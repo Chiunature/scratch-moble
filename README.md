@@ -1,97 +1,48 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Scratch Mobile
 
-# Getting Started
+这是 Scratch 移动端应用的 React Native + Yarn workspaces monorepo 工程。
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
-
-## Step 1: Start Metro
-
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
+## 安装依赖
 
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+yarn install
 ```
 
-## Step 2: Build and run your app
+## 工作区结构
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+```text
+apps/mobile              React Native 主应用
+packages/core           纯 TypeScript 核心逻辑
+packages/protocol       纯 TypeScript 硬件协议逻辑
+packages/shared         共享类型、常量和 schema
+```
 
-### Android
+## 运行
+
+真机 USB 调试推荐先启动 Metro：
 
 ```sh
-# Using npm
-npm run android
+yarn usb
+```
 
-# OR using Yarn
+再打开另一个终端安装并启动 Android 应用：
+
+```sh
 yarn android
 ```
 
-### iOS
+`yarn usb` 会先执行 `adb reverse tcp:8081 tcp:8081`，让真机通过 USB 连接本机 Metro 服务。
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+日常开发时，如果 App 已经装在真机上，通常只需要保持 `yarn usb` 运行，然后在手机上直接打开 App。只改 JS/TS 代码、样式或页面逻辑时，不需要重新执行 `yarn android`；如果热更新没有生效，可以在 Metro 终端按 `r` 重新加载。
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+改动原生 Android 配置、原生依赖、包名、权限、`AndroidManifest.xml`、Gradle 配置，或者首次安装、卸载后重装、换手机时，需要重新执行 `yarn android`。
 
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
+## 检查
 
 ```sh
-bundle exec pod install
+yarn lint
+yarn test
+yarn typecheck
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+模块边界规则见 `docs/module-boundary.md`。

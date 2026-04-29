@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "paths": {
+      "@scratch-mobile/core": ["packages/core/src"],
+      "@scratch-mobile/protocol": ["packages/protocol/src"],
+      "@scratch-mobile/shared": ["packages/shared/src"]
+    },
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext"
+  }
+}
