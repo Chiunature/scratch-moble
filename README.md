@@ -46,3 +46,4 @@ yarn typecheck
 ```
 
 模块边界规则见 `docs/module-boundary.md`。
+scratch 的积木块更改规则见 `docs/scratch-blocks-guide.md`

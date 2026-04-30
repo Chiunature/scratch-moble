@@ -1,0 +1,104 @@
+# Scratch Blocks 使用说明（项目内）
+
+本文档说明本项目中 `scratch-blocks` 的推荐写法、开发流程和常见问题。
+
+## 背景
+
+- 当前依赖：`scratch-blocks@2.1.19`
+- 官方 2.x 方向：基于 Blockly 12 能力演进（不再是旧时代的 Blockly fork）
+- 官方仓库：<https://github.com/scratchfoundation/scratch-blocks>
+
+## 推荐写法（现代风格）
+
+在本项目中，优先使用以下组合：
+
+- 块定义：`defineBlocksWithJsonArray`
+- 工具箱：`categoryToolbox` JSON
+- 主题：`Theme.defineTheme(...)` + `style/categorystyle`
+- 页面注入：`ScratchBlocks.inject(...)`
+
+对应文件：`packages/scratch-editor-web/src/main.ts`
+
+### 1) 块定义
+
+- 使用 `type` 管理块类型（项目里集中在 `BLOCK_TYPES`）
+- 使用 `style`（如 `event_blocks` / `motion_blocks` / `looks_blocks`）
+- 避免在块定义里直接塞 `colour`，统一走主题样式
+
+### 2) 工具箱定义
+
+- 使用 JSON toolbox，不再使用 XML toolbox 作为主路径
+- 分类颜色用 `categorystyle`（如 `event_category`）
+- 默认参数用 `inputs.shadow.fields` 提供
+
+### 3) 主题定义
+
+- 统一在 `editorTheme` 中定义 `blockStyles/categoryStyles/componentStyles`
+- Android 低版本 WebView 上，建议始终显式给出主要颜色，避免 `Invalid colour: "undefined"`
+
+## 开发流程
+
+当你修改 `packages/scratch-editor-web/src/main.ts` 后，需要重新生成并同步到 mobile 侧的 HTML 常量文件。
+
+### 手动流程
+
+```bash
+yarn workspace @scratch-mobile/scratch-editor-web build
+yarn workspace @scratch-mobile/scratch-editor-web sync:mobile
+```
+
+或直接一条命令：
+
+```bash
+yarn editor:web
+```
+
+配合 RN 调试：
+
+```bash
+yarn usb
+```
+
+## 常见问题
+
+### 1) `Invalid colour: "undefined"`
+
+典型表现：`ScratchBlocks.inject` 阶段报错，堆栈在 `setTheme/validatedBlockStyle`。
+
+处理建议：
+
+- 确保块定义使用 `style`
+- 确保主题内对应 `blockStyles` 和 `categoryStyles` 存在
+- 避免混用历史遗留颜色扩展和缺失主题键
+
+### 2) WebView 下 `Failed to fetch .../media/disconnect.mp3`（CORS）
+
+当页面来源是 `about:blank`（`origin: null`）时，远端 `media` 资源可能被 CORS 拦截。
+
+影响：
+
+- 主要影响编辑器音效加载
+- 一般不影响积木渲染和基本交互
+
+可选处理：
+
+- 若不需要音效，可在注入选项里设置 `sounds: false`
+- 或将 `media` 资源改为可控的同源静态资源地址
+
+### 3) Chrome 远程调试 WebView 404
+
+老 Android WebView 内核与新 Chrome DevTools 前端可能版本不匹配。
+
+建议：
+
+- 优先使用 `inspect fallback`
+- 或使用本地预览页调试：`yarn editor:web:preview`
+
+## 相关文件
+
+- `packages/scratch-editor-web/src/main.ts`
+- `packages/scratch-editor-web/scripts/build.mjs`
+- `packages/scratch-editor-web/scripts/sync-to-mobile.mjs`
+- `packages/scratch-editor-web/scripts/watch-mobile.mjs`
+- `apps/mobile/src/editor/editorBundleHtml.ts`
+- `apps/mobile/src/screens/EditorScreen/EditorScreen.tsx`
