@@ -10,10 +10,18 @@ export const styles = StyleSheet.create({
     padding: spacing.sm,
     backgroundColor: colors.background,
   },
+  compactContainer: {
+    flexDirection: 'column',
+  },
   editorPanel: {
     flex: 1,
+    minHeight: 0,
     overflow: 'hidden',
     borderRadius: spacing.xl,
+    backgroundColor: colors.surface,
+  },
+  webView: {
+    flex: 1,
     backgroundColor: colors.surface,
   },
   codePanel: {
@@ -22,6 +30,10 @@ export const styles = StyleSheet.create({
     borderRadius: spacing.xl,
     padding: spacing.md,
     backgroundColor: colors.codeBackground,
+  },
+  compactCodePanel: {
+    width: '100%',
+    maxHeight: 260,
   },
   codeTitle: {
     color: colors.surface,
