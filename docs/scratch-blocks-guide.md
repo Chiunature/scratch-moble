@@ -53,6 +53,30 @@ yarn workspace @scratch-mobile/scratch-editor-web sync:mobile
 yarn editor:web
 ```
 
+### 自动流程（推荐）
+
+开发期建议开 2 个终端常驻：
+
+1. 终端 A：RN 打包与热更新
+
+```bash
+yarn usb
+```
+
+2. 终端 B： 日志观察
+
+日志观察（按需）：
+
+```bash
+yarn logs:mobile
+```
+
+需要清空历史日志再看新问题时：
+
+```bash
+yarn logs:mobile:reset
+```
+
 配合 RN 调试：
 
 ```bash

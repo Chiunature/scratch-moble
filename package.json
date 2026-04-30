@@ -16,6 +16,8 @@
     "editor:web:sync": "yarn workspace @scratch-mobile/scratch-editor-web sync:mobile",
     "editor:web": "yarn editor:web:build && yarn editor:web:sync",
     "editor:web:preview": "yarn editor:web:build && yarn workspace @scratch-mobile/scratch-editor-web preview",
+    "logs:mobile": "adb logcat -v time ReactNativeJS:I chromium:E *:S",
+    "logs:mobile:reset": "adb logcat -c && adb logcat -v time ReactNativeJS:I chromium:E *:S",
     "lint": "eslint . --ext .js,.ts,.tsx",
     "test": "jest",
     "typecheck": "yarn typecheck:shared && yarn typecheck:core && yarn typecheck:protocol && yarn typecheck:mobile",

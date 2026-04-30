@@ -15,6 +15,7 @@ export function EditorScreen() {
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   const [blockCount, setBlockCount] = useState(0);
   const { width } = useWindowDimensions();
+  console.log('useWindowDimensions宽度', width);
   const isCompact = width < 720;
 
   function handleMessage(event: WebViewMessageEvent) {
