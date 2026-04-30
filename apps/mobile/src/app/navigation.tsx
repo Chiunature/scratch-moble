@@ -6,6 +6,7 @@ import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
+import { colors, fontWeight } from '../theme';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -23,9 +24,9 @@ export function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: '#eef2ff' },
-          headerTintColor: '#111827',
-          headerTitleStyle: { fontWeight: '800' },
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.ink,
+          headerTitleStyle: { fontWeight: fontWeight.extraBold },
         }}>
         <Stack.Screen
           name="Home"

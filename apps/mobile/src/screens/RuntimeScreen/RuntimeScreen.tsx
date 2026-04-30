@@ -1,8 +1,9 @@
 import React from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { Button, Text, View } from 'react-native';
 import { formatRuntimeTicks } from '@scratch-mobile/core';
 
-import { useRuntimeStore } from '../store/useRuntimeStore';
+import { useRuntimeStore } from '../../store/useRuntimeStore';
+import { styles } from './RuntimeScreen.styles';
 
 export function RuntimeScreen() {
   const ticks = useRuntimeStore(state => state.ticks);
@@ -19,19 +20,3 @@ export function RuntimeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    gap: 16,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  actions: {
-    gap: 12,
-  },
-});
