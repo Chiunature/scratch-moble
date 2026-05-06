@@ -27,7 +27,8 @@ export function RootNavigator() {
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.ink,
           headerTitleStyle: { fontWeight: fontWeight.extraBold },
-        }}>
+        }}
+      >
         <Stack.Screen
           name="Home"
           component={HomeScreen}
@@ -36,7 +37,7 @@ export function RootNavigator() {
         <Stack.Screen
           name="Editor"
           component={EditorScreen}
-          options={{ title: '编程模式' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="BuildGuide"

@@ -22634,9 +22634,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function bootstrap() {
     registerEditorBlocks();
     const host = document.getElementById("workspace");
-    const code = document.getElementById("code");
-    const send = document.getElementById("send-code");
-    if (!host || !code || !send) {
+    if (!host) {
       return;
     }
     const sharedInjectOptions = {
@@ -22661,7 +22659,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     });
     const publish = () => {
       const generated = renderPseudoCode(workspace);
-      code.textContent = generated;
       postToReactNative({
         type: "editor.code.generated",
         code: generated,
@@ -22669,7 +22666,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       });
     };
     workspace.addChangeListener(() => publish());
-    send.addEventListener("click", publish);
     publish();
   }
   bootstrap();

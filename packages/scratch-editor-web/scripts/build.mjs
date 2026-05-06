@@ -25,59 +25,25 @@ body {
   color: #0f172a;
 }
 .shell {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 12px;
   width: 100vw;
   height: 100vh;
-  padding: 12px;
+  height: 100dvh;
+  box-sizing: border-box;
 }
 .panel {
   border-radius: 16px;
   background: #fff;
-  border: 1px solid rgba(79, 70, 229, 0.18);
   box-shadow: 0 10px 24px rgba(79, 70, 229, 0.08);
 }
-.workspace-wrap { overflow: hidden; }
-#workspace { width: 100%; height: 100%; }
 .workspace-wrap {
   min-width: 0;
-  min-height: 360px;
-}
-.code-wrap {
-  display: flex;
-  flex-direction: column;
-  padding: 14px;
-  gap: 10px;
-}
-h1 { margin: 0; font-size: 16px; color: #4338ca; }
-pre {
-  margin: 0;
-  flex: 1;
   min-height: 0;
-  overflow: auto;
-  background: #0f172a;
-  color: #d1fae5;
-  border-radius: 12px;
-  padding: 12px;
+  width: 100%;
+  height: 100%;
 }
-button {
-  border: 0;
-  border-radius: 12px;
-  padding: 12px;
-  font-weight: 700;
-  color: #fff;
-  background: #111827;
-}
-@media (max-width: 900px) {
-  .shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-    height: 100dvh;
-    padding: 8px;
-  }
-  .workspace-wrap { min-height: 0; }
-  .code-wrap { display: none; }
+#workspace {
+  width: 100%;
+  height: 100%;
 }
 `;
 
@@ -95,11 +61,6 @@ const htmlTemplate = jsCode => `<!doctype html>
     <main class="shell">
       <section class="panel workspace-wrap">
         <div id="workspace"></div>
-      </section>
-      <section class="panel code-wrap">
-        <h1>生成代码</h1>
-        <pre id="code">// 拖拽飞出栏积木后生成代码</pre>
-        <button id="send-code">发送给 App</button>
       </section>
     </main>
     <script>${jsCode}</script>

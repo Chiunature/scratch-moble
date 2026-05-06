@@ -3,37 +3,49 @@ import { StyleSheet } from 'react-native';
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
 
 export const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.sm,
     backgroundColor: colors.background,
   },
-  compactContainer: {
-    flexDirection: 'column',
+  editorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    // paddingBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    justifyContent: 'flex-start',
+    // borderBottomWidth: StyleSheet.hairlineWidth,
+    // borderBottomColor: colors.primarySoft,
+  },
+  headerPressable: {
+    minWidth: 24,
+    padding: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   editorPanel: {
     flex: 1,
     minHeight: 0,
-    overflow: 'hidden',
-    borderRadius: spacing.xl,
-    backgroundColor: colors.surface,
   },
   webView: {
     flex: 1,
     backgroundColor: colors.surface,
   },
   codePanel: {
+    position: 'absolute',
     width: 280,
+    height: '100%',
+    right: 0,
     gap: spacing.xs,
     borderRadius: spacing.xl,
     padding: spacing.md,
     backgroundColor: colors.codeBackground,
-  },
-  compactCodePanel: {
-    width: '100%',
-    maxHeight: 260,
   },
   codeTitle: {
     color: colors.surface,

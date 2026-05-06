@@ -229,10 +229,8 @@ function postToReactNative(message: OutMessage): void {
 function bootstrap(): void {
   registerEditorBlocks();
   const host = document.getElementById('workspace');
-  const code = document.getElementById('code');
-  const send = document.getElementById('send-code');
 
-  if (!host || !code || !send) {
+  if (!host) {
     return;
   }
 
@@ -260,7 +258,6 @@ function bootstrap(): void {
 
   const publish = (): void => {
     const generated = renderPseudoCode(workspace);
-    code.textContent = generated;
     postToReactNative({
       type: 'editor.code.generated',
       code: generated,
@@ -269,7 +266,6 @@ function bootstrap(): void {
   };
 
   workspace.addChangeListener(() => publish());
-  send.addEventListener('click', publish);
   publish();
 }
 
