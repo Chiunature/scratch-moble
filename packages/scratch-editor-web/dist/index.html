@@ -22478,14 +22478,17 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return e3 || this.isFlyout ? Ao.call(this, e3) : null;
   };
 
-  // src/main.ts
+  // src/blocks/blockTypes.ts
   var BLOCK_TYPES = {
     whenFlagClicked: "event_whenflagclicked",
     moveSteps: "motion_movesteps",
     turnRight: "motion_turnright",
     sayForSecs: "looks_sayforsecs",
-    switchCostumeTo: "looks_switchcostumeto"
+    switchCostumeTo: "looks_switchcostumeto",
+    repeat: "control_repeat"
   };
+
+  // src/blocks/registerBlocks.ts
   function registerEditorBlocks() {
     Ct([
       {
@@ -22529,9 +22532,22 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         previousStatement: null,
         nextStatement: null,
         style: "looks_blocks"
+      },
+      {
+        type: BLOCK_TYPES.repeat,
+        message0: "\u91CD\u590D\u6267\u884C %1 \u6B21 %2",
+        args0: [
+          { type: "input_value", name: "TIMES", check: "Number" },
+          { type: "input_statement", name: "SUBSTACK" }
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        style: "loop_blocks"
       }
     ]);
   }
+
+  // src/blocks/toolbox.ts
   var toolboxJson = {
     kind: "categoryToolbox",
     contents: [
@@ -22584,9 +22600,132 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           { kind: "block", type: BLOCK_TYPES.sayForSecs },
           { kind: "block", type: BLOCK_TYPES.switchCostumeTo }
         ]
+      },
+      {
+        kind: "category",
+        name: "\u63A7\u5236",
+        categorystyle: "loop_category",
+        contents: [
+          {
+            kind: "block",
+            type: BLOCK_TYPES.repeat,
+            inputs: {
+              TIMES: {
+                shadow: {
+                  type: "math_number",
+                  fields: {
+                    NUM: 10
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     ]
   };
+
+  // src/bridge.ts
+  function postToReactNative(message) {
+    const bridge = window.ReactNativeWebView;
+    if (bridge?.postMessage) {
+      bridge.postMessage(JSON.stringify(message));
+    }
+  }
+
+  // src/codegen/helpers.ts
+  var INDENT_TEXT = "    ";
+  function indent(context) {
+    return INDENT_TEXT.repeat(context.indent);
+  }
+  function quotePythonString(value) {
+    return JSON.stringify(value);
+  }
+  function getNextBlock(block) {
+    return block.getNextBlock?.() ?? null;
+  }
+  function getInputTargetBlock(block, inputName) {
+    return block.getInputTargetBlock?.(inputName) ?? null;
+  }
+  function getFieldValue(block, fieldName) {
+    const value = block.getFieldValue?.(fieldName);
+    return value == null ? null : String(value);
+  }
+
+  // src/codegen/generators.ts
+  function expressionBlockToPython(block) {
+    if (block.type === "math_number") {
+      return getFieldValue(block, "NUM") ?? "0";
+    }
+    if (block.type === "text") {
+      return quotePythonString(getFieldValue(block, "TEXT") ?? "");
+    }
+    return `None  # TODO: unsupported expression ${block.type}`;
+  }
+  function valueToPython(block, inputName, fallback) {
+    const targetBlock = getInputTargetBlock(block, inputName);
+    return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
+  }
+  function statementInputToPython(block, inputName, context) {
+    const firstChildBlock = getInputTargetBlock(block, inputName);
+    return firstChildBlock ? statementChainToPython(firstChildBlock, context) : "";
+  }
+  var statementGenerators = {
+    [BLOCK_TYPES.whenFlagClicked](_block, context) {
+      return `${indent(context)}# \u5F53\u5F00\u59CB\u8FD0\u884C`;
+    },
+    [BLOCK_TYPES.moveSteps](block, context) {
+      const steps = valueToPython(block, "STEPS", "10");
+      return `${indent(context)}move_steps(${steps})`;
+    },
+    [BLOCK_TYPES.turnRight](block, context) {
+      const degrees = valueToPython(block, "DEGREES", "15");
+      return `${indent(context)}turn_right(${degrees})`;
+    },
+    [BLOCK_TYPES.sayForSecs](block, context) {
+      const message = valueToPython(block, "MESSAGE", quotePythonString("Hello"));
+      const seconds = valueToPython(block, "SECS", "2");
+      return `${indent(context)}say_for_secs(${message}, ${seconds})`;
+    },
+    [BLOCK_TYPES.switchCostumeTo](block, context) {
+      const costume = valueToPython(block, "COSTUME", quotePythonString("costume1"));
+      return `${indent(context)}switch_costume(${costume})`;
+    },
+    [BLOCK_TYPES.repeat](block, context) {
+      const times = valueToPython(block, "TIMES", "10");
+      const childContext = { indent: context.indent + 1 };
+      const body = statementInputToPython(block, "SUBSTACK", childContext) || `${indent(childContext)}pass`;
+      return `${indent(context)}for _ in range(${times}):
+${body}`;
+    }
+  };
+  function blockToPython(block, context) {
+    const generator = statementGenerators[block.type];
+    if (!generator) {
+      return `${indent(context)}# TODO: unsupported block ${block.type}`;
+    }
+    return generator(block, context);
+  }
+  function statementChainToPython(firstBlock, context) {
+    const lines = [];
+    let currentBlock = firstBlock;
+    while (currentBlock) {
+      lines.push(blockToPython(currentBlock, context));
+      currentBlock = getNextBlock(currentBlock);
+    }
+    return lines.join("\n");
+  }
+  function renderPythonCode(workspace) {
+    const blocks = workspace.getTopBlocks(true).sort(
+      (a2, b2) => a2.getRelativeToSurfaceXY().y - b2.getRelativeToSurfaceXY().y
+    );
+    if (blocks.length === 0) {
+      return "# \u62D6\u62FD\u98DE\u51FA\u680F\u79EF\u6728\u540E\u751F\u6210 Python \u4EE3\u7801";
+    }
+    return blocks.map((block) => statementChainToPython(block, { indent: 0 })).filter(Boolean).join("\n\n");
+  }
+
+  // src/theme.ts
   var editorTheme = ye.defineTheme("scratch-mobile", {
     name: "scratch-mobile",
     blockStyles: {
@@ -22644,7 +22783,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     categoryStyles: {
       event_category: { colour: "#FFBF00" },
       motion_category: { colour: "#4C97FF" },
-      looks_category: { colour: "#9966FF" }
+      looks_category: { colour: "#9966FF" },
+      loop_category: { colour: "#0FBD8C" }
     },
     componentStyles: {
       workspaceBackgroundColour: "#f3f6ff",
@@ -22659,37 +22799,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       cursorColour: "#111827"
     }
   });
-  function renderPseudoCode(workspace) {
-    const blocks = workspace.getTopBlocks(true).sort(
-      (a2, b2) => a2.getRelativeToSurfaceXY().y - b2.getRelativeToSurfaceXY().y
-    );
-    if (blocks.length === 0) {
-      return "// \u62D6\u62FD\u98DE\u51FA\u680F\u79EF\u6728\u540E\u751F\u6210\u4EE3\u7801";
-    }
-    return blocks.map((block) => {
-      const type = block.type;
-      if (type === BLOCK_TYPES.whenFlagClicked) return "when_start()";
-      if (type === BLOCK_TYPES.moveSteps) return "move_steps(10)";
-      if (type === BLOCK_TYPES.turnRight) return "turn_right(15)";
-      if (type === BLOCK_TYPES.sayForSecs) return "say_for_secs('Hello', 2)";
-      if (type === BLOCK_TYPES.switchCostumeTo)
-        return "switch_costume('costume1')";
-      return `# ${type}`;
-    }).join("\n");
-  }
-  function postToReactNative(message) {
-    const bridge = window.ReactNativeWebView;
-    if (bridge?.postMessage) {
-      bridge.postMessage(JSON.stringify(message));
-    }
-  }
+
+  // src/main.ts
   function bootstrap() {
     registerEditorBlocks();
     const host = document.getElementById("workspace");
     if (!host) {
       return;
     }
-    const sharedInjectOptions = {
+    const workspace = No(host, {
       move: { scrollbars: true, drag: true, wheel: true },
       zoom: {
         controls: true,
@@ -22703,14 +22821,11 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       media: "https://unpkg.com/scratch-blocks@2.1.19/media/",
       trashcan: true,
       theme: editorTheme,
-      sounds: false
-    };
-    const workspace = No(host, {
-      ...sharedInjectOptions,
+      sounds: false,
       toolbox: toolboxJson
     });
     const publish = () => {
-      const generated = renderPseudoCode(workspace);
+      const generated = renderPythonCode(workspace);
       postToReactNative({
         type: "editor.code.generated",
         code: generated,
