@@ -45,6 +45,12 @@ body {
   width: 100%;
   height: 100%;
 }
+/* Blockly：隐藏滚动条 UI，但须保持 main.ts 里 move.scrollbars: true，否则无法空白处平移 */
+#workspace .blocklyMainWorkspaceScrollbar .blocklyScrollbarHandle {
+  display: none !important;
+}
+/* 飞出栏宽度由 flyoutWidthClamp.ts 写 svg width；展开时用 visible 盖过 UA 对 svg 的 overflow:hidden */
+
 `;
 
 const htmlTemplate = jsCode => `<!doctype html>
@@ -79,6 +85,7 @@ await build({
   platform: 'browser',
   target: ['chrome100', 'safari15'],
   minify: false,
+  loader: { '.svg': 'dataurl', '.png': 'dataurl' },
 });
 
 const jsCode = await readFile(path.join(distDir, 'editor.js'), 'utf8');

@@ -35,7 +35,8 @@ export function registerEditorBlocks(): void {
     },
     {
       type: BLOCK_TYPES.sayForSecs,
-      message0: '说 %1 持续 %2 秒',
+      message0:
+        '说 %1 持续 %2 秒当开始运行当开始运行当开始运行当开始运行当开始运行当开始运行当开始运行当开始运行',
       args0: [
         { type: 'input_value', name: 'MESSAGE' },
         { type: 'input_value', name: 'SECS', check: 'Number' },

@@ -22464,7 +22464,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       },
       {
         type: BLOCK_TYPES.sayForSecs,
-        message0: "\u8BF4 %1 \u6301\u7EED %2 \u79D2",
+        message0: "\u8BF4 %1 \u6301\u7EED %2 \u79D2\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C",
         args0: [
           { type: "input_value", name: "MESSAGE" },
           { type: "input_value", name: "SECS", check: "Number" }
@@ -22748,6 +22748,162 @@ ${body}`;
     }
   });
 
+  // src/workspace-custom/flyoutWidthClamp.ts
+  function setupFlyoutWidthClamp(workspace) {
+    const tryBind = () => {
+      const root = workspace.getInjectionDiv?.();
+      const flyoutSvg = root?.querySelector("svg.blocklyFlyout");
+      if (!(flyoutSvg instanceof SVGSVGElement)) return false;
+      const flyout = workspace.getToolbox?.()?.getFlyout?.();
+      if (!flyout) return false;
+      const refreshLayout = () => {
+        flyout.reflow?.();
+        workspace.resizeContents?.();
+        flyout.position?.();
+      };
+      const collapse = () => {
+        flyoutSvg.style.removeProperty("overflow");
+        refreshLayout();
+      };
+      const expand = () => {
+        flyoutSvg.style.overflow = "visible";
+        refreshLayout();
+      };
+      collapse();
+      flyoutSvg.addEventListener("pointerenter", expand);
+      flyoutSvg.addEventListener("pointerleave", collapse);
+      flyoutSvg.addEventListener("pointercancel", collapse);
+      flyoutSvg.addEventListener("pointerdown", expand, true);
+      return true;
+    };
+    if (!tryBind()) {
+      requestAnimationFrame(() => tryBind());
+    }
+  }
+
+  // assets/zoom/zoom-in.svg
+  var zoom_in_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:none;stroke:%23575e75;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5px;}</style></defs><title>zoom-in</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><circle class="cls-4" cx="18" cy="18" r="7"/><line class="cls-4" x1="23" y1="23" x2="26" y2="26"/><line class="cls-4" x1="16" y1="18" x2="20" y2="18"/><line class="cls-4" x1="18" y1="16" x2="18" y2="20"/></g></svg>%0A';
+
+  // assets/zoom/zoom-out.svg
+  var zoom_out_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:none;stroke:%23575e75;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5px;}</style></defs><title>zoom-out</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><circle class="cls-4" cx="18" cy="18" r="7"/><line class="cls-4" x1="23" y1="23" x2="26" y2="26"/><line class="cls-4" x1="16" y1="18" x2="20" y2="18"/></g></svg>%0A';
+
+  // assets/zoom/zoom-reset.svg
+  var zoom_reset_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:%23575e75;}</style></defs><title>zoom-reset</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><rect class="cls-4" x="13" y="14" width="10" height="2" rx="1" ry="1"/><rect class="cls-4" x="13" y="20" width="10" height="2" rx="1" ry="1"/></g></svg>%0A';
+
+  // src/workspace-custom/patchScratchZoom.ts
+  var zoomInUrl = zoom_in_default;
+  var zoomOutUrl = zoom_out_default;
+  var zoomResetUrl = zoom_reset_default;
+  var XLINK_NS = "http://www.w3.org/1999/xlink";
+  function setSvgImageHref(el, href) {
+    const tag = el.tagName.toLowerCase();
+    if (tag !== "image") {
+      return;
+    }
+    el.setAttribute("href", href);
+    el.setAttributeNS(XLINK_NS, "xlink:href", href);
+  }
+  function patchImagesInGroup(root, groupClass, href) {
+    const group = root.querySelector(groupClass);
+    if (!group) {
+      return;
+    }
+    const img = group.querySelector("image");
+    if (img) {
+      setSvgImageHref(img, href);
+    }
+  }
+  function ensureScratchZoomControlsIfMissing(workspace) {
+    if (!workspace.options.zoomOptions?.controls) {
+      return;
+    }
+    const svgGroup = workspace.getSvgGroup?.();
+    if (!svgGroup || svgGroup.querySelector(".blocklyZoom")) {
+      return;
+    }
+    const z2 = new so(workspace);
+    svgGroup.appendChild(z2.createDom());
+    z2.init();
+  }
+  function patchScratchZoomControlImages(workspace) {
+    const root = workspace.getInjectionDiv?.();
+    if (!root) {
+      return;
+    }
+    patchImagesInGroup(root, ".blocklyZoomIn", zoomInUrl);
+    patchImagesInGroup(root, ".blocklyZoomOut", zoomOutUrl);
+    patchImagesInGroup(root, ".blocklyZoomReset", zoomResetUrl);
+  }
+
+  // src/workspace-custom/toolboxDoubleClickHideFlyout.ts
+  function findToolboxItemContainingTarget(toolbox, target) {
+    if (!(target instanceof Node)) {
+      return null;
+    }
+    for (const item of toolbox.getToolboxItems()) {
+      const div = item.getDiv();
+      if (div && (div === target || div.contains(target))) {
+        return item;
+      }
+    }
+    return null;
+  }
+  function setupToolboxDoubleClickHideFlyout(workspace) {
+    const toolbox = workspace.getToolbox?.();
+    const host = toolbox?.HtmlDiv ?? null;
+    if (!toolbox || !host) {
+      return;
+    }
+    const flyout = toolbox.getFlyout?.();
+    if (!flyout?.hide) {
+      return;
+    }
+    function getAllMethodNames(obj) {
+      const seen = /* @__PURE__ */ new Set();
+      let p2 = obj;
+      while (p2 && p2 !== Object.prototype) {
+        for (const name2 of Object.getOwnPropertyNames(p2)) {
+          if (name2 === "constructor") continue;
+          try {
+            const v2 = obj[name2];
+            if (typeof v2 === "function") seen.add(name2);
+          } catch {
+          }
+        }
+        p2 = Object.getPrototypeOf(p2);
+      }
+      return [...seen].sort();
+    }
+    host.addEventListener(
+      "pointerdown",
+      (e3) => {
+        console.log("e", e3);
+        if (e3.pointerType === "mouse" && e3.button !== 0) {
+          return;
+        }
+        const hit = findToolboxItemContainingTarget(toolbox, e3.target);
+        console.log(getAllMethodNames(hit ?? {}));
+        if (!hit?.isSelectable?.()) {
+          console.log("hit is not selectable");
+          return;
+        }
+        const selected = toolbox.getSelectedItem?.();
+        if (!selected || selected.getId() !== hit.getId()) {
+          return;
+        }
+        if (!flyout.isVisible?.()) {
+          return;
+        }
+        flyout.hide();
+        toolbox.clearSelection?.();
+        workspace.resize?.();
+        e3.preventDefault();
+        e3.stopPropagation();
+      },
+      true
+    );
+  }
+
   // src/main.ts
   function bootstrap() {
     registerEditorBlocks();
@@ -22756,22 +22912,53 @@ ${body}`;
       return;
     }
     const workspace = No(host, {
-      move: { scrollbars: true, drag: true, wheel: true },
+      move: {
+        // Blockly：scrollbars 为 false 时，选项解析会把 drag / wheel 一并关掉，空白处无法平移工作区（含移动端滑动）。
+        scrollbars: true,
+        drag: true,
+        wheel: true
+      },
       zoom: {
         controls: true,
-        wheel: true,
+        //显示缩放控件
         startScale: 0.8,
+        //初始缩放比例
         maxScale: 1.6,
+        //最大缩放比例
         minScale: 0.45,
+        //最小缩放比例
         scaleSpeed: 1.08,
+        //缩放速度
         pinch: true
+        //允许捏合缩放
+      },
+      grid: {
+        spacing: 20,
+        //网格间距
+        length: 20,
+        //网格长度
+        colour: "rgba(15, 23, 42, 0.12)",
+        snap: true
+        //网格吸附
       },
       media: "https://unpkg.com/scratch-blocks@2.1.19/media/",
-      trashcan: true,
+      trashcan: false,
+      //垃圾桶
       theme: editorTheme,
       sounds: false,
+      //交互音效
       toolbox: toolboxJson
+      //工具箱定义 xml或者json
     });
+    ensureScratchZoomControlsIfMissing(workspace);
+    workspace.resize?.();
+    patchScratchZoomControlImages(workspace);
+    requestAnimationFrame(() => {
+      workspace.resize?.();
+      patchScratchZoomControlImages(workspace);
+      setupFlyoutWidthClamp(workspace);
+    });
+    setupToolboxDoubleClickHideFlyout(workspace);
     const publish = () => {
       const generated = renderPythonCode(workspace);
       postToReactNative({

@@ -17,11 +17,11 @@
 - 主题：`Theme.defineTheme(...)` + `style/categorystyle`
 - 页面注入：`ScratchBlocks.inject(...)`
 
-对应文件：`packages/scratch-editor-web/src/main.ts`
+对应代码主要在：`packages/scratch-editor-web/src/`（入口为 `main.ts`，积木与生成逻辑已按目录拆分，见下文「目录结构」）。
 
 ### 1) 块定义
 
-- 使用 `type` 管理块类型（项目里集中在 `BLOCK_TYPES`）
+- 使用 `type` 管理块类型（项目里集中在 `src/blocks/blockTypes.ts` 的 `BLOCK_TYPES`）
 - 使用 `style`（如 `event_blocks` / `motion_blocks` / `looks_blocks`）
 - 避免在块定义里直接塞 `colour`，统一走主题样式
 
@@ -36,9 +36,25 @@
 - 统一在 `editorTheme` 中定义 `blockStyles/categoryStyles/componentStyles`
 - Android 低版本 WebView 上，建议始终显式给出主要颜色，避免 `Invalid colour: "undefined"`
 
+## `packages/scratch-editor-web` 目录结构
+
+| 路径 | 作用 |
+|------|------|
+| `src/main.ts` | 编辑器入口：注册积木、`ScratchBlocks.inject`、订阅变更、调用 `workspace-custom` 中的定制逻辑。 |
+| `src/blocks/` | 积木相关：`blockTypes.ts`（type 常量）、`registerBlocks.ts`（`defineBlocksWithJsonArray`）、`toolbox.ts`（`categoryToolbox` JSON 与默认 shadow）。 |
+| `src/codegen/` | 工作区 → Python：`types.ts`、`helpers.ts`、`generators.ts`（按块类型生成语句与 `renderPythonCode`）。 |
+| `src/theme.ts` | `Theme.defineTheme`：块色、分类色、工作区/工具栏等 `componentStyles`。 |
+| `src/bridge.ts` | 与 React Native WebView 通信：`postMessage` 与 `editor.code.generated` 消息类型。 |
+| `src/workspace-custom/` | 注入后定制：`patchScratchZoom.ts`（缩放条内置 SVG）、`toolboxDoubleClickHideFlyout.ts`（已选分类再次点击关闭飞出栏）、`flyoutWidthClamp.ts`（飞出栏默认最大宽度 + 横向裁剪，指针进入/按下时展开）；`index.ts` 统一导出。样式配合见 `scripts/build.mjs` 内 `.scratch-flyout-*`。 |
+| `assets/zoom/` | 缩放按钮用的 SVG（构建时打成 data URL 打进包内）；替换图标只需改这三个文件并重新 build。 |
+| `scripts/build.mjs` | esbuild 打包 `src/main.ts` → `dist/editor.js`，内联页面 CSS，合并为 `dist/index.html`。 |
+| `scripts/sync-to-mobile.mjs` | 将 `dist/index.html` 写入 `apps/mobile/src/editor/editorBundleHtml.ts`。 |
+| `scripts/preview.mjs` | 本地预览 `dist`（详见脚本内说明）。 |
+| `dist/` | 构建产物（`editor.js`、`index.html`），勿手改；由 `build` 生成。 |
+
 ## 开发流程
 
-当你修改 `packages/scratch-editor-web/src/main.ts` 后，需要重新生成并同步到 mobile 侧的 HTML 常量文件。
+当你修改 `packages/scratch-editor-web/src/` 或 `assets/` 后，需要重新生成并同步到 mobile 侧的 HTML 常量文件。
 
 ### 手动流程
 
@@ -120,9 +136,14 @@ yarn usb
 
 ## 相关文件
 
-- `packages/scratch-editor-web/src/main.ts`
+- `packages/scratch-editor-web/src/main.ts`（入口）
+- `packages/scratch-editor-web/src/blocks/*`（积木与工具箱）
+- `packages/scratch-editor-web/src/codegen/*`（Python 生成）
+- `packages/scratch-editor-web/src/theme.ts`、`packages/scratch-editor-web/src/bridge.ts`
+- `packages/scratch-editor-web/src/workspace-custom/*`（缩放条、飞出栏交互定制）
+- `packages/scratch-editor-web/assets/zoom/*`（缩放图标资源）
 - `packages/scratch-editor-web/scripts/build.mjs`
 - `packages/scratch-editor-web/scripts/sync-to-mobile.mjs`
-- `packages/scratch-editor-web/scripts/watch-mobile.mjs`
+- `packages/scratch-editor-web/scripts/preview.mjs`
 - `apps/mobile/src/editor/editorBundleHtml.ts`
 - `apps/mobile/src/screens/EditorScreen/EditorScreen.tsx`
