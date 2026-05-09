@@ -22428,91 +22428,198 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
 
   // src/blocks/blockTypes.ts
   var BLOCK_TYPES = {
-    whenFlagClicked: "event_whenflagclicked",
-    moveSteps: "motion_movesteps",
-    turnRight: "motion_turnright",
-    sayForSecs: "looks_sayforsecs",
-    switchCostumeTo: "looks_switchcostumeto",
-    repeat: "control_repeat"
+    motor: {
+      runForPowerSeconds: "motor_run_for_power_seconds"
+    },
+    move: {
+      pair: "pair"
+    },
+    matrixLight: {
+      show: "show"
+    },
+    sound: {
+      playMusic: "play_music"
+    },
+    event: {
+      whenFlagClicked: "event_when_flag_clicked"
+    },
+    control: {
+      sleepSeconds: "control_sleep_seconds"
+    },
+    sensor: {
+      oneCalibrate: "one_calibrate"
+    }
   };
 
   // src/blocks/registerBlocks.ts
   function registerEditorBlocks() {
     Ct([
       {
-        type: BLOCK_TYPES.whenFlagClicked,
-        message0: "\u5F53\u5F00\u59CB\u8FD0\u884C",
-        nextStatement: null,
-        style: "event_blocks",
-        extensions: ["shape_hat"]
-      },
-      {
-        type: BLOCK_TYPES.moveSteps,
-        message0: "\u524D\u8FDB %1 \u6B65",
+        type: BLOCK_TYPES.motor.runForPowerSeconds,
+        message0: "\u7535\u673A\u6309\u529F\u7387\u8FD0\u884C %1",
         args0: [{ type: "input_value", name: "STEPS", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
         style: "motion_blocks"
       },
       {
-        type: BLOCK_TYPES.turnRight,
-        message0: "\u53F3\u8F6C %1 \u5EA6",
-        args0: [{ type: "input_value", name: "DEGREES", check: "Number" }],
+        type: BLOCK_TYPES.move.pair,
+        message0: "\u79FB\u52A8 \u914D\u5BF9",
         previousStatement: null,
         nextStatement: null,
         style: "motion_blocks"
       },
       {
-        type: BLOCK_TYPES.sayForSecs,
-        message0: "\u8BF4 %1 \u6301\u7EED %2 \u79D2\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C\u5F53\u5F00\u59CB\u8FD0\u884C",
-        args0: [
-          { type: "input_value", name: "MESSAGE" },
-          { type: "input_value", name: "SECS", check: "Number" }
-        ],
+        type: BLOCK_TYPES.matrixLight.show,
+        message0: "\u77E9\u9635\u706F %1",
+        args0: [{ type: "input_value", name: "TIMES", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
         style: "looks_blocks"
       },
       {
-        type: BLOCK_TYPES.switchCostumeTo,
-        message0: "\u5207\u6362\u9020\u578B\u4E3A %1",
-        args0: [{ type: "input_value", name: "COSTUME" }],
+        type: BLOCK_TYPES.sound.playMusic,
+        message0: "\u64AD\u653E\u97F3\u4E50",
         previousStatement: null,
         nextStatement: null,
         style: "looks_blocks"
       },
       {
-        type: BLOCK_TYPES.repeat,
-        message0: "\u91CD\u590D\u6267\u884C %1 \u6B21 %2",
-        args0: [
-          { type: "input_value", name: "TIMES", check: "Number" },
-          { type: "input_statement", name: "SUBSTACK" }
-        ],
+        type: BLOCK_TYPES.event.whenFlagClicked,
+        message0: "\u5F53\u5F00\u59CB\u8FD0\u884C",
+        nextStatement: null,
+        style: "event_blocks",
+        extensions: ["shape_hat"]
+      },
+      {
+        type: BLOCK_TYPES.control.sleepSeconds,
+        message0: "\u7B49\u5F85 %1 \u79D2",
+        args0: [{ type: "input_value", name: "STEPS", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
         style: "loop_blocks"
+      },
+      {
+        type: BLOCK_TYPES.sensor.oneCalibrate,
+        message0: "\u4F20\u611F\u5668 \u5355\u6B21\u6821\u51C6",
+        previousStatement: null,
+        nextStatement: null,
+        style: "looks_blocks"
       }
     ]);
   }
 
   // src/blocks/toolbox.ts
+  function toolboxCategoryIconClasses(categoryId) {
+    return `toolbox-category-icon toolbox-category-icon-${categoryId}`;
+  }
+  var TOOLBOX_CATEGORIES = [
+    { id: "motor", displayText: "\u7535\u673A" },
+    { id: "move", displayText: "\u79FB\u52A8" },
+    { id: "matrixLight", displayText: "\u77E9\u9635\u706F" },
+    { id: "sound", displayText: "\u58F0\u97F3" },
+    { id: "event", displayText: "\u4E8B\u4EF6" },
+    { id: "control", displayText: "\u63A7\u5236" },
+    { id: "sensor", displayText: "\u4F20\u611F\u5668" },
+    { id: "operation", displayText: "\u8FD0\u7B97" },
+    { id: "variable", displayText: "\u53D8\u91CF" },
+    { id: "customBlock", displayText: "\u81EA\u5236\u79EF\u6728" }
+  ];
   var toolboxJson = {
     kind: "categoryToolbox",
     contents: [
       {
         kind: "category",
-        name: "\u4E8B\u4EF6",
-        categorystyle: "event_category",
-        contents: [{ kind: "block", type: BLOCK_TYPES.whenFlagClicked }]
-      },
-      {
-        kind: "category",
-        name: "\u8FD0\u52A8",
-        categorystyle: "motion_category",
+        id: "motor",
+        name: "\u7535\u673A",
+        categorystyle: "motor_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("motor")
+        },
         contents: [
           {
             kind: "block",
-            type: BLOCK_TYPES.moveSteps,
+            type: BLOCK_TYPES.motor.runForPowerSeconds,
+            inputs: {
+              STEPS: {
+                shadow: {
+                  type: "math_number",
+                  fields: {
+                    NUM: 10
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        kind: "category",
+        id: "move",
+        name: "\u79FB\u52A8",
+        categorystyle: "move_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("move")
+        },
+        contents: [{ kind: "block", type: BLOCK_TYPES.move.pair }]
+      },
+      {
+        kind: "category",
+        id: "matrixLight",
+        name: "\u77E9\u9635\u706F",
+        categorystyle: "matrixLight_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("matrixLight")
+        },
+        contents: [
+          {
+            kind: "block",
+            type: BLOCK_TYPES.matrixLight.show,
+            inputs: {
+              TIMES: {
+                shadow: {
+                  type: "math_number",
+                  fields: {
+                    NUM: 10
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        kind: "category",
+        id: "sound",
+        name: "\u58F0\u97F3",
+        categorystyle: "sound_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("sound")
+        },
+        contents: [{ kind: "block", type: BLOCK_TYPES.sound.playMusic }]
+      },
+      {
+        kind: "category",
+        id: "event",
+        name: "\u4E8B\u4EF6",
+        categorystyle: "event_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("event")
+        },
+        contents: [{ kind: "block", type: BLOCK_TYPES.event.whenFlagClicked }]
+      },
+      {
+        kind: "category",
+        id: "control",
+        name: "\u63A7\u5236",
+        categorystyle: "control_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("control")
+        },
+        contents: [
+          {
+            kind: "block",
+            type: BLOCK_TYPES.control.sleepSeconds,
             inputs: {
               STEPS: {
                 shadow: {
@@ -22526,9 +22633,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           },
           {
             kind: "block",
-            type: BLOCK_TYPES.turnRight,
+            type: BLOCK_TYPES.control.sleepSeconds,
             inputs: {
-              DEGREES: {
+              STEPS: {
                 shadow: {
                   type: "math_number",
                   fields: {
@@ -22542,34 +22649,73 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       },
       {
         kind: "category",
-        name: "\u5916\u89C2",
-        categorystyle: "looks_category",
-        contents: [
-          { kind: "block", type: BLOCK_TYPES.sayForSecs },
-          { kind: "block", type: BLOCK_TYPES.switchCostumeTo }
-        ]
-      },
-      {
-        kind: "category",
-        name: "\u63A7\u5236",
-        categorystyle: "loop_category",
-        contents: [
-          {
-            kind: "block",
-            type: BLOCK_TYPES.repeat,
-            inputs: {
-              TIMES: {
-                shadow: {
-                  type: "math_number",
-                  fields: {
-                    NUM: 10
-                  }
-                }
-              }
-            }
-          }
-        ]
+        id: "sensor",
+        name: "\u4F20\u611F\u5668",
+        categorystyle: "sensor_category",
+        cssconfig: {
+          icon: toolboxCategoryIconClasses("sensor")
+        },
+        contents: [{ kind: "block", type: BLOCK_TYPES.sensor.oneCalibrate }]
       }
+      // {
+      //   kind: 'category',
+      //   id: 'operation',
+      //   name: '运算',
+      //   categorystyle: 'operation_category',
+      //   cssconfig: {
+      //     icon: toolboxCategoryIconClasses('operation'),
+      //   },
+      //   contents: [
+      //     {
+      //       kind: 'block',
+      //       type: BLOCK_TYPES.repeat,
+      //       inputs: {
+      //         TIMES: {
+      //           shadow: {
+      //             type: 'math_number',
+      //             fields: {
+      //               NUM: 10,
+      //             },
+      //           },
+      //         },
+      //       },
+      //     },
+      //   ],
+      // },
+      // {
+      //   kind: 'category',
+      //   id: 'variable',
+      //   name: '变量',
+      //   categorystyle: 'variable_category',
+      //   cssconfig: {
+      //     icon: toolboxCategoryIconClasses('variable'),
+      //   },
+      //   contents: [
+      //     {
+      //       kind: 'block',
+      //       type: BLOCK_TYPES.repeat,
+      //       inputs: {
+      //         TIMES: {
+      //           shadow: {
+      //             type: 'math_number',
+      //             fields: {
+      //               NUM: 10,
+      //             },
+      //           },
+      //         },
+      //       },
+      //     },
+      //   ],
+      // },
+      // {
+      //   kind: 'category',
+      //   id: 'customBlock',
+      //   name: '自制积木',
+      //   categorystyle: 'customBlock_category',
+      //   cssconfig: {
+      //     icon: toolboxCategoryIconClasses('customBlock'),
+      //   },
+      // },
     ]
   };
 
@@ -22614,37 +22760,30 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     const targetBlock = getInputTargetBlock(block, inputName);
     return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
   }
-  function statementInputToPython(block, inputName, context) {
-    const firstChildBlock = getInputTargetBlock(block, inputName);
-    return firstChildBlock ? statementChainToPython(firstChildBlock, context) : "";
-  }
   var statementGenerators = {
-    [BLOCK_TYPES.whenFlagClicked](_block, context) {
+    [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
       return `${indent(context)}# \u5F53\u5F00\u59CB\u8FD0\u884C`;
     },
-    [BLOCK_TYPES.moveSteps](block, context) {
-      const steps = valueToPython(block, "STEPS", "10");
-      return `${indent(context)}move_steps(${steps})`;
+    [BLOCK_TYPES.motor.runForPowerSeconds](block, context) {
+      const v2 = valueToPython(block, "STEPS", "10");
+      return `${indent(context)}motor_run_for_power_seconds(${v2})`;
     },
-    [BLOCK_TYPES.turnRight](block, context) {
-      const degrees = valueToPython(block, "DEGREES", "15");
-      return `${indent(context)}turn_right(${degrees})`;
+    [BLOCK_TYPES.move.pair](_block, context) {
+      return `${indent(context)}move_pair()`;
     },
-    [BLOCK_TYPES.sayForSecs](block, context) {
-      const message = valueToPython(block, "MESSAGE", quotePythonString("Hello"));
-      const seconds = valueToPython(block, "SECS", "2");
-      return `${indent(context)}say_for_secs(${message}, ${seconds})`;
+    [BLOCK_TYPES.matrixLight.show](block, context) {
+      const v2 = valueToPython(block, "TIMES", "10");
+      return `${indent(context)}matrix_light_show(${v2})`;
     },
-    [BLOCK_TYPES.switchCostumeTo](block, context) {
-      const costume = valueToPython(block, "COSTUME", quotePythonString("costume1"));
-      return `${indent(context)}switch_costume(${costume})`;
+    [BLOCK_TYPES.sound.playMusic](_block, context) {
+      return `${indent(context)}play_music()`;
     },
-    [BLOCK_TYPES.repeat](block, context) {
-      const times = valueToPython(block, "TIMES", "10");
-      const childContext = { indent: context.indent + 1 };
-      const body = statementInputToPython(block, "SUBSTACK", childContext) || `${indent(childContext)}pass`;
-      return `${indent(context)}for _ in range(${times}):
-${body}`;
+    [BLOCK_TYPES.control.sleepSeconds](block, context) {
+      const v2 = valueToPython(block, "STEPS", "1");
+      return `${indent(context)}sleep_seconds(${v2})`;
+    },
+    [BLOCK_TYPES.sensor.oneCalibrate](_block, context) {
+      return `${indent(context)}sensor_one_calibrate()`;
     }
   };
   function blockToPython(block, context) {
@@ -22729,10 +22868,16 @@ ${body}`;
       }
     },
     categoryStyles: {
-      event_category: { colour: "#FFBF00" },
-      motion_category: { colour: "#4C97FF" },
-      looks_category: { colour: "#9966FF" },
-      loop_category: { colour: "#0FBD8C" }
+      motor_category: { colour: "#4c97ff" },
+      move_category: { colour: "#ff4ccd" },
+      matrixLight_category: { colour: "#9966ff" },
+      sound_category: { colour: "#cf63cf" },
+      event_category: { colour: "#ffbf00" },
+      control_category: { colour: "#ffab19" },
+      sensor_category: { colour: "#34ccf1" },
+      operation_category: { colour: "#59c059" },
+      variable_category: { colour: "#ff8c1a" },
+      customBlock_category: { colour: "#ff6680" }
     },
     componentStyles: {
       workspaceBackgroundColour: "#f3f6ff",
@@ -22835,6 +22980,178 @@ ${body}`;
     patchImagesInGroup(root, ".blocklyZoomReset", zoomResetUrl);
   }
 
+  // assets/toolbox/combined_motor.svg
+  var combined_motor_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M9.82,5.92c-3.83,0-6.93,3.1-6.93,6.94c0,3.83,3.1,6.93,6.93,6.93c3.83,0,6.94-3.1,6.94-6.93%0D%0A%09%09%09C16.76,9.02,13.66,5.92,9.82,5.92z M5.2,14.59c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0D%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C6.94,13.81,6.16,14.59,5.2,14.59z M9.82,19.21c-0.96,0-1.73-0.78-1.73-1.73%0D%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C11.56,18.43,10.78,19.21,9.82,19.21z M11.33,12.28v1.16H10.4v0.92H9.25%0D%0A%09%09%09v-0.92H8.32v-1.16h0.93v-0.93h1.16v0.93H11.33z M9.82,9.96c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0D%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C11.56,9.18,10.78,9.96,9.82,9.96z M14.45,14.59c-0.96,0-1.73-0.78-1.73-1.73%0D%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C16.18,13.81,15.41,14.59,14.45,14.59z"/>%0D%0A%09</g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M12.85,2.89c-2.41,0-4.54,1.23-5.78,3.1c0.85-0.34,1.78-0.53,2.75-0.53c0.46,0,0.9,0.04,1.34,0.12%0D%0A%09%09%09c-0.03-0.12-0.04-0.25-0.04-0.39c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73c0,0.6-0.3,1.13-0.76,1.44%0D%0A%09%09%09c0.89,0.57,1.64,1.33,2.22,2.21c0.31-0.46,0.84-0.76,1.44-0.76c0.96,0,1.73,0.78,1.73,1.73c0,0.96-0.78,1.73-1.73,1.73%0D%0A%09%09%09c-0.13,0-0.26-0.01-0.39-0.04c0.08,0.43,0.12,0.88,0.12,1.34c0,0.97-0.19,1.9-0.53,2.75c1.87-1.24,3.1-3.37,3.1-5.78%0D%0A%09%09%09C19.79,6,16.68,2.89,12.85,2.89z"/>%0D%0A%09</g>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/gray_scale.svg
+  var gray_scale_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<path class="st0" d="M16.67,2.83H6.01C4.25,2.83,2.83,4.25,2.83,6v10.67c0,1.75,1.42,3.17,3.18,3.17h10.66%0D%0A%09%09c1.75,0,3.17-1.42,3.17-3.17V6C19.84,4.25,18.42,2.83,16.67,2.83z M15.89,13.62h-0.94c-0.75,1.2-2.09,1.99-3.61,1.99%0D%0A%09%09s-2.86-0.79-3.61-1.99H6.79c-1.26,0-2.28-1.02-2.28-2.28c0-0.63,0.25-1.2,0.67-1.61c0.41-0.41,0.98-0.67,1.61-0.67h0.94%0D%0A%09%09c0.75-1.2,2.09-1.99,3.61-1.99s2.86,0.79,3.61,1.99h0.94c1.26,0,2.28,1.02,2.28,2.28S17.15,13.62,15.89,13.62z"/>%0D%0A%09<path class="st0" d="M13.95,11.34c0,0.98-0.54,1.84-1.35,2.28c-0.37,0.21-0.8,0.33-1.26,0.33s-0.89-0.12-1.26-0.33%0D%0A%09%09c-0.81-0.44-1.35-1.3-1.35-2.28s0.54-1.84,1.35-2.28c0.37-0.21,0.8-0.33,1.26-0.33s0.89,0.12,1.26,0.33%0D%0A%09%09C13.41,9.5,13.95,10.36,13.95,11.34z"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/handleShank.svg
+  var handleShank_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<path class="st0" d="M16.24,6.95c-0.06,0-0.11,0-0.17,0.01V6.95H6.44c-2.43,0-4.39,1.97-4.39,4.39c0,2.42,1.97,4.39,4.39,4.39%0D%0A%09%09c1.29,0,2.46-0.56,3.25-1.46h3.29c0.8,0.89,1.97,1.46,3.26,1.46c2.43,0,4.39-1.97,4.39-4.39C20.63,8.92,18.67,6.95,16.24,6.95z%0D%0A%09%09 M15.24,11.34c0,0.48-0.39,0.87-0.87,0.87c-0.49,0-0.87-0.39-0.87-0.87c0-0.49,0.38-0.88,0.87-0.88%0D%0A%09%09C14.85,10.47,15.24,10.86,15.24,11.34z M5.49,13.73v-1.65H3.83v-1.46h1.66V8.95h1.46v1.66h1.66v1.46H6.96v1.65H5.49z M16.38,14.21%0D%0A%09%09c-0.11,0-0.21-0.02-0.31-0.06c-0.32-0.12-0.56-0.44-0.56-0.81c0-0.37,0.24-0.69,0.56-0.81c0.09-0.04,0.2-0.06,0.31-0.06%0D%0A%09%09c0.49,0,0.87,0.39,0.87,0.87C17.24,13.82,16.86,14.21,16.38,14.21z M16.38,10.2c-0.11,0-0.21-0.02-0.31-0.06%0D%0A%09%09c-0.32-0.12-0.56-0.44-0.56-0.81c0-0.37,0.24-0.69,0.56-0.81c0.09-0.04,0.2-0.06,0.31-0.06c0.49,0,0.87,0.39,0.87,0.87%0D%0A%09%09C17.24,9.81,16.86,10.2,16.38,10.2z M18.39,12.21c-0.49,0-0.87-0.39-0.87-0.87c0-0.49,0.38-0.88,0.87-0.88%0D%0A%09%09c0.48,0,0.87,0.39,0.87,0.88C19.25,11.82,18.86,12.21,18.39,12.21z"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/matrix.svg
+  var matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/motor_sensing.svg
+  var motor_sensing_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g id="XMLID_00000064332656542466190760000003885663620856589749_">%0D%0A%09<path class="st0" d="M11.34,2.87c-4.68,0-8.47,3.79-8.47,8.47c0,4.68,3.79,8.47,8.47,8.47c4.68,0,8.47-3.79,8.47-8.47%0D%0A%09%09C19.81,6.66,16.02,2.87,11.34,2.87z M5.69,13.46c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C7.81,12.51,6.86,13.46,5.69,13.46z M11.34,19.1c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C13.46,18.15,12.51,19.1,11.34,19.1z M13.17,10.64v1.41h-1.13v1.13h-1.41%0D%0A%09%09v-1.13H9.5v-1.41h1.13V9.5h1.41v1.13H13.17z M11.34,7.81c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C13.46,6.86,12.51,7.81,11.34,7.81z M16.98,13.46c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C19.1,12.51,18.15,13.46,16.98,13.46z"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/music.svg
+  var music_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<path class="st0" d="M11.16,4.66l-0.11,0.23l-3.63,7.77c-0.08-0.06-0.16-0.12-0.24-0.18c-0.22-0.15-0.47-0.26-0.74-0.34%0D%0A%09c-0.25-0.08-0.53-0.12-0.8-0.12c-0.08,0-0.15,0-0.23,0.01c-0.34,0.03-0.67,0.11-0.97,0.25c-0.31,0.14-0.58,0.33-0.81,0.58%0D%0A%09c-0.23,0.25-0.41,0.54-0.53,0.86c-0.12,0.33-0.17,0.65-0.14,0.96c0.03,0.31,0.12,0.61,0.28,0.88c0.15,0.27,0.36,0.51,0.61,0.73%0D%0A%09c0.25,0.21,0.54,0.4,0.88,0.56c0.3,0.14,0.6,0.21,0.91,0.21c0.04,0,0.07,0,0.11,0c0.34-0.02,0.66-0.11,0.97-0.26%0D%0A%09c0.3-0.15,0.57-0.36,0.82-0.62c0.24-0.26,0.45-0.55,0.6-0.87l0.17-0.37l3.66-7.93l5.12,1.35l-2.5,5.33%0D%0A%09c-0.25-0.25-0.56-0.46-0.92-0.63c-0.26-0.12-0.53-0.18-0.81-0.18c-0.09,0-0.17,0.01-0.26,0.02c-0.36,0.05-0.7,0.16-1.02,0.35%0D%0A%09c-0.31,0.18-0.6,0.41-0.84,0.7c-0.25,0.28-0.43,0.59-0.55,0.91c-0.12,0.33-0.16,0.65-0.11,0.95c0.05,0.3,0.16,0.57,0.33,0.82%0D%0A%09c0.17,0.24,0.39,0.46,0.66,0.65c0.25,0.18,0.54,0.35,0.85,0.49c0.36,0.17,0.71,0.26,1.03,0.26c0.13,0,0.26-0.01,0.38-0.04%0D%0A%09c0.4-0.09,0.75-0.25,1.03-0.47c0.32-0.24,0.6-0.55,0.85-0.92l0.01-0.02l0.01-0.02l4.35-9.29l0.16-0.34l-0.36-0.09l-7.96-2.1%0D%0A%09L11.16,4.66z"/>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/start_program.svg
+  var start_program_default = 'data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg id="_\u56FE\u5C42_1" data-name="\u56FE\u5C42 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.68 22.68">%0A  <defs>%0A    <style>%0A      .cls-1 {%0A        fill: %23fff;%0A      }%0A    </style>%0A  </defs>%0A  <polygon class="cls-1" points="18.12 11.34 4.55 3.51 4.55 19.17 18.12 11.34"/>%0A</svg>';
+
+  // assets/toolbox/touch.svg
+  var touch_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<path class="st0" d="M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28%0D%0A%09H12V12h1.29v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28%0D%0A%09v1.28H12V12h1.29v-1.32H12z M16.67,2.83H6.01C4.26,2.83,2.84,4.25,2.84,6v10.67c0,1.75,1.42,3.17,3.17,3.17h10.66%0D%0A%09c1.76,0,3.17-1.42,3.17-3.17V6C19.84,4.25,18.43,2.83,16.67,2.83z M14.62,11.34c0,1.14-0.59,2.15-1.48,2.73%0D%0A%09c-0.52,0.34-1.14,0.54-1.8,0.54c-0.66,0-1.28-0.2-1.8-0.54c-0.89-0.58-1.48-1.59-1.48-2.73c0-1.14,0.59-2.15,1.48-2.74%0D%0A%09c0.52-0.34,1.14-0.54,1.8-0.54c0.66,0,1.28,0.2,1.8,0.54C14.03,9.19,14.62,10.2,14.62,11.34z M5.29,14.07%0D%0A%09c-0.43,0-0.78-0.35-0.78-0.78V9.38c0-0.43,0.35-0.78,0.78-0.78h2.77c-0.63,0.74-1,1.7-1,2.74c0,1.03,0.37,1.99,1,2.73H5.29z%0D%0A%09 M18.17,13.29c0,0.43-0.35,0.78-0.78,0.78h-2.77c0.63-0.74,1-1.7,1-2.73c0-1.04-0.37-2-1-2.74h2.77c0.43,0,0.78,0.35,0.78,0.78%0D%0A%09V13.29z M10.68,9.39v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12V9.39H10.68z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29%0D%0A%09v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12z"/>%0D%0A</svg>%0D%0A';
+
+  // assets/toolbox/ultrasonic.svg
+  var ultrasonic_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M18.02,6.76H4.66c-1.26,0-2.29,1.03-2.29,2.29v4.84c0,1.27,1.03,2.3,2.29,2.3h13.36%0D%0A%09%09%09c1.26,0,2.29-1.03,2.29-2.3V9.05C20.31,7.79,19.28,6.76,18.02,6.76z M15.96,14.87c-1.43,0-2.65-0.89-3.13-2.15h-3.1%0D%0A%09%09%09c-0.47,1.26-1.7,2.15-3.13,2.15c-1.85,0-3.34-1.49-3.34-3.34c0-1.85,1.49-3.35,3.34-3.35h9.35c1.85,0,3.35,1.5,3.35,3.35%0D%0A%09%09%09C19.31,13.38,17.81,14.87,15.96,14.87z"/>%0D%0A%09</g>%0D%0A%09<g>%0D%0A%09%09<g>%0D%0A%09%09%09<path class="st0" d="M16.01,8.76H6.56c-1.53,0-2.77,1.24-2.77,2.77c0,1.53,1.24,2.77,2.77,2.77c1.44,0,2.63-1.1,2.75-2.51h3.94%0D%0A%09%09%09%09c0.12,1.41,1.31,2.51,2.75,2.51c1.54,0,2.77-1.24,2.77-2.77C18.78,9.99,17.55,8.76,16.01,8.76z M6.56,13.71%0D%0A%09%09%09%09c-1.2,0-2.18-0.98-2.18-2.18c0-1.2,0.98-2.18,2.18-2.18c1.2,0,2.18,0.98,2.18,2.18c0,0.08-0.01,0.17-0.02,0.26%0D%0A%09%09%09%09C8.6,12.87,7.68,13.71,6.56,13.71z M16.01,13.71c-1.12,0-2.04-0.85-2.17-1.93c-0.01-0.08-0.02-0.17-0.02-0.26%0D%0A%09%09%09%09c0-1.2,0.98-2.18,2.18-2.18c1.2,0,2.18,0.98,2.18,2.18C18.19,12.73,17.21,13.71,16.01,13.71z"/>%0D%0A%09%09</g>%0D%0A%09</g>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // src/blocks/toolboxCategoryIconUrls.ts
+  var asUrl = (u2) => u2;
+  var TOOLBOX_SVG_URLS = {
+    combinedMotor: asUrl(combined_motor_default),
+    grayScale: asUrl(gray_scale_default),
+    handleShank: asUrl(handleShank_default),
+    matrix: asUrl(matrix_default),
+    motorSensing: asUrl(motor_sensing_default),
+    music: asUrl(music_default),
+    startProgram: asUrl(start_program_default),
+    touch: asUrl(touch_default),
+    ultrasonic: asUrl(ultrasonic_default)
+  };
+  var TOOLBOX_CATEGORY_ICON_URL_BY_ID = {
+    motor: TOOLBOX_SVG_URLS.motorSensing,
+    move: TOOLBOX_SVG_URLS.grayScale,
+    matrixLight: TOOLBOX_SVG_URLS.matrix,
+    sound: TOOLBOX_SVG_URLS.music,
+    event: TOOLBOX_SVG_URLS.startProgram,
+    control: TOOLBOX_SVG_URLS.handleShank,
+    sensor: TOOLBOX_SVG_URLS.motorSensing,
+    operation: TOOLBOX_SVG_URLS.matrix,
+    variable: TOOLBOX_SVG_URLS.music,
+    customBlock: TOOLBOX_SVG_URLS.startProgram
+  };
+
+  // src/workspace-custom/patchToolboxCategoryIcons.ts
+  var ICON_URL_BY_ID = TOOLBOX_CATEGORY_ICON_URL_BY_ID;
+  var ICON_BY_ID = Object.fromEntries(
+    TOOLBOX_CATEGORIES.map((c2) => [c2.id, ICON_URL_BY_ID[c2.id] ?? ""])
+  );
+  var ID_BY_TEXT = Object.fromEntries(
+    TOOLBOX_CATEGORIES.map((c2) => [c2.displayText, c2.id])
+  );
+  var SEL_ROW = ".blocklyTreeRowContentContainer";
+  var SEL_BUBBLE = ".categoryBubble";
+  var SEL_LABEL = ".blocklyToolboxCategoryLabel";
+  var ICON_CLASS = "toolbox-category-icon";
+  var ICON_CLASS_PREFIX = `${ICON_CLASS}-`;
+  var ICON_SIZE_PX = 24;
+  function resolveCategoryId(generatedId, itemDiv) {
+    if (itemDiv) {
+      const patchedId = itemDiv.dataset.toolboxCategoryId;
+      if (patchedId && ICON_BY_ID[patchedId]) {
+        return patchedId;
+      }
+    }
+    if (ICON_BY_ID[generatedId]) {
+      return generatedId;
+    }
+    if (itemDiv) {
+      const labelText = itemDiv.querySelector(SEL_LABEL)?.textContent?.trim();
+      if (labelText && ID_BY_TEXT[labelText]) {
+        return ID_BY_TEXT[labelText];
+      }
+    }
+    return null;
+  }
+  function buildIconClassName(categoryId) {
+    return `${ICON_CLASS} ${ICON_CLASS_PREFIX}${categoryId}`;
+  }
+  function patchRowContent(itemDiv, categoryId, iconUrl) {
+    itemDiv.dataset.toolboxCategoryId = categoryId;
+    const row = itemDiv.querySelector(SEL_ROW);
+    if (!row) {
+      return;
+    }
+    const bubble = row.querySelector(SEL_BUBBLE);
+    if (bubble) {
+      bubble.style.display = "none";
+    }
+    const label = row.querySelector(SEL_LABEL);
+    if (!label) {
+      return;
+    }
+    let icon = label.querySelector(`.${ICON_CLASS}`);
+    if (!icon) {
+      icon = document.createElement("img");
+      icon.alt = "";
+      icon.setAttribute("aria-hidden", "true");
+      label.replaceChildren(icon);
+    }
+    icon.className = buildIconClassName(categoryId);
+    icon.src = iconUrl;
+    Object.assign(icon.style, {
+      display: "block",
+      height: `${ICON_SIZE_PX}px`,
+      margin: "0 auto",
+      objectFit: "contain",
+      width: `${ICON_SIZE_PX}px`
+    });
+    Object.assign(label.style, {
+      display: "flex",
+      justifyContent: "center",
+      padding: "0"
+    });
+    Object.assign(row.style, {
+      alignItems: "center",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      padding: "10px 8px"
+    });
+  }
+  function processToolboxItem(item) {
+    const generatedId = item.getId();
+    const itemDiv = item.getDiv();
+    const categoryId = resolveCategoryId(generatedId, itemDiv);
+    if (!categoryId || !itemDiv) {
+      return;
+    }
+    patchRowContent(itemDiv, categoryId, ICON_BY_ID[categoryId]);
+  }
+  function enableToolboxScrolling(workspace) {
+    const toolbox = workspace.getToolbox?.();
+    if (!toolbox) return;
+    const toolboxDiv = toolbox.HtmlDiv;
+    if (!toolboxDiv) return;
+    Object.assign(toolboxDiv.style, {
+      height: "100%",
+      overflowY: "auto",
+      overflowX: "hidden"
+    });
+    const toolboxContent = toolboxDiv.querySelector(".blocklyToolboxContents");
+    if (toolboxContent) {
+      Object.assign(toolboxContent.style, {
+        minHeight: "100%"
+      });
+    }
+    const scrollbar = toolboxDiv.querySelector(".blocklyToolboxScrollbar");
+    if (scrollbar) {
+      scrollbar.style.display = "none";
+    }
+  }
+  function patchToolboxCategoryIcons(workspace) {
+    const toolbox = workspace.getToolbox?.();
+    if (!toolbox) {
+      return;
+    }
+    for (const item of toolbox.getToolboxItems()) {
+      processToolboxItem(item);
+    }
+    enableToolboxScrolling(workspace);
+  }
+
   // src/workspace-custom/toolboxDoubleClickHideFlyout.ts
   function findToolboxItemContainingTarget(toolbox, target) {
     if (!(target instanceof Node)) {
@@ -22858,33 +23175,14 @@ ${body}`;
     if (!flyout?.hide) {
       return;
     }
-    function getAllMethodNames(obj) {
-      const seen = /* @__PURE__ */ new Set();
-      let p2 = obj;
-      while (p2 && p2 !== Object.prototype) {
-        for (const name2 of Object.getOwnPropertyNames(p2)) {
-          if (name2 === "constructor") continue;
-          try {
-            const v2 = obj[name2];
-            if (typeof v2 === "function") seen.add(name2);
-          } catch {
-          }
-        }
-        p2 = Object.getPrototypeOf(p2);
-      }
-      return [...seen].sort();
-    }
     host.addEventListener(
       "pointerdown",
       (e3) => {
-        console.log("e", e3);
         if (e3.pointerType === "mouse" && e3.button !== 0) {
           return;
         }
         const hit = findToolboxItemContainingTarget(toolbox, e3.target);
-        console.log(getAllMethodNames(hit ?? {}));
         if (!hit?.isSelectable?.()) {
-          console.log("hit is not selectable");
           return;
         }
         const selected = toolbox.getSelectedItem?.();
@@ -22953,9 +23251,11 @@ ${body}`;
     ensureScratchZoomControlsIfMissing(workspace);
     workspace.resize?.();
     patchScratchZoomControlImages(workspace);
+    patchToolboxCategoryIcons(workspace);
     requestAnimationFrame(() => {
       workspace.resize?.();
       patchScratchZoomControlImages(workspace);
+      patchToolboxCategoryIcons(workspace);
       setupFlyoutWidthClamp(workspace);
     });
     setupToolboxDoubleClickHideFlyout(workspace);

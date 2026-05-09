@@ -6,4 +6,5 @@ export {
   ensureScratchZoomControlsIfMissing,
   patchScratchZoomControlImages,
 } from './patchScratchZoom';
+export { patchToolboxCategoryIcons } from './patchToolboxCategoryIcons';
 export { setupToolboxDoubleClickHideFlyout } from './toolboxDoubleClickHideFlyout';

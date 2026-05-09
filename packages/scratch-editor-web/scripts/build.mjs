@@ -49,8 +49,9 @@ body {
 #workspace .blocklyMainWorkspaceScrollbar .blocklyScrollbarHandle {
   display: none !important;
 }
-/* 飞出栏宽度由 flyoutWidthClamp.ts 写 svg width；展开时用 visible 盖过 UA 对 svg 的 overflow:hidden */
-
+#workspace .toolbox-category-icon {
+  border:1px solid #000;
+}
 `;
 
 const htmlTemplate = jsCode => `<!doctype html>

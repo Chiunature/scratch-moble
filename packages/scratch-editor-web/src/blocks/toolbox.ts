@@ -5,23 +5,46 @@
  */
 import { BLOCK_TYPES } from './blockTypes';
 
+/**
+ * Blockly 会把返回值写进分类项的 class，不必在 CSS 里定义对应选择器；
+ * 后缀与分类 id 一致即可，便于 patchToolboxCategoryIcons 从 DOM 兜底识别。
+ */
+function toolboxCategoryIconClasses(categoryId: string): string {
+  return `toolbox-category-icon toolbox-category-icon-${categoryId}`;
+}
+
+/**
+ * 工具箱分类的基础元数据，id 与 name 与下方 toolboxJson 保持一致。
+ * patchToolboxCategoryIcons 等运行时补丁可从此处读取，避免各自维护一份。
+ */
+export const TOOLBOX_CATEGORIES = [
+  { id: 'motor', displayText: '电机' },
+  { id: 'move', displayText: '移动' },
+  { id: 'matrixLight', displayText: '矩阵灯' },
+  { id: 'sound', displayText: '声音' },
+  { id: 'event', displayText: '事件' },
+  { id: 'control', displayText: '控制' },
+  { id: 'sensor', displayText: '传感器' },
+  { id: 'operation', displayText: '运算' },
+  { id: 'variable', displayText: '变量' },
+  { id: 'customBlock', displayText: '自制积木' },
+] as const;
+
 export const toolboxJson = {
   kind: 'categoryToolbox',
   contents: [
     {
       kind: 'category',
-      name: '事件',
-      categorystyle: 'event_category',
-      contents: [{ kind: 'block', type: BLOCK_TYPES.whenFlagClicked }],
-    },
-    {
-      kind: 'category',
-      name: '运动',
-      categorystyle: 'motion_category',
+      id: 'motor',
+      name: '电机',
+      categorystyle: 'motor_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('motor'),
+      },
       contents: [
         {
           kind: 'block',
-          type: BLOCK_TYPES.moveSteps,
+          type: BLOCK_TYPES.motor.runForPowerSeconds,
           inputs: {
             STEPS: {
               shadow: {
@@ -33,39 +56,30 @@ export const toolboxJson = {
             },
           },
         },
-        {
-          kind: 'block',
-          type: BLOCK_TYPES.turnRight,
-          inputs: {
-            DEGREES: {
-              shadow: {
-                type: 'math_number',
-                fields: {
-                  NUM: 15,
-                },
-              },
-            },
-          },
-        },
       ],
     },
     {
       kind: 'category',
-      name: '外观',
-      categorystyle: 'looks_category',
-      contents: [
-        { kind: 'block', type: BLOCK_TYPES.sayForSecs },
-        { kind: 'block', type: BLOCK_TYPES.switchCostumeTo },
-      ],
+      id: 'move',
+      name: '移动',
+      categorystyle: 'move_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('move'),
+      },
+      contents: [{ kind: 'block', type: BLOCK_TYPES.move.pair }],
     },
     {
       kind: 'category',
-      name: '控制',
-      categorystyle: 'loop_category',
+      id: 'matrixLight',
+      name: '矩阵灯',
+      categorystyle: 'matrixLight_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('matrixLight'),
+      },
       contents: [
         {
           kind: 'block',
-          type: BLOCK_TYPES.repeat,
+          type: BLOCK_TYPES.matrixLight.show,
           inputs: {
             TIMES: {
               shadow: {
@@ -79,5 +93,133 @@ export const toolboxJson = {
         },
       ],
     },
+    {
+      kind: 'category',
+      id: 'sound',
+      name: '声音',
+      categorystyle: 'sound_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('sound'),
+      },
+      contents: [{ kind: 'block', type: BLOCK_TYPES.sound.playMusic }],
+    },
+    {
+      kind: 'category',
+      id: 'event',
+      name: '事件',
+      categorystyle: 'event_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('event'),
+      },
+      contents: [{ kind: 'block', type: BLOCK_TYPES.event.whenFlagClicked }],
+    },
+    {
+      kind: 'category',
+      id: 'control',
+      name: '控制',
+      categorystyle: 'control_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('control'),
+      },
+      contents: [
+        {
+          kind: 'block',
+          type: BLOCK_TYPES.control.sleepSeconds,
+          inputs: {
+            STEPS: {
+              shadow: {
+                type: 'math_number',
+                fields: {
+                  NUM: 10,
+                },
+              },
+            },
+          },
+        },
+        {
+          kind: 'block',
+          type: BLOCK_TYPES.control.sleepSeconds,
+          inputs: {
+            STEPS: {
+              shadow: {
+                type: 'math_number',
+                fields: {
+                  NUM: 15,
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    {
+      kind: 'category',
+      id: 'sensor',
+      name: '传感器',
+      categorystyle: 'sensor_category',
+      cssconfig: {
+        icon: toolboxCategoryIconClasses('sensor'),
+      },
+      contents: [{ kind: 'block', type: BLOCK_TYPES.sensor.oneCalibrate }],
+    },
+    // {
+    //   kind: 'category',
+    //   id: 'operation',
+    //   name: '运算',
+    //   categorystyle: 'operation_category',
+    //   cssconfig: {
+    //     icon: toolboxCategoryIconClasses('operation'),
+    //   },
+    //   contents: [
+    //     {
+    //       kind: 'block',
+    //       type: BLOCK_TYPES.repeat,
+    //       inputs: {
+    //         TIMES: {
+    //           shadow: {
+    //             type: 'math_number',
+    //             fields: {
+    //               NUM: 10,
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   ],
+    // },
+    // {
+    //   kind: 'category',
+    //   id: 'variable',
+    //   name: '变量',
+    //   categorystyle: 'variable_category',
+    //   cssconfig: {
+    //     icon: toolboxCategoryIconClasses('variable'),
+    //   },
+    //   contents: [
+    //     {
+    //       kind: 'block',
+    //       type: BLOCK_TYPES.repeat,
+    //       inputs: {
+    //         TIMES: {
+    //           shadow: {
+    //             type: 'math_number',
+    //             fields: {
+    //               NUM: 10,
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   ],
+    // },
+    // {
+    //   kind: 'category',
+    //   id: 'customBlock',
+    //   name: '自制积木',
+    //   categorystyle: 'customBlock_category',
+    //   cssconfig: {
+    //     icon: toolboxCategoryIconClasses('customBlock'),
+    //   },
+    // },
   ],
 };

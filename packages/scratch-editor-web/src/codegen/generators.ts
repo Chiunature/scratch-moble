@@ -49,39 +49,35 @@ function statementInputToPython(
 }
 
 const statementGenerators: Record<string, StatementGenerator> = {
-  [BLOCK_TYPES.whenFlagClicked](_block, context) {
+  [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
     return `${indent(context)}# 当开始运行`;
   },
 
-  [BLOCK_TYPES.moveSteps](block, context) {
-    const steps = valueToPython(block, 'STEPS', '10');
-    return `${indent(context)}move_steps(${steps})`;
+  [BLOCK_TYPES.motor.runForPowerSeconds](block, context) {
+    const v = valueToPython(block, 'STEPS', '10');
+    return `${indent(context)}motor_run_for_power_seconds(${v})`;
   },
 
-  [BLOCK_TYPES.turnRight](block, context) {
-    const degrees = valueToPython(block, 'DEGREES', '15');
-    return `${indent(context)}turn_right(${degrees})`;
+  [BLOCK_TYPES.move.pair](_block, context) {
+    return `${indent(context)}move_pair()`;
   },
 
-  [BLOCK_TYPES.sayForSecs](block, context) {
-    const message = valueToPython(block, 'MESSAGE', quotePythonString('Hello'));
-    const seconds = valueToPython(block, 'SECS', '2');
-    return `${indent(context)}say_for_secs(${message}, ${seconds})`;
+  [BLOCK_TYPES.matrixLight.show](block, context) {
+    const v = valueToPython(block, 'TIMES', '10');
+    return `${indent(context)}matrix_light_show(${v})`;
   },
 
-  [BLOCK_TYPES.switchCostumeTo](block, context) {
-    const costume = valueToPython(block, 'COSTUME', quotePythonString('costume1'));
-    return `${indent(context)}switch_costume(${costume})`;
+  [BLOCK_TYPES.sound.playMusic](_block, context) {
+    return `${indent(context)}play_music()`;
   },
 
-  [BLOCK_TYPES.repeat](block, context) {
-    const times = valueToPython(block, 'TIMES', '10');
-    const childContext = { indent: context.indent + 1 };
-    const body =
-      statementInputToPython(block, 'SUBSTACK', childContext) ||
-      `${indent(childContext)}pass`;
+  [BLOCK_TYPES.control.sleepSeconds](block, context) {
+    const v = valueToPython(block, 'STEPS', '1');
+    return `${indent(context)}sleep_seconds(${v})`;
+  },
 
-    return `${indent(context)}for _ in range(${times}):\n${body}`;
+  [BLOCK_TYPES.sensor.oneCalibrate](_block, context) {
+    return `${indent(context)}sensor_one_calibrate()`;
   },
 };
 

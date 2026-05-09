@@ -13,6 +13,7 @@ import { editorTheme } from './theme';
 import {
   ensureScratchZoomControlsIfMissing,
   patchScratchZoomControlImages,
+  patchToolboxCategoryIcons,
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
 } from './workspace-custom';
@@ -56,9 +57,12 @@ function bootstrap(): void {
   ensureScratchZoomControlsIfMissing(workspace);
   workspace.resize?.();
   patchScratchZoomControlImages(workspace);
+  patchToolboxCategoryIcons(workspace);
+
   requestAnimationFrame(() => {
     workspace.resize?.();
     patchScratchZoomControlImages(workspace);
+    patchToolboxCategoryIcons(workspace);
     setupFlyoutWidthClamp(workspace);
   });
 
