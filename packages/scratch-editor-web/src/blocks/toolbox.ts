@@ -41,16 +41,20 @@ export const toolboxJson = {
       cssconfig: {
         icon: toolboxCategoryIconClasses('motor'),
       },
+      //该类别下的积木
       contents: [
         {
-          kind: 'block',
-          type: BLOCK_TYPES.motor.runForPowerSeconds,
+          kind: 'block', //积木类型
+          type: BLOCK_TYPES.motor.runForPowerSeconds, //积木字段名字
+          //积木参数输入框
           inputs: {
+            //对应args0中的name
             STEPS: {
+              //积木参数使用阴影块
               shadow: {
-                type: 'math_number',
+                type: 'math_number', //阴影块类型
                 fields: {
-                  NUM: 10,
+                  NUM: 10, //阴影块参数
                 },
               },
             },
@@ -122,20 +126,6 @@ export const toolboxJson = {
         icon: toolboxCategoryIconClasses('control'),
       },
       contents: [
-        {
-          kind: 'block',
-          type: BLOCK_TYPES.control.sleepSeconds,
-          inputs: {
-            STEPS: {
-              shadow: {
-                type: 'math_number',
-                fields: {
-                  NUM: 10,
-                },
-              },
-            },
-          },
-        },
         {
           kind: 'block',
           type: BLOCK_TYPES.control.sleepSeconds,
