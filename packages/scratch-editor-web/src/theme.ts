@@ -6,6 +6,8 @@
  */
 import * as ScratchBlocks from 'scratch-blocks';
 
+import { TOOLBOX_CATEGORIES } from './blocks/toolbox';
+
 export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
   name: 'scratch-mobile',
   blockStyles: {
@@ -60,18 +62,10 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourTertiary: '#774DCB',
     },
   },
-  categoryStyles: {
-    motor_category: { colour: '#4c97ff' },
-    move_category: { colour: '#ff4ccd' },
-    matrixLight_category: { colour: '#9966ff' },
-    sound_category: { colour: '#cf63cf' },
-    event_category: { colour: '#ffbf00' },
-    control_category: { colour: '#ffab19' },
-    sensor_category: { colour: '#34ccf1' },
-    operation_category: { colour: '#59c059' },
-    variable_category: { colour: '#ff8c1a' },
-    customBlock_category: { colour: '#ff6680' },
-  },
+  categoryStyles: Object.fromEntries(
+    // 键须与 toolboxJson 里各分类的 categorystyle 一致（如 motor → motor_category）
+    TOOLBOX_CATEGORIES.map(c => [`${c.id}_category`, { colour: c.colour }]),
+  ),
   componentStyles: {
     workspaceBackgroundColour: '#f3f6ff',
     toolboxBackgroundColour: '#ffffff',

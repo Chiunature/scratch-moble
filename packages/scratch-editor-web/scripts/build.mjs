@@ -49,8 +49,29 @@ body {
 #workspace .blocklyMainWorkspaceScrollbar .blocklyScrollbarHandle {
   display: none !important;
 }
-#workspace .toolbox-category-icon {
-  border:1px solid #000;
+/* 每格容器的 --scratch-toolbox-selected-bg 由 patchToolboxCategoryIcons 从 TOOLBOX_CATEGORIES 写入 */
+.blocklyToolboxCategory.blocklyToolboxSelected {
+  background-color: var(--scratch-toolbox-selected-bg, #57e) !important;
+}
+
+/* 工具箱分类行布局（patchToolboxCategoryIcons 注入图标后生效） */
+.blocklyTreeRowContentContainer {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 8px;
+}
+.blocklyToolboxCategoryLabel {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+}
+.toolbox-category-icon {
+  display: block;
+  height: 24px;
+  margin: 0 auto;
+  width: 24px;
 }
 `;
 
@@ -78,6 +99,21 @@ const htmlTemplate = jsCode => `<!doctype html>
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
 
+/** assets/toolbox 下图标内联进 bundle；其余 .svg 仍为 data URL（如缩放按钮） */
+const toolboxSvgTextPlugin = {
+  name: 'toolbox-svg-text',
+  setup(build) {
+    build.onLoad({ filter: /\.svg$/ }, async args => {
+      const normalized = args.path.replace(/\\/g, '/');
+      if (!normalized.includes('/assets/toolbox/')) {
+        return undefined;
+      }
+      const contents = await readFile(args.path, 'utf8');
+      return { contents, loader: 'text' };
+    });
+  },
+};
+
 await build({
   entryPoints: [path.join(srcDir, 'main.ts')],
   outfile: path.join(distDir, 'editor.js'),
@@ -86,6 +122,7 @@ await build({
   platform: 'browser',
   target: ['chrome100', 'safari15'],
   minify: false,
+  plugins: [toolboxSvgTextPlugin],
   loader: { '.svg': 'dataurl', '.png': 'dataurl' },
 });
 

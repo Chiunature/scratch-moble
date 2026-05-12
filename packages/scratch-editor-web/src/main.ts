@@ -9,6 +9,7 @@ import { registerEditorBlocks } from './blocks/registerBlocks';
 import { toolboxJson } from './blocks/toolbox';
 import { postToReactNative } from './bridge';
 import { renderPythonCode } from './codegen/generators';
+import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
 import {
   ensureScratchZoomControlsIfMissing,
@@ -16,7 +17,15 @@ import {
   patchToolboxCategoryIcons,
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
+  setupToolboxScrolling,
 } from './workspace-custom';
+
+/** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
+function refreshToolboxDomAfterLayout(workspace: Workspace): void {
+  patchScratchZoomControlImages(workspace);
+  patchToolboxCategoryIcons(workspace);
+  setupToolboxScrolling(workspace);
+}
 
 function bootstrap(): void {
   registerEditorBlocks();
@@ -56,17 +65,13 @@ function bootstrap(): void {
 
   ensureScratchZoomControlsIfMissing(workspace);
   workspace.resize?.();
-  patchScratchZoomControlImages(workspace);
-  patchToolboxCategoryIcons(workspace);
-
+  refreshToolboxDomAfterLayout(workspace);
+  setupToolboxDoubleClickHideFlyout(workspace);
   requestAnimationFrame(() => {
     workspace.resize?.();
-    patchScratchZoomControlImages(workspace);
-    patchToolboxCategoryIcons(workspace);
+    refreshToolboxDomAfterLayout(workspace);
     setupFlyoutWidthClamp(workspace);
   });
-
-  setupToolboxDoubleClickHideFlyout(workspace);
 
   const publish = (): void => {
     const generated = renderPythonCode(workspace);

@@ -6,32 +6,11 @@
  *
  * scratch-blocks 使用 ContinuousFlyout（autoClose 为 false），需显式 flyout.hide()。
  */
-import type { IToolboxItem, Toolbox } from 'blockly/core';
+import type { Toolbox } from 'blockly/core';
 
 import type { Workspace } from '../codegen/types';
 
-/**
- * 根据点击的 DOM 元素，查找包含该元素的工具箱项
- * @param toolbox - Blockly 工具箱实例
- * @param target - 事件目标（被点击的 DOM 元素）
- * @returns 包含目标元素的工具箱项，如果未找到则返回 null
- */
-
-function findToolboxItemContainingTarget(
-  toolbox: Toolbox,
-  target: EventTarget | null,
-): IToolboxItem | null {
-  if (!(target instanceof Node)) {
-    return null;
-  }
-  for (const item of toolbox.getToolboxItems()) {
-    const div = item.getDiv();
-    if (div && (div === target || div.contains(target))) {
-      return item;
-    }
-  }
-  return null;
-}
+import { getToolboxItemContainingDomNode } from './toolboxDom';
 
 export function setupToolboxDoubleClickHideFlyout(workspace: Workspace): void {
   const toolbox = workspace.getToolbox?.() as Toolbox | null;
@@ -49,7 +28,7 @@ export function setupToolboxDoubleClickHideFlyout(workspace: Workspace): void {
       if (e.pointerType === 'mouse' && e.button !== 0) {
         return;
       }
-      const hit = findToolboxItemContainingTarget(toolbox, e.target);
+      const hit = getToolboxItemContainingDomNode(toolbox, e.target);
       if (!hit?.isSelectable?.()) {
         return;
       }

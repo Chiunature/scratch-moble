@@ -14,20 +14,23 @@ function toolboxCategoryIconClasses(categoryId: string): string {
 }
 
 /**
- * 工具箱分类的基础元数据，id 与 name 与下方 toolboxJson 保持一致。
- * patchToolboxCategoryIcons 等运行时补丁可从此处读取，避免各自维护一份。
+ * 分类元数据：id / 显示文案 / 主题色（一处维护）。
+ * - id：与 toolboxJson 里各分类的 id 一致，也是 SVG 图标的 key。
+ * - displayText：首轮 patch 前从 label 文案反查 id 时用（须与 name 一致）。
+ * - colour：theme 里 categoryStyles、选中栏背景（patch 写 CSS 变量）共用。
+ * 新增分类：在此加一行 + toolboxJson 里追加分类 + toolboxCategoryIconUrls 补图标。
  */
 export const TOOLBOX_CATEGORIES = [
-  { id: 'motor', displayText: '电机' },
-  { id: 'move', displayText: '移动' },
-  { id: 'matrixLight', displayText: '矩阵灯' },
-  { id: 'sound', displayText: '声音' },
-  { id: 'event', displayText: '事件' },
-  { id: 'control', displayText: '控制' },
-  { id: 'sensor', displayText: '传感器' },
-  { id: 'operation', displayText: '运算' },
-  { id: 'variable', displayText: '变量' },
-  { id: 'customBlock', displayText: '自制积木' },
+  { id: 'motor',       displayText: '电机',   colour: '#4c97ff' },
+  { id: 'move',        displayText: '移动',   colour: '#ff4ccd' },
+  { id: 'matrixLight', displayText: '矩阵灯', colour: '#9966ff' },
+  { id: 'sound',       displayText: '声音',   colour: '#cf63cf' },
+  { id: 'event',       displayText: '事件',   colour: '#ffbf00' },
+  { id: 'control',     displayText: '控制',   colour: '#ffab19' },
+  { id: 'sensor',      displayText: '传感器', colour: '#34ccf1' },
+  { id: 'operation',   displayText: '运算',   colour: '#59c059' },
+  { id: 'variable',    displayText: '变量',   colour: '#ff8c1a' },
+  { id: 'customBlock', displayText: '自制积木', colour: '#ff6680' },
 ] as const;
 
 export const toolboxJson = {
@@ -213,3 +216,4 @@ export const toolboxJson = {
     // },
   ],
 };
+

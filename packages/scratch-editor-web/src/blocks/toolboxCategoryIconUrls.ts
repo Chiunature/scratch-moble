@@ -1,47 +1,51 @@
 /**
- * 左侧工具箱分类图标资源（esbuild 将 .svg 打成 data URL）。
+ * 左侧工具箱分类图标资源。
  *
- * - TOOLBOX_SVG_URLS：全部 SVG 的唯一来源，按资源语义命名。
- * - TOOLBOX_CATEGORY_ICON_URL_BY_ID：分类 id → URL，只引用上面常量，避免重复 asUrl。
+ * - `assets/toolbox/*.svg` 经 esbuild 插件打成 **文本** 内联进 bundle，供 DOM 内嵌 `<svg>`。
+ * - 其它目录的 `.svg` 仍为 data URL（如缩放按钮）。
  *
- * 与 toolbox.ts 中 TOOLBOX_CATEGORIES 的 id 对应；调整映射只改 BY_ID 即可。
+ * - TOOLBOX_SVG_MARKUP：全部 toolbox SVG 字符串，按资源语义命名。
+ * - TOOLBOX_CATEGORY_ICON_SVG_BY_ID：分类 id → SVG 文本。
+ *
+ * 与 toolbox.ts 中 TOOLBOX_CATEGORIES 的 id 对应。
  */
-import combinedMotorUrl from '../../assets/toolbox/combined_motor.svg';
-import grayScaleUrl from '../../assets/toolbox/gray_scale.svg';
-import handleShankUrl from '../../assets/toolbox/handleShank.svg';
-import matrixUrl from '../../assets/toolbox/matrix.svg';
-import motorSensingUrl from '../../assets/toolbox/motor_sensing.svg';
-import musicUrl from '../../assets/toolbox/music.svg';
-import startProgramUrl from '../../assets/toolbox/start_program.svg';
-import touchUrl from '../../assets/toolbox/touch.svg';
-import ultrasonicUrl from '../../assets/toolbox/ultrasonic.svg';
+import combinedMotorMarkup from '../../assets/toolbox/combined_motor.svg';
+import matrixMarkup from '../../assets/toolbox/matrix.svg';
+import motorMarkup from '../../assets/toolbox/motor.svg';
+import musicMarkup from '../../assets/toolbox/music.svg';
+import startProgramMarkup from '../../assets/toolbox/start_program.svg';
+import customizeBlockMarkup from '../../assets/toolbox/customize_block.svg';
+import loopMarkup from '../../assets/toolbox/loop.svg';
+import operationMarkup from '../../assets/toolbox/operation.svg';
+import sensorMarkup from '../../assets/toolbox/sensor.svg';
+import variableMarkup from '../../assets/toolbox/variable.svg';
 
-/** esbuild 将 .svg 打成 data URL；此处统一收窄为 string，避免与 RN 侧 Svg 组件类型冲突 */
-const asUrl = (u: unknown): string => u as string;
+const asMarkup = (u: unknown): string => u as string;
 
-/** 全部 toolbox SVG（含暂未挂到分类上的资源，如 touch / ultrasonic / combinedMotor） */
-export const TOOLBOX_SVG_URLS = {
-  combinedMotor: asUrl(combinedMotorUrl),
-  grayScale: asUrl(grayScaleUrl),
-  handleShank: asUrl(handleShankUrl),
-  matrix: asUrl(matrixUrl),
-  motorSensing: asUrl(motorSensingUrl),
-  music: asUrl(musicUrl),
-  startProgram: asUrl(startProgramUrl),
-  touch: asUrl(touchUrl),
-  ultrasonic: asUrl(ultrasonicUrl),
+/** 分类 id 与 toolboxJson / TOOLBOX_CATEGORIES 一致，将assets/toolbox目录下的svg文件转换为字符串 */
+export const TOOLBOX_SVG_MARKUP = {
+  combinedMotor: asMarkup(combinedMotorMarkup),
+  matrix: asMarkup(matrixMarkup),
+  motor: asMarkup(motorMarkup),
+  music: asMarkup(musicMarkup),
+  startProgram: asMarkup(startProgramMarkup),
+  customizeBlock: asMarkup(customizeBlockMarkup),
+  loop: asMarkup(loopMarkup),
+  operation: asMarkup(operationMarkup),
+  sensor: asMarkup(sensorMarkup),
+  variable: asMarkup(variableMarkup),
 } as const;
 
-/** 分类 id 与 toolboxJson / TOOLBOX_CATEGORIES 一致 */
-export const TOOLBOX_CATEGORY_ICON_URL_BY_ID: Record<string, string> = {
-  motor: TOOLBOX_SVG_URLS.motorSensing,
-  move: TOOLBOX_SVG_URLS.grayScale,
-  matrixLight: TOOLBOX_SVG_URLS.matrix,
-  sound: TOOLBOX_SVG_URLS.music,
-  event: TOOLBOX_SVG_URLS.startProgram,
-  control: TOOLBOX_SVG_URLS.handleShank,
-  sensor: TOOLBOX_SVG_URLS.motorSensing,
-  operation: TOOLBOX_SVG_URLS.matrix,
-  variable: TOOLBOX_SVG_URLS.music,
-  customBlock: TOOLBOX_SVG_URLS.startProgram,
+/** 分类 id 与 toolboxJson / TOOLBOX_CATEGORIES 一致 ，根据分类id获取对应的svg字符串 */
+export const TOOLBOX_CATEGORY_ICON_SVG_BY_ID: Record<string, string> = {
+  motor: TOOLBOX_SVG_MARKUP.motor,
+  move: TOOLBOX_SVG_MARKUP.combinedMotor,
+  matrixLight: TOOLBOX_SVG_MARKUP.matrix,
+  sound: TOOLBOX_SVG_MARKUP.music,
+  event: TOOLBOX_SVG_MARKUP.startProgram,
+  control: TOOLBOX_SVG_MARKUP.loop,
+  sensor: TOOLBOX_SVG_MARKUP.sensor,
+  operation: TOOLBOX_SVG_MARKUP.operation,
+  variable: TOOLBOX_SVG_MARKUP.variable,
+  customBlock: TOOLBOX_SVG_MARKUP.customizeBlock,
 };
