@@ -8,5 +8,4 @@ export {
 } from './patchScratchZoom';
 export { patchToolboxCategoryIcons } from './patchToolboxCategoryIcons';
 export { setupToolboxDoubleClickHideFlyout } from './toolboxDoubleClickHideFlyout';
-export { setupToolboxScrolling } from './setupToolboxScrolling';
 // export { setupToolboxCategoryClick } from './setupToolboxCategoryClick';

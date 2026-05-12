@@ -17,14 +17,12 @@ import {
   patchToolboxCategoryIcons,
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
-  setupToolboxScrolling,
 } from './workspace-custom';
 
 /** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
 function refreshToolboxDomAfterLayout(workspace: Workspace): void {
   patchScratchZoomControlImages(workspace);
   patchToolboxCategoryIcons(workspace);
-  setupToolboxScrolling(workspace);
 }
 
 function bootstrap(): void {

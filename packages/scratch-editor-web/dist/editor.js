@@ -23070,7 +23070,11 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
     return { iconById, colourById, idByText };
   }
-  var { iconById: ICON_BY_ID, colourById: COLOUR_BY_ID, idByText: ID_BY_TEXT } = buildToolboxCategoryLookups();
+  var {
+    iconById: ICON_BY_ID,
+    colourById: COLOUR_BY_ID,
+    idByText: ID_BY_TEXT
+  } = buildToolboxCategoryLookups();
   var SEL_ROW = ".blocklyTreeRowContentContainer";
   var SEL_BUBBLE = ".categoryBubble";
   var SEL_LABEL = ".blocklyToolboxCategoryLabel";
@@ -23291,40 +23295,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     );
   }
 
-  // src/workspace-custom/setupToolboxScrolling.ts
-  function setupToolboxScrolling(workspace) {
-    const toolbox = workspace.getToolbox?.();
-    if (!toolbox) {
-      return;
-    }
-    const toolboxDiv = toolbox.HtmlDiv;
-    if (!toolboxDiv) {
-      return;
-    }
-    Object.assign(toolboxDiv.style, {
-      height: "100%",
-      overflowX: "hidden",
-      overflowY: "auto"
-    });
-    const toolboxContent = toolboxDiv.querySelector(
-      ".blocklyToolboxContents"
-    );
-    if (toolboxContent) {
-      toolboxContent.style.minHeight = "100%";
-    }
-    const scrollbar = toolboxDiv.querySelector(
-      ".blocklyToolboxScrollbar"
-    );
-    if (scrollbar) {
-      scrollbar.style.display = "none";
-    }
-  }
-
   // src/main.ts
   function refreshToolboxDomAfterLayout(workspace) {
     patchScratchZoomControlImages(workspace);
     patchToolboxCategoryIcons(workspace);
-    setupToolboxScrolling(workspace);
   }
   function bootstrap() {
     registerEditorBlocks();
