@@ -13,6 +13,7 @@ import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
 import {
   ensureScratchZoomControlsIfMissing,
+  patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
   setupFlyoutWidthClamp,
@@ -62,6 +63,7 @@ function bootstrap(): void {
   });
 
   ensureScratchZoomControlsIfMissing(workspace);
+  patchFlyoutGetWidthWhenHidden(workspace);
   workspace.resize?.();
   refreshToolboxDomAfterLayout(workspace);
   setupToolboxDoubleClickHideFlyout(workspace);

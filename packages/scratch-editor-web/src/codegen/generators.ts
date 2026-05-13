@@ -16,11 +16,31 @@ import {
   indent,
   quotePythonString,
 } from './helpers';
-import type { GenerateContext, ScratchBlock, StatementGenerator, Workspace } from './types';
+import type {
+  GenerateContext,
+  ScratchBlock,
+  StatementGenerator,
+  Workspace,
+} from './types';
+
+/**
+ * 作为「表达式」嵌在输入槽里的纯数字字面量块（含飞出栏默认阴影类型）。
+ * 均使用字段 NUM，与 scratch-blocks 内置定义一致。
+ */
+const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
+  'math_number',
+  'math_positive_number',
+  'math_whole_number',
+  'math_integer',
+]);
 
 function expressionBlockToPython(block: ScratchBlock): string {
-  if (block.type === 'math_number') {
+  if (NUMERIC_LITERAL_BLOCK_TYPES.has(block.type)) {
     return getFieldValue(block, 'NUM') ?? '0';
+  }
+
+  if (block.type === BLOCK_TYPES.common.portDropdown) {
+    return getFieldValue(block, 'PORT') ?? '1';
   }
 
   if (block.type === 'text') {
@@ -45,7 +65,9 @@ function statementInputToPython(
   context: GenerateContext,
 ): string {
   const firstChildBlock = getInputTargetBlock(block, inputName);
-  return firstChildBlock ? statementChainToPython(firstChildBlock, context) : '';
+  return firstChildBlock
+    ? statementChainToPython(firstChildBlock, context)
+    : '';
 }
 
 const statementGenerators: Record<string, StatementGenerator> = {
@@ -53,9 +75,33 @@ const statementGenerators: Record<string, StatementGenerator> = {
     return `${indent(context)}# 当开始运行`;
   },
 
+  // 端口、功率、秒数 → 固件侧自行实现 motor_run_for_power_seconds
   [BLOCK_TYPES.motor.runForPowerSeconds](block, context) {
-    const v = valueToPython(block, 'STEPS', '10');
-    return `${indent(context)}motor_run_for_power_seconds(${v})`;
+    const port = valueToPython(block, 'PORTS', '1');
+    const power = valueToPython(block, 'POWER', '50');
+    const seconds = valueToPython(block, 'SECONDS', '2');
+    return `${indent(
+      context,
+    )}motor_run_for_power_seconds(${port}, ${power}, ${seconds})`;
+  },
+
+  // 端口、功率（无时长）
+  [BLOCK_TYPES.motor.runPower](block, context) {
+    const port = valueToPython(block, 'PORTS', '1');
+    const power = valueToPython(block, 'POWER', '50');
+    return `${indent(context)}motor_run_power(${port}, ${power})`;
+  },
+
+  // 仅关断端口
+  [BLOCK_TYPES.motor.stop](block, context) {
+    const port = valueToPython(block, 'PORTS', '1');
+    return `${indent(context)}motor_stop(${port})`;
+  },
+
+  [BLOCK_TYPES.motor.stopModule](block, context) {
+    const port = valueToPython(block, 'PORTS', '1');
+    const mode = valueToPython(block, 'BLOCK', '0');
+    return `${indent(context)}motor_stop_module(${port}, ${mode})`;
   },
 
   [BLOCK_TYPES.move.pair](_block, context) {

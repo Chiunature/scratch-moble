@@ -3,8 +3,15 @@
  * 新增积木时先在此处注册，再在 blockDefinitions/<分类>.ts、toolbox.ts、generators.ts 补充实现。
  */
 export const BLOCK_TYPES = {
+  common: {
+    /** 通用端口下拉报告块（Number），可作为任意 PORT/PORTS 输入槽的默认阴影 */
+    portDropdown: 'port_dropdown',
+  },
   motor: {
-    runForPowerSeconds: 'motor_run_for_power_seconds',
+    runForPowerSeconds: 'run_for_power_seconds',
+    runPower: 'run_power',
+    stop: 'stop',
+    stopModule: 'stop_module',
   },
   move: {
     pair: 'pair',

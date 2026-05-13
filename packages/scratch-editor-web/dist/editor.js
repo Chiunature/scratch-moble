@@ -22428,8 +22428,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
 
   // src/blocks/blockTypes.ts
   var BLOCK_TYPES = {
+    common: {
+      /** 通用端口下拉报告块（Number），可作为任意 PORT/PORTS 输入槽的默认阴影 */
+      portDropdown: "port_dropdown"
+    },
     motor: {
-      runForPowerSeconds: "motor_run_for_power_seconds"
+      runForPowerSeconds: "run_for_power_seconds",
+      runPower: "run_power",
+      stop: "stop",
+      stopModule: "stop_module"
     },
     move: {
       pair: "pair"
@@ -22486,14 +22493,105 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // assets/block/block_motor_sensing.svg
+  var block_motor_sensing_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g id="XMLID_00000064332656542466190760000003885663620856589749_">%0D%0A%09<path class="st0" d="M11.34,2.87c-4.68,0-8.47,3.79-8.47,8.47c0,4.68,3.79,8.47,8.47,8.47c4.68,0,8.47-3.79,8.47-8.47%0D%0A%09%09C19.81,6.66,16.02,2.87,11.34,2.87z M5.69,13.46c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C7.81,12.51,6.86,13.46,5.69,13.46z M11.34,19.1c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C13.46,18.15,12.51,19.1,11.34,19.1z M13.17,10.64v1.41h-1.13v1.13h-1.41%0D%0A%09%09v-1.13H9.5v-1.41h1.13V9.5h1.41v1.13H13.17z M11.34,7.81c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C13.46,6.86,12.51,7.81,11.34,7.81z M16.98,13.46c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C19.1,12.51,18.15,13.46,16.98,13.46z"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/block/block_separator_vertical.svg
+  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
+
   // src/blocks/blockDefinitions/motor.ts
   var motorBlockDefinitions = [
     {
       type: BLOCK_TYPES.motor.runForPowerSeconds,
-      message0: "\u7535\u673A\u6309\u529F\u7387\u8FD0\u884C %1",
-      args0: [{ type: "input_value", name: "STEPS", check: "Number" }],
+      // %1~%2 图与竖线；%3 PORTS 值槽：默认阴影为通用 port_dropdown（槽内 0-7 下拉），可拔掉换其它 Number 积木
+      message0: "%1 %2 \u7535\u673A %3 \u4EE5 %4 \u529F\u7387\u8F6C\u52A8 %5 \u79D2",
+      args0: [
+        {
+          type: "field_image",
+          src: block_motor_sensing_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "POWER", check: "Number" },
+        { type: "input_value", name: "SECONDS", check: "Number" }
+      ],
       previousStatement: null,
       nextStatement: null,
+      inputsInline: true,
+      style: "motion_blocks"
+    },
+    {
+      type: BLOCK_TYPES.motor.runPower,
+      message0: "%1 %2 \u7535\u673A %3 \u4EE5 %4 \u529F\u7387\u8F6C\u52A8",
+      args0: [
+        {
+          type: "field_image",
+          src: block_motor_sensing_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "POWER", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "motion_blocks"
+    },
+    {
+      type: BLOCK_TYPES.motor.stop,
+      message0: "%1 %2 \u7535\u673A %3 \u5173\u95ED\u7535\u673A",
+      args0: [
+        { type: "field_image", src: block_motor_sensing_default, width: 24, height: 24, alt: "*" },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      style: "motion_blocks"
+    },
+    {
+      type: BLOCK_TYPES.motor.stopModule,
+      // 勿重复长文案；%3 与中文之间留空格，否则易与上一块贴在一起且整行过长触发折行
+      message0: "%1 %2 \u7535\u673A %3 \u5C06\u7535\u673A\u8BBE\u7F6E\u4E3A\u505C\u6B62\u65F6 %4",
+      args0: [
+        { type: "field_image", src: block_motor_sensing_default, width: 24, height: 24, alt: "*" },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "BLOCK", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
       style: "motion_blocks"
     }
   ];
@@ -22506,6 +22604,33 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       previousStatement: null,
       nextStatement: null,
       style: "motion_blocks"
+    }
+  ];
+
+  // src/blocks/blockDefinitions/portDropdown.ts
+  var portDropdownReporterDefinitions = [
+    {
+      type: BLOCK_TYPES.common.portDropdown,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_dropdown",
+          name: "PORT",
+          options: [
+            ["0", "0"],
+            ["1", "1"],
+            ["2", "2"],
+            ["3", "3"],
+            ["4", "4"],
+            ["5", "5"],
+            ["6", "6"],
+            ["7", "7"]
+          ]
+        }
+      ],
+      output: "Number",
+      outputShape: 2,
+      extensions: ["colours_textfield"]
     }
   ];
 
@@ -22534,6 +22659,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/blocks/registerBlocks.ts
   function registerEditorBlocks() {
     Ct([
+      ...portDropdownReporterDefinitions,
       ...motorBlockDefinitions,
       ...moveBlockDefinitions,
       ...matrixLightBlockDefinitions,
@@ -22544,10 +22670,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     ]);
   }
 
-  // src/blocks/toolbox.ts
-  function toolboxCategoryIconClasses(categoryId) {
-    return `toolbox-category-icon toolbox-category-icon-${categoryId}`;
-  }
+  // src/blocks/toolboxCategories/shared.ts
   var TOOLBOX_CATEGORIES = [
     { id: "motor", displayText: "\u7535\u673A", colour: "#4c97ff" },
     { id: "move", displayText: "\u79FB\u52A8", colour: "#ff4ccd" },
@@ -22560,192 +22683,208 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     { id: "variable", displayText: "\u53D8\u91CF", colour: "#ff8c1a" },
     { id: "customBlock", displayText: "\u81EA\u5236\u79EF\u6728", colour: "#ff6680" }
   ];
-  var toolboxJson = {
-    kind: "categoryToolbox",
+  function toolboxCategoryIconClasses(categoryId) {
+    return `toolbox-category-icon toolbox-category-icon-${categoryId}`;
+  }
+
+  // src/blocks/toolboxCategories/control.ts
+  var controlToolboxCategory = {
+    kind: "category",
+    id: "control",
+    name: "\u63A7\u5236",
+    categorystyle: "control_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("control")
+    },
     contents: [
       {
-        kind: "category",
-        id: "motor",
-        name: "\u7535\u673A",
-        categorystyle: "motor_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("motor")
-        },
-        //该类别下的积木
-        contents: [
-          {
-            kind: "block",
-            //积木类型
-            type: BLOCK_TYPES.motor.runForPowerSeconds,
-            //积木字段名字
-            //积木参数输入框
-            inputs: {
-              //对应args0中的name
-              STEPS: {
-                //积木参数使用阴影块
-                shadow: {
-                  type: "math_number",
-                  //阴影块类型
-                  fields: {
-                    NUM: 10
-                    //阴影块参数
-                  }
-                }
-              }
+        kind: "block",
+        type: BLOCK_TYPES.control.sleepSeconds,
+        inputs: {
+          STEPS: {
+            shadow: {
+              type: "math_number",
+              fields: { NUM: 15 }
             }
           }
-        ]
-      },
-      {
-        kind: "category",
-        id: "move",
-        name: "\u79FB\u52A8",
-        categorystyle: "move_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("move")
-        },
-        contents: [{ kind: "block", type: BLOCK_TYPES.move.pair }]
-      },
-      {
-        kind: "category",
-        id: "matrixLight",
-        name: "\u77E9\u9635\u706F",
-        categorystyle: "matrixLight_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("matrixLight")
-        },
-        contents: [
-          {
-            kind: "block",
-            type: BLOCK_TYPES.matrixLight.show,
-            inputs: {
-              TIMES: {
-                shadow: {
-                  type: "math_number",
-                  fields: {
-                    NUM: 10
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
-        kind: "category",
-        id: "sound",
-        name: "\u58F0\u97F3",
-        categorystyle: "sound_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("sound")
-        },
-        contents: [{ kind: "block", type: BLOCK_TYPES.sound.playMusic }]
-      },
-      {
-        kind: "category",
-        id: "event",
-        name: "\u4E8B\u4EF6",
-        categorystyle: "event_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("event")
-        },
-        contents: [{ kind: "block", type: BLOCK_TYPES.event.whenFlagClicked }]
-      },
-      {
-        kind: "category",
-        id: "control",
-        name: "\u63A7\u5236",
-        categorystyle: "control_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("control")
-        },
-        contents: [
-          {
-            kind: "block",
-            type: BLOCK_TYPES.control.sleepSeconds,
-            inputs: {
-              STEPS: {
-                shadow: {
-                  type: "math_number",
-                  fields: {
-                    NUM: 15
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
-        kind: "category",
-        id: "sensor",
-        name: "\u4F20\u611F\u5668",
-        categorystyle: "sensor_category",
-        cssconfig: {
-          icon: toolboxCategoryIconClasses("sensor")
-        },
-        contents: [{ kind: "block", type: BLOCK_TYPES.sensor.oneCalibrate }]
+        }
       }
-      // {
-      //   kind: 'category',
-      //   id: 'operation',
-      //   name: '运算',
-      //   categorystyle: 'operation_category',
-      //   cssconfig: {
-      //     icon: toolboxCategoryIconClasses('operation'),
-      //   },
-      //   contents: [
-      //     {
-      //       kind: 'block',
-      //       type: BLOCK_TYPES.repeat,
-      //       inputs: {
-      //         TIMES: {
-      //           shadow: {
-      //             type: 'math_number',
-      //             fields: {
-      //               NUM: 10,
-      //             },
-      //           },
-      //         },
-      //       },
-      //     },
-      //   ],
-      // },
-      // {
-      //   kind: 'category',
-      //   id: 'variable',
-      //   name: '变量',
-      //   categorystyle: 'variable_category',
-      //   cssconfig: {
-      //     icon: toolboxCategoryIconClasses('variable'),
-      //   },
-      //   contents: [
-      //     {
-      //       kind: 'block',
-      //       type: BLOCK_TYPES.repeat,
-      //       inputs: {
-      //         TIMES: {
-      //           shadow: {
-      //             type: 'math_number',
-      //             fields: {
-      //               NUM: 10,
-      //             },
-      //           },
-      //         },
-      //       },
-      //     },
-      //   ],
-      // },
-      // {
-      //   kind: 'category',
-      //   id: 'customBlock',
-      //   name: '自制积木',
-      //   categorystyle: 'customBlock_category',
-      //   cssconfig: {
-      //     icon: toolboxCategoryIconClasses('customBlock'),
-      //   },
-      // },
     ]
+  };
+
+  // src/blocks/toolboxCategories/event.ts
+  var eventToolboxCategory = {
+    kind: "category",
+    id: "event",
+    name: "\u4E8B\u4EF6",
+    categorystyle: "event_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("event")
+    },
+    contents: [{ kind: "block", type: BLOCK_TYPES.event.whenFlagClicked }]
+  };
+
+  // src/blocks/toolboxCategories/matrixLight.ts
+  var matrixLightToolboxCategory = {
+    kind: "category",
+    id: "matrixLight",
+    name: "\u77E9\u9635\u706F",
+    categorystyle: "matrixLight_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("matrixLight")
+    },
+    contents: [
+      {
+        kind: "block",
+        type: BLOCK_TYPES.matrixLight.show,
+        inputs: {
+          TIMES: {
+            shadow: {
+              type: "math_number",
+              fields: { NUM: 10 }
+            }
+          }
+        }
+      }
+    ]
+  };
+
+  // src/blocks/toolboxCategories/motor.ts
+  var motorToolboxCategory = {
+    kind: "category",
+    id: "motor",
+    name: "\u7535\u673A",
+    categorystyle: "motor_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("motor")
+    },
+    contents: [
+      {
+        kind: "block",
+        type: BLOCK_TYPES.motor.runForPowerSeconds,
+        inputs: {
+          PORTS: {
+            shadow: {
+              type: BLOCK_TYPES.common.portDropdown,
+              fields: { PORT: "0" }
+            }
+          },
+          POWER: {
+            shadow: {
+              type: "math_positive_number",
+              fields: { NUM: 50 }
+            }
+          },
+          SECONDS: {
+            shadow: {
+              type: "math_positive_number",
+              fields: { NUM: 2 }
+            }
+          }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.motor.runPower,
+        inputs: {
+          PORTS: {
+            shadow: {
+              type: BLOCK_TYPES.common.portDropdown,
+              fields: { PORT: "0" }
+            }
+          },
+          POWER: {
+            shadow: {
+              type: "math_positive_number",
+              fields: { NUM: 50 }
+            }
+          }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.motor.stop,
+        inputs: {
+          PORTS: {
+            shadow: {
+              type: BLOCK_TYPES.common.portDropdown,
+              fields: { PORT: "0" }
+            }
+          }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.motor.stopModule,
+        inputs: {
+          PORTS: {
+            shadow: {
+              type: BLOCK_TYPES.common.portDropdown,
+              fields: { PORT: "0" }
+            }
+          },
+          BLOCK: {
+            shadow: {
+              type: "math_whole_number",
+              fields: { NUM: 0 }
+            }
+          }
+        }
+      }
+    ]
+  };
+
+  // src/blocks/toolboxCategories/move.ts
+  var moveToolboxCategory = {
+    kind: "category",
+    id: "move",
+    name: "\u79FB\u52A8",
+    categorystyle: "move_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("move")
+    },
+    contents: [{ kind: "block", type: BLOCK_TYPES.move.pair }]
+  };
+
+  // src/blocks/toolboxCategories/sensor.ts
+  var sensorToolboxCategory = {
+    kind: "category",
+    id: "sensor",
+    name: "\u4F20\u611F\u5668",
+    categorystyle: "sensor_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("sensor")
+    },
+    contents: [{ kind: "block", type: BLOCK_TYPES.sensor.oneCalibrate }]
+  };
+
+  // src/blocks/toolboxCategories/sound.ts
+  var soundToolboxCategory = {
+    kind: "category",
+    id: "sound",
+    name: "\u58F0\u97F3",
+    categorystyle: "sound_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("sound")
+    },
+    contents: [{ kind: "block", type: BLOCK_TYPES.sound.playMusic }]
+  };
+
+  // src/blocks/toolboxCategories/index.ts
+  var toolboxCategoryContents = [
+    motorToolboxCategory,
+    moveToolboxCategory,
+    matrixLightToolboxCategory,
+    soundToolboxCategory,
+    eventToolboxCategory,
+    controlToolboxCategory,
+    sensorToolboxCategory
+  ];
+
+  // src/blocks/toolbox.ts
+  var toolboxJson = {
+    kind: "categoryToolbox",
+    contents: toolboxCategoryContents
   };
 
   // src/bridge.ts
@@ -22776,9 +22915,18 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
 
   // src/codegen/generators.ts
+  var NUMERIC_LITERAL_BLOCK_TYPES = /* @__PURE__ */ new Set([
+    "math_number",
+    "math_positive_number",
+    "math_whole_number",
+    "math_integer"
+  ]);
   function expressionBlockToPython(block) {
-    if (block.type === "math_number") {
+    if (NUMERIC_LITERAL_BLOCK_TYPES.has(block.type)) {
       return getFieldValue(block, "NUM") ?? "0";
+    }
+    if (block.type === BLOCK_TYPES.common.portDropdown) {
+      return getFieldValue(block, "PORT") ?? "1";
     }
     if (block.type === "text") {
       return quotePythonString(getFieldValue(block, "TEXT") ?? "");
@@ -22793,9 +22941,30 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
       return `${indent(context)}# \u5F53\u5F00\u59CB\u8FD0\u884C`;
     },
+    // 端口、功率、秒数 → 固件侧自行实现 motor_run_for_power_seconds
     [BLOCK_TYPES.motor.runForPowerSeconds](block, context) {
-      const v2 = valueToPython(block, "STEPS", "10");
-      return `${indent(context)}motor_run_for_power_seconds(${v2})`;
+      const port = valueToPython(block, "PORTS", "1");
+      const power = valueToPython(block, "POWER", "50");
+      const seconds = valueToPython(block, "SECONDS", "2");
+      return `${indent(
+        context
+      )}motor_run_for_power_seconds(${port}, ${power}, ${seconds})`;
+    },
+    // 端口、功率（无时长）
+    [BLOCK_TYPES.motor.runPower](block, context) {
+      const port = valueToPython(block, "PORTS", "1");
+      const power = valueToPython(block, "POWER", "50");
+      return `${indent(context)}motor_run_power(${port}, ${power})`;
+    },
+    // 仅关断端口
+    [BLOCK_TYPES.motor.stop](block, context) {
+      const port = valueToPython(block, "PORTS", "1");
+      return `${indent(context)}motor_stop(${port})`;
+    },
+    [BLOCK_TYPES.motor.stopModule](block, context) {
+      const port = valueToPython(block, "PORTS", "1");
+      const mode = valueToPython(block, "BLOCK", "0");
+      return `${indent(context)}motor_stop_module(${port}, ${mode})`;
     },
     [BLOCK_TYPES.move.pair](_block, context) {
       return `${indent(context)}move_pair()`;
@@ -22945,6 +23114,17 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     if (!tryBind()) {
       requestAnimationFrame(() => tryBind());
     }
+  }
+
+  // src/workspace-custom/patchFlyoutGetWidthWhenHidden.ts
+  var PATCH_KEY = "__scratchEditorWebFlyoutGetWidthPatched";
+  function patchFlyoutGetWidthWhenHidden(workspace) {
+    const flyout = workspace.getToolbox?.()?.getFlyout?.();
+    if (!flyout?.getWidth || typeof flyout.isVisible !== "function") return;
+    if (flyout[PATCH_KEY]) return;
+    flyout[PATCH_KEY] = true;
+    const orig = flyout.getWidth.bind(flyout);
+    flyout.getWidth = () => flyout.isVisible() ? orig() : 0;
   }
 
   // assets/zoom/zoom-in.svg
@@ -23346,6 +23526,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       //工具箱定义 xml或者json
     });
     ensureScratchZoomControlsIfMissing(workspace);
+    patchFlyoutGetWidthWhenHidden(workspace);
     workspace.resize?.();
     refreshToolboxDomAfterLayout(workspace);
     setupToolboxDoubleClickHideFlyout(workspace);

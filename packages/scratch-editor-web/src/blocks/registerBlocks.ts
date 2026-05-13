@@ -10,11 +10,13 @@ import { eventBlockDefinitions } from './blockDefinitions/event';
 import { matrixLightBlockDefinitions } from './blockDefinitions/matrixLight';
 import { motorBlockDefinitions } from './blockDefinitions/motor';
 import { moveBlockDefinitions } from './blockDefinitions/move';
+import { portDropdownReporterDefinitions } from './blockDefinitions/portDropdown';
 import { sensorBlockDefinitions } from './blockDefinitions/sensor';
 import { soundBlockDefinitions } from './blockDefinitions/sound';
 
 export function registerEditorBlocks(): void {
   ScratchBlocks.defineBlocksWithJsonArray([
+    ...portDropdownReporterDefinitions,
     ...motorBlockDefinitions,
     ...moveBlockDefinitions,
     ...matrixLightBlockDefinitions,
