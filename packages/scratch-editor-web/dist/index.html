@@ -42,10 +42,15 @@ body {
   width: 100%;
   height: 100%;
 }
-/* Blockly：隐藏滚动条 UI，但须保持 main.ts 里 move.scrollbars: true，否则无法空白处平移 */
+/* Blockly：隐藏工作区滚动条 UI，但须保持 main.ts 里 move.scrollbars: true，否则无法空白处平移 */
 #workspace .blocklyMainWorkspaceScrollbar .blocklyScrollbarHandle {
   display: none !important;
 }
+/* Blockly：隐藏飞出栏滚动条 UI，但须保持 main.ts 里 move.scrollbars: true，否则无法空白处平移 */
+#workspace .blocklyScrollbarVertical.blocklyFlyoutScrollbar{
+  display: none !important;
+}
+
 /* 每格容器的 --scratch-toolbox-selected-bg 由 patchToolboxCategoryIcons 从 TOOLBOX_CATEGORIES 写入 */
 .blocklyToolboxCategory.blocklyToolboxSelected {
   background-color: var(--scratch-toolbox-selected-bg, #57e) !important;
