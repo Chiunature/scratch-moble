@@ -6,6 +6,7 @@
 import * as ScratchBlocks from 'scratch-blocks';
 
 import { controlBlockDefinitions } from './blockDefinitions/control';
+import { mathShadowBlockDefinitions } from './blockDefinitions/mathShadows';
 import { eventBlockDefinitions } from './blockDefinitions/event';
 import { matrixLightBlockDefinitions } from './blockDefinitions/matrixLight';
 import { motorBlockDefinitions } from './blockDefinitions/motor';
@@ -16,6 +17,7 @@ import { soundBlockDefinitions } from './blockDefinitions/sound';
 
 export function registerEditorBlocks(): void {
   ScratchBlocks.defineBlocksWithJsonArray([
+    ...mathShadowBlockDefinitions,
     ...portDropdownReporterDefinitions,
     ...motorBlockDefinitions,
     ...moveBlockDefinitions,

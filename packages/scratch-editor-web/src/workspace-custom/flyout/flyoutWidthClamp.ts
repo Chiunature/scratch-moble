@@ -3,7 +3,7 @@
  * - 收起态：宽度限制在 maxWidthPx 内
  * - 展开态：根据内容实际宽度自动撑开
  */
-import type { Workspace } from '../codegen/types';
+import type { Workspace } from '../../codegen/types';
 
 export function setupFlyoutWidthClamp(workspace: Workspace): void {
   const tryBind = (): boolean => {

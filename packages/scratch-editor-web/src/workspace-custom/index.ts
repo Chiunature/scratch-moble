@@ -1,16 +1,22 @@
 /**
- * 工作区注入后的定制逻辑（不修改 scratch-blocks 源码）：缩放条内置图标、工具箱二次点击关飞出栏等。
+ * 工作区注入后的定制逻辑（不修改 scratch-blocks 源码）。
+ *
+ * 子目录按职责分类：
+ * - fields：数字字段编辑器（滑块 / 键盘）
+ * - flyout：飞出栏布局补丁
+ * - toolbox：工具箱 DOM / 图标 / 交互
+ * - zoom：缩放控件补丁
  */
-export { setupFlyoutWidthClamp } from './flyoutWidthClamp';
 export {
-  patchFieldNumberMobileKeyboard,
+  patchFieldNumberEditor,
   type ScratchNumberKeyboardMode,
-} from './patchFieldNumberMobileKeyboard';
-export { patchFlyoutGetWidthWhenHidden } from './patchFlyoutGetWidthWhenHidden';
+} from './fields';
+export { patchFlyoutGetWidthWhenHidden, setupFlyoutWidthClamp } from './flyout';
+export {
+  patchToolboxCategoryIcons,
+  setupToolboxDoubleClickHideFlyout,
+} from './toolbox';
 export {
   ensureScratchZoomControlsIfMissing,
   patchScratchZoomControlImages,
-} from './patchScratchZoom';
-export { patchToolboxCategoryIcons } from './patchToolboxCategoryIcons';
-export { setupToolboxDoubleClickHideFlyout } from './toolboxDoubleClickHideFlyout';
-// export { setupToolboxCategoryClick } from './setupToolboxCategoryClick';
+} from './zoom';

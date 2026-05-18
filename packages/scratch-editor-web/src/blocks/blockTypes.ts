@@ -31,4 +31,12 @@ export const BLOCK_TYPES = {
   sensor: {
     oneCalibrate: 'one_calibrate',
   },
+  math: {
+    /** 功率百分比阴影（0–100，滑块） */
+    powerPercent: 'math_power_percent',
+    /** 时长秒数阴影（滑块） */
+    durationSeconds: 'math_duration_seconds',
+    /** 非负整数阴影（键盘输入） */
+    positiveKeyboard: 'math_positive_number_keyboard',
+  },
 } as const;

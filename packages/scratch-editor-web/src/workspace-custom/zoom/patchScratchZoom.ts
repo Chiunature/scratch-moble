@@ -7,10 +7,10 @@
  */
 import { ScratchZoomControls } from 'scratch-blocks';
 
-import type { Workspace } from './codegen/types';
-import zoomInImport from '../assets/zoom/zoom-in.svg';
-import zoomOutImport from '../assets/zoom/zoom-out.svg';
-import zoomResetImport from '../assets/zoom/zoom-reset.svg';
+import type { Workspace } from '../../codegen/types';
+import zoomInImport from '../../../assets/zoom/zoom-in.svg';
+import zoomOutImport from '../../../assets/zoom/zoom-out.svg';
+import zoomResetImport from '../../../assets/zoom/zoom-reset.svg';
 
 const zoomInUrl = zoomInImport as unknown as string;
 const zoomOutUrl = zoomOutImport as unknown as string;

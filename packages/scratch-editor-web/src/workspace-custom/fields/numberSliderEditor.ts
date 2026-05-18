@@ -1,0 +1,200 @@
+import { Events, renderManagement } from 'scratch-blocks';
+
+import { isReactNativeHost, postToReactNative } from '../../bridge';
+
+type RenderableBlock = {
+  rendered?: boolean;
+  queueRender?: () => void;
+  getParent?: () => RenderableBlock | null;
+};
+
+/** 带 min/max 的 Scratch 数字字段（field_number 族） */
+export type ScratchNumberField = {
+  name?: string;
+  workspace_: unknown;
+  textContent_?: Text;
+  getDisplayText_?: () => string;
+  getValue(): string | number;
+  setValue(value: string | number, fireChangeEvent?: boolean): void;
+  getMin(): number;
+  getMax(): number;
+  getPrecision(): number;
+  getSourceBlock(): {
+    getColour?: () => string;
+    getColourSecondary?: () => string;
+    getColourTertiary?: () => string;
+  } & RenderableBlock | null;
+};
+
+type SliderSession = {
+  field: ScratchNumberField;
+  valueWhenOpened: string | number | null;
+};
+
+const sessions = new Map<string, SliderSession>();
+
+function createSessionId(field: ScratchNumberField): string {
+  const id = (field as unknown as { id_?: string }).id_;
+  return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function refreshSliderFieldDisplay(field: ScratchNumberField): void {
+  if (field.textContent_ && typeof field.getDisplayText_ === 'function') {
+    field.textContent_.nodeValue = field.getDisplayText_();
+  }
+
+  const block = field.getSourceBlock();
+  if (block?.rendered && typeof block.queueRender === 'function') {
+    block.queueRender();
+    const parent = block.getParent?.();
+    if (parent?.rendered && typeof parent.queueRender === 'function') {
+      parent.queueRender();
+    }
+  }
+
+  renderManagement.triggerQueuedRenders();
+}
+
+function applySliderValueDuringDrag(field: ScratchNumberField, raw: number): void {
+  field.setValue(raw, false);
+  if (field.textContent_ && typeof field.getDisplayText_ === 'function') {
+    field.textContent_.nodeValue = field.getDisplayText_();
+  }
+}
+
+function fireFieldChangeIfNeeded(
+  field: ScratchNumberField,
+  oldValue: string | number | null,
+): void {
+  const block = field.getSourceBlock();
+  const newValue = field.getValue();
+  if (!block || oldValue === newValue) {
+    return;
+  }
+  if (Events.isEnabled()) {
+    Events.fire(
+      new Events.BlockChange(
+        block as Parameters<typeof Events.BlockChange>[0],
+        'field',
+        field.name ?? null,
+        oldValue,
+        newValue,
+      ),
+    );
+  }
+}
+
+function getFieldAnchorRect(
+  field: ScratchNumberField,
+): { x: number; y: number; width: number; height: number } | null {
+  const target = (
+    field as unknown as { getClickTarget_?: () => Element | null }
+  ).getClickTarget_?.();
+  if (!target || typeof target.getBoundingClientRect !== 'function') {
+    return null;
+  }
+  const rect = target.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    return null;
+  }
+  return {
+    x: rect.left,
+    y: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function dropdownColoursFromField(field: ScratchNumberField): {
+  primary: string;
+  secondary: string;
+} {
+  const block = field.getSourceBlock();
+  const primary =
+    (block && typeof block.getColour === 'function' && block.getColour()) ||
+    '#4C97FF';
+  const secondary =
+    (block &&
+      typeof block.getColourSecondary === 'function' &&
+      block.getColourSecondary()) ||
+    primary;
+  return { primary, secondary };
+}
+
+function closeSession(sessionId: string, notifyNative: boolean): void {
+  const session = sessions.get(sessionId);
+  if (!session) {
+    return;
+  }
+  sessions.delete(sessionId);
+  refreshSliderFieldDisplay(session.field);
+  fireFieldChangeIfNeeded(session.field, session.valueWhenOpened);
+  if (notifyNative) {
+    postToReactNative({ type: 'editor.numberSlider.close', sessionId });
+  }
+}
+
+export function handleNumberSliderInbound(
+  message:
+    | { type: 'editor.numberSlider.value'; sessionId: string; value: number }
+    | { type: 'editor.numberSlider.close'; sessionId: string },
+): void {
+  const session = sessions.get(message.sessionId);
+  if (!session) {
+    return;
+  }
+
+  if (message.type === 'editor.numberSlider.value') {
+    applySliderValueDuringDrag(session.field, message.value);
+    return;
+  }
+
+  closeSession(message.sessionId, false);
+}
+
+/** 在 RN WebView 中打开原生滑块浮层 */
+export function openNumberSliderEditor(
+  field: ScratchNumberField,
+  _e?: Event,
+): void {
+  if (!isReactNativeHost()) {
+    return;
+  }
+
+  for (const [, session] of sessions) {
+    if (session.field === field) {
+      return;
+    }
+  }
+
+  const anchor = getFieldAnchorRect(field);
+  const block = field.getSourceBlock();
+  if (!anchor || !block) {
+    return;
+  }
+
+  const sessionId = createSessionId(field);
+  sessions.set(sessionId, {
+    field,
+    valueWhenOpened: field.getValue(),
+  });
+
+  const min = field.getMin();
+  const max = field.getMax();
+  const step = field.getPrecision() || 1;
+  let value = Number(field.getValue());
+  if (Number.isNaN(value)) {
+    value = min > -Infinity ? min : 0;
+  }
+
+  postToReactNative({
+    type: 'editor.numberSlider.open',
+    sessionId,
+    min,
+    max,
+    step,
+    value,
+    anchor,
+    colors: dropdownColoursFromField(field),
+  });
+}

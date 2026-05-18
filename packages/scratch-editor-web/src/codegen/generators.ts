@@ -32,6 +32,9 @@ const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
   'math_positive_number',
   'math_whole_number',
   'math_integer',
+  BLOCK_TYPES.math.powerPercent,
+  BLOCK_TYPES.math.durationSeconds,
+  BLOCK_TYPES.math.positiveKeyboard,
 ]);
 
 function expressionBlockToPython(block: ScratchBlock): string {

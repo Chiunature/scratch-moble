@@ -8,7 +8,7 @@
  */
 import type { Toolbox } from 'blockly/core';
 
-import type { Workspace } from '../codegen/types';
+import type { Workspace } from '../../codegen/types';
 
 import { getToolboxItemContainingDomNode } from './toolboxDom';
 

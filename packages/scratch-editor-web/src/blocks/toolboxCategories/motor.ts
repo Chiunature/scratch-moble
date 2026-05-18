@@ -27,13 +27,13 @@ export const motorToolboxCategory = {
         },
         POWER: {
           shadow: {
-            type: 'math_positive_number',
+            type: BLOCK_TYPES.math.powerPercent,
             fields: { NUM: 50 },
           },
         },
         SECONDS: {
           shadow: {
-            type: 'math_positive_number',
+            type: BLOCK_TYPES.math.durationSeconds,
             fields: { NUM: 2 },
           },
         },
@@ -51,7 +51,7 @@ export const motorToolboxCategory = {
         },
         POWER: {
           shadow: {
-            type: 'math_positive_number',
+            type: BLOCK_TYPES.math.powerPercent,
             fields: { NUM: 50 },
           },
         },
@@ -81,7 +81,7 @@ export const motorToolboxCategory = {
         },
         BLOCK: {
           shadow: {
-            type: 'math_whole_number',
+            type: BLOCK_TYPES.math.positiveKeyboard,
             fields: { NUM: 0 },
           },
         },

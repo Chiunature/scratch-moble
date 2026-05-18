@@ -19,9 +19,9 @@
  */
 import type { Toolbox } from 'blockly/core';
 
-import type { Workspace } from '../codegen/types';
-import { TOOLBOX_CATEGORIES } from '../blocks/toolbox';
-import { TOOLBOX_CATEGORY_ICON_SVG_BY_ID } from '../blocks/toolboxCategoryIconUrls';
+import type { Workspace } from '../../codegen/types';
+import { TOOLBOX_CATEGORIES } from '../../blocks/toolbox';
+import { TOOLBOX_CATEGORY_ICON_SVG_BY_ID } from '../../blocks/toolboxCategoryIconUrls';
 
 /** 从 TOOLBOX_CATEGORIES 一次遍历得到图标 / 颜色 / 文案反查，避免三份 map 各自 fromEntries */
 function buildToolboxCategoryLookups(): {
@@ -278,6 +278,8 @@ function patchRowContent(
   icon.setAttribute('focusable', 'false');
   icon.setAttribute('aria-hidden', 'true');
   icon.setAttribute('class', `${ICON_CLASS} ${ICON_CLASS_PREFIX}${categoryId}`);
+  icon.setAttribute('width', String(ICON_SIZE_PX));
+  icon.setAttribute('height', String(ICON_SIZE_PX));
 
   label.replaceChildren(icon);
 }

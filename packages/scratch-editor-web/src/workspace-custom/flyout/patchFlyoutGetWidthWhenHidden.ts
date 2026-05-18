@@ -2,7 +2,7 @@
  * scratch-blocks 的飞出栏 hide 后 isVisible 为 false，但 getWidth 仍恒为 250，布局错位。
  * 隐藏时让 getWidth 为 0；可见时仍用原实现（250）。
  */
-import type { Workspace } from '../codegen/types';
+import type { Workspace } from '../../codegen/types';
 
 const PATCH_KEY = '__scratchEditorWebFlyoutGetWidthPatched';
 

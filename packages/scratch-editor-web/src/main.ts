@@ -7,14 +7,14 @@ import * as ScratchBlocks from 'scratch-blocks';
 
 import { registerEditorBlocks } from './blocks/registerBlocks';
 import { toolboxJson } from './blocks/toolbox';
-import { postToReactNative } from './bridge';
+import { postToReactNative, registerNativeInboundBridge } from './bridge';
 import { getEditorFormFactor } from './deviceFormFactor';
 import { renderPythonCode } from './codegen/generators';
 import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
 import {
   ensureScratchZoomControlsIfMissing,
-  patchFieldNumberMobileKeyboard,
+  patchFieldNumberEditor,
   patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
@@ -37,7 +37,9 @@ function refreshToolboxDomAfterLayout(workspace: Workspace): void {
 }
 
 function bootstrap(): void {
+  registerNativeInboundBridge();
   registerEditorBlocks();
+  patchFieldNumberEditor(scratchNumberKeyboardForFormFactor(getEditorFormFactor()));
   const host = document.getElementById('workspace');
 
   if (!host) {
@@ -74,11 +76,6 @@ function bootstrap(): void {
     // FieldTextInput#showPromptEditor → window.prompt（RN WebView 里像「JS 弹窗」），且 CHANGE_VALUE_TITLE 常为空。
     modalInputs: false,
   });
-
-  patchFieldNumberMobileKeyboard(
-    //把设备类型参数传给 patchFieldNumberMobileKeyboard 函数
-    scratchNumberKeyboardForFormFactor(getEditorFormFactor()),
-  );
 
   ensureScratchZoomControlsIfMissing(workspace);
   patchFlyoutGetWidthWhenHidden(workspace);

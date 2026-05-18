@@ -1,4 +1,4 @@
-import type { Workspace } from '../codegen/types';
+import type { Workspace } from '../../codegen/types';
 
 /**
  * 工具箱分类点击钩子（预留）。

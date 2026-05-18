@@ -22455,6 +22455,14 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     },
     sensor: {
       oneCalibrate: "one_calibrate"
+    },
+    math: {
+      /** 功率百分比阴影（0–100，滑块） */
+      powerPercent: "math_power_percent",
+      /** 时长秒数阴影（滑块） */
+      durationSeconds: "math_duration_seconds",
+      /** 非负整数阴影（键盘输入） */
+      positiveKeyboard: "math_positive_number_keyboard"
     }
   };
 
@@ -22467,6 +22475,56 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       previousStatement: null,
       nextStatement: null,
       style: "loop_blocks"
+    }
+  ];
+
+  // src/blocks/blockDefinitions/mathShadows.ts
+  var mathShadowBlockDefinitions = [
+    {
+      type: BLOCK_TYPES.math.powerPercent,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_number_slider",
+          name: "NUM",
+          value: 50,
+          min: 0,
+          max: 100,
+          precision: 1
+        }
+      ],
+      output: "Number",
+      style: "motion_blocks"
+    },
+    {
+      type: BLOCK_TYPES.math.durationSeconds,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_number_slider",
+          name: "NUM",
+          value: 2,
+          min: 0,
+          max: 999,
+          precision: 0.1
+        }
+      ],
+      output: "Number",
+      style: "motion_blocks"
+    },
+    {
+      type: BLOCK_TYPES.math.positiveKeyboard,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_number_keyboard",
+          name: "NUM",
+          value: 0,
+          min: 0
+        }
+      ],
+      output: "Number",
+      style: "math_blocks"
     }
   ];
 
@@ -22659,6 +22717,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/blocks/registerBlocks.ts
   function registerEditorBlocks() {
     Ct([
+      ...mathShadowBlockDefinitions,
       ...portDropdownReporterDefinitions,
       ...motorBlockDefinitions,
       ...moveBlockDefinitions,
@@ -22771,13 +22830,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           },
           POWER: {
             shadow: {
-              type: "math_positive_number",
+              type: BLOCK_TYPES.math.powerPercent,
               fields: { NUM: 50 }
             }
           },
           SECONDS: {
             shadow: {
-              type: "math_positive_number",
+              type: BLOCK_TYPES.math.durationSeconds,
               fields: { NUM: 2 }
             }
           }
@@ -22795,7 +22854,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           },
           POWER: {
             shadow: {
-              type: "math_positive_number",
+              type: BLOCK_TYPES.math.powerPercent,
               fields: { NUM: 50 }
             }
           }
@@ -22825,7 +22884,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           },
           BLOCK: {
             shadow: {
-              type: "math_whole_number",
+              type: BLOCK_TYPES.math.positiveKeyboard,
               fields: { NUM: 0 }
             }
           }
@@ -22887,7 +22946,152 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     contents: toolboxCategoryContents
   };
 
-  // src/bridge.ts
+  // src/workspace-custom/fields/numberSliderEditor.ts
+  var sessions = /* @__PURE__ */ new Map();
+  function createSessionId(field) {
+    const id = field.id_;
+    return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function refreshSliderFieldDisplay(field) {
+    if (field.textContent_ && typeof field.getDisplayText_ === "function") {
+      field.textContent_.nodeValue = field.getDisplayText_();
+    }
+    const block = field.getSourceBlock();
+    if (block?.rendered && typeof block.queueRender === "function") {
+      block.queueRender();
+      const parent = block.getParent?.();
+      if (parent?.rendered && typeof parent.queueRender === "function") {
+        parent.queueRender();
+      }
+    }
+    qt.triggerQueuedRenders();
+  }
+  function applySliderValueDuringDrag(field, raw) {
+    field.setValue(raw, false);
+    if (field.textContent_ && typeof field.getDisplayText_ === "function") {
+      field.textContent_.nodeValue = field.getDisplayText_();
+    }
+  }
+  function fireFieldChangeIfNeeded(field, oldValue) {
+    const block = field.getSourceBlock();
+    const newValue = field.getValue();
+    if (!block || oldValue === newValue) {
+      return;
+    }
+    if (f.isEnabled()) {
+      f.fire(
+        new f.BlockChange(
+          block,
+          "field",
+          field.name ?? null,
+          oldValue,
+          newValue
+        )
+      );
+    }
+  }
+  function getFieldAnchorRect(field) {
+    const target = field.getClickTarget_?.();
+    if (!target || typeof target.getBoundingClientRect !== "function") {
+      return null;
+    }
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+    return {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+  function dropdownColoursFromField(field) {
+    const block = field.getSourceBlock();
+    const primary = block && typeof block.getColour === "function" && block.getColour() || "#4C97FF";
+    const secondary = block && typeof block.getColourSecondary === "function" && block.getColourSecondary() || primary;
+    return { primary, secondary };
+  }
+  function closeSession(sessionId, notifyNative) {
+    const session = sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+    sessions.delete(sessionId);
+    refreshSliderFieldDisplay(session.field);
+    fireFieldChangeIfNeeded(session.field, session.valueWhenOpened);
+    if (notifyNative) {
+      postToReactNative({ type: "editor.numberSlider.close", sessionId });
+    }
+  }
+  function handleNumberSliderInbound(message) {
+    const session = sessions.get(message.sessionId);
+    if (!session) {
+      return;
+    }
+    if (message.type === "editor.numberSlider.value") {
+      applySliderValueDuringDrag(session.field, message.value);
+      return;
+    }
+    closeSession(message.sessionId, false);
+  }
+  function openNumberSliderEditor(field, _e2) {
+    if (!isReactNativeHost()) {
+      return;
+    }
+    for (const [, session] of sessions) {
+      if (session.field === field) {
+        return;
+      }
+    }
+    const anchor = getFieldAnchorRect(field);
+    const block = field.getSourceBlock();
+    if (!anchor || !block) {
+      return;
+    }
+    const sessionId = createSessionId(field);
+    sessions.set(sessionId, {
+      field,
+      valueWhenOpened: field.getValue()
+    });
+    const min = field.getMin();
+    const max = field.getMax();
+    const step = field.getPrecision() || 1;
+    let value = Number(field.getValue());
+    if (Number.isNaN(value)) {
+      value = min > -Infinity ? min : 0;
+    }
+    postToReactNative({
+      type: "editor.numberSlider.open",
+      sessionId,
+      min,
+      max,
+      step,
+      value,
+      anchor,
+      colors: dropdownColoursFromField(field)
+    });
+  }
+
+  // src/bridge/nativeInbound.ts
+  function handleMessageFromNative(message) {
+    switch (message.type) {
+      case "editor.numberSlider.value":
+      case "editor.numberSlider.close":
+        handleNumberSliderInbound(message);
+        break;
+    }
+  }
+  function registerNativeInboundBridge() {
+    window.__scratchEditorReceiveFromNative = handleMessageFromNative;
+  }
+
+  // src/bridge/index.ts
+  function isReactNativeHost() {
+    return Boolean(
+      window.ReactNativeWebView?.postMessage
+    );
+  }
   function postToReactNative(message) {
     const bridge = window.ReactNativeWebView;
     if (bridge?.postMessage) {
@@ -22933,7 +23137,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     "math_number",
     "math_positive_number",
     "math_whole_number",
-    "math_integer"
+    "math_integer",
+    BLOCK_TYPES.math.powerPercent,
+    BLOCK_TYPES.math.durationSeconds,
+    BLOCK_TYPES.math.positiveKeyboard
   ]);
   function expressionBlockToPython(block) {
     if (NUMERIC_LITERAL_BLOCK_TYPES.has(block.type)) {
@@ -23097,7 +23304,112 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   });
 
-  // src/workspace-custom/flyoutWidthClamp.ts
+  // src/workspace-custom/fields/patchFieldNumberMobileKeyboard.ts
+  var fieldTextShowEditor = V.prototype.showEditor_;
+  var fieldNumberShowEditor = V.prototype.showEditor_;
+  var selectGuard = {
+    saved: null,
+    fn: null,
+    skip: false
+  };
+  function installSelectGuard() {
+    if (selectGuard.fn) {
+      HTMLInputElement.prototype.select = selectGuard.fn;
+      return;
+    }
+    selectGuard.saved ??= HTMLInputElement.prototype.select;
+    selectGuard.fn = function() {
+      if (selectGuard.skip && this.classList.contains("blocklyHtmlInput")) {
+        return;
+      }
+      return selectGuard.saved.call(this);
+    };
+    HTMLInputElement.prototype.select = selectGuard.fn;
+  }
+  function uninstallSelectGuard() {
+    if (selectGuard.fn && HTMLInputElement.prototype.select === selectGuard.fn) {
+      HTMLInputElement.prototype.select = selectGuard.saved;
+    }
+  }
+  function withSelectGuardSkipped(run) {
+    selectGuard.skip = true;
+    try {
+      run();
+    } finally {
+      selectGuard.skip = false;
+    }
+  }
+  function tuneInputForNumPad(input) {
+    input.readOnly = false;
+    input.setAttribute("inputmode", "none");
+  }
+  function tuneKeyboardFieldInput(input) {
+    input.inputMode = "decimal";
+    input.autocomplete = "off";
+  }
+  var keyboardMode = "numpad-only";
+  function setScratchNumberKeyboardMode(mode) {
+    keyboardMode = mode;
+    if (mode === "system-only") {
+      uninstallSelectGuard();
+    }
+  }
+  function openScratchNumberKeyboardEditor(field, e3) {
+    if (keyboardMode === "system-only") {
+      fieldTextShowEditor.call(field, e3, false);
+      const input2 = field.htmlInput_;
+      if (input2) {
+        tuneKeyboardFieldInput(input2);
+      }
+      return;
+    }
+    installSelectGuard();
+    if (e3?.pointerType === "touch") {
+      withSelectGuardSkipped(() => fieldNumberShowEditor.call(field, e3));
+      const input2 = field.htmlInput_;
+      if (input2) {
+        tuneInputForNumPad(input2);
+      }
+      return;
+    }
+    fieldNumberShowEditor.call(field, e3);
+    const input = field.htmlInput_;
+    if (input) {
+      tuneKeyboardFieldInput(input);
+    }
+  }
+
+  // src/workspace-custom/fields/patchFieldNumberEditor.ts
+  var fieldsRegistered = false;
+  function registerNumberFieldVariants() {
+    if (fieldsRegistered) {
+      return;
+    }
+    fieldsRegistered = true;
+    class FieldNumberSlider extends W {
+      showEditor_(e3) {
+        openNumberSliderEditor(this, e3);
+      }
+    }
+    class FieldNumberKeyboard extends W {
+      showEditor_(e3) {
+        openScratchNumberKeyboardEditor(this, e3);
+      }
+      widgetCreate_() {
+        const input = super.widgetCreate_();
+        tuneKeyboardFieldInput(input);
+        return input;
+      }
+    }
+    pt.register("field_number_slider", FieldNumberSlider);
+    pt.register("field_number_keyboard", FieldNumberKeyboard);
+  }
+  function patchFieldNumberEditor(keyboardMode2 = "numpad-only") {
+    registerNumberFieldVariants();
+    setScratchNumberKeyboardMode(keyboardMode2);
+  }
+
+  // src/workspace-custom/flyout/flyoutWidthClamp.ts
   function setupFlyoutWidthClamp(workspace) {
     const tryBind = () => {
       const root = workspace.getInjectionDiv?.();
@@ -23130,107 +23442,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   }
 
-  // src/workspace-custom/patchFieldNumberMobileKeyboard.ts
-  var fieldTextShowEditor = V.prototype.showEditor_;
-  var scratchShowEditorOrig = null;
-  var widgetCreatePatched = false;
-  var selectGuard = {
-    saved: null,
-    fn: null,
-    /** 为 true 时，当前调用栈内对 `.blocklyHtmlInput` 的 select() 变为空操作 */
-    skip: false
-  };
-  function installSelectGuard() {
-    if (selectGuard.fn) {
-      HTMLInputElement.prototype.select = selectGuard.fn;
-      return;
-    }
-    selectGuard.saved ??= HTMLInputElement.prototype.select;
-    selectGuard.fn = function() {
-      if (selectGuard.skip && this.classList.contains("blocklyHtmlInput")) {
-        return;
-      }
-      return selectGuard.saved.call(this);
-    };
-    HTMLInputElement.prototype.select = selectGuard.fn;
-  }
-  function uninstallSelectGuard() {
-    if (selectGuard.fn && HTMLInputElement.prototype.select === selectGuard.fn) {
-      HTMLInputElement.prototype.select = selectGuard.saved;
-    }
-  }
-  function withSelectGuardSkipped(run) {
-    selectGuard.skip = true;
-    try {
-      run();
-    } finally {
-      selectGuard.skip = false;
-    }
-  }
-  function ensureWidgetCreatePatch() {
-    if (widgetCreatePatched) {
-      return;
-    }
-    widgetCreatePatched = true;
-    const orig = V.prototype.widgetCreate_;
-    V.prototype.widgetCreate_ = function() {
-      const input = orig.call(this);
-      const field = this;
-      if (typeof field.getNumRestrictor === "function" && input instanceof HTMLInputElement) {
-        input.inputMode = "decimal";
-        input.autocomplete = "off";
-      }
-      return input;
-    };
-  }
-  function getScratchNumberProto() {
-    const probe = pt.fromJson({
-      type: "field_number",
-      name: "_keyboard_probe_",
-      value: 0
-    });
-    if (!probe || typeof probe.getNumRestrictor !== "function") {
-      console.warn(
-        "[patchFieldNumberMobileKeyboard] \u672A\u68C0\u6D4B\u5230 ScratchFieldNumber\u3002\u8BF7\u5728 ScratchBlocks.inject() \u4E4B\u540E\u518D\u8C03\u7528\u3002"
-      );
-      return null;
-    }
-    const proto = Object.getPrototypeOf(probe);
-    scratchShowEditorOrig ??= proto.showEditor_;
-    return proto;
-  }
-  function tuneInputForNumPad(input) {
-    input.readOnly = false;
-    input.setAttribute("inputmode", "none");
-  }
-  function patchFieldNumberMobileKeyboard(mode = "numpad-only") {
-    ensureWidgetCreatePatch();
-    const proto = getScratchNumberProto();
-    const orig = scratchShowEditorOrig;
-    if (!proto || !orig) {
-      return;
-    }
-    if (mode === "system-only") {
-      uninstallSelectGuard();
-      proto.showEditor_ = function(e3) {
-        return fieldTextShowEditor.call(this, e3, false);
-      };
-      return;
-    }
-    installSelectGuard();
-    proto.showEditor_ = function(e3) {
-      const field = this;
-      if (e3?.pointerType !== "touch") {
-        return orig.call(field, e3);
-      }
-      withSelectGuardSkipped(() => orig.call(field, e3));
-      if (field.htmlInput_) {
-        tuneInputForNumPad(field.htmlInput_);
-      }
-    };
-  }
-
-  // src/workspace-custom/patchFlyoutGetWidthWhenHidden.ts
+  // src/workspace-custom/flyout/patchFlyoutGetWidthWhenHidden.ts
   var PATCH_KEY = "__scratchEditorWebFlyoutGetWidthPatched";
   function patchFlyoutGetWidthWhenHidden(workspace) {
     const flyout = workspace.getToolbox?.()?.getFlyout?.();
@@ -23239,60 +23451,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     flyout[PATCH_KEY] = true;
     const orig = flyout.getWidth.bind(flyout);
     flyout.getWidth = () => flyout.isVisible() ? orig() : 0;
-  }
-
-  // assets/zoom/zoom-in.svg
-  var zoom_in_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:none;stroke:%23575e75;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5px;}</style></defs><title>zoom-in</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><circle class="cls-4" cx="18" cy="18" r="7"/><line class="cls-4" x1="23" y1="23" x2="26" y2="26"/><line class="cls-4" x1="16" y1="18" x2="20" y2="18"/><line class="cls-4" x1="18" y1="16" x2="18" y2="20"/></g></svg>%0A';
-
-  // assets/zoom/zoom-out.svg
-  var zoom_out_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:none;stroke:%23575e75;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5px;}</style></defs><title>zoom-out</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><circle class="cls-4" cx="18" cy="18" r="7"/><line class="cls-4" x1="23" y1="23" x2="26" y2="26"/><line class="cls-4" x1="16" y1="18" x2="20" y2="18"/></g></svg>%0A';
-
-  // assets/zoom/zoom-reset.svg
-  var zoom_reset_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:%23575e75;}</style></defs><title>zoom-reset</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><rect class="cls-4" x="13" y="14" width="10" height="2" rx="1" ry="1"/><rect class="cls-4" x="13" y="20" width="10" height="2" rx="1" ry="1"/></g></svg>%0A';
-
-  // src/workspace-custom/patchScratchZoom.ts
-  var zoomInUrl = zoom_in_default;
-  var zoomOutUrl = zoom_out_default;
-  var zoomResetUrl = zoom_reset_default;
-  var XLINK_NS = "http://www.w3.org/1999/xlink";
-  function setSvgImageHref(el, href) {
-    const tag = el.tagName.toLowerCase();
-    if (tag !== "image") {
-      return;
-    }
-    el.setAttribute("href", href);
-    el.setAttributeNS(XLINK_NS, "xlink:href", href);
-  }
-  function patchImagesInGroup(root, groupClass, href) {
-    const group = root.querySelector(groupClass);
-    if (!group) {
-      return;
-    }
-    const img = group.querySelector("image");
-    if (img) {
-      setSvgImageHref(img, href);
-    }
-  }
-  function ensureScratchZoomControlsIfMissing(workspace) {
-    if (!workspace.options.zoomOptions?.controls) {
-      return;
-    }
-    const svgGroup = workspace.getSvgGroup?.();
-    if (!svgGroup || svgGroup.querySelector(".blocklyZoom")) {
-      return;
-    }
-    const z2 = new so(workspace);
-    svgGroup.appendChild(z2.createDom());
-    z2.init();
-  }
-  function patchScratchZoomControlImages(workspace) {
-    const root = workspace.getInjectionDiv?.();
-    if (!root) {
-      return;
-    }
-    patchImagesInGroup(root, ".blocklyZoomIn", zoomInUrl);
-    patchImagesInGroup(root, ".blocklyZoomOut", zoomOutUrl);
-    patchImagesInGroup(root, ".blocklyZoomReset", zoomResetUrl);
   }
 
   // assets/toolbox/combined_motor.svg
@@ -23352,7 +23510,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     customBlock: TOOLBOX_SVG_MARKUP.customizeBlock
   };
 
-  // src/workspace-custom/patchToolboxCategoryIcons.ts
+  // src/workspace-custom/toolbox/patchToolboxCategoryIcons.ts
   function buildToolboxCategoryLookups() {
     const iconById = {};
     const colourById = {};
@@ -23374,6 +23532,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   var SEL_LABEL = ".blocklyToolboxCategoryLabel";
   var ICON_CLASS = "toolbox-category-icon";
   var ICON_CLASS_PREFIX = `${ICON_CLASS}-`;
+  var ICON_SIZE_PX = 24;
   var svgParser = new DOMParser();
   var SVG_NS_PREFIX = "toolbox-svg";
   var svgTemplateByCategoryId = /* @__PURE__ */ new Map();
@@ -23520,6 +23679,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     icon.setAttribute("focusable", "false");
     icon.setAttribute("aria-hidden", "true");
     icon.setAttribute("class", `${ICON_CLASS} ${ICON_CLASS_PREFIX}${categoryId}`);
+    icon.setAttribute("width", String(ICON_SIZE_PX));
+    icon.setAttribute("height", String(ICON_SIZE_PX));
     label.replaceChildren(icon);
   }
   function patchToolboxCategoryIcons(workspace) {
@@ -23537,7 +23698,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   }
 
-  // src/workspace-custom/toolboxDom.ts
+  // src/workspace-custom/toolbox/toolboxDom.ts
   function getToolboxItemContainingDomNode(toolbox, target) {
     if (!(target instanceof Node)) {
       return null;
@@ -23551,7 +23712,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return null;
   }
 
-  // src/workspace-custom/toolboxDoubleClickHideFlyout.ts
+  // src/workspace-custom/toolbox/toolboxDoubleClickHideFlyout.ts
   function setupToolboxDoubleClickHideFlyout(workspace) {
     const toolbox = workspace.getToolbox?.();
     const host = toolbox?.HtmlDiv ?? null;
@@ -23589,6 +23750,60 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     );
   }
 
+  // assets/zoom/zoom-in.svg
+  var zoom_in_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:none;stroke:%23575e75;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5px;}</style></defs><title>zoom-in</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><circle class="cls-4" cx="18" cy="18" r="7"/><line class="cls-4" x1="23" y1="23" x2="26" y2="26"/><line class="cls-4" x1="16" y1="18" x2="20" y2="18"/><line class="cls-4" x1="18" y1="16" x2="18" y2="20"/></g></svg>%0A';
+
+  // assets/zoom/zoom-out.svg
+  var zoom_out_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:none;stroke:%23575e75;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5px;}</style></defs><title>zoom-out</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><circle class="cls-4" cx="18" cy="18" r="7"/><line class="cls-4" x1="23" y1="23" x2="26" y2="26"/><line class="cls-4" x1="16" y1="18" x2="20" y2="18"/></g></svg>%0A';
+
+  // assets/zoom/zoom-reset.svg
+  var zoom_reset_default = 'data:image/svg+xml,<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><style>.cls-1{fill:%23231f20;opacity:0.15;}.cls-2{fill:%23fff;}.cls-3{opacity:0.75;}.cls-4{fill:%23575e75;}</style></defs><title>zoom-reset</title><circle class="cls-1" cx="18" cy="18" r="18"/><circle class="cls-2" cx="18" cy="18" r="16"/><g class="cls-3"><rect class="cls-4" x="13" y="14" width="10" height="2" rx="1" ry="1"/><rect class="cls-4" x="13" y="20" width="10" height="2" rx="1" ry="1"/></g></svg>%0A';
+
+  // src/workspace-custom/zoom/patchScratchZoom.ts
+  var zoomInUrl = zoom_in_default;
+  var zoomOutUrl = zoom_out_default;
+  var zoomResetUrl = zoom_reset_default;
+  var XLINK_NS = "http://www.w3.org/1999/xlink";
+  function setSvgImageHref(el, href) {
+    const tag = el.tagName.toLowerCase();
+    if (tag !== "image") {
+      return;
+    }
+    el.setAttribute("href", href);
+    el.setAttributeNS(XLINK_NS, "xlink:href", href);
+  }
+  function patchImagesInGroup(root, groupClass, href) {
+    const group = root.querySelector(groupClass);
+    if (!group) {
+      return;
+    }
+    const img = group.querySelector("image");
+    if (img) {
+      setSvgImageHref(img, href);
+    }
+  }
+  function ensureScratchZoomControlsIfMissing(workspace) {
+    if (!workspace.options.zoomOptions?.controls) {
+      return;
+    }
+    const svgGroup = workspace.getSvgGroup?.();
+    if (!svgGroup || svgGroup.querySelector(".blocklyZoom")) {
+      return;
+    }
+    const z2 = new so(workspace);
+    svgGroup.appendChild(z2.createDom());
+    z2.init();
+  }
+  function patchScratchZoomControlImages(workspace) {
+    const root = workspace.getInjectionDiv?.();
+    if (!root) {
+      return;
+    }
+    patchImagesInGroup(root, ".blocklyZoomIn", zoomInUrl);
+    patchImagesInGroup(root, ".blocklyZoomOut", zoomOutUrl);
+    patchImagesInGroup(root, ".blocklyZoomReset", zoomResetUrl);
+  }
+
   // src/main.ts
   function scratchNumberKeyboardForFormFactor(formFactor) {
     return formFactor === "phone" ? "system-only" : "numpad-only";
@@ -23598,7 +23813,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     patchToolboxCategoryIcons(workspace);
   }
   function bootstrap() {
+    registerNativeInboundBridge();
     registerEditorBlocks();
+    patchFieldNumberEditor(scratchNumberKeyboardForFormFactor(getEditorFormFactor()));
     const host = document.getElementById("workspace");
     if (!host) {
       return;
@@ -23645,9 +23862,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       // FieldTextInput#showPromptEditor → window.prompt（RN WebView 里像「JS 弹窗」），且 CHANGE_VALUE_TITLE 常为空。
       modalInputs: false
     });
-    patchFieldNumberMobileKeyboard(
-      scratchNumberKeyboardForFormFactor(getEditorFormFactor())
-    );
     ensureScratchZoomControlsIfMissing(workspace);
     patchFlyoutGetWidthWhenHidden(workspace);
     workspace.resize?.();
