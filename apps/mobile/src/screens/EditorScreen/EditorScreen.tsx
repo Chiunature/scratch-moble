@@ -10,7 +10,6 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { EDITOR_BUNDLE_HTML } from '../../editor/editorBundleHtml';
-import { spacing } from '../../theme';
 import { styles } from './EditorScreen.styles';
 import HomeIcon from '../../../assets/editorScreen/home.png';
 import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
@@ -21,11 +20,18 @@ type EditorMessage = {
   blockCount: number;
 };
 
+/** 与 `scratch-editor-web` 的 `deviceFormFactor.ts` 中阈值一致 */
+const TABLET_MIN_SHORT_SIDE = 600;
+
 export function EditorScreen() {
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets(); //用于获取不被安全区域遮挡的尺寸
-  console.log('insets', insets);
-  // const { width } = useWindowDimensions(); //获取窗口宽高
+  const insets = useSafeAreaInsets(); // 用于获取被安全区域遮挡的尺寸
+  const { width, height } = useWindowDimensions(); //获取当前窗口的宽高
+  const formFactor =
+    Math.min(width, height) >= TABLET_MIN_SHORT_SIDE ? 'tablet' : 'phone';
+  const injectedBeforeContentLoaded = `window.__RN_EDITOR_DEVICE__=${JSON.stringify(
+    { formFactor },
+  )};true;`;
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   const [blockCount, setBlockCount] = useState(0);
   const [isOpebCodePanel, setIsOpebCodePanel] = useState(false);
@@ -77,6 +83,7 @@ export function EditorScreen() {
         <WebView
           originWhitelist={['*']}
           source={{ html: EDITOR_BUNDLE_HTML }}
+          injectedJavaScriptBeforeContentLoaded={injectedBeforeContentLoaded}
           onMessage={handleMessage}
           javaScriptEnabled
           domStorageEnabled

@@ -22980,6 +22980,20 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   }
 
+  // src/deviceFormFactor.ts
+  var TABLET_MIN_SHORT_SIDE = 600;
+  function inferFormFactorFromViewport() {
+    const shortSide = Math.min(window.innerWidth, window.innerHeight);
+    return shortSide >= TABLET_MIN_SHORT_SIDE ? "tablet" : "phone";
+  }
+  function getEditorFormFactor() {
+    const raw = window.__RN_EDITOR_DEVICE__?.formFactor;
+    if (raw === "tablet" || raw === "phone") {
+      return raw;
+    }
+    return inferFormFactorFromViewport();
+  }
+
   // src/codegen/helpers.ts
   var INDENT_TEXT = "    ";
   function indent(context) {
@@ -23199,6 +23213,106 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     if (!tryBind()) {
       requestAnimationFrame(() => tryBind());
     }
+  }
+
+  // src/workspace-custom/patchFieldNumberMobileKeyboard.ts
+  var fieldTextShowEditor = V.prototype.showEditor_;
+  var scratchShowEditorOrig = null;
+  var widgetCreatePatched = false;
+  var selectGuard = {
+    saved: null,
+    fn: null,
+    /** 为 true 时，当前调用栈内对 `.blocklyHtmlInput` 的 select() 变为空操作 */
+    skip: false
+  };
+  function installSelectGuard() {
+    if (selectGuard.fn) {
+      HTMLInputElement.prototype.select = selectGuard.fn;
+      return;
+    }
+    selectGuard.saved ??= HTMLInputElement.prototype.select;
+    selectGuard.fn = function() {
+      if (selectGuard.skip && this.classList.contains("blocklyHtmlInput")) {
+        return;
+      }
+      return selectGuard.saved.call(this);
+    };
+    HTMLInputElement.prototype.select = selectGuard.fn;
+  }
+  function uninstallSelectGuard() {
+    if (selectGuard.fn && HTMLInputElement.prototype.select === selectGuard.fn) {
+      HTMLInputElement.prototype.select = selectGuard.saved;
+    }
+  }
+  function withSelectGuardSkipped(run) {
+    selectGuard.skip = true;
+    try {
+      run();
+    } finally {
+      selectGuard.skip = false;
+    }
+  }
+  function ensureWidgetCreatePatch() {
+    if (widgetCreatePatched) {
+      return;
+    }
+    widgetCreatePatched = true;
+    const orig = V.prototype.widgetCreate_;
+    V.prototype.widgetCreate_ = function() {
+      const input = orig.call(this);
+      const field = this;
+      if (typeof field.getNumRestrictor === "function" && input instanceof HTMLInputElement) {
+        input.inputMode = "decimal";
+        input.autocomplete = "off";
+      }
+      return input;
+    };
+  }
+  function getScratchNumberProto() {
+    const probe = pt.fromJson({
+      type: "field_number",
+      name: "_keyboard_probe_",
+      value: 0
+    });
+    if (!probe || typeof probe.getNumRestrictor !== "function") {
+      console.warn(
+        "[patchFieldNumberMobileKeyboard] \u672A\u68C0\u6D4B\u5230 ScratchFieldNumber\u3002\u8BF7\u5728 ScratchBlocks.inject() \u4E4B\u540E\u518D\u8C03\u7528\u3002"
+      );
+      return null;
+    }
+    const proto = Object.getPrototypeOf(probe);
+    scratchShowEditorOrig ??= proto.showEditor_;
+    return proto;
+  }
+  function tuneInputForNumPad(input) {
+    input.readOnly = false;
+    input.setAttribute("inputmode", "none");
+  }
+  function patchFieldNumberMobileKeyboard(mode = "numpad-only") {
+    ensureWidgetCreatePatch();
+    const proto = getScratchNumberProto();
+    const orig = scratchShowEditorOrig;
+    if (!proto || !orig) {
+      return;
+    }
+    if (mode === "system-only") {
+      uninstallSelectGuard();
+      proto.showEditor_ = function(e3) {
+        return fieldTextShowEditor.call(this, e3, false);
+      };
+      return;
+    }
+    installSelectGuard();
+    proto.showEditor_ = function(e3) {
+      const field = this;
+      if (e3?.pointerType !== "touch") {
+        return orig.call(field, e3);
+      }
+      withSelectGuardSkipped(() => orig.call(field, e3));
+      if (field.htmlInput_) {
+        tuneInputForNumPad(field.htmlInput_);
+      }
+    };
   }
 
   // src/workspace-custom/patchFlyoutGetWidthWhenHidden.ts
@@ -23561,6 +23675,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
 
   // src/main.ts
+  function scratchNumberKeyboardForFormFactor(formFactor) {
+    return formFactor === "phone" ? "system-only" : "numpad-only";
+  }
   function refreshToolboxDomAfterLayout(workspace) {
     patchScratchZoomControlImages(workspace);
     patchToolboxCategoryIcons(workspace);
@@ -23607,9 +23724,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       theme: editorTheme,
       sounds: false,
       //交互音效
-      toolbox: toolboxJson
+      toolbox: toolboxJson,
       //工具箱定义 xml或者json
+      // 手机 system-only 会把 quietInput 固定为 false；若此处为 true（Blockly 默认），在触摸环境下会走
+      // FieldTextInput#showPromptEditor → window.prompt（RN WebView 里像「JS 弹窗」），且 CHANGE_VALUE_TITLE 常为空。
+      modalInputs: false
     });
+    patchFieldNumberMobileKeyboard(
+      scratchNumberKeyboardForFormFactor(getEditorFormFactor())
+    );
     ensureScratchZoomControlsIfMissing(workspace);
     patchFlyoutGetWidthWhenHidden(workspace);
     workspace.resize?.();
