@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
   useWindowDimensions,
 } from 'react-native';
 

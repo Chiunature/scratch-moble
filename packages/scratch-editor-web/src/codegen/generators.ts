@@ -8,7 +8,10 @@
  *
  * 新增积木时只需在 statementGenerators 里追加一个 key-function 对即可。
  */
-import { BLOCK_TYPES } from '../blocks/blockTypes';
+import {
+  BLOCK_TYPES,
+  CUSTOM_NUMERIC_LITERAL_TYPES,
+} from '../blocks/blockTypes';
 import {
   getFieldValue,
   getInputTargetBlock,
@@ -32,9 +35,7 @@ const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
   'math_positive_number',
   'math_whole_number',
   'math_integer',
-  BLOCK_TYPES.math.powerPercent,
-  BLOCK_TYPES.math.durationSeconds,
-  BLOCK_TYPES.math.positiveKeyboard,
+  ...CUSTOM_NUMERIC_LITERAL_TYPES,
 ]);
 
 function expressionBlockToPython(block: ScratchBlock): string {

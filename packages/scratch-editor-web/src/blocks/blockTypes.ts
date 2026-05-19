@@ -6,6 +6,12 @@ export const BLOCK_TYPES = {
   common: {
     /** 通用端口下拉报告块（Number），可作为任意 PORT/PORTS 输入槽的默认阴影 */
     portDropdown: 'port_dropdown',
+    /** 整数滑块阴影（precision=1） */
+    integerSlider: 'number_slider_integer',
+    /** 小数滑块阴影（默认 precision=0.1） */
+    decimalSlider: 'number_slider_decimal',
+    /** 非负整数键盘阴影（历史 type 名保留兼容） */
+    positiveKeyboard: 'math_positive_number_keyboard',
   },
   motor: {
     runForPowerSeconds: 'run_for_power_seconds',
@@ -31,12 +37,11 @@ export const BLOCK_TYPES = {
   sensor: {
     oneCalibrate: 'one_calibrate',
   },
-  math: {
-    /** 功率百分比阴影（0–100，滑块） */
-    powerPercent: 'math_power_percent',
-    /** 时长秒数阴影（滑块） */
-    durationSeconds: 'math_duration_seconds',
-    /** 非负整数阴影（键盘输入） */
-    positiveKeyboard: 'math_positive_number_keyboard',
-  },
 } as const;
+
+/** 自定义数字字面量/阴影块（字段 NUM），供 codegen 等与 scratch 内置 math_* 一并处理 */
+export const CUSTOM_NUMERIC_LITERAL_TYPES = [
+  BLOCK_TYPES.common.integerSlider,
+  BLOCK_TYPES.common.decimalSlider,
+  BLOCK_TYPES.common.positiveKeyboard,
+] as const;

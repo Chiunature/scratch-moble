@@ -24,6 +24,14 @@ import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
 /** 与 `scratch-editor-web` 的 `deviceFormFactor.ts` 中阈值一致 */
 const TABLET_MIN_SHORT_SIDE = 600;
 
+function parseEditorOutMessage(raw: string): EditorOutMessage | null {
+  try {
+    return JSON.parse(raw) as EditorOutMessage;
+  } catch {
+    return null;
+  }
+}
+
 export function EditorScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -38,35 +46,38 @@ export function EditorScreen() {
   )};true;`;
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   const [blockCount, setBlockCount] = useState(0);
-  const [isOpebCodePanel, setIsOpebCodePanel] = useState(false);
+  const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
 
-  const handleMessage = useCallback((event: WebViewMessageEvent) => {
-    try {
-      const message = JSON.parse(event.nativeEvent.data) as EditorOutMessage;
-
-      if (message.type === 'editor.code.generated') {
+  const handleEditorMessage = useCallback((message: EditorOutMessage) => {
+    switch (message.type) {
+      case 'editor.code.generated':
         setGeneratedCode(message.code);
         setBlockCount(message.blockCount);
         return;
-      }
-
-      if (message.type === 'editor.numberSlider.open') {
+      case 'editor.numberSlider.open':
         setRnSliderSession(current =>
           current?.sessionId === message.sessionId ? current : message,
         );
         return;
-      }
-
-      if (message.type === 'editor.numberSlider.close') {
+      case 'editor.numberSlider.close':
         setRnSliderSession(current =>
           current?.sessionId === message.sessionId ? null : current,
         );
-      }
-    } catch {
-      setGeneratedCode(event.nativeEvent.data);
-      setBlockCount(0);
+        return;
     }
   }, []);
+
+  const handleMessage = useCallback((event: WebViewMessageEvent) => {
+    const message = parseEditorOutMessage(event.nativeEvent.data);
+    if (message) {
+      handleEditorMessage(message);
+      return;
+    }
+
+    // 兼容早期 editor 直接 post 代码字符串的调试路径。
+    setGeneratedCode(event.nativeEvent.data);
+    setBlockCount(0);
+  }, [handleEditorMessage]);
 
   return (
     <View style={styles.root}>
@@ -77,16 +88,16 @@ export function EditorScreen() {
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <Image source={HomeIcon} style={{ width: 24, height: 24 }} />
+          <Image source={HomeIcon} style={styles.headerIcon} />
         </Pressable>
         <View style={styles.headerContent}>
           <Pressable
             style={styles.headerPressable}
-            onPress={() => setIsOpebCodePanel(open => !open)}
+            onPress={() => setIsCodePanelOpen(open => !open)}
             accessibilityRole="button"
             accessibilityLabel="代码示例"
           >
-            <Image source={CodeViewIcon} style={{ width: 24, height: 24 }} />
+            <Image source={CodeViewIcon} style={styles.headerIcon} />
           </Pressable>
         </View>
       </View>
@@ -118,7 +129,7 @@ export function EditorScreen() {
             });
           }}
         />
-        {isOpebCodePanel && (
+        {isCodePanelOpen && (
           <View style={styles.codePanel}>
             <Text style={styles.codeTitle}>RN 收到的生成代码</Text>
             <Text style={styles.meta}>积木数量：{blockCount}</Text>

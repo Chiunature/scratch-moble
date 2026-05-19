@@ -1,11 +1,13 @@
 import { BLOCK_TYPES } from '../blockTypes';
+import {
+  decimalSliderShadow,
+  integerSliderShadow,
+  portShadow,
+  positiveKeyboardShadow,
+} from './shadowPresets';
 import { toolboxCategoryIconClasses } from './shared';
 
-/**
- * 电机类 toolbox 项：
- * - inputs 与 blockDefinitions/motor.ts 中 input_value 的 name 一致。
- * - PORTS 使用通用 port_dropdown 阴影：槽内可下拉 0-7，也可拔掉换变量/运算等 Number 积木。
- */
+/** inputs 名称与 blockDefinitions/motor.ts 中 input_value 一致；阴影见 shadowPresets.ts */
 export const motorToolboxCategory = {
   kind: 'category',
   id: 'motor',
@@ -19,72 +21,32 @@ export const motorToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.motor.runForPowerSeconds,
       inputs: {
-        PORTS: {
-          shadow: {
-            type: BLOCK_TYPES.common.portDropdown,
-            fields: { PORT: '0' },
-          },
-        },
-        POWER: {
-          shadow: {
-            type: BLOCK_TYPES.math.powerPercent,
-            fields: { NUM: 50 },
-          },
-        },
-        SECONDS: {
-          shadow: {
-            type: BLOCK_TYPES.math.durationSeconds,
-            fields: { NUM: 2 },
-          },
-        },
+        PORTS: { shadow: portShadow('0') },
+        POWER: { shadow: integerSliderShadow(50) },
+        SECONDS: { shadow: decimalSliderShadow(2) },
       },
     },
     {
       kind: 'block',
       type: BLOCK_TYPES.motor.runPower,
       inputs: {
-        PORTS: {
-          shadow: {
-            type: BLOCK_TYPES.common.portDropdown,
-            fields: { PORT: '0' },
-          },
-        },
-        POWER: {
-          shadow: {
-            type: BLOCK_TYPES.math.powerPercent,
-            fields: { NUM: 50 },
-          },
-        },
+        PORTS: { shadow: portShadow('0') },
+        POWER: { shadow: integerSliderShadow(50) },
       },
     },
     {
       kind: 'block',
       type: BLOCK_TYPES.motor.stop,
       inputs: {
-        PORTS: {
-          shadow: {
-            type: BLOCK_TYPES.common.portDropdown,
-            fields: { PORT: '0' },
-          },
-        },
+        PORTS: { shadow: portShadow('0') },
       },
     },
     {
       kind: 'block',
       type: BLOCK_TYPES.motor.stopModule,
       inputs: {
-        PORTS: {
-          shadow: {
-            type: BLOCK_TYPES.common.portDropdown,
-            fields: { PORT: '0' },
-          },
-        },
-        BLOCK: {
-          shadow: {
-            type: BLOCK_TYPES.math.positiveKeyboard,
-            fields: { NUM: 0 },
-          },
-        },
+        PORTS: { shadow: portShadow('0') },
+        BLOCK: { shadow: positiveKeyboardShadow(0) },
       },
     },
   ],

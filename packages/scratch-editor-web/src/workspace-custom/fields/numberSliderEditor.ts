@@ -1,6 +1,10 @@
 import { Events, renderManagement } from 'scratch-blocks';
 
-import { isReactNativeHost, postToReactNative } from '../../bridge';
+import {
+  isReactNativeHost,
+  postToReactNative,
+  type EditorInMessage,
+} from '../../bridge';
 
 type RenderableBlock = {
   rendered?: boolean;
@@ -74,7 +78,7 @@ function fireFieldChangeIfNeeded(
   if (Events.isEnabled()) {
     Events.fire(
       new Events.BlockChange(
-        block as Parameters<typeof Events.BlockChange>[0],
+        block as ConstructorParameters<typeof Events.BlockChange>[0],
         'field',
         field.name ?? null,
         oldValue,
@@ -121,7 +125,11 @@ function dropdownColoursFromField(field: ScratchNumberField): {
   return { primary, secondary };
 }
 
-function closeSession(sessionId: string, notifyNative: boolean): void {
+/**
+ * RN 主动关闭浮层时传 false，避免把 close 消息再回传形成回声。
+ * Web 侧若将来主动取消会话，可传 true 让 RN 同步清理原生浮层。
+ */
+function closeSession(sessionId: string, notifyNativeHost: boolean): void {
   const session = sessions.get(sessionId);
   if (!session) {
     return;
@@ -129,16 +137,12 @@ function closeSession(sessionId: string, notifyNative: boolean): void {
   sessions.delete(sessionId);
   refreshSliderFieldDisplay(session.field);
   fireFieldChangeIfNeeded(session.field, session.valueWhenOpened);
-  if (notifyNative) {
+  if (notifyNativeHost) {
     postToReactNative({ type: 'editor.numberSlider.close', sessionId });
   }
 }
 
-export function handleNumberSliderInbound(
-  message:
-    | { type: 'editor.numberSlider.value'; sessionId: string; value: number }
-    | { type: 'editor.numberSlider.close'; sessionId: string },
-): void {
+export function handleNumberSliderInbound(message: EditorInMessage): void {
   const session = sessions.get(message.sessionId);
   if (!session) {
     return;

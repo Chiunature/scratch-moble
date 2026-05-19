@@ -23,6 +23,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerIcon: {
+    width: 24,
+    height: 24,
+  },
   headerContent: {
     flex: 1,
     flexDirection: 'row',

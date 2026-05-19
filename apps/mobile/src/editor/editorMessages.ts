@@ -1,4 +1,7 @@
-/** 与 scratch-editor-web/src/bridge/messages.ts 保持字段一致 */
+/**
+ * RN 侧镜像的 WebView bridge 协议。
+ * 修改字段时同步更新 packages/scratch-editor-web/src/bridge/messages.ts。
+ */
 
 export type EditorOutMessage =
   | {

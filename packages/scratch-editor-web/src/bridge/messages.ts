@@ -1,3 +1,8 @@
+/**
+ * WebView 与 React Native 的桥接协议（Web 侧源定义）。
+ * 修改字段时同步更新 apps/mobile/src/editor/editorMessages.ts。
+ */
+
 /** WebView → React Native */
 export type EditorOutMessage =
   | {

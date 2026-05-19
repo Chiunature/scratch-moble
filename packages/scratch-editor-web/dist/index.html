@@ -22515,7 +22515,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   var BLOCK_TYPES = {
     common: {
       /** 通用端口下拉报告块（Number），可作为任意 PORT/PORTS 输入槽的默认阴影 */
-      portDropdown: "port_dropdown"
+      portDropdown: "port_dropdown",
+      /** 整数滑块阴影（precision=1） */
+      integerSlider: "number_slider_integer",
+      /** 小数滑块阴影（默认 precision=0.1） */
+      decimalSlider: "number_slider_decimal",
+      /** 非负整数键盘阴影（历史 type 名保留兼容） */
+      positiveKeyboard: "math_positive_number_keyboard"
     },
     motor: {
       runForPowerSeconds: "run_for_power_seconds",
@@ -22540,16 +22546,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     },
     sensor: {
       oneCalibrate: "one_calibrate"
-    },
-    math: {
-      /** 功率百分比阴影（0–100，滑块） */
-      powerPercent: "math_power_percent",
-      /** 时长秒数阴影（滑块） */
-      durationSeconds: "math_duration_seconds",
-      /** 非负整数阴影（键盘输入） */
-      positiveKeyboard: "math_positive_number_keyboard"
     }
   };
+  var CUSTOM_NUMERIC_LITERAL_TYPES = [
+    BLOCK_TYPES.common.integerSlider,
+    BLOCK_TYPES.common.decimalSlider,
+    BLOCK_TYPES.common.positiveKeyboard
+  ];
 
   // src/blocks/blockDefinitions/control.ts
   var controlBlockDefinitions = [
@@ -22563,42 +22566,29 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
-  // src/blocks/blockDefinitions/mathShadows.ts
-  var mathShadowBlockDefinitions = [
-    {
-      type: BLOCK_TYPES.math.powerPercent,
+  // src/blocks/blockDefinitions/numberShadowReporters.ts
+  var SLIDER_DEFAULTS = { value: 0, min: 0, max: 999 };
+  function sliderShadowReporter(type, precision) {
+    return {
+      type,
       message0: "%1",
       args0: [
         {
           type: "field_number_slider",
           name: "NUM",
-          value: 50,
-          min: 0,
-          max: 100,
-          precision: 1
+          ...SLIDER_DEFAULTS,
+          precision
         }
       ],
       output: "Number",
       style: "motion_blocks"
-    },
+    };
+  }
+  var numberShadowReporterDefinitions = [
+    sliderShadowReporter(BLOCK_TYPES.common.integerSlider, 1),
+    sliderShadowReporter(BLOCK_TYPES.common.decimalSlider, 0.1),
     {
-      type: BLOCK_TYPES.math.durationSeconds,
-      message0: "%1",
-      args0: [
-        {
-          type: "field_number_slider",
-          name: "NUM",
-          value: 2,
-          min: 0,
-          max: 999,
-          precision: 0.1
-        }
-      ],
-      output: "Number",
-      style: "motion_blocks"
-    },
-    {
-      type: BLOCK_TYPES.math.positiveKeyboard,
+      type: BLOCK_TYPES.common.positiveKeyboard,
       message0: "%1",
       args0: [
         {
@@ -22611,6 +22601,39 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       output: "Number",
       style: "math_blocks"
     }
+  ];
+
+  // src/blocks/blockDefinitions/portDropdown.ts
+  var portDropdownReporterDefinitions = [
+    {
+      type: BLOCK_TYPES.common.portDropdown,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_dropdown",
+          name: "PORT",
+          options: [
+            ["0", "0"],
+            ["1", "1"],
+            ["2", "2"],
+            ["3", "3"],
+            ["4", "4"],
+            ["5", "5"],
+            ["6", "6"],
+            ["7", "7"]
+          ]
+        }
+      ],
+      output: "Number",
+      outputShape: 2,
+      extensions: ["colours_textfield"]
+    }
+  ];
+
+  // src/blocks/blockDefinitions/commonReporters.ts
+  var commonReporterDefinitions = [
+    ...numberShadowReporterDefinitions,
+    ...portDropdownReporterDefinitions
   ];
 
   // src/blocks/blockDefinitions/event.ts
@@ -22750,33 +22773,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
-  // src/blocks/blockDefinitions/portDropdown.ts
-  var portDropdownReporterDefinitions = [
-    {
-      type: BLOCK_TYPES.common.portDropdown,
-      message0: "%1",
-      args0: [
-        {
-          type: "field_dropdown",
-          name: "PORT",
-          options: [
-            ["0", "0"],
-            ["1", "1"],
-            ["2", "2"],
-            ["3", "3"],
-            ["4", "4"],
-            ["5", "5"],
-            ["6", "6"],
-            ["7", "7"]
-          ]
-        }
-      ],
-      output: "Number",
-      outputShape: 2,
-      extensions: ["colours_textfield"]
-    }
-  ];
-
   // src/blocks/blockDefinitions/sensor.ts
   var sensorBlockDefinitions = [
     {
@@ -22802,8 +22798,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/blocks/registerBlocks.ts
   function registerEditorBlocks() {
     Ct([
-      ...mathShadowBlockDefinitions,
-      ...portDropdownReporterDefinitions,
+      ...commonReporterDefinitions,
       ...motorBlockDefinitions,
       ...moveBlockDefinitions,
       ...matrixLightBlockDefinitions,
@@ -22893,6 +22888,32 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     ]
   };
 
+  // src/blocks/toolboxCategories/shadowPresets.ts
+  function portShadow(port = "0") {
+    return {
+      type: BLOCK_TYPES.common.portDropdown,
+      fields: { PORT: String(port) }
+    };
+  }
+  function integerSliderShadow(num) {
+    return {
+      type: BLOCK_TYPES.common.integerSlider,
+      fields: { NUM: num }
+    };
+  }
+  function decimalSliderShadow(num) {
+    return {
+      type: BLOCK_TYPES.common.decimalSlider,
+      fields: { NUM: num }
+    };
+  }
+  function positiveKeyboardShadow(num) {
+    return {
+      type: BLOCK_TYPES.common.positiveKeyboard,
+      fields: { NUM: num }
+    };
+  }
+
   // src/blocks/toolboxCategories/motor.ts
   var motorToolboxCategory = {
     kind: "category",
@@ -22907,72 +22928,32 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.motor.runForPowerSeconds,
         inputs: {
-          PORTS: {
-            shadow: {
-              type: BLOCK_TYPES.common.portDropdown,
-              fields: { PORT: "0" }
-            }
-          },
-          POWER: {
-            shadow: {
-              type: BLOCK_TYPES.math.powerPercent,
-              fields: { NUM: 50 }
-            }
-          },
-          SECONDS: {
-            shadow: {
-              type: BLOCK_TYPES.math.durationSeconds,
-              fields: { NUM: 2 }
-            }
-          }
+          PORTS: { shadow: portShadow("0") },
+          POWER: { shadow: integerSliderShadow(50) },
+          SECONDS: { shadow: decimalSliderShadow(2) }
         }
       },
       {
         kind: "block",
         type: BLOCK_TYPES.motor.runPower,
         inputs: {
-          PORTS: {
-            shadow: {
-              type: BLOCK_TYPES.common.portDropdown,
-              fields: { PORT: "0" }
-            }
-          },
-          POWER: {
-            shadow: {
-              type: BLOCK_TYPES.math.powerPercent,
-              fields: { NUM: 50 }
-            }
-          }
+          PORTS: { shadow: portShadow("0") },
+          POWER: { shadow: integerSliderShadow(50) }
         }
       },
       {
         kind: "block",
         type: BLOCK_TYPES.motor.stop,
         inputs: {
-          PORTS: {
-            shadow: {
-              type: BLOCK_TYPES.common.portDropdown,
-              fields: { PORT: "0" }
-            }
-          }
+          PORTS: { shadow: portShadow("0") }
         }
       },
       {
         kind: "block",
         type: BLOCK_TYPES.motor.stopModule,
         inputs: {
-          PORTS: {
-            shadow: {
-              type: BLOCK_TYPES.common.portDropdown,
-              fields: { PORT: "0" }
-            }
-          },
-          BLOCK: {
-            shadow: {
-              type: BLOCK_TYPES.math.positiveKeyboard,
-              fields: { NUM: 0 }
-            }
-          }
+          PORTS: { shadow: portShadow("0") },
+          BLOCK: { shadow: positiveKeyboardShadow(0) }
         }
       }
     ]
@@ -23097,7 +23078,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     const secondary = block && typeof block.getColourSecondary === "function" && block.getColourSecondary() || primary;
     return { primary, secondary };
   }
-  function closeSession(sessionId, notifyNative) {
+  function closeSession(sessionId, notifyNativeHost) {
     const session = sessions.get(sessionId);
     if (!session) {
       return;
@@ -23105,7 +23086,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     sessions.delete(sessionId);
     refreshSliderFieldDisplay(session.field);
     fireFieldChangeIfNeeded(session.field, session.valueWhenOpened);
-    if (notifyNative) {
+    if (notifyNativeHost) {
       postToReactNative({ type: "editor.numberSlider.close", sessionId });
     }
   }
@@ -23223,9 +23204,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     "math_positive_number",
     "math_whole_number",
     "math_integer",
-    BLOCK_TYPES.math.powerPercent,
-    BLOCK_TYPES.math.durationSeconds,
-    BLOCK_TYPES.math.positiveKeyboard
+    ...CUSTOM_NUMERIC_LITERAL_TYPES
   ]);
   function expressionBlockToPython(block) {
     if (NUMERIC_LITERAL_BLOCK_TYPES.has(block.type)) {
