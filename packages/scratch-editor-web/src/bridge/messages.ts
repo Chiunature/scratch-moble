@@ -6,11 +6,13 @@
 /** WebView → React Native */
 export type EditorOutMessage =
   | {
+      //代码
       type: 'editor.code.generated';
       code: string;
       blockCount: number;
     }
   | {
+      //数字滑块开启
       type: 'editor.numberSlider.open';
       sessionId: string;
       min: number;
@@ -21,6 +23,7 @@ export type EditorOutMessage =
       colors: { primary: string; secondary: string };
     }
   | {
+      //数字滑块关闭
       type: 'editor.numberSlider.close';
       sessionId: string;
     };

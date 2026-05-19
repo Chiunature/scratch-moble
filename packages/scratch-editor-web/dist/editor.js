@@ -22501,7 +22501,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
   var numberShadowReporterDefinitions = [
     sliderShadowReporter(BLOCK_TYPES.common.integerSlider, 1),
+    //整数滑块阴影
     sliderShadowReporter(BLOCK_TYPES.common.decimalSlider, 0.1),
+    //小数滑块阴影
     {
       type: BLOCK_TYPES.common.positiveKeyboard,
       message0: "%1",
@@ -23069,9 +23071,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
 
   // src/bridge/index.ts
   function isReactNativeHost() {
-    return Boolean(
-      window.ReactNativeWebView?.postMessage
-    );
+    return Boolean(window.ReactNativeWebView?.postMessage);
   }
   function postToReactNative(message) {
     const bridge = window.ReactNativeWebView;
@@ -23794,7 +23794,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function bootstrap() {
     registerNativeInboundBridge();
     registerEditorBlocks();
-    patchFieldNumberEditor(scratchNumberKeyboardForFormFactor(getEditorFormFactor()));
+    patchFieldNumberEditor(
+      scratchNumberKeyboardForFormFactor(getEditorFormFactor())
+    );
     const host = document.getElementById("workspace");
     if (!host) {
       return;
@@ -23854,6 +23856,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     const publish = () => {
       const generated = renderPythonCode(workspace);
       postToReactNative({
+        // 发送Python代码到React Native
         type: "editor.code.generated",
         code: generated,
         blockCount: workspace.getAllBlocks(false).length

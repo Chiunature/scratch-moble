@@ -138,7 +138,8 @@ export function NumberSliderOverlay({
               top: bubbleTop,
               width: bubbleWidth,
               backgroundColor: session.colors.primary,
-              borderColor: session.colors.secondary,
+              // borderColor: session.colors.secondary,
+              borderColor: 'red',
             },
           ]}
           onPress={e => e.stopPropagation()}
@@ -191,5 +192,7 @@ const styles = StyleSheet.create({
   slider: {
     width: '100%',
     height: 40,
+    borderWidth: 1,
+    borderColor: 'blue',
   },
 });

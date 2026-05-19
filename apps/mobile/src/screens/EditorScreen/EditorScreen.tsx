@@ -39,15 +39,21 @@ export function EditorScreen() {
   const webViewRef = useRef<WebView>(null);
   const formFactor =
     Math.min(width, height) >= TABLET_MIN_SHORT_SIDE ? 'tablet' : 'phone';
+  //存储当前激活的数字滑块会话
   const [rnSliderSession, setRnSliderSession] =
     useState<RnNumberSliderOpenMessage | null>(null);
+  //注入设备类型
   const injectedBeforeContentLoaded = `window.__RN_EDITOR_DEVICE__=${JSON.stringify(
     { formFactor },
   )};true;`;
+  //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
+  //存储积木数量
   const [blockCount, setBlockCount] = useState(0);
+  //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
 
+  //处理WebView发送的消息
   const handleEditorMessage = useCallback((message: EditorOutMessage) => {
     switch (message.type) {
       case 'editor.code.generated':
@@ -67,17 +73,20 @@ export function EditorScreen() {
     }
   }, []);
 
-  const handleMessage = useCallback((event: WebViewMessageEvent) => {
-    const message = parseEditorOutMessage(event.nativeEvent.data);
-    if (message) {
-      handleEditorMessage(message);
-      return;
-    }
+  const handleMessage = useCallback(
+    (event: WebViewMessageEvent) => {
+      const message = parseEditorOutMessage(event.nativeEvent.data);
+      if (message) {
+        handleEditorMessage(message);
+        return;
+      }
 
-    // 兼容早期 editor 直接 post 代码字符串的调试路径。
-    setGeneratedCode(event.nativeEvent.data);
-    setBlockCount(0);
-  }, [handleEditorMessage]);
+      // 兼容早期 editor 直接 post 代码字符串的调试路径。
+      setGeneratedCode(event.nativeEvent.data);
+      setBlockCount(0);
+    },
+    [handleEditorMessage],
+  );
 
   return (
     <View style={styles.root}>
@@ -104,11 +113,10 @@ export function EditorScreen() {
       <View style={styles.editorPanel}>
         <WebView
           ref={webViewRef}
-          style={styles.webView}
           originWhitelist={['*']}
-          source={{ html: EDITOR_BUNDLE_HTML }}
-          injectedJavaScriptBeforeContentLoaded={injectedBeforeContentLoaded}
-          onMessage={handleMessage}
+          source={{ html: EDITOR_BUNDLE_HTML }} //加载编辑器网页
+          injectedJavaScriptBeforeContentLoaded={injectedBeforeContentLoaded} //注入设备类型
+          onMessage={handleMessage} //处理WebView发送的消息
           javaScriptEnabled
           domStorageEnabled
         />

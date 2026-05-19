@@ -37,15 +37,19 @@ function refreshToolboxDomAfterLayout(workspace: Workspace): void {
 }
 
 function bootstrap(): void {
-  registerNativeInboundBridge();
-  registerEditorBlocks();
-  patchFieldNumberEditor(scratchNumberKeyboardForFormFactor(getEditorFormFactor()));
+  registerNativeInboundBridge(); //挂载WebView与React Native的桥接
+  registerEditorBlocks(); //— 注册 shadow 积木
+  // 把设备类型参数传给 patchFieldNumberEditor 函数，注册自定义字段类，覆盖 showEditor_
+  patchFieldNumberEditor(
+    scratchNumberKeyboardForFormFactor(getEditorFormFactor()),
+  );
+
   const host = document.getElementById('workspace');
 
   if (!host) {
     return;
   }
-
+  // 注入工作区 + toolbox
   const workspace = ScratchBlocks.inject(host, {
     move: {
       // Blockly：scrollbars 为 false 时，选项解析会把 drag / wheel 一并关掉，空白处无法平移工作区（含移动端滑动）。
@@ -77,20 +81,23 @@ function bootstrap(): void {
     modalInputs: false,
   });
 
+  // 确保缩放控件存在
   ensureScratchZoomControlsIfMissing(workspace);
+  // 确保飞出栏宽度正确
   patchFlyoutGetWidthWhenHidden(workspace);
-  workspace.resize?.();
+  workspace.resize?.(); // 确保工作区大小正确
   refreshToolboxDomAfterLayout(workspace);
-  setupToolboxDoubleClickHideFlyout(workspace);
+  setupToolboxDoubleClickHideFlyout(workspace); // 确保工具箱点击隐藏
   requestAnimationFrame(() => {
-    workspace.resize?.();
+    workspace.resize?.(); // 确保工作区大小正确
     refreshToolboxDomAfterLayout(workspace);
-    setupFlyoutWidthClamp(workspace);
+    setupFlyoutWidthClamp(workspace); // 确保工具箱宽度正确
   });
 
   const publish = (): void => {
-    const generated = renderPythonCode(workspace);
+    const generated = renderPythonCode(workspace); // 生成Python代码
     postToReactNative({
+      // 发送Python代码到React Native
       type: 'editor.code.generated',
       code: generated,
       blockCount: workspace.getAllBlocks(false).length,

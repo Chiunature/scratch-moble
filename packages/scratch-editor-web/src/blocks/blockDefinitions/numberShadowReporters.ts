@@ -7,7 +7,9 @@ import { BLOCK_TYPES } from '../blockTypes';
 const SLIDER_DEFAULTS = { value: 0, min: 0, max: 999 } as const;
 
 function sliderShadowReporter(
-  type: typeof BLOCK_TYPES.common.integerSlider | typeof BLOCK_TYPES.common.decimalSlider,
+  type:
+    | typeof BLOCK_TYPES.common.integerSlider
+    | typeof BLOCK_TYPES.common.decimalSlider,
   precision: number,
 ) {
   return {
@@ -27,8 +29,8 @@ function sliderShadowReporter(
 }
 
 export const numberShadowReporterDefinitions = [
-  sliderShadowReporter(BLOCK_TYPES.common.integerSlider, 1),
-  sliderShadowReporter(BLOCK_TYPES.common.decimalSlider, 0.1),
+  sliderShadowReporter(BLOCK_TYPES.common.integerSlider, 1), //整数滑块阴影
+  sliderShadowReporter(BLOCK_TYPES.common.decimalSlider, 0.1), //小数滑块阴影
   {
     type: BLOCK_TYPES.common.positiveKeyboard,
     message0: '%1',

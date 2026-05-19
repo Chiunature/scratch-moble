@@ -37,10 +37,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-  webView: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
   codePanel: {
     position: 'absolute',
     width: 280,
