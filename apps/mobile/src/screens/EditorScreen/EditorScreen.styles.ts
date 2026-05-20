@@ -36,6 +36,7 @@ export const styles = StyleSheet.create({
   editorPanel: {
     flex: 1,
     minHeight: 0,
+    position: 'relative',
   },
   codePanel: {
     position: 'absolute',
