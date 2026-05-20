@@ -8,7 +8,6 @@ import * as ScratchBlocks from 'scratch-blocks';
 import { registerEditorBlocks } from './blocks/registerBlocks';
 import { toolboxJson } from './blocks/toolbox';
 import { postToReactNative, registerNativeInboundBridge } from './bridge';
-import { getEditorFormFactor } from './deviceFormFactor';
 import { renderPythonCode } from './codegen/generators';
 import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
@@ -20,15 +19,7 @@ import {
   patchToolboxCategoryIcons,
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
-  type ScratchNumberKeyboardMode,
 } from './workspace-custom';
-
-function scratchNumberKeyboardForFormFactor(
-  formFactor: ReturnType<typeof getEditorFormFactor>,
-): ScratchNumberKeyboardMode {
-  // 通过传来了的设备类型参数，决定返回使用哪种键盘策略
-  return formFactor === 'phone' ? 'system-only' : 'numpad-only';
-}
 
 /** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
 function refreshToolboxDomAfterLayout(workspace: Workspace): void {
@@ -39,10 +30,7 @@ function refreshToolboxDomAfterLayout(workspace: Workspace): void {
 function bootstrap(): void {
   registerNativeInboundBridge(); //挂载WebView与React Native的桥接
   registerEditorBlocks(); //— 注册 shadow 积木
-  // 把设备类型参数传给 patchFieldNumberEditor 函数，注册自定义字段类，覆盖 showEditor_
-  patchFieldNumberEditor(
-    scratchNumberKeyboardForFormFactor(getEditorFormFactor()),
-  );
+  patchFieldNumberEditor();
 
   const host = document.getElementById('workspace');
 
@@ -76,7 +64,7 @@ function bootstrap(): void {
     theme: editorTheme,
     sounds: false, //交互音效
     toolbox: toolboxJson, //工具箱定义 xml或者json
-    // 手机 system-only 会把 quietInput 固定为 false；若此处为 true（Blockly 默认），在触摸环境下会走
+    // field_number_keyboard 使用系统键盘（quietInput=false）；若此处为 true（Blockly 默认），触摸下会走
     // FieldTextInput#showPromptEditor → window.prompt（RN WebView 里像「JS 弹窗」），且 CHANGE_VALUE_TITLE 常为空。
     modalInputs: false,
   });

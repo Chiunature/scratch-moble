@@ -23080,20 +23080,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   }
 
-  // src/deviceFormFactor.ts
-  var TABLET_MIN_SHORT_SIDE = 600;
-  function inferFormFactorFromViewport() {
-    const shortSide = Math.min(window.innerWidth, window.innerHeight);
-    return shortSide >= TABLET_MIN_SHORT_SIDE ? "tablet" : "phone";
-  }
-  function getEditorFormFactor() {
-    const raw = window.__RN_EDITOR_DEVICE__?.formFactor;
-    if (raw === "tablet" || raw === "phone") {
-      return raw;
-    }
-    return inferFormFactorFromViewport();
-  }
-
   // src/codegen/helpers.ts
   var INDENT_TEXT = "    ";
   function indent(context) {
@@ -23285,73 +23271,12 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
 
   // src/workspace-custom/fields/patchFieldNumberMobileKeyboard.ts
   var fieldTextShowEditor = V.prototype.showEditor_;
-  var fieldNumberShowEditor = V.prototype.showEditor_;
-  var selectGuard = {
-    saved: null,
-    fn: null,
-    skip: false
-  };
-  function installSelectGuard() {
-    if (selectGuard.fn) {
-      HTMLInputElement.prototype.select = selectGuard.fn;
-      return;
-    }
-    selectGuard.saved ??= HTMLInputElement.prototype.select;
-    selectGuard.fn = function() {
-      if (selectGuard.skip && this.classList.contains("blocklyHtmlInput")) {
-        return;
-      }
-      return selectGuard.saved.call(this);
-    };
-    HTMLInputElement.prototype.select = selectGuard.fn;
-  }
-  function uninstallSelectGuard() {
-    if (selectGuard.fn && HTMLInputElement.prototype.select === selectGuard.fn) {
-      HTMLInputElement.prototype.select = selectGuard.saved;
-    }
-  }
-  function withSelectGuardSkipped(run) {
-    selectGuard.skip = true;
-    try {
-      run();
-    } finally {
-      selectGuard.skip = false;
-    }
-  }
-  function tuneInputForNumPad(input) {
-    input.readOnly = false;
-    input.setAttribute("inputmode", "none");
-  }
   function tuneKeyboardFieldInput(input) {
     input.inputMode = "decimal";
     input.autocomplete = "off";
   }
-  var keyboardMode = "numpad-only";
-  function setScratchNumberKeyboardMode(mode) {
-    keyboardMode = mode;
-    if (mode === "system-only") {
-      uninstallSelectGuard();
-    }
-  }
   function openScratchNumberKeyboardEditor(field, e3) {
-    if (keyboardMode === "system-only") {
-      fieldTextShowEditor.call(field, e3, false);
-      const input2 = field.htmlInput_;
-      if (input2) {
-        tuneKeyboardFieldInput(input2);
-      }
-      return;
-    }
-    installSelectGuard();
-    if (e3?.pointerType === "touch") {
-      withSelectGuardSkipped(() => fieldNumberShowEditor.call(field, e3));
-      const input2 = field.htmlInput_;
-      if (input2) {
-        tuneInputForNumPad(input2);
-      }
-      return;
-    }
-    fieldNumberShowEditor.call(field, e3);
+    fieldTextShowEditor.call(field, e3, false);
     const input = field.htmlInput_;
     if (input) {
       tuneKeyboardFieldInput(input);
@@ -23383,9 +23308,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     pt.register("field_number_slider", FieldNumberSlider);
     pt.register("field_number_keyboard", FieldNumberKeyboard);
   }
-  function patchFieldNumberEditor(keyboardMode2 = "numpad-only") {
+  function patchFieldNumberEditor() {
     registerNumberFieldVariants();
-    setScratchNumberKeyboardMode(keyboardMode2);
   }
 
   // src/workspace-custom/flyout/flyoutWidthClamp.ts
@@ -23784,9 +23708,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
 
   // src/main.ts
-  function scratchNumberKeyboardForFormFactor(formFactor) {
-    return formFactor === "phone" ? "system-only" : "numpad-only";
-  }
   function refreshToolboxDomAfterLayout(workspace) {
     patchScratchZoomControlImages(workspace);
     patchToolboxCategoryIcons(workspace);
@@ -23794,9 +23715,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function bootstrap() {
     registerNativeInboundBridge();
     registerEditorBlocks();
-    patchFieldNumberEditor(
-      scratchNumberKeyboardForFormFactor(getEditorFormFactor())
-    );
+    patchFieldNumberEditor();
     const host = document.getElementById("workspace");
     if (!host) {
       return;
@@ -23839,7 +23758,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       //交互音效
       toolbox: toolboxJson,
       //工具箱定义 xml或者json
-      // 手机 system-only 会把 quietInput 固定为 false；若此处为 true（Blockly 默认），在触摸环境下会走
+      // field_number_keyboard 使用系统键盘（quietInput=false）；若此处为 true（Blockly 默认），触摸下会走
       // FieldTextInput#showPromptEditor → window.prompt（RN WebView 里像「JS 弹窗」），且 CHANGE_VALUE_TITLE 常为空。
       modalInputs: false
     });

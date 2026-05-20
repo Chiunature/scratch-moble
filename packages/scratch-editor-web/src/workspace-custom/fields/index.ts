@@ -1,4 +1,1 @@
-export {
-  patchFieldNumberEditor,
-  type ScratchNumberKeyboardMode,
-} from './patchFieldNumberEditor';
+export { patchFieldNumberEditor } from './patchFieldNumberEditor';

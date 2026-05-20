@@ -1,11 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Pressable,
-  Image,
-  View,
-  Text,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, Image, View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -21,9 +15,6 @@ import { styles } from './EditorScreen.styles';
 import HomeIcon from '../../../assets/editorScreen/home.png';
 import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
 
-/** 与 `scratch-editor-web` 的 `deviceFormFactor.ts` 中阈值一致 */
-const TABLET_MIN_SHORT_SIDE = 600;
-
 function parseEditorOutMessage(raw: string): EditorOutMessage | null {
   try {
     return JSON.parse(raw) as EditorOutMessage;
@@ -35,17 +26,10 @@ function parseEditorOutMessage(raw: string): EditorOutMessage | null {
 export function EditorScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
   const webViewRef = useRef<WebView>(null);
-  const formFactor =
-    Math.min(width, height) >= TABLET_MIN_SHORT_SIDE ? 'tablet' : 'phone';
   //存储当前激活的数字滑块会话
   const [rnSliderSession, setRnSliderSession] =
     useState<RnNumberSliderOpenMessage | null>(null);
-  //注入设备类型
-  const injectedBeforeContentLoaded = `window.__RN_EDITOR_DEVICE__=${JSON.stringify(
-    { formFactor },
-  )};true;`;
   //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   //存储积木数量
@@ -115,7 +99,6 @@ export function EditorScreen() {
           ref={webViewRef}
           originWhitelist={['*']}
           source={{ html: EDITOR_BUNDLE_HTML }} //加载编辑器网页
-          injectedJavaScriptBeforeContentLoaded={injectedBeforeContentLoaded} //注入设备类型
           onMessage={handleMessage} //处理WebView发送的消息
           javaScriptEnabled
           domStorageEnabled
