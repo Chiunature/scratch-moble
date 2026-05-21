@@ -4,7 +4,7 @@ import { BLOCK_TYPES } from '../blockTypes';
  * 通用数字阴影 reporter（滑块 / 键盘），仅作槽内 shadow，不进飞出栏。
  * `precision` 即步长；RN 滑块见 numberSliderEditor。toolbox 仅可覆盖 `fields.NUM`。
  */
-const SLIDER_DEFAULTS = { value: 0, min: 0, max: 999 } as const;
+const SLIDER_DEFAULTS = { value: 0, min: -100, max: 100 } as const;
 
 function sliderShadowReporter(
   type:
