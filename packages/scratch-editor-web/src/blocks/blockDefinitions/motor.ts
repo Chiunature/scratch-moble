@@ -85,7 +85,6 @@ export const motorBlockDefinitions = [
   },
   {
     type: BLOCK_TYPES.motor.stopModule,
-    // 勿重复长文案；%3 与中文之间留空格，否则易与上一块贴在一起且整行过长触发折行
     message0: '%1 %2 电机 %3 将电机设置为停止时 %4',
     args0: [
       { type: 'field_image', src: motoricon, width: 24, height: 24, alt: '*' },
@@ -97,7 +96,14 @@ export const motorBlockDefinitions = [
         alt: '',
       },
       { type: 'input_value', name: 'PORTS', check: 'Number' },
-      { type: 'input_value', name: 'BLOCK', check: 'Number' },
+      {
+        type: 'field_dropdown',
+        name: 'BLOCK',
+        options: [
+          ['惯性滑行', '0'],
+          ['制动', '1'],
+        ],
+      },
     ],
     previousStatement: null,
     nextStatement: null,

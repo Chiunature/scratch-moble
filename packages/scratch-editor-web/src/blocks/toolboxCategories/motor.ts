@@ -23,7 +23,7 @@ export const motorToolboxCategory = {
       inputs: {
         PORTS: { shadow: portShadow('0') },
         POWER: { shadow: integerSliderShadow(50) },
-        SECONDS: { shadow: decimalSliderShadow(2) },
+        SECONDS: { shadow: positiveKeyboardShadow(2) },
       },
     },
     {
@@ -31,7 +31,7 @@ export const motorToolboxCategory = {
       type: BLOCK_TYPES.motor.runPower,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        POWER: { shadow: integerSliderShadow(50) },
+        POWER: { shadow: positiveKeyboardShadow(50) },
       },
     },
     {
@@ -46,8 +46,8 @@ export const motorToolboxCategory = {
       type: BLOCK_TYPES.motor.stopModule,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        BLOCK: { shadow: positiveKeyboardShadow(0) },
       },
+      fields: { BLOCK: '0' },
     },
   ],
 } as const;

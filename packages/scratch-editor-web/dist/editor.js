@@ -22460,7 +22460,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       sleepSeconds: "control_sleep_seconds"
     },
     sensor: {
-      oneCalibrate: "one_calibrate"
+      touch_sensor: {
+        oneCalibrate: "one_calibrate"
+      },
+      ultrasion_sensor: {
+        value: "value"
+      },
+      clicker_sensor: {
+        // press: 'clicker_press',
+      }
     }
   };
   var CUSTOM_NUMERIC_LITERAL_TYPES = [
@@ -22658,7 +22666,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     },
     {
       type: BLOCK_TYPES.motor.stopModule,
-      // 勿重复长文案；%3 与中文之间留空格，否则易与上一块贴在一起且整行过长触发折行
       message0: "%1 %2 \u7535\u673A %3 \u5C06\u7535\u673A\u8BBE\u7F6E\u4E3A\u505C\u6B62\u65F6 %4",
       args0: [
         { type: "field_image", src: block_motor_sensing_default, width: 24, height: 24, alt: "*" },
@@ -22670,7 +22677,14 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           alt: ""
         },
         { type: "input_value", name: "PORTS", check: "Number" },
-        { type: "input_value", name: "BLOCK", check: "Number" }
+        {
+          type: "field_dropdown",
+          name: "BLOCK",
+          options: [
+            ["\u60EF\u6027\u6ED1\u884C", "0"],
+            ["\u5236\u52A8", "1"]
+          ]
+        }
       ],
       previousStatement: null,
       nextStatement: null,
@@ -22693,11 +22707,19 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/blocks/blockDefinitions/sensor.ts
   var sensorBlockDefinitions = [
     {
-      type: BLOCK_TYPES.sensor.oneCalibrate,
+      type: BLOCK_TYPES.sensor.touch_sensor.oneCalibrate,
       message0: "\u4F20\u611F\u5668 \u5355\u6B21\u6821\u51C6",
       previousStatement: null,
       nextStatement: null,
       style: "looks_blocks"
+    },
+    {
+      type: BLOCK_TYPES.sensor.ultrasion_sensor.value,
+      message0: "\u8D85\u58F0\u6CE2\u4F20\u611F\u5668 \u6570\u503C",
+      output: "Number",
+      outputShape: 2,
+      //2：圆角，1：六角，3：矩形
+      style: "sensor_blocks"
     }
   ];
 
@@ -22818,12 +22840,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       fields: { NUM: num }
     };
   }
-  function decimalSliderShadow(num) {
-    return {
-      type: BLOCK_TYPES.common.decimalSlider,
-      fields: { NUM: num }
-    };
-  }
   function positiveKeyboardShadow(num) {
     return {
       type: BLOCK_TYPES.common.positiveKeyboard,
@@ -22847,7 +22863,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         inputs: {
           PORTS: { shadow: portShadow("0") },
           POWER: { shadow: integerSliderShadow(50) },
-          SECONDS: { shadow: decimalSliderShadow(2) }
+          SECONDS: { shadow: positiveKeyboardShadow(2) }
         }
       },
       {
@@ -22855,7 +22871,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.motor.runPower,
         inputs: {
           PORTS: { shadow: portShadow("0") },
-          POWER: { shadow: integerSliderShadow(50) }
+          POWER: { shadow: positiveKeyboardShadow(50) }
         }
       },
       {
@@ -22869,9 +22885,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.motor.stopModule,
         inputs: {
-          PORTS: { shadow: portShadow("0") },
-          BLOCK: { shadow: positiveKeyboardShadow(0) }
-        }
+          PORTS: { shadow: portShadow("0") }
+        },
+        fields: { BLOCK: "0" }
       }
     ]
   };
@@ -22897,7 +22913,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     cssconfig: {
       icon: toolboxCategoryIconClasses("sensor")
     },
-    contents: [{ kind: "block", type: BLOCK_TYPES.sensor.oneCalibrate }]
+    contents: [
+      { kind: "block", type: BLOCK_TYPES.sensor.touch_sensor.oneCalibrate },
+      { kind: "block", type: BLOCK_TYPES.sensor.ultrasion_sensor.value }
+    ]
   };
 
   // src/blocks/toolboxCategories/sound.ts

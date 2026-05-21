@@ -35,7 +35,15 @@ export const BLOCK_TYPES = {
     sleepSeconds: 'control_sleep_seconds',
   },
   sensor: {
-    oneCalibrate: 'one_calibrate',
+    touch_sensor: {
+      oneCalibrate: 'one_calibrate',
+    },
+    ultrasion_sensor: {
+      value: 'value',
+    },
+    clicker_sensor: {
+      // press: 'clicker_press',
+    },
   },
 } as const;
 
