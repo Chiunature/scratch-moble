@@ -88,43 +88,6 @@ function fireFieldChangeIfNeeded(
   }
 }
 
-function getFieldAnchorRect(
-  field: ScratchNumberField,
-): { x: number; y: number; width: number; height: number } | null {
-  const target = (
-    field as unknown as { getClickTarget_?: () => Element | null }
-  ).getClickTarget_?.();
-  if (!target || typeof target.getBoundingClientRect !== 'function') {
-    return null;
-  }
-  const rect = target.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) {
-    return null;
-  }
-  return {
-    x: rect.left,
-    y: rect.top,
-    width: rect.width,
-    height: rect.height,
-  };
-}
-
-function dropdownColoursFromField(field: ScratchNumberField): {
-  primary: string;
-  secondary: string;
-} {
-  const block = field.getSourceBlock();
-  const primary =
-    (block && typeof block.getColour === 'function' && block.getColour()) ||
-    '#4C97FF';
-  const secondary =
-    (block &&
-      typeof block.getColourSecondary === 'function' &&
-      block.getColourSecondary()) ||
-    primary;
-  return { primary, secondary };
-}
-
 /**
  * RN 主动关闭浮层时传 false，避免把 close 消息再回传形成回声。
  * Web 侧若将来主动取消会话，可传 true 让 RN 同步清理原生浮层。
@@ -171,9 +134,7 @@ export function openNumberSliderEditor(
     }
   }
 
-  const anchor = getFieldAnchorRect(field);
-  const block = field.getSourceBlock();
-  if (!anchor || !block) {
+  if (!field.getSourceBlock()) {
     return;
   }
 
@@ -198,7 +159,5 @@ export function openNumberSliderEditor(
     max,
     step,
     value,
-    anchor,
-    colors: dropdownColoursFromField(field),
   });
 }

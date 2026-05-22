@@ -16,8 +16,6 @@ export type EditorOutMessage =
       max: number;
       step: number;
       value: number;
-      anchor: { x: number; y: number; width: number; height: number };
-      colors: { primary: string; secondary: string };
     }
   | {
       type: 'editor.numberSlider.close';
@@ -27,8 +25,6 @@ export type EditorOutMessage =
       type: 'editor.portPicker.open';
       sessionId: string;
       value: string;
-      anchor: { x: number; y: number; width: number; height: number };
-      colors: { primary: string; secondary: string };
     }
   | {
       type: 'editor.portPicker.close';

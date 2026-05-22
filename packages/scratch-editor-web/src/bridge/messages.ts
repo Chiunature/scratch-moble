@@ -19,8 +19,6 @@ export type EditorOutMessage =
       max: number;
       step: number;
       value: number;
-      anchor: { x: number; y: number; width: number; height: number };
-      colors: { primary: string; secondary: string };
     }
   | {
       //数字滑块关闭
@@ -28,12 +26,10 @@ export type EditorOutMessage =
       sessionId: string;
     }
   | {
-      //端口选择器开启（选项由 RN 定义，Web 只传当前值）
+      //端口选择器开启（选项与配色由 RN 定义，Web 只传当前值）
       type: 'editor.portPicker.open';
       sessionId: string;
       value: string;
-      anchor: { x: number; y: number; width: number; height: number };
-      colors: { primary: string; secondary: string };
     }
   | {
       //端口选择器关闭

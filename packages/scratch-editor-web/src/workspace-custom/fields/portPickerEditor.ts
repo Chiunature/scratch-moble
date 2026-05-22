@@ -91,43 +91,6 @@ function fireFieldChangeIfNeeded(
   }
 }
 
-function getFieldAnchorRect(
-  field: ScratchPortField,
-): { x: number; y: number; width: number; height: number } | null {
-  const target = (
-    field as unknown as { getClickTarget_?: () => Element | null }
-  ).getClickTarget_?.();
-  if (!target || typeof target.getBoundingClientRect !== 'function') {
-    return null;
-  }
-  const rect = target.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) {
-    return null;
-  }
-  return {
-    x: rect.left,
-    y: rect.top,
-    width: rect.width,
-    height: rect.height,
-  };
-}
-
-function coloursFromField(field: ScratchPortField): {
-  primary: string;
-  secondary: string;
-} {
-  const block = field.getSourceBlock();
-  const primary =
-    (block && typeof block.getColour === 'function' && block.getColour()) ||
-    '#4C97FF';
-  const secondary =
-    (block &&
-      typeof block.getColourSecondary === 'function' &&
-      block.getColourSecondary()) ||
-    primary;
-  return { primary, secondary };
-}
-
 function closeSession(sessionId: string, notifyNativeHost: boolean): void {
   const session = sessions.get(sessionId);
   if (!session) {
@@ -178,9 +141,7 @@ export function openPortPickerEditor(
     }
   }
 
-  const anchor = getFieldAnchorRect(field);
-  const block = field.getSourceBlock();
-  if (!anchor || !block) {
+  if (!field.getSourceBlock()) {
     return;
   }
 
@@ -194,7 +155,5 @@ export function openPortPickerEditor(
     type: 'editor.portPicker.open',
     sessionId,
     value: String(field.getValue()),
-    anchor,
-    colors: coloursFromField(field),
   });
 }

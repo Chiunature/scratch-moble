@@ -13,8 +13,10 @@ import { motorBlockDefinitions } from './blockDefinitions/motor';
 import { moveBlockDefinitions } from './blockDefinitions/move';
 import { sensorBlockDefinitions } from './blockDefinitions/sensor';
 import { soundBlockDefinitions } from './blockDefinitions/sound';
+import { registerPortDropdownExtensions } from './portDropdownExtensions';
 
 export function registerEditorBlocks(): void {
+  registerPortDropdownExtensions();
   ScratchBlocks.defineBlocksWithJsonArray([
     ...commonReporterDefinitions,
     ...motorBlockDefinitions,

@@ -22542,7 +22542,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       ],
       output: "Number",
       outputShape: 2,
-      extensions: ["colours_textfield"]
+      extensions: ["colours_from_parent"]
     }
   ];
 
@@ -22725,8 +22725,51 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // src/blocks/portDropdownExtensions.ts
+  var PORT_DROPDOWN_TYPE = BLOCK_TYPES.common.portDropdown;
+  function getHostParent(block) {
+    const parent = block.getParent();
+    if (!parent) {
+      return null;
+    }
+    if (parent.type === PORT_DROPDOWN_TYPE) {
+      return null;
+    }
+    return parent;
+  }
+  function syncColourFromParent(block) {
+    const parent = getHostParent(block);
+    if (parent) {
+      block.setColour(parent.getColour());
+      return;
+    }
+    block.setStyle("text_blocks");
+  }
+  var extensionsRegistered = false;
+  function registerPortDropdownExtensions() {
+    if (extensionsRegistered) {
+      return;
+    }
+    extensionsRegistered = true;
+    F.register("colours_from_parent", function coloursFromParent() {
+      const block = this;
+      const apply = () => syncColourFromParent(block);
+      apply();
+      block.setOnChange((event) => {
+        if (!event) {
+          apply();
+          return;
+        }
+        if (event.type === f.BLOCK_MOVE || event.type === f.BLOCK_CREATE) {
+          apply();
+        }
+      });
+    });
+  }
+
   // src/blocks/registerBlocks.ts
   function registerEditorBlocks() {
+    registerPortDropdownExtensions();
     Ct([
       ...commonReporterDefinitions,
       ...motorBlockDefinitions,
@@ -22983,28 +23026,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       );
     }
   }
-  function getFieldAnchorRect(field) {
-    const target = field.getClickTarget_?.();
-    if (!target || typeof target.getBoundingClientRect !== "function") {
-      return null;
-    }
-    const rect = target.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) {
-      return null;
-    }
-    return {
-      x: rect.left,
-      y: rect.top,
-      width: rect.width,
-      height: rect.height
-    };
-  }
-  function dropdownColoursFromField(field) {
-    const block = field.getSourceBlock();
-    const primary = block && typeof block.getColour === "function" && block.getColour() || "#4C97FF";
-    const secondary = block && typeof block.getColourSecondary === "function" && block.getColourSecondary() || primary;
-    return { primary, secondary };
-  }
   function closeSession(sessionId, notifyNativeHost) {
     const session = sessions.get(sessionId);
     if (!session) {
@@ -23037,9 +23058,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         return;
       }
     }
-    const anchor = getFieldAnchorRect(field);
-    const block = field.getSourceBlock();
-    if (!anchor || !block) {
+    if (!field.getSourceBlock()) {
       return;
     }
     const sessionId = createSessionId(field);
@@ -23060,9 +23079,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       min,
       max,
       step,
-      value,
-      anchor,
-      colors: dropdownColoursFromField(field)
+      value
     });
   }
 
@@ -23111,28 +23128,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       );
     }
   }
-  function getFieldAnchorRect2(field) {
-    const target = field.getClickTarget_?.();
-    if (!target || typeof target.getBoundingClientRect !== "function") {
-      return null;
-    }
-    const rect = target.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) {
-      return null;
-    }
-    return {
-      x: rect.left,
-      y: rect.top,
-      width: rect.width,
-      height: rect.height
-    };
-  }
-  function coloursFromField(field) {
-    const block = field.getSourceBlock();
-    const primary = block && typeof block.getColour === "function" && block.getColour() || "#4C97FF";
-    const secondary = block && typeof block.getColourSecondary === "function" && block.getColourSecondary() || primary;
-    return { primary, secondary };
-  }
   function closeSession2(sessionId, notifyNativeHost) {
     const session = sessions2.get(sessionId);
     if (!session) {
@@ -23169,9 +23164,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         return;
       }
     }
-    const anchor = getFieldAnchorRect2(field);
-    const block = field.getSourceBlock();
-    if (!anchor || !block) {
+    if (!field.getSourceBlock()) {
       return;
     }
     const sessionId = createSessionId2(field);
@@ -23182,9 +23175,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     postToReactNative({
       type: "editor.portPicker.open",
       sessionId,
-      value: String(field.getValue()),
-      anchor,
-      colors: coloursFromField(field)
+      value: String(field.getValue())
     });
   }
 

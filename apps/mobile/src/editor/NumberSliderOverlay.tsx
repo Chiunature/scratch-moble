@@ -13,6 +13,12 @@ type Props = {
 
 const BUBBLE_WIDTH = 220;
 
+/** 滑块气泡配色（RN 侧固定，不从 WebView 取色） */
+const BUBBLE_COLORS = {
+  primary: '#4C97FF',
+  secondary: '#4280D7',
+} as const;
+
 function formatDisplayValue(value: number, step: number): string {
   if (step >= 1) {
     return String(Math.round(value));
@@ -116,8 +122,8 @@ export function NumberSliderOverlay({
             styles.bubble,
             {
               width: BUBBLE_WIDTH,
-              backgroundColor: session.colors.primary,
-              borderColor: session.colors.secondary,
+              backgroundColor: BUBBLE_COLORS.primary,
+              borderColor: BUBBLE_COLORS.secondary,
             },
           ]}
           onPress={e => e.stopPropagation()}
