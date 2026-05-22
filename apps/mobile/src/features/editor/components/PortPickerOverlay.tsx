@@ -1,12 +1,9 @@
 /**
  * 端口选择底部弹窗（RN 原生 UI）。
  *
- * WebView 点击 port_dropdown 字段后，EditorScreen 收到 `editor.portPicker.open`，
- * 渲染本组件；用户确认后通过 `onValueChange` 回传 value，由 Web 写入 PORT 字段。
- *
- * 端口列表与详情数据见 `portPickerOptions.ts`（RN 侧唯一定义）。
+ * Blockly 通过 maxSelections（1=单选，2=多选）控制；确认回传 "3" 或 "1,2"。
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -18,7 +15,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { RnPortPickerOpenMessage } from '@scratch-mobile/shared';
+import {
+  coercePortFieldValue,
+  normalizePortValues,
+  parsePortFieldValue,
+  portModeFromMaxSelections,
+  type RnPortPickerOpenMessage,
+} from '@scratch-mobile/shared';
 
 import { fontSize, fontWeight, spacing } from '../../../theme';
 import {
@@ -31,26 +34,17 @@ import {
 } from '../data/portPickerOptions';
 
 type Props = {
-  /** 当前会话；null 时不渲染（由 EditorScreen 控制） */
   session: RnPortPickerOpenMessage | null;
-  /** 用户点「确认选择」：把 pending 端口写回 WebView */
   onValueChange: (sessionId: string, value: string) => void;
-  /** 关闭浮层（取消 / 点遮罩 / 确认后收尾） */
   onClose: (sessionId: string) => void;
 };
 
-/** 端口网格列数（4×2 = 8 个口） */
 const PORT_COLUMNS = 4;
-/** 格子间距 */
 const PORT_GAP = 6;
-/** 单格最大边长，防止小屏左侧被格子占满 */
 const PORT_CELL_MAX_SIZE = 38;
-/** 在可容纳尺寸上再缩小，给右侧详情区留宽 */
 const PORT_CELL_SCALE = 0.92;
-/** 底部面板高度占屏幕比例 */
 const SHEET_HEIGHT_RATIO = 0.72;
 
-/** 连接状态 → 描边 / 角标颜色 */
 function statusColor(status: PortConnectionStatus): string {
   switch (status) {
     case 'connected':
@@ -62,15 +56,10 @@ function statusColor(status: PortConnectionStatus): string {
   }
 }
 
-/** 格子右上角状态圆点 */
 function PortStatusDot({ color }: { color: string }) {
   return <View style={[styles.statusDot, { backgroundColor: color }]} />;
 }
 
-/**
- * 单个端口格子（正方形，边长由父级 onLayout 计算）。
- * 点击只更新本地 pending，不立刻回传 Web。
- */
 function PortGridButton({
   port,
   selected,
@@ -119,7 +108,6 @@ function PortGridButton({
   );
 }
 
-/** 网格下方图例：已选中 / 已连接 / 警告 / 未连接 */
 function PortLegend() {
   return (
     <View style={styles.legend}>
@@ -140,24 +128,42 @@ function PortLegend() {
   );
 }
 
-/** 右侧详情卡片：展示 pending 端口对应的设备信息 */
-function PortDetailPanel({ port }: { port: PortDefinition }) {
-  const statusColorValue = statusColor(port.connectionStatus);
+function PortDetailPanel({
+  ports,
+  selectionHint,
+}: {
+  ports: PortDefinition[];
+  selectionHint: string;
+}) {
+  const primary = ports[0] ?? getPortDefinition('0');
 
   return (
     <View style={styles.detailPanel}>
       <View style={styles.detailHeader}>
-        <Text style={styles.detailHeaderLabel}>当前选择</Text>
-        <Text style={styles.detailHeaderPort}>端口 {port.label}</Text>
+        <Text style={styles.detailHeaderLabel}>{selectionHint}</Text>
+        <Text style={styles.detailHeaderPort}>
+          {ports.length > 1
+            ? ports.map(p => p.label).join(', ')
+            : `端口 ${primary.label}`}
+        </Text>
       </View>
+
+      {ports.length > 1 && (
+        <View style={styles.detailRow}>
+          <Text style={styles.detailKey}>已选端口</Text>
+          <Text style={styles.detailValue}>
+            {ports.map(p => p.label).join('、')}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.detailRow}>
         <Text style={styles.detailKey}>设备名称</Text>
-        <Text style={styles.detailValue}>{port.deviceName}</Text>
+        <Text style={styles.detailValue}>{primary.deviceName}</Text>
       </View>
       <View style={styles.detailRow}>
         <Text style={styles.detailKey}>设备类型</Text>
-        <Text style={styles.detailValue}>{port.deviceType}</Text>
+        <Text style={styles.detailValue}>{primary.deviceType}</Text>
       </View>
 
       <View style={styles.detailRow}>
@@ -166,10 +172,10 @@ function PortDetailPanel({ port }: { port: PortDefinition }) {
           <View
             style={[
               styles.statusBadgeDot,
-              { backgroundColor: statusColorValue },
+              { backgroundColor: statusColor(primary.connectionStatus) },
             ]}
           />
-          <Text style={styles.statusBadgeText}>{port.runtimeLabel}</Text>
+          <Text style={styles.statusBadgeText}>{primary.runtimeLabel}</Text>
         </View>
       </View>
     </View>
@@ -180,16 +186,16 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
   const { height: screenHeight } = useWindowDimensions();
   const sheetHeight = screenHeight * SHEET_HEIGHT_RATIO;
 
-  /** 面板自屏幕底部外滑入的距离 */
+  const maxSelections = session?.maxSelections ?? 1;
+  const isMulti = maxSelections > 1;
+  const selectionMode = portModeFromMaxSelections(maxSelections);
+
   const slideAnim = useRef(new Animated.Value(sheetHeight)).current;
-  /** 遮罩淡入 */
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
 
-  /** 左侧网格实测宽度，用于计算正方形边长 */
   const [gridWidth, setGridWidth] = useState(0);
-  /** 待确认端口（点格子只改本地，确认后才 onValueChange） */
-  const [pendingValue, setPendingValue] = useState('0');
+  const [pendingPorts, setPendingPorts] = useState<string[]>(['0']);
 
   const portCellSize = useMemo(() => {
     if (gridWidth <= 0) {
@@ -201,7 +207,35 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
     return Math.min(PORT_CELL_MAX_SIZE, Math.floor(fitted * PORT_CELL_SCALE));
   }, [gridWidth]);
 
-  const pendingPort = getPortDefinition(pendingValue);
+  const detailPorts = useMemo(
+    () => pendingPorts.map(v => getPortDefinition(v)),
+    [pendingPorts],
+  );
+
+  const selectionHint = isMulti
+    ? `已选 ${pendingPorts.length}/${maxSelections}`
+    : '当前选择';
+
+  const togglePort = useCallback(
+    (portValue: string) => {
+      if (!isMulti) {
+        setPendingPorts([portValue]);
+        return;
+      }
+      setPendingPorts(current => {
+        const idx = current.indexOf(portValue);
+        if (idx >= 0) {
+          const next = current.filter(v => v !== portValue);
+          return next.length > 0 ? next : current;
+        }
+        if (current.length < maxSelections) {
+          return [...current, portValue];
+        }
+        return [...current.slice(1), portValue];
+      });
+    },
+    [isMulti, maxSelections],
+  );
 
   useEffect(() => {
     if (!session) {
@@ -210,7 +244,13 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
       return;
     }
 
-    setPendingValue(session.value);
+    const max = session.maxSelections ?? 1;
+    const ports = normalizePortValues(
+      parsePortFieldValue(session.value),
+      max,
+    );
+    setPendingPorts(ports);
+
     slideAnim.setValue(sheetHeight);
     Animated.parallel([
       Animated.timing(slideAnim, {
@@ -225,25 +265,36 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
         useNativeDriver: true,
       }),
     ]).start();
-    // 仅在 sessionId 变化时重播入场动画，不依赖整个 session 对象引用
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: sessionId only
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sessionId only
   }, [session?.sessionId, fadeAnim, slideAnim, sheetHeight]);
 
   if (!session) {
     return null;
   }
 
+  const canConfirm = isMulti
+    ? pendingPorts.length === maxSelections
+    : pendingPorts.length > 0;
+
   const handleConfirm = () => {
-    onValueChange(session.sessionId, pendingValue);
+    if (!canConfirm) {
+      return;
+    }
+    const value = coercePortFieldValue(
+      pendingPorts.join(','),
+      { mode: selectionMode, maxSelections },
+    );
+    onValueChange(session.sessionId, value);
     onClose(session.sessionId);
   };
+
+  const isSelected = (portValue: string) => pendingPorts.includes(portValue);
 
   return (
     <Animated.View
       style={[StyleSheet.absoluteFill, styles.root, { opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
-      {/* 点遮罩 = 取消，不写回 Web */}
       <Pressable
         style={styles.backdrop}
         onPress={() => onClose(session.sessionId)}
@@ -262,7 +313,6 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
             onPress={e => e.stopPropagation()}
           >
             <View style={styles.body}>
-              {/* 左：网格 + 图例 + 确认/取消 */}
               <View style={styles.leftColumn}>
                 <View
                   style={styles.grid}
@@ -277,15 +327,22 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
                     <PortGridButton
                       key={port.value}
                       port={port}
-                      selected={pendingValue === port.value}
+                      selected={isSelected(port.value)}
                       size={portCellSize}
-                      onPress={() => setPendingValue(port.value)}
+                      onPress={() => togglePort(port.value)}
                     />
                   ))}
                 </View>
                 <PortLegend />
 
-                <Pressable style={styles.confirmButton} onPress={handleConfirm}>
+                <Pressable
+                  style={[
+                    styles.confirmButton,
+                    !canConfirm && styles.confirmButtonDisabled,
+                  ]}
+                  onPress={handleConfirm}
+                  disabled={!canConfirm}
+                >
                   <Text style={styles.confirmIcon}>✓</Text>
                   <Text style={styles.confirmText}>确认选择</Text>
                 </Pressable>
@@ -298,9 +355,11 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
                 </Pressable>
               </View>
 
-              {/* 右：当前 pending 端口详情 */}
               <View style={styles.rightColumn}>
-                <PortDetailPanel port={pendingPort} />
+                <PortDetailPanel
+                  ports={detailPorts}
+                  selectionHint={selectionHint}
+                />
               </View>
             </View>
           </Pressable>
@@ -487,6 +546,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
+  },
+  confirmButtonDisabled: {
+    opacity: 0.45,
   },
   confirmIcon: {
     color: '#ecfdf5',

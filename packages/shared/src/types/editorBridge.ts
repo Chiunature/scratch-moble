@@ -26,6 +26,8 @@ export type EditorOutMessage =
       type: 'editor.portPicker.open';
       sessionId: string;
       value: string;
+      /** 1 = 单选，>1 = 多选（如 2） */
+      maxSelections?: number;
     }
   | {
       type: 'editor.portPicker.close';

@@ -22537,7 +22537,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         {
           type: "field_port_picker",
           name: "PORT",
-          value: "0"
+          value: "0",
+          selectionMode: "single"
         }
       ],
       output: "Number",
@@ -22684,11 +22685,39 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // assets/toolbox/combined_motor.svg
+  var combined_motor_default = '<?xml version="1.0" encoding="UTF-8"?>\n<svg id="_\u56FE\u5C42_1" data-name="\u56FE\u5C42 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.6771653543 22.6771653543">\n  <defs>\n    <style>\n      .cls-1 {\n        fill: #fff;\n      }\n\n      .cls-2 {\n        fill: #ff4ccd;\n      }\n    </style>\n  </defs>\n  <rect class="cls-1" x="-.0012695088" width="22.6771653543" height="22.6771653543" rx="2.8346456693" ry="2.8346456693"/>\n  <g>\n    <path class="cls-2" d="M9.8234185674,5.9168559004c-3.8285524111,0-6.9333813506,3.1048413823-6.9333813506,6.935421971,0,3.8285524111,3.1048289395,6.9333813506,6.9333813506,6.9333813506,3.8305805888,0,6.9354095282-3.1048289395,6.9354095282-6.9333813506,0-3.8305805888-3.1048289395-6.935421971-6.9354095282-6.935421971ZM5.2018486881,14.5851130539c-.958158413,0-1.734875803-.77671739-1.734875803-1.7328351825,0-.958158413,.77671739-1.734875803,1.734875803-1.734875803,.9561053497,0,1.7328351825,.77671739,1.7328351825,1.734875803,0,.9561177925-.7767298328,1.7328351825-1.7328351825,1.7328351825Zm4.6215698793,4.6236104998c-.9561177925,0-1.7328351825-.77671739-1.7328351825-1.734875803,0-.9561177925,.77671739-1.7328351825,1.7328351825-1.7328351825,.958158413,0,1.734875803,.77671739,1.734875803,1.7328351825,0,.958158413-.77671739,1.734875803-1.734875803,1.734875803Zm1.5024690393-6.9333813506v1.155911957h-.9235051934v.9234927505h-1.1558995142v-.9234927505h-.925533371v-1.155911957h.925533371v-.925533371h1.1558995142v.925533371h.9235051934Zm-1.5024690393-2.3138396489c-.9561177925,0-1.7328351825-.77671739-1.7328351825-1.7328351825,0-.958158413,.77671739-1.734875803,1.7328351825-1.734875803,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.9561177925-.77671739,1.7328351825-1.734875803,1.7328351825Zm4.6236104998,4.6236104998c-.9561177925,0-1.7328351825-.77671739-1.7328351825-1.7328351825,0-.958158413,.77671739-1.734875803,1.7328351825-1.734875803,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.9561177925-.77671739,1.7328351825-1.734875803,1.7328351825Z"/>\n    <path class="cls-2" d="M12.8492289952,2.8915061324c-2.4137305098,0-4.5379915394,1.2333808783-5.7815506345,3.1048413823,.8501050703-.3404601064,1.7797196822-.5300511686,2.7541906162-.5300511686,.4566510455,0,.9031114314,.0407750811,1.3373405373,.1223252433-.028543801-.1243658638-.0428157016-.2527880828-.0428157016-.3853039857,0-.958158413,.77671739-1.734875803,1.7328351825-1.734875803,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.5973169874-.3037538235,1.1253275355-.7644861099,1.4372313981,.8867989104,.5708138069,1.6431349812,1.3271498777,2.2180300291,2.2139487881,.3119038626-.4607198436,.8378737902-.7624454895,1.4351907776-.7624454895,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.9561177925-.77671739,1.7328351825-1.734875803,1.7328351825-.13250346,0-.2609381219-.0142719005-.3852915429-.0428157016,.0815377194,.4342291059,.1223128005,.8806894918,.1223128005,1.3373405373,0,.9724303135-.1875504417,1.9020449255-.5300387258,2.7521499958,1.871460504-1.2415184746,3.1048289395-3.3657670614,3.1048289395-5.779510014,0-3.8305805888-3.1048289395-6.935421971-6.935421971-6.935421971Z"/>\n  </g>\n</svg>';
+
   // src/blocks/blockDefinitions/move.ts
   var moveBlockDefinitions = [
     {
       type: BLOCK_TYPES.move.pair,
-      message0: "\u79FB\u52A8 \u914D\u5BF9",
+      message0: "%1 %2\u5C06\u7EC4\u5408\u7535\u673A\u8BBE\u7F6E\u4E3A %3 \u8F6C\u52A8\u65B9\u5411\u4E3A %4",
+      args0: [
+        {
+          type: "field_image",
+          src: combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        {
+          type: "field_dropdown",
+          name: "DIRECTION",
+          options: [
+            ["\u6B63\u8F6C", "0"],
+            ["\u53CD\u8F6C", "1"]
+          ]
+        }
+      ],
       previousStatement: null,
       nextStatement: null,
       style: "motion_blocks"
@@ -22879,6 +22908,12 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       fields: { PORT: String(port) }
     };
   }
+  function portShadowMulti(ports = ["0", "1"]) {
+    return {
+      type: BLOCK_TYPES.common.portDropdown,
+      fields: { PORT: ports.map(String).join(",") }
+    };
+  }
   function integerSliderShadow(num) {
     return {
       type: BLOCK_TYPES.common.integerSlider,
@@ -22946,7 +22981,18 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     cssconfig: {
       icon: toolboxCategoryIconClasses("move")
     },
-    contents: [{ kind: "block", type: BLOCK_TYPES.move.pair }]
+    contents: [
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.pair,
+        inputs: {
+          PORTS: { shadow: portShadowMulti(["0", "1"]) }
+        },
+        fields: {
+          DIRECTION: "0"
+        }
+      }
+    ]
   };
 
   // src/blocks/toolboxCategories/sensor.ts
@@ -23098,32 +23144,102 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     });
   }
 
+  // ../shared/src/utils/portFieldValue.ts
+  var DEFAULT_PORT = "0";
+  function parsePortFieldValue(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return [DEFAULT_PORT];
+    }
+    if (!trimmed.includes(",")) {
+      return [trimmed];
+    }
+    const ports = trimmed.split(",").map((v2) => v2.trim()).filter((v2) => v2.length > 0);
+    return ports.length > 0 ? ports : [DEFAULT_PORT];
+  }
+  function normalizePortValues(values, maxSelections) {
+    const max = Math.max(1, maxSelections);
+    const seen = /* @__PURE__ */ new Set();
+    const unique = [];
+    for (const v2 of values) {
+      const s2 = String(v2).trim();
+      if (!s2 || seen.has(s2)) {
+        continue;
+      }
+      seen.add(s2);
+      unique.push(s2);
+    }
+    unique.sort((a2, b2) => Number(a2) - Number(b2));
+    if (unique.length === 0) {
+      return [DEFAULT_PORT];
+    }
+    if (max === 1) {
+      return [unique[0]];
+    }
+    return unique.slice(0, max);
+  }
+  function formatPortFieldValue(ports, mode, maxSelections = 2) {
+    const max = mode === "multi" ? maxSelections : 1;
+    const normalized = normalizePortValues(ports, max);
+    if (mode === "single") {
+      return normalized[0];
+    }
+    return normalized.join(",");
+  }
+  function coercePortFieldValue(raw, opts) {
+    const max = opts.mode === "multi" ? opts.maxSelections ?? 2 : 1;
+    const ports = normalizePortValues(parsePortFieldValue(raw), max);
+    return formatPortFieldValue(ports, opts.mode, opts.maxSelections ?? 2);
+  }
+  function formatPortFieldDisplay(raw) {
+    const ports = parsePortFieldValue(raw);
+    if (ports.length === 1) {
+      return ports[0];
+    }
+    return ports.join("+");
+  }
+
   // src/workspace-custom/fields/portPickerEditor.ts
   var sessions2 = /* @__PURE__ */ new Map();
   var fieldDropdownShowEditor = H.prototype.showEditor_;
+  function getFieldPortConfig(field) {
+    if (field.selectionMode_ === "multi") {
+      return {
+        mode: "multi",
+        maxSelections: field.maxSelections_ ?? 2
+      };
+    }
+    const ports = parsePortFieldValue(String(field.getValue()));
+    if (ports.length > 1) {
+      return { mode: "multi", maxSelections: field.maxSelections_ ?? 2 };
+    }
+    return { mode: "single", maxSelections: 1 };
+  }
   function createSessionId2(field) {
     const id = field.id_;
     return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
   function refreshPortFieldDisplay(field) {
-    if (field.textContent_ && typeof field.getDisplayText_ === "function") {
-      field.textContent_.nodeValue = field.getDisplayText_();
-    }
-    const block = field.getSourceBlock();
-    if (block?.rendered && typeof block.queueRender === "function") {
-      block.queueRender();
-      const parent = block.getParent?.();
-      if (parent?.rendered && typeof parent.queueRender === "function") {
-        parent.queueRender();
+    if (typeof field.getDisplayText_ === "function") {
+      const block = field.getSourceBlock();
+      const text = field.getDisplayText_();
+      const fieldInstance = field;
+      if (fieldInstance.textContent_) {
+        fieldInstance.textContent_.nodeValue = text;
       }
+      if (block?.rendered && typeof block.queueRender === "function") {
+        block.queueRender();
+        const parent = block.getParent?.();
+        if (parent?.rendered && typeof parent.queueRender === "function") {
+          parent.queueRender();
+        }
+      }
+      qt.triggerQueuedRenders();
     }
-    qt.triggerQueuedRenders();
   }
   function applyPortValue(field, value) {
-    field.setValue(value, false);
-    if (field.textContent_ && typeof field.getDisplayText_ === "function") {
-      field.textContent_.nodeValue = field.getDisplayText_();
-    }
+    const { mode, maxSelections } = getFieldPortConfig(field);
+    field.setValue(coercePortFieldValue(value, { mode, maxSelections }), false);
   }
   function fireFieldChangeIfNeeded2(field, oldValue) {
     const block = field.getSourceBlock();
@@ -23165,6 +23281,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
     if (message.type === "editor.portPicker.value") {
       applyPortValue(session.field, message.value);
+      refreshPortFieldDisplay(session.field);
+      fireFieldChangeIfNeeded2(session.field, session.valueWhenOpened);
       return;
     }
     closeSession2(message.sessionId, false);
@@ -23182,6 +23300,11 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     if (!field.getSourceBlock()) {
       return;
     }
+    const { mode, maxSelections } = getFieldPortConfig(field);
+    const value = coercePortFieldValue(String(field.getValue()), {
+      mode,
+      maxSelections
+    });
     const sessionId = createSessionId2(field);
     sessions2.set(sessionId, {
       field,
@@ -23190,7 +23313,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     postToReactNative({
       type: "editor.portPicker.open",
       sessionId,
-      value: String(field.getValue())
+      value,
+      maxSelections
     });
   }
 
@@ -23254,7 +23378,12 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return getFieldValue(block, "NUM") ?? "0";
     }
     if (block.type === BLOCK_TYPES.common.portDropdown) {
-      return getFieldValue(block, "PORT") ?? "1";
+      const raw = getFieldValue(block, "PORT") ?? "0";
+      const ports = parsePortFieldValue(raw);
+      if (ports.length === 1) {
+        return ports[0];
+      }
+      return `[${ports.join(", ")}]`;
     }
     if (block.type === "text") {
       return quotePythonString(getFieldValue(block, "TEXT") ?? "");
@@ -23497,26 +23626,68 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return [s2, s2];
     }
   );
+  function readSelectionMode(options) {
+    if (options.selectionMode === "multi") {
+      return "multi";
+    }
+    const value = typeof options.value === "string" ? options.value : "";
+    if (value.includes(",")) {
+      return "multi";
+    }
+    return "single";
+  }
+  function readMaxSelections(options, mode) {
+    const raw = options.maxSelections;
+    if (typeof raw === "number" && raw >= 1) {
+      return Math.floor(raw);
+    }
+    return mode === "multi" ? 2 : 1;
+  }
+  function fieldCoerceOpts(field) {
+    const mode = field.selectionMode_ ?? "single";
+    return { mode, maxSelections: field.maxSelections_ ?? (mode === "multi" ? 2 : 1) };
+  }
   function registerPortPickerField() {
     if (fieldsRegistered2) {
       return;
     }
     fieldsRegistered2 = true;
     class FieldPortPicker extends H {
-      /** 与 FieldDropdown.fromJson 一致：`(menuOptions, validator, config)`，value 在 config 里 */
+      selectionMode_ = "single";
+      maxSelections_ = 1;
       static fromJson(options) {
-        const value = typeof options.value === "string" ? options.value : "0";
-        return new FieldPortPicker(BLOCKLY_PORT_OPTIONS, void 0, {
+        const selectionMode = readSelectionMode(options);
+        const maxSelections = readMaxSelections(options, selectionMode);
+        const rawValue = typeof options.value === "string" ? options.value : "0";
+        const field = new FieldPortPicker(BLOCKLY_PORT_OPTIONS, void 0, {
           ...options,
-          value
+          value: coercePortFieldValue(rawValue, { mode: selectionMode, maxSelections })
         });
+        field.selectionMode_ = selectionMode;
+        field.maxSelections_ = maxSelections;
+        return field;
       }
       showEditor_(e3) {
         openPortPickerEditor(this, e3);
       }
-      /** 显示当前端口值；RN 侧选项列表单独维护 */
+      doClassValidation_(newValue) {
+        const opts = fieldCoerceOpts(this);
+        if (newValue == null || newValue === "") {
+          return coercePortFieldValue("0", opts);
+        }
+        const coerced = coercePortFieldValue(String(newValue), opts);
+        const ports = parsePortFieldValue(coerced);
+        if (ports.length > 1) {
+          this.selectionMode_ = "multi";
+          this.maxSelections_ = Math.max(this.maxSelections_, 2);
+        }
+        return coerced;
+      }
+      getText_() {
+        return formatPortFieldDisplay(String(this.getValue()));
+      }
       getDisplayText_() {
-        return String(this.getValue());
+        return this.getText_();
       }
     }
     pt.register(
@@ -23571,9 +23742,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     const orig = flyout.getWidth.bind(flyout);
     flyout.getWidth = () => flyout.isVisible() ? orig() : 0;
   }
-
-  // assets/toolbox/combined_motor.svg
-  var combined_motor_default = '<?xml version="1.0" encoding="UTF-8"?>\n<svg id="_\u56FE\u5C42_1" data-name="\u56FE\u5C42 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.6771653543 22.6771653543">\n  <defs>\n    <style>\n      .cls-1 {\n        fill: #fff;\n      }\n\n      .cls-2 {\n        fill: #ff4ccd;\n      }\n    </style>\n  </defs>\n  <rect class="cls-1" x="-.0012695088" width="22.6771653543" height="22.6771653543" rx="2.8346456693" ry="2.8346456693"/>\n  <g>\n    <path class="cls-2" d="M9.8234185674,5.9168559004c-3.8285524111,0-6.9333813506,3.1048413823-6.9333813506,6.935421971,0,3.8285524111,3.1048289395,6.9333813506,6.9333813506,6.9333813506,3.8305805888,0,6.9354095282-3.1048289395,6.9354095282-6.9333813506,0-3.8305805888-3.1048289395-6.935421971-6.9354095282-6.935421971ZM5.2018486881,14.5851130539c-.958158413,0-1.734875803-.77671739-1.734875803-1.7328351825,0-.958158413,.77671739-1.734875803,1.734875803-1.734875803,.9561053497,0,1.7328351825,.77671739,1.7328351825,1.734875803,0,.9561177925-.7767298328,1.7328351825-1.7328351825,1.7328351825Zm4.6215698793,4.6236104998c-.9561177925,0-1.7328351825-.77671739-1.7328351825-1.734875803,0-.9561177925,.77671739-1.7328351825,1.7328351825-1.7328351825,.958158413,0,1.734875803,.77671739,1.734875803,1.7328351825,0,.958158413-.77671739,1.734875803-1.734875803,1.734875803Zm1.5024690393-6.9333813506v1.155911957h-.9235051934v.9234927505h-1.1558995142v-.9234927505h-.925533371v-1.155911957h.925533371v-.925533371h1.1558995142v.925533371h.9235051934Zm-1.5024690393-2.3138396489c-.9561177925,0-1.7328351825-.77671739-1.7328351825-1.7328351825,0-.958158413,.77671739-1.734875803,1.7328351825-1.734875803,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.9561177925-.77671739,1.7328351825-1.734875803,1.7328351825Zm4.6236104998,4.6236104998c-.9561177925,0-1.7328351825-.77671739-1.7328351825-1.7328351825,0-.958158413,.77671739-1.734875803,1.7328351825-1.734875803,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.9561177925-.77671739,1.7328351825-1.734875803,1.7328351825Z"/>\n    <path class="cls-2" d="M12.8492289952,2.8915061324c-2.4137305098,0-4.5379915394,1.2333808783-5.7815506345,3.1048413823,.8501050703-.3404601064,1.7797196822-.5300511686,2.7541906162-.5300511686,.4566510455,0,.9031114314,.0407750811,1.3373405373,.1223252433-.028543801-.1243658638-.0428157016-.2527880828-.0428157016-.3853039857,0-.958158413,.77671739-1.734875803,1.7328351825-1.734875803,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.5973169874-.3037538235,1.1253275355-.7644861099,1.4372313981,.8867989104,.5708138069,1.6431349812,1.3271498777,2.2180300291,2.2139487881,.3119038626-.4607198436,.8378737902-.7624454895,1.4351907776-.7624454895,.958158413,0,1.734875803,.77671739,1.734875803,1.734875803,0,.9561177925-.77671739,1.7328351825-1.734875803,1.7328351825-.13250346,0-.2609381219-.0142719005-.3852915429-.0428157016,.0815377194,.4342291059,.1223128005,.8806894918,.1223128005,1.3373405373,0,.9724303135-.1875504417,1.9020449255-.5300387258,2.7521499958,1.871460504-1.2415184746,3.1048289395-3.3657670614,3.1048289395-5.779510014,0-3.8305805888-3.1048289395-6.935421971-6.935421971-6.935421971Z"/>\n  </g>\n</svg>';
 
   // assets/toolbox/matrix.svg
   var matrix_default = '<?xml version="1.0" encoding="UTF-8"?>\n<svg id="_\u56FE\u5C42_1" data-name="\u56FE\u5C42 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.6771653543 22.6771653543">\n  <defs>\n    <style>\n      .cls-1 {\n        fill: #fff;\n      }\n\n      .cls-2 {\n        fill: #9b6af6;\n      }\n    </style>\n  </defs>\n  <rect class="cls-1" y=".0063373591" width="22.6771653543" height="22.6771653543" rx="2.8346456693" ry="2.8346456693"/>\n  <g>\n    <rect class="cls-2" x="3.1280199652" y="2.9609260113" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="9.0765647229" y="2.9609260113" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="15.0251094807" y="2.9609260113" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="3.1280199652" y="9.0765647229" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="9.0765647229" y="9.0765647229" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="15.0251094807" y="9.0765647229" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="3.1280199652" y="15.1922034345" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="9.0765647229" y="15.1922034345" width="4.5240359085" height="4.5240359085"/>\n    <rect class="cls-2" x="15.0251094807" y="15.1922034345" width="4.5240359085" height="4.5240359085"/>\n  </g>\n</svg>';

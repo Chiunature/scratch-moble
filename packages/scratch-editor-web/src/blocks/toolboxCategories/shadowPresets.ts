@@ -1,10 +1,20 @@
 import { BLOCK_TYPES } from '../blockTypes';
 
-/** toolbox `inputs.<name>.shadow`：通用端口下拉（0–7） */
+/** toolbox `inputs.<name>.shadow`：单选端口（0–7） */
 export function portShadow(port: string | number = '0') {
   return {
     type: BLOCK_TYPES.common.portDropdown,
     fields: { PORT: String(port) },
+  } as const;
+}
+
+/** toolbox `inputs.<name>.shadow`：多选端口（同 port_dropdown，初值逗号分隔） */
+export function portShadowMulti(
+  ports: [string | number, string | number] = ['0', '1'],
+) {
+  return {
+    type: BLOCK_TYPES.common.portDropdown,
+    fields: { PORT: ports.map(String).join(',') },
   } as const;
 }
 

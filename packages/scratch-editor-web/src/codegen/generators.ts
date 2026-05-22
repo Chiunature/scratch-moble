@@ -8,6 +8,8 @@
  *
  * 新增积木时只需在 statementGenerators 里追加一个 key-function 对即可。
  */
+import { parsePortFieldValue } from '@scratch-mobile/shared';
+
 import {
   BLOCK_TYPES,
   CUSTOM_NUMERIC_LITERAL_TYPES,
@@ -44,7 +46,12 @@ function expressionBlockToPython(block: ScratchBlock): string {
   }
 
   if (block.type === BLOCK_TYPES.common.portDropdown) {
-    return getFieldValue(block, 'PORT') ?? '1';
+    const raw = getFieldValue(block, 'PORT') ?? '0';
+    const ports = parsePortFieldValue(raw);
+    if (ports.length === 1) {
+      return ports[0]!;
+    }
+    return `[${ports.join(', ')}]`;
   }
 
   if (block.type === 'text') {
