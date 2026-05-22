@@ -22,6 +22,17 @@ export type EditorOutMessage =
   | {
       type: 'editor.numberSlider.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.portPicker.open';
+      sessionId: string;
+      value: string;
+      anchor: { x: number; y: number; width: number; height: number };
+      colors: { primary: string; secondary: string };
+    }
+  | {
+      type: 'editor.portPicker.close';
+      sessionId: string;
     };
 
 export type EditorInMessage =
@@ -33,9 +44,23 @@ export type EditorInMessage =
   | {
       type: 'editor.numberSlider.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.portPicker.value';
+      sessionId: string;
+      value: string;
+    }
+  | {
+      type: 'editor.portPicker.close';
+      sessionId: string;
     };
 
 export type RnNumberSliderOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.numberSlider.open' }
+>;
+
+export type RnPortPickerOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.portPicker.open' }
 >;

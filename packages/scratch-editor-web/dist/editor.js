@@ -22535,18 +22535,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       message0: "%1",
       args0: [
         {
-          type: "field_dropdown",
+          type: "field_port_picker",
           name: "PORT",
-          options: [
-            ["0", "0"],
-            ["1", "1"],
-            ["2", "2"],
-            ["3", "3"],
-            ["4", "4"],
-            ["5", "5"],
-            ["6", "6"],
-            ["7", "7"]
-          ]
+          value: "0"
         }
       ],
       output: "Number",
@@ -22871,7 +22862,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.motor.runPower,
         inputs: {
           PORTS: { shadow: portShadow("0") },
-          POWER: { shadow: positiveKeyboardShadow(50) }
+          POWER: { shadow: integerSliderShadow(50) }
         }
       },
       {
@@ -23075,12 +23066,138 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     });
   }
 
+  // src/workspace-custom/fields/portPickerEditor.ts
+  var sessions2 = /* @__PURE__ */ new Map();
+  var fieldDropdownShowEditor = H.prototype.showEditor_;
+  function createSessionId2(field) {
+    const id = field.id_;
+    return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function refreshPortFieldDisplay(field) {
+    if (field.textContent_ && typeof field.getDisplayText_ === "function") {
+      field.textContent_.nodeValue = field.getDisplayText_();
+    }
+    const block = field.getSourceBlock();
+    if (block?.rendered && typeof block.queueRender === "function") {
+      block.queueRender();
+      const parent = block.getParent?.();
+      if (parent?.rendered && typeof parent.queueRender === "function") {
+        parent.queueRender();
+      }
+    }
+    qt.triggerQueuedRenders();
+  }
+  function applyPortValue(field, value) {
+    field.setValue(value, false);
+    if (field.textContent_ && typeof field.getDisplayText_ === "function") {
+      field.textContent_.nodeValue = field.getDisplayText_();
+    }
+  }
+  function fireFieldChangeIfNeeded2(field, oldValue) {
+    const block = field.getSourceBlock();
+    const newValue = field.getValue();
+    if (!block || oldValue === newValue) {
+      return;
+    }
+    if (f.isEnabled()) {
+      f.fire(
+        new f.BlockChange(
+          block,
+          "field",
+          field.name ?? null,
+          oldValue,
+          newValue
+        )
+      );
+    }
+  }
+  function getFieldAnchorRect2(field) {
+    const target = field.getClickTarget_?.();
+    if (!target || typeof target.getBoundingClientRect !== "function") {
+      return null;
+    }
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+    return {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+  function coloursFromField(field) {
+    const block = field.getSourceBlock();
+    const primary = block && typeof block.getColour === "function" && block.getColour() || "#4C97FF";
+    const secondary = block && typeof block.getColourSecondary === "function" && block.getColourSecondary() || primary;
+    return { primary, secondary };
+  }
+  function closeSession2(sessionId, notifyNativeHost) {
+    const session = sessions2.get(sessionId);
+    if (!session) {
+      return;
+    }
+    sessions2.delete(sessionId);
+    refreshPortFieldDisplay(session.field);
+    fireFieldChangeIfNeeded2(session.field, session.valueWhenOpened);
+    if (notifyNativeHost) {
+      postToReactNative({ type: "editor.portPicker.close", sessionId });
+    }
+  }
+  function handlePortPickerInbound(message) {
+    if (message.type !== "editor.portPicker.value" && message.type !== "editor.portPicker.close") {
+      return;
+    }
+    const session = sessions2.get(message.sessionId);
+    if (!session) {
+      return;
+    }
+    if (message.type === "editor.portPicker.value") {
+      applyPortValue(session.field, message.value);
+      return;
+    }
+    closeSession2(message.sessionId, false);
+  }
+  function openPortPickerEditor(field, e3) {
+    if (!isReactNativeHost()) {
+      fieldDropdownShowEditor.call(field, e3);
+      return;
+    }
+    for (const [, session] of sessions2) {
+      if (session.field === field) {
+        return;
+      }
+    }
+    const anchor = getFieldAnchorRect2(field);
+    const block = field.getSourceBlock();
+    if (!anchor || !block) {
+      return;
+    }
+    const sessionId = createSessionId2(field);
+    sessions2.set(sessionId, {
+      field,
+      valueWhenOpened: field.getValue()
+    });
+    postToReactNative({
+      type: "editor.portPicker.open",
+      sessionId,
+      value: String(field.getValue()),
+      anchor,
+      colors: coloursFromField(field)
+    });
+  }
+
   // src/bridge/nativeInbound.ts
   function handleMessageFromNative(message) {
     switch (message.type) {
       case "editor.numberSlider.value":
       case "editor.numberSlider.close":
         handleNumberSliderInbound(message);
+        break;
+      case "editor.portPicker.value":
+      case "editor.portPicker.close":
+        handlePortPickerInbound(message);
         break;
     }
   }
@@ -23329,6 +23446,46 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
   function patchFieldNumberEditor() {
     registerNumberFieldVariants();
+  }
+
+  // src/workspace-custom/fields/patchFieldPortPicker.ts
+  var fieldsRegistered2 = false;
+  var BLOCKLY_PORT_OPTIONS = Array.from(
+    { length: 8 },
+    (_2, i2) => {
+      const s2 = String(i2);
+      return [s2, s2];
+    }
+  );
+  function registerPortPickerField() {
+    if (fieldsRegistered2) {
+      return;
+    }
+    fieldsRegistered2 = true;
+    class FieldPortPicker extends H {
+      /** 与 FieldDropdown.fromJson 一致：`(menuOptions, validator, config)`，value 在 config 里 */
+      static fromJson(options) {
+        const value = typeof options.value === "string" ? options.value : "0";
+        return new FieldPortPicker(BLOCKLY_PORT_OPTIONS, void 0, {
+          ...options,
+          value
+        });
+      }
+      showEditor_(e3) {
+        openPortPickerEditor(this, e3);
+      }
+      /** 显示当前端口值；RN 侧选项列表单独维护 */
+      getDisplayText_() {
+        return String(this.getValue());
+      }
+    }
+    pt.register(
+      "field_port_picker",
+      FieldPortPicker
+    );
+  }
+  function patchFieldPortPicker() {
+    registerPortPickerField();
   }
 
   // src/workspace-custom/flyout/flyoutWidthClamp.ts
@@ -23735,6 +23892,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     registerNativeInboundBridge();
     registerEditorBlocks();
     patchFieldNumberEditor();
+    patchFieldPortPicker();
     const host = document.getElementById("workspace");
     if (!host) {
       return;

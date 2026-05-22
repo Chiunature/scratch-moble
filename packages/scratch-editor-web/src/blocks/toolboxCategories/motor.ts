@@ -31,7 +31,7 @@ export const motorToolboxCategory = {
       type: BLOCK_TYPES.motor.runPower,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        POWER: { shadow: positiveKeyboardShadow(50) },
+        POWER: { shadow: integerSliderShadow(50) },
       },
     },
     {

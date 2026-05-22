@@ -14,6 +14,7 @@ import { editorTheme } from './theme';
 import {
   ensureScratchZoomControlsIfMissing,
   patchFieldNumberEditor,
+  patchFieldPortPicker,
   patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
@@ -31,6 +32,7 @@ function bootstrap(): void {
   registerNativeInboundBridge(); //挂载WebView与React Native的桥接
   registerEditorBlocks(); //— 注册 shadow 积木
   patchFieldNumberEditor();
+  patchFieldPortPicker();
 
   const host = document.getElementById('workspace');
 

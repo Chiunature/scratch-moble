@@ -26,6 +26,19 @@ export type EditorOutMessage =
       //数字滑块关闭
       type: 'editor.numberSlider.close';
       sessionId: string;
+    }
+  | {
+      //端口选择器开启（选项由 RN 定义，Web 只传当前值）
+      type: 'editor.portPicker.open';
+      sessionId: string;
+      value: string;
+      anchor: { x: number; y: number; width: number; height: number };
+      colors: { primary: string; secondary: string };
+    }
+  | {
+      //端口选择器关闭
+      type: 'editor.portPicker.close';
+      sessionId: string;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -37,5 +50,14 @@ export type EditorInMessage =
     }
   | {
       type: 'editor.numberSlider.close';
+      sessionId: string;
+    }
+  | {
+      type: 'editor.portPicker.value';
+      sessionId: string;
+      value: string;
+    }
+  | {
+      type: 'editor.portPicker.close';
       sessionId: string;
     };

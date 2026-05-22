@@ -5,9 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { NumberSliderOverlay } from '../../editor/NumberSliderOverlay';
+import { PortPickerOverlay } from '../../editor/PortPickerOverlay';
 import type {
   EditorOutMessage,
   RnNumberSliderOpenMessage,
+  RnPortPickerOpenMessage,
 } from '../../editor/editorMessages';
 import { injectEditorMessage } from '../../editor/injectEditorMessage';
 import { EDITOR_BUNDLE_HTML } from '../../editor/editorBundleHtml';
@@ -30,6 +32,8 @@ export function EditorScreen() {
   //存储当前激活的数字滑块会话
   const [rnSliderSession, setRnSliderSession] =
     useState<RnNumberSliderOpenMessage | null>(null);
+  const [rnPortPickerSession, setRnPortPickerSession] =
+    useState<RnPortPickerOpenMessage | null>(null);
   //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   //存储积木数量
@@ -51,6 +55,16 @@ export function EditorScreen() {
         return;
       case 'editor.numberSlider.close':
         setRnSliderSession(current =>
+          current?.sessionId === message.sessionId ? null : current,
+        );
+        return;
+      case 'editor.portPicker.open':
+        setRnPortPickerSession(current =>
+          current?.sessionId === message.sessionId ? current : message,
+        );
+        return;
+      case 'editor.portPicker.close':
+        setRnPortPickerSession(current =>
           current?.sessionId === message.sessionId ? null : current,
         );
         return;
@@ -116,6 +130,23 @@ export function EditorScreen() {
             setRnSliderSession(null);
             injectEditorMessage(webViewRef.current, {
               type: 'editor.numberSlider.close',
+              sessionId,
+            });
+          }}
+        />
+        <PortPickerOverlay
+          session={rnPortPickerSession}
+          onValueChange={(sessionId, value) => {
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.portPicker.value',
+              sessionId,
+              value,
+            });
+          }}
+          onClose={sessionId => {
+            setRnPortPickerSession(null);
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.portPicker.close',
               sessionId,
             });
           }}
