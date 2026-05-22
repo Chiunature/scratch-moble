@@ -9,7 +9,7 @@ export const sensorBlockDefinitions = [
     style: 'looks_blocks',
   },
   {
-    type: BLOCK_TYPES.sensor.ultrasion_sensor.value,
+    type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
     message0: '超声波传感器 数值',
     output: 'Number',
     outputShape: 2, //2：圆角，1：六角，3：矩形

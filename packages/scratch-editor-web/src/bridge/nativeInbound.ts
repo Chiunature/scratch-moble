@@ -1,4 +1,4 @@
-import type { EditorInMessage } from './messages';
+import type { EditorInMessage } from '@scratch-mobile/shared';
 import { handleNumberSliderInbound } from '../workspace-custom/fields/numberSliderEditor';
 import { handlePortPickerInbound } from '../workspace-custom/fields/portPickerEditor';
 

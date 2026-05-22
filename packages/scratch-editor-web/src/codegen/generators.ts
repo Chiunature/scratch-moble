@@ -63,17 +63,6 @@ function valueToPython(
   return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
 }
 
-function statementInputToPython(
-  block: ScratchBlock,
-  inputName: string,
-  context: GenerateContext,
-): string {
-  const firstChildBlock = getInputTargetBlock(block, inputName);
-  return firstChildBlock
-    ? statementChainToPython(firstChildBlock, context)
-    : '';
-}
-
 const statementGenerators: Record<string, StatementGenerator> = {
   [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
     return `${indent(context)}# 当开始运行`;
@@ -126,7 +115,7 @@ const statementGenerators: Record<string, StatementGenerator> = {
     return `${indent(context)}sleep_seconds(${v})`;
   },
 
-  [BLOCK_TYPES.sensor.oneCalibrate](_block, context) {
+  [BLOCK_TYPES.sensor.touch_sensor.oneCalibrate](_block, context) {
     return `${indent(context)}sensor_one_calibrate()`;
   },
 };

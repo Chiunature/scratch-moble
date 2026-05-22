@@ -22463,8 +22463,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       touch_sensor: {
         oneCalibrate: "one_calibrate"
       },
-      ultrasion_sensor: {
-        value: "value"
+      ultrasonic_sensor: {
+        value: "ultrasonic_sensor_value"
       },
       clicker_sensor: {
         // press: 'clicker_press',
@@ -22705,7 +22705,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       style: "looks_blocks"
     },
     {
-      type: BLOCK_TYPES.sensor.ultrasion_sensor.value,
+      type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
       message0: "\u8D85\u58F0\u6CE2\u4F20\u611F\u5668 \u6570\u503C",
       output: "Number",
       outputShape: 2,
@@ -22783,17 +22783,28 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
 
   // src/blocks/toolboxCategories/shared.ts
-  var TOOLBOX_CATEGORIES = [
+  var IMPLEMENTED_TOOLBOX_CATEGORIES = [
     { id: "motor", displayText: "\u7535\u673A", colour: "#4c97ff" },
     { id: "move", displayText: "\u79FB\u52A8", colour: "#ff4ccd" },
     { id: "matrixLight", displayText: "\u77E9\u9635\u706F", colour: "#9966ff" },
     { id: "sound", displayText: "\u58F0\u97F3", colour: "#cf63cf" },
     { id: "event", displayText: "\u4E8B\u4EF6", colour: "#ffbf00" },
     { id: "control", displayText: "\u63A7\u5236", colour: "#ffab19" },
-    { id: "sensor", displayText: "\u4F20\u611F\u5668", colour: "#34ccf1" },
-    { id: "operation", displayText: "\u8FD0\u7B97", colour: "#59c059" },
-    { id: "variable", displayText: "\u53D8\u91CF", colour: "#ff8c1a" },
-    { id: "customBlock", displayText: "\u81EA\u5236\u79EF\u6728", colour: "#ff6680" }
+    { id: "sensor", displayText: "\u4F20\u611F\u5668", colour: "#34ccf1" }
+  ];
+  var PLANNED_TOOLBOX_CATEGORIES = [
+    { id: "operation", displayText: "\u8FD0\u7B97", colour: "#59c059", planned: true },
+    { id: "variable", displayText: "\u53D8\u91CF", colour: "#ff8c1a", planned: true },
+    {
+      id: "customBlock",
+      displayText: "\u81EA\u5236\u79EF\u6728",
+      colour: "#ff6680",
+      planned: true
+    }
+  ];
+  var TOOLBOX_CATEGORIES = [
+    ...IMPLEMENTED_TOOLBOX_CATEGORIES,
+    ...PLANNED_TOOLBOX_CATEGORIES
   ];
   function toolboxCategoryIconClasses(categoryId) {
     return `toolbox-category-icon toolbox-category-icon-${categoryId}`;
@@ -22949,7 +22960,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     },
     contents: [
       { kind: "block", type: BLOCK_TYPES.sensor.touch_sensor.oneCalibrate },
-      { kind: "block", type: BLOCK_TYPES.sensor.ultrasion_sensor.value }
+      { kind: "block", type: BLOCK_TYPES.sensor.ultrasonic_sensor.value }
     ]
   };
 
@@ -23044,6 +23055,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return;
     }
     if (message.type === "editor.numberSlider.value") {
+      const current = Number(session.field.getValue());
+      if (!Number.isNaN(current) && current === message.value) {
+        return;
+      }
       applySliderValueDuringDrag(session.field, message.value);
       return;
     }
@@ -23293,7 +23308,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const v2 = valueToPython(block, "STEPS", "1");
       return `${indent(context)}sleep_seconds(${v2})`;
     },
-    [BLOCK_TYPES.sensor.oneCalibrate](_block, context) {
+    [BLOCK_TYPES.sensor.touch_sensor.oneCalibrate](_block, context) {
       return `${indent(context)}sensor_one_calibrate()`;
     }
   };
@@ -23321,6 +23336,40 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return "# \u62D6\u62FD\u98DE\u51FA\u680F\u79EF\u6728\u540E\u751F\u6210 Python \u4EE3\u7801";
     }
     return blocks.map((block) => statementChainToPython(block, { indent: 0 })).filter(Boolean).join("\n\n");
+  }
+
+  // src/bridge/codeGenerationPublisher.ts
+  var DEFAULT_DEBOUNCE_MS = 200;
+  function createCodeGenerationPublisher(workspace, options) {
+    const debounceMs = options?.debounceMs ?? DEFAULT_DEBOUNCE_MS;
+    let debounceTimer = null;
+    let lastSentCode = "";
+    let lastSentBlockCount = -1;
+    const flush = () => {
+      if (debounceTimer != null) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+      const code = renderPythonCode(workspace);
+      const blockCount = workspace.getAllBlocks(false).length;
+      if (code === lastSentCode && blockCount === lastSentBlockCount) {
+        return;
+      }
+      lastSentCode = code;
+      lastSentBlockCount = blockCount;
+      postToReactNative({
+        type: "editor.code.generated",
+        code,
+        blockCount
+      });
+    };
+    const schedule = () => {
+      if (debounceTimer != null) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(flush, debounceMs);
+    };
+    return { schedule, flush };
   }
 
   // src/theme.ts
@@ -23940,17 +23989,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       refreshToolboxDomAfterLayout(workspace);
       setupFlyoutWidthClamp(workspace);
     });
-    const publish = () => {
-      const generated = renderPythonCode(workspace);
-      postToReactNative({
-        // 发送Python代码到React Native
-        type: "editor.code.generated",
-        code: generated,
-        blockCount: workspace.getAllBlocks(false).length
-      });
-    };
-    workspace.addChangeListener(() => publish());
-    publish();
+    const { schedule: scheduleCodePublish, flush: flushCodePublish } = createCodeGenerationPublisher(workspace);
+    workspace.addChangeListener(() => scheduleCodePublish());
+    flushCodePublish();
   }
   bootstrap();
 })();

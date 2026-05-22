@@ -3,6 +3,8 @@
  * Web 只接收最终选中的 value；展示与状态均在此维护。
  */
 
+import { portPickerTheme } from '../../../theme';
+
 export type PortConnectionStatus = 'connected' | 'warning' | 'disconnected';
 
 export type PortDefinition = {
@@ -16,23 +18,7 @@ export type PortDefinition = {
   runtimeLabel: string;
 };
 
-/** 设计稿配色 */
-export const portPickerTheme = {
-  sheetBg: '#0b1220',
-  sheetBorder: '#1e293b',
-  panelBg: '#111827',
-  panelBorder: '#1f2937',
-  textPrimary: '#f8fafc',
-  textMuted: '#94a3b8',
-  textDim: '#64748b',
-  accent: '#34d399',
-  accentGlow: 'rgba(52, 211, 153, 0.45)',
-  connected: '#3b82f6',
-  warning: '#f97316',
-  disconnected: '#475569',
-  confirmBg: '#10b981',
-  cancelBorder: '#334155',
-} as const;
+export { portPickerTheme };
 
 export const PORT_STATUS_LEGEND: {
   key: PortConnectionStatus | 'selected';

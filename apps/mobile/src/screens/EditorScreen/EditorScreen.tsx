@@ -4,15 +4,19 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
-import { NumberSliderOverlay } from '../../editor/NumberSliderOverlay';
-import { PortPickerOverlay } from '../../editor/PortPickerOverlay';
 import type {
   EditorOutMessage,
   RnNumberSliderOpenMessage,
   RnPortPickerOpenMessage,
-} from '../../editor/editorMessages';
-import { injectEditorMessage } from '../../editor/injectEditorMessage';
-import { EDITOR_BUNDLE_HTML } from '../../editor/editorBundleHtml';
+} from '@scratch-mobile/shared';
+
+import {
+  EDITOR_BUNDLE_HTML,
+  injectEditorMessage,
+  NumberSliderOverlay,
+  PortPickerOverlay,
+  resetInjectEditorMessageDedup,
+} from '../../features/editor';
 import { styles } from './EditorScreen.styles';
 import HomeIcon from '../../../assets/editorScreen/home.png';
 import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
@@ -40,14 +44,24 @@ export function EditorScreen() {
   const [blockCount, setBlockCount] = useState(0);
   //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
+  const lastCodeRef = useRef({ code: '', blockCount: 0 });
 
   //处理WebView发送的消息
   const handleEditorMessage = useCallback((message: EditorOutMessage) => {
     switch (message.type) {
-      case 'editor.code.generated':
-        setGeneratedCode(message.code);
-        setBlockCount(message.blockCount);
+      case 'editor.code.generated': {
+        const { code: nextCode, blockCount: nextBlockCount } = message;
+        if (
+          lastCodeRef.current.code === nextCode &&
+          lastCodeRef.current.blockCount === nextBlockCount
+        ) {
+          return;
+        }
+        lastCodeRef.current = { code: nextCode, blockCount: nextBlockCount };
+        setGeneratedCode(nextCode);
+        setBlockCount(nextBlockCount);
         return;
+      }
       case 'editor.numberSlider.open':
         setRnSliderSession(current =>
           current?.sessionId === message.sessionId ? current : message,
@@ -128,6 +142,7 @@ export function EditorScreen() {
           }}
           onClose={sessionId => {
             setRnSliderSession(null);
+            resetInjectEditorMessageDedup();
             injectEditorMessage(webViewRef.current, {
               type: 'editor.numberSlider.close',
               sessionId,
@@ -145,6 +160,7 @@ export function EditorScreen() {
           }}
           onClose={sessionId => {
             setRnPortPickerSession(null);
+            resetInjectEditorMessageDedup();
             injectEditorMessage(webViewRef.current, {
               type: 'editor.portPicker.close',
               sessionId,

@@ -11,6 +11,6 @@ export const sensorToolboxCategory = {
   },
   contents: [
     { kind: 'block', type: BLOCK_TYPES.sensor.touch_sensor.oneCalibrate },
-    { kind: 'block', type: BLOCK_TYPES.sensor.ultrasion_sensor.value },
+    { kind: 'block', type: BLOCK_TYPES.sensor.ultrasonic_sensor.value },
   ],
 } as const;

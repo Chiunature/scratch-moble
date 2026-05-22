@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, spacing } from '../theme';
+import type { RnNumberSliderOpenMessage } from '@scratch-mobile/shared';
+
+import { colors, fontSize, fontWeight, numberSliderBubbleColors, spacing } from '../../../theme';
 import { BubbleSlider } from './BubbleSlider';
-import type { RnNumberSliderOpenMessage } from './editorMessages';
 
 type Props = {
   session: RnNumberSliderOpenMessage | null;
@@ -12,12 +13,6 @@ type Props = {
 };
 
 const BUBBLE_WIDTH = 220;
-
-/** 滑块气泡配色（RN 侧固定，不从 WebView 取色） */
-const BUBBLE_COLORS = {
-  primary: '#4C97FF',
-  secondary: '#4280D7',
-} as const;
 
 function formatDisplayValue(value: number, step: number): string {
   if (step >= 1) {
@@ -122,8 +117,8 @@ export function NumberSliderOverlay({
             styles.bubble,
             {
               width: BUBBLE_WIDTH,
-              backgroundColor: BUBBLE_COLORS.primary,
-              borderColor: BUBBLE_COLORS.secondary,
+              backgroundColor: numberSliderBubbleColors.primary,
+              borderColor: numberSliderBubbleColors.secondary,
             },
           ]}
           onPress={e => e.stopPropagation()}

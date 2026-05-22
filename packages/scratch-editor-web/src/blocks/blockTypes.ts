@@ -38,8 +38,8 @@ export const BLOCK_TYPES = {
     touch_sensor: {
       oneCalibrate: 'one_calibrate',
     },
-    ultrasion_sensor: {
-      value: 'value',
+    ultrasonic_sensor: {
+      value: 'ultrasonic_sensor_value',
     },
     clicker_sensor: {
       // press: 'clicker_press',

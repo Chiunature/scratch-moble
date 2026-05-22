@@ -1,18 +1,16 @@
 /**
- * WebView 与 React Native 的桥接协议（Web 侧源定义）。
- * 修改字段时同步更新 apps/mobile/src/editor/editorMessages.ts。
+ * WebView 与 React Native 的编辑器桥接协议（跨端单一来源）。
+ * mobile 与 scratch-editor-web 均从此模块导入，勿再维护副本。
  */
 
 /** WebView → React Native */
 export type EditorOutMessage =
   | {
-      //代码
       type: 'editor.code.generated';
       code: string;
       blockCount: number;
     }
   | {
-      //数字滑块开启
       type: 'editor.numberSlider.open';
       sessionId: string;
       min: number;
@@ -21,18 +19,15 @@ export type EditorOutMessage =
       value: number;
     }
   | {
-      //数字滑块关闭
       type: 'editor.numberSlider.close';
       sessionId: string;
     }
   | {
-      //端口选择器开启（选项与配色由 RN 定义，Web 只传当前值）
       type: 'editor.portPicker.open';
       sessionId: string;
       value: string;
     }
   | {
-      //端口选择器关闭
       type: 'editor.portPicker.close';
       sessionId: string;
     };
@@ -57,3 +52,13 @@ export type EditorInMessage =
       type: 'editor.portPicker.close';
       sessionId: string;
     };
+
+export type RnNumberSliderOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.numberSlider.open' }
+>;
+
+export type RnPortPickerOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.portPicker.open' }
+>;

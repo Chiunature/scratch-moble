@@ -6,8 +6,10 @@ import { build } from 'esbuild';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(rootDir, '..', '..');
 const srcDir = path.join(rootDir, 'src');
 const distDir = path.join(rootDir, 'dist');
+const sharedEntry = path.join(repoRoot, 'packages', 'shared', 'src', 'index.ts');
 
 const css = `
 :root {
@@ -129,6 +131,9 @@ await build({
   minify: false,
   plugins: [toolboxSvgTextPlugin],
   loader: { '.svg': 'dataurl', '.png': 'dataurl' },
+  alias: {
+    '@scratch-mobile/shared': sharedEntry,
+  },
 });
 
 const jsCode = await readFile(path.join(distDir, 'editor.js'), 'utf8');

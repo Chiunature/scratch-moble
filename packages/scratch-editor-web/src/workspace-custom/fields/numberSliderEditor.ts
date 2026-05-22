@@ -4,7 +4,7 @@ import {
   isReactNativeHost,
   postToReactNative,
   type EditorInMessage,
-} from '../../bridge';
+} from '../../bridge/index';
 
 type RenderableBlock = {
   rendered?: boolean;
@@ -112,6 +112,10 @@ export function handleNumberSliderInbound(message: EditorInMessage): void {
   }
 
   if (message.type === 'editor.numberSlider.value') {
+    const current = Number(session.field.getValue());
+    if (!Number.isNaN(current) && current === message.value) {
+      return;
+    }
     applySliderValueDuringDrag(session.field, message.value);
     return;
   }

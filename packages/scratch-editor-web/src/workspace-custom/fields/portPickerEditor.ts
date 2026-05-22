@@ -4,7 +4,7 @@ import {
   isReactNativeHost,
   postToReactNative,
   type EditorInMessage,
-} from '../../bridge';
+} from '../../bridge/index';
 
 type RenderableBlock = {
   rendered?: boolean;

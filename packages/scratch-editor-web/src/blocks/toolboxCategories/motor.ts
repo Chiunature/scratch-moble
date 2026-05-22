@@ -1,6 +1,5 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import {
-  decimalSliderShadow,
   integerSliderShadow,
   portShadow,
   positiveKeyboardShadow,

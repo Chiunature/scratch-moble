@@ -12,7 +12,7 @@
 - `apps/mobile`：React Native 页面、导航、App providers、移动端服务、原生桥接和 UI 状态。
 - `packages/core`：纯 TypeScript 的项目、积木、运行时、资源和编解码逻辑。
 - `packages/protocol`：纯 TypeScript 的硬件协议类型、编码、解码和校验逻辑。
-- `packages/shared`：共享类型、常量、schema 定义和小型跨端工具函数。
+- `packages/shared`：共享类型、常量、schema 定义和小型跨端工具函数（含 WebView 编辑器桥协议 `types/editorBridge`）。
 
 ## 运行时边界
 

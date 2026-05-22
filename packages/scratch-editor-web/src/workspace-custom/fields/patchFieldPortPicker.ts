@@ -6,7 +6,7 @@ let fieldsRegistered = false;
 
 /**
  * Blockly `FieldDropdown` 在 fromJson / 构造时强制要求 options。
- * 仅用于 Web 字段初始化与非 RN 时的浏览器回退菜单；RN 选择 UI 见 portPickerOptions.ts。
+ * 仅用于 Web 字段初始化与非 RN 时的浏览器回退菜单；RN 选择 UI 见 apps/mobile features/editor/data。
  */
 const BLOCKLY_PORT_OPTIONS: [string, string][] = Array.from(
   { length: 8 },

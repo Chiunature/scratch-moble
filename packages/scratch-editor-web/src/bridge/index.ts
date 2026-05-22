@@ -1,6 +1,4 @@
-import type { EditorInMessage, EditorOutMessage } from './messages';
-
-export type { EditorInMessage, EditorOutMessage };
+export type { EditorInMessage, EditorOutMessage } from '@scratch-mobile/shared';
 export {
   handleMessageFromNative,
   registerNativeInboundBridge,
@@ -15,6 +13,8 @@ export function isReactNativeHost(): boolean {
 }
 
 /** 发送消息到React Native */
+import type { EditorOutMessage } from '@scratch-mobile/shared';
+
 export function postToReactNative(message: EditorOutMessage): void {
   // 检查webview是否运行在react native环境中
   const bridge = (window as RNWindow).ReactNativeWebView;

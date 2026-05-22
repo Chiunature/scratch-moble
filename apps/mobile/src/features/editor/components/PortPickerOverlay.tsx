@@ -18,8 +18,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fontSize, fontWeight, spacing } from '../theme';
-import type { RnPortPickerOpenMessage } from './editorMessages';
+import type { RnPortPickerOpenMessage } from '@scratch-mobile/shared';
+
+import { fontSize, fontWeight, spacing } from '../../../theme';
 import {
   PORT_DEFINITIONS,
   PORT_STATUS_LEGEND,
@@ -27,7 +28,7 @@ import {
   portPickerTheme,
   type PortConnectionStatus,
   type PortDefinition,
-} from './portPickerOptions';
+} from '../data/portPickerOptions';
 
 type Props = {
   /** 当前会话；null 时不渲染（由 EditorScreen 控制） */
@@ -224,6 +225,8 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
         useNativeDriver: true,
       }),
     ]).start();
+    // 仅在 sessionId 变化时重播入场动画，不依赖整个 session 对象引用
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: sessionId only
   }, [session?.sessionId, fadeAnim, slideAnim, sheetHeight]);
 
   if (!session) {

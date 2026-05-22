@@ -7,8 +7,8 @@ import * as ScratchBlocks from 'scratch-blocks';
 
 import { registerEditorBlocks } from './blocks/registerBlocks';
 import { toolboxJson } from './blocks/toolbox';
-import { postToReactNative, registerNativeInboundBridge } from './bridge';
-import { renderPythonCode } from './codegen/generators';
+import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
+import { registerNativeInboundBridge } from './bridge/index';
 import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
 import {
@@ -84,18 +84,11 @@ function bootstrap(): void {
     setupFlyoutWidthClamp(workspace); // 确保工具箱宽度正确
   });
 
-  const publish = (): void => {
-    const generated = renderPythonCode(workspace); // 生成Python代码
-    postToReactNative({
-      // 发送Python代码到React Native
-      type: 'editor.code.generated',
-      code: generated,
-      blockCount: workspace.getAllBlocks(false).length,
-    });
-  };
+  const { schedule: scheduleCodePublish, flush: flushCodePublish } =
+    createCodeGenerationPublisher(workspace);
 
-  workspace.addChangeListener(() => publish());
-  publish();
+  workspace.addChangeListener(() => scheduleCodePublish());
+  flushCodePublish();
 }
 
 bootstrap();
