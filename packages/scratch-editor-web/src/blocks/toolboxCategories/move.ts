@@ -18,7 +18,7 @@ export const moveToolboxCategory = {
         PORTS: { shadow: portShadowMulti(['0', '1']) },
       },
       fields: {
-        DIRECTION: '0',
+        DIRECTION: '3',
       },
     },
   ],

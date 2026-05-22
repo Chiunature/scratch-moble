@@ -21,6 +21,11 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#4280D7',
       colourTertiary: '#3373CC',
     },
+    move_blocks: {
+      colourPrimary: '#ff4ccd',
+      colourSecondary: '#ff33a3',
+      colourTertiary: '#e03cb1',
+    },
     looks_blocks: {
       colourPrimary: '#9966FF',
       colourSecondary: '#855CD6',
@@ -51,11 +56,7 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#E6AC00',
       colourTertiary: '#CC9900',
     },
-    motion: {
-      colourPrimary: '#4C97FF',
-      colourSecondary: '#4280D7',
-      colourTertiary: '#3373CC',
-    },
+
     looks: {
       colourPrimary: '#9966FF',
       colourSecondary: '#855CD6',

@@ -8,7 +8,10 @@ export function portShadow(port: string | number = '0') {
   } as const;
 }
 
-/** toolbox `inputs.<name>.shadow`：多选端口（同 port_dropdown，初值逗号分隔） */
+/**
+ * toolbox 多选端口阴影：type 仍为 port_dropdown，PORT 为 "0,1"。
+ * 字段在 setValue/doClassValidation 时根据逗号自动切为多选（见 patchFieldPortPicker）。
+ */
 export function portShadowMulti(
   ports: [string | number, string | number] = ['0', '1'],
 ) {

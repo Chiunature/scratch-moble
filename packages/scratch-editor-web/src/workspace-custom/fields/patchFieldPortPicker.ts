@@ -49,6 +49,22 @@ function fieldCoerceOpts(field: {
   return { mode, maxSelections: field.maxSelections_ ?? (mode === 'multi' ? 2 : 1) };
 }
 
+/** 逗号初值（如 portShadowMulti）须在 coerce 前升级为多选，否则会被截成单个端口。 */
+function applyMultiFromRawValue(
+  field: FieldPortPicker,
+  raw: string,
+): void {
+  const trimmed = raw.trim();
+  if (!trimmed.includes(',')) {
+    return;
+  }
+  const ports = parsePortFieldValue(trimmed);
+  if (ports.length > 1) {
+    field.selectionMode_ = 'multi';
+    field.maxSelections_ = Math.max(field.maxSelections_, 2);
+  }
+}
+
 function registerPortPickerField(): void {
   if (fieldsRegistered) {
     return;
@@ -78,17 +94,14 @@ function registerPortPickerField(): void {
     }
 
     doClassValidation_(newValue?: string | null): string | null {
-      const opts = fieldCoerceOpts(this);
       if (newValue == null || newValue === '') {
+        const opts = fieldCoerceOpts(this);
         return coercePortFieldValue('0', opts);
       }
-      const coerced = coercePortFieldValue(String(newValue), opts);
-      const ports = parsePortFieldValue(coerced);
-      if (ports.length > 1) {
-        this.selectionMode_ = 'multi';
-        this.maxSelections_ = Math.max(this.maxSelections_, 2);
-      }
-      return coerced;
+      const raw = String(newValue);
+      applyMultiFromRawValue(this, raw);
+      const opts = fieldCoerceOpts(this);
+      return coercePortFieldValue(raw, opts);
     }
 
     getText_(): string {

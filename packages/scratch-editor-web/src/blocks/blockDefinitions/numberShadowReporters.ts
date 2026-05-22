@@ -24,7 +24,6 @@ function sliderShadowReporter(
       },
     ],
     output: 'Number',
-    style: 'motion_blocks',
   };
 }
 

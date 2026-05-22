@@ -1,5 +1,5 @@
 import { BLOCK_TYPES } from '../blockTypes';
-import combinedMotor from '../../../assets/toolbox/combined_motor.svg';
+import combinedMotor from '../../../assets/block/block_combined_motor.svg';
 import separatorVertical from '../../../assets/block/block_separator_vertical.svg';
 export const moveBlockDefinitions = [
   {
@@ -25,14 +25,16 @@ export const moveBlockDefinitions = [
         type: 'field_dropdown',
         name: 'DIRECTION',
         options: [
-          ['正转', '0'],
-          ['反转', '1'],
+          ['左电机反向', '0'],
+          ['右电机反向', '1'],
+          ['全部反向', '2'],
+          ['全部正向', '3'],
         ],
       },
     ],
 
     previousStatement: null,
     nextStatement: null,
-    style: 'motion_blocks',
+    style: 'move_blocks',
   },
 ] as const;

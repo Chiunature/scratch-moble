@@ -17,8 +17,18 @@ export const IMPLEMENTED_TOOLBOX_CATEGORIES = [
 
 /** 规划中：已有主题色与图标映射，尚未加入 toolboxCategoryContents */
 export const PLANNED_TOOLBOX_CATEGORIES = [
-  { id: 'operation', displayText: '运算', colour: '#59c059', planned: true as const },
-  { id: 'variable', displayText: '变量', colour: '#ff8c1a', planned: true as const },
+  {
+    id: 'operation',
+    displayText: '运算',
+    colour: '#59c059',
+    planned: true as const,
+  },
+  {
+    id: 'variable',
+    displayText: '变量',
+    colour: '#ff8c1a',
+    planned: true as const,
+  },
   {
     id: 'customBlock',
     displayText: '自制积木',
