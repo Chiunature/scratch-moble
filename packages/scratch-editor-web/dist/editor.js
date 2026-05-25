@@ -22695,6 +22695,18 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // assets/block/block_combined_motor.svg
   var block_combined_motor_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M9.82,5.92c-3.83,0-6.93,3.1-6.93,6.94c0,3.83,3.1,6.93,6.93,6.93c3.83,0,6.94-3.1,6.94-6.93%0D%0A%09%09%09C16.76,9.02,13.66,5.92,9.82,5.92z M5.2,14.59c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0D%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C6.94,13.81,6.16,14.59,5.2,14.59z M9.82,19.21c-0.96,0-1.73-0.78-1.73-1.73%0D%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C11.56,18.43,10.78,19.21,9.82,19.21z M11.33,12.28v1.16H10.4v0.92H9.25%0D%0A%09%09%09v-0.92H8.32v-1.16h0.93v-0.93h1.16v0.93H11.33z M9.82,9.96c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0D%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C11.56,9.18,10.78,9.96,9.82,9.96z M14.45,14.59c-0.96,0-1.73-0.78-1.73-1.73%0D%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C16.18,13.81,15.41,14.59,14.45,14.59z"/>%0D%0A%09</g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M12.85,2.89c-2.41,0-4.54,1.23-5.78,3.1c0.85-0.34,1.78-0.53,2.75-0.53c0.46,0,0.9,0.04,1.34,0.12%0D%0A%09%09%09c-0.03-0.12-0.04-0.25-0.04-0.39c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73c0,0.6-0.3,1.13-0.76,1.44%0D%0A%09%09%09c0.89,0.57,1.64,1.33,2.22,2.21c0.31-0.46,0.84-0.76,1.44-0.76c0.96,0,1.73,0.78,1.73,1.73c0,0.96-0.78,1.73-1.73,1.73%0D%0A%09%09%09c-0.13,0-0.26-0.01-0.39-0.04c0.08,0.43,0.12,0.88,0.12,1.34c0,0.97-0.19,1.9-0.53,2.75c1.87-1.24,3.1-3.37,3.1-5.78%0D%0A%09%09%09C19.79,6,16.68,2.89,12.85,2.89z"/>%0D%0A%09</g>%0D%0A</g>%0D%0A</svg>%0D%0A';
 
+  // assets/block/left.svg
+  var left_default = 'data:image/svg+xml,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1779696958672" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8871" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M966.656 567.296q0 43.008-20.48 58.368t-65.536 15.36l-64.512 0q-44.032 0-93.696 0.512t-96.768 0.512l-74.752 0q-38.912 0-61.952 7.68t-22.016 35.328q0 20.48-1.024 48.64t-1.024 49.664q0 35.84-19.456 45.568t-50.176-13.824q-30.72-24.576-72.704-57.856t-85.504-68.096-86.016-68.608-75.264-59.392q-30.72-24.576-31.232-46.592t28.16-45.568q28.672-24.576 68.608-56.832t82.944-66.56 84.48-68.096 74.24-60.416q35.84-28.672 58.88-22.016t23.04 43.52l0 25.6q0 14.336 0.512 29.696t1.024 30.208 0.512 26.112q1.024 25.6 16.384 32.256t41.984 6.656q29.696 0 77.824-0.512t100.352-0.512 101.376-0.512 79.872-0.512q13.312 0 27.648 2.048t26.112 9.728 19.456 21.504 7.68 36.352q0 27.648 0.512 53.248t0.512 57.344z" p-id="8872" fill="%23ffffff"></path></svg>';
+
+  // assets/block/right.svg
+  var right_default = 'data:image/svg+xml,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1779696967886" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9321" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M47.104 453.632q0-43.008 20.992-57.856t66.048-14.848q20.48 0 64.512 0.512t93.696 0.512 96.768 0.512 74.752 0.512q38.912 1.024 61.44-6.656t22.528-35.328q0-20.48 1.536-48.64t1.536-48.64q1.024-35.84 20.48-45.568t49.152 14.848q30.72 24.576 71.68 58.368t84.992 69.12 86.016 69.632 74.752 59.904q29.696 24.576 30.208 46.592t-28.16 45.568q-29.696 24.576-70.144 56.32t-83.968 65.536-85.504 67.072-74.752 58.88q-35.84 28.672-58.88 21.504t-22.016-44.032l0-24.576 0-29.696q0-15.36-0.512-30.208t-0.512-27.136q0-25.6-15.36-32.256t-41.984-6.656q-29.696 0-77.824-0.512t-100.352-0.512-101.376-0.512-79.872-0.512q-13.312 0-27.648-2.56t-26.112-9.728-18.944-20.992-7.168-37.376q0-27.648-0.512-53.248t0.512-57.344z" p-id="9322" fill="%23ffffff"></path></svg>';
+
+  // assets/block/forward.svg
+  var forward_default = 'data:image/svg+xml,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1779696952860" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8646" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M470.016 976.896q-44.032 0-59.392-20.48t-15.36-65.536q0-20.48-0.512-64.512t-1.024-93.696-1.536-96.768-1.024-74.752q0-39.936-7.68-62.464t-35.328-21.504q-20.48 0-48.64-1.024t-49.664 0q-35.84 0-45.568-19.456t13.824-50.176q24.576-30.72 57.344-72.704t67.584-86.016 68.096-87.04 58.88-75.776q23.552-29.696 45.568-30.72t46.592 26.624q24.576 29.696 56.832 69.632t67.072 82.432 68.608 83.968 60.416 73.216q29.696 35.84 23.04 58.88t-43.52 23.04q-11.264 0-25.088 0.512t-29.184 1.024-30.208 1.024-27.136 0.512q-25.6 1.024-32.256 16.384t-5.632 41.984q0 29.696 0.512 77.824t1.024 100.352 1.536 101.376 1.024 79.872q0 13.312-2.048 27.648t-9.728 26.112-21.504 19.968-36.352 8.192q-27.648 0-52.736 0.512t-56.832 1.536z" p-id="8647" fill="%23ffffff"></path></svg>';
+
+  // assets/block/backward.svg
+  var backward_default = 'data:image/svg+xml,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1779696963191" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9092" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M564.224 44.032q43.008 0 58.368 20.48t15.36 65.536q0 20.48 0.512 64.512t0.512 93.696 0.512 96.768 0.512 74.752q0 38.912 7.68 61.952t35.328 22.016q19.456 0 48.128 1.024t49.152 1.024q35.84 0 45.568 18.944t-13.824 49.664q-24.576 30.72-57.344 72.704t-68.096 86.016-69.12 86.528-59.392 75.264q-23.552 29.696-45.568 30.72t-45.568-27.648q-24.576-29.696-57.344-69.632t-67.072-82.432-67.584-83.968-59.904-74.24q-29.696-35.84-22.528-58.88t44.032-23.04l24.576 0q14.336 0 29.696-0.512t30.208-1.536 26.112-1.024q26.624 0 32.768-15.36t6.144-41.984q0-29.696-0.512-77.824t-0.512-100.352-0.512-101.376-0.512-79.872q0-13.312 2.048-27.648t9.728-26.112 20.992-19.456 36.864-7.68q27.648 0 53.248-0.512t57.344-0.512z" p-id="9093" fill="%23ffffff"></path></svg>';
+
   // src/blocks/blockDefinitions/move.ts
   var moveBlockDefinitions = [
     {
@@ -22786,10 +22798,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           type: "field_dropdown",
           name: "DIRECTION",
           options: [
-            ["\u524D\u8FDB", "advance"],
-            ["\u540E\u9000", "retreat"],
-            ["\u5411\u5DE6\u8F6C", "left"],
-            ["\u5411\u53F3\u8F6C", "right"]
+            [{ src: forward_default, width: 24, height: 24, alt: "\u524D\u8FDB" }, "advance"],
+            [
+              { src: backward_default, width: 24, height: 24, alt: "\u540E\u9000" },
+              "retreat"
+            ],
+            [{ src: left_default, width: 24, height: 24, alt: "\u5411\u5DE6\u8F6C" }, "left"],
+            [{ src: right_default, width: 24, height: 24, alt: "\u5411\u53F3\u8F6C" }, "right"]
           ]
         },
         { type: "input_value", name: "POWER", check: "Number" },
@@ -22822,10 +22837,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           type: "field_dropdown",
           name: "DIRECTION",
           options: [
-            ["\u524D\u8FDB", "advance"],
-            ["\u540E\u9000", "retreat"],
-            ["\u5411\u5DE6\u8F6C", "left"],
-            ["\u5411\u53F3\u8F6C", "right"]
+            [{ src: forward_default, width: 24, height: 24, alt: "\u524D\u8FDB" }, "advance"],
+            [
+              { src: backward_default, width: 24, height: 24, alt: "\u540E\u9000" },
+              "retreat"
+            ],
+            [{ src: left_default, width: 24, height: 24, alt: "\u5411\u5DE6\u8F6C" }, "left"],
+            [{ src: right_default, width: 24, height: 24, alt: "\u5411\u53F3\u8F6C" }, "right"]
           ]
         },
         { type: "input_value", name: "POWER", check: "Number" }

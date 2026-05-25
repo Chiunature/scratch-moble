@@ -1,6 +1,10 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import combinedMotor from '../../../assets/block/block_combined_motor.svg';
 import separatorVertical from '../../../assets/block/block_separator_vertical.svg';
+import leftIcon from '../../../assets/block/left.svg';
+import rightIcon from '../../../assets/block/right.svg';
+import forwardIcon from '../../../assets/block/forward.svg';
+import backwardIcon from '../../../assets/block/backward.svg';
 export const moveBlockDefinitions = [
   {
     type: BLOCK_TYPES.move.pair,
@@ -91,10 +95,13 @@ export const moveBlockDefinitions = [
         type: 'field_dropdown',
         name: 'DIRECTION',
         options: [
-          ['前进', 'advance'],
-          ['后退', 'retreat'],
-          ['向左转', 'left'],
-          ['向右转', 'right'],
+          [{ src: forwardIcon, width: 24, height: 24, alt: '前进' }, 'advance'],
+          [
+            { src: backwardIcon, width: 24, height: 24, alt: '后退' },
+            'retreat',
+          ],
+          [{ src: leftIcon, width: 24, height: 24, alt: '向左转' }, 'left'],
+          [{ src: rightIcon, width: 24, height: 24, alt: '向右转' }, 'right'],
         ],
       },
       { type: 'input_value', name: 'POWER', check: 'Number' },
@@ -127,10 +134,13 @@ export const moveBlockDefinitions = [
         type: 'field_dropdown',
         name: 'DIRECTION',
         options: [
-          ['前进', 'advance'],
-          ['后退', 'retreat'],
-          ['向左转', 'left'],
-          ['向右转', 'right'],
+          [{ src: forwardIcon, width: 24, height: 24, alt: '前进' }, 'advance'],
+          [
+            { src: backwardIcon, width: 24, height: 24, alt: '后退' },
+            'retreat',
+          ],
+          [{ src: leftIcon, width: 24, height: 24, alt: '向左转' }, 'left'],
+          [{ src: rightIcon, width: 24, height: 24, alt: '向右转' }, 'right'],
         ],
       },
       { type: 'input_value', name: 'POWER', check: 'Number' },
