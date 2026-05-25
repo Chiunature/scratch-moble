@@ -21,6 +21,14 @@ export const BLOCK_TYPES = {
   },
   move: {
     pair: 'pair',
+    moveSetStopModule: 'mov_set_stop_module',
+    movDirPowerSeconds: 'mov_dir_power_seconds',
+    movDirPower: 'mov_dir_power',
+    movStop: 'mov_stop',
+    movForPowerSeconds: 'mov_for_power_seconds',
+    movPower: 'mov_power',
+    movFindLineInit: 'mov_find_line_init',
+    movFindLineRun: 'mov_find_line_run',
   },
   matrixLight: {
     show: 'show',

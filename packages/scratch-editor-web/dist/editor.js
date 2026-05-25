@@ -22445,7 +22445,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       stopModule: "stop_module"
     },
     move: {
-      pair: "pair"
+      pair: "pair",
+      moveSetStopModule: "mov_set_stop_module",
+      movDirPowerSeconds: "mov_dir_power_seconds",
+      movDirPower: "mov_dir_power",
+      movStop: "mov_stop",
+      movForPowerSeconds: "mov_for_power_seconds",
+      movPower: "mov_power",
+      movFindLineInit: "mov_find_line_init",
+      movFindLineRun: "mov_find_line_run"
     },
     matrixLight: {
       show: "show"
@@ -22691,7 +22699,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   var moveBlockDefinitions = [
     {
       type: BLOCK_TYPES.move.pair,
-      message0: "%1 %2\u5C06\u7EC4\u5408\u7535\u673A\u8BBE\u7F6E\u4E3A %3 \u8F6C\u52A8\u65B9\u5411\u4E3A %4",
+      message0: "%1 %2 \u5C06\u7EC4\u5408\u7535\u673A\u8BBE\u7F6E\u4E3A %3 \u8F6C\u52A8\u65B9\u5411\u4E3A %4",
       args0: [
         {
           type: "field_image",
@@ -22722,6 +22730,260 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       inputsInline: true,
       previousStatement: null,
       nextStatement: null,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.moveSetStopModule,
+      message0: "%1 %2 \u5C06\u7EC4\u5408\u7535\u673A\u8BBE\u7F6E\u4E3A\u505C\u6B62\u4F7F %3",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "field_dropdown",
+          name: "DIRECTION",
+          options: [
+            ["\u60EF\u6027\u6ED1\u884C", "0"],
+            ["\u5236\u52A8", "1"]
+          ]
+        }
+      ],
+      inputsInline: true,
+      previousStatement: null,
+      nextStatement: null,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movDirPowerSeconds,
+      message0: "%1 %2 %3 \u4EE5\u529F\u7387 %4 \u8F6C\u52A8 %5 \u79D2",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "field_dropdown",
+          name: "DIRECTION",
+          options: [
+            ["\u524D\u8FDB", "advance"],
+            ["\u540E\u9000", "retreat"],
+            ["\u5411\u5DE6\u8F6C", "left"],
+            ["\u5411\u53F3\u8F6C", "right"]
+          ]
+        },
+        { type: "input_value", name: "POWER", check: "Number" },
+        { type: "input_value", name: "SECONDS", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movDirPower,
+      message0: "%1 %2 %3 \u4EE5\u529F\u7387 %4 \u79FB\u52A8",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "field_dropdown",
+          name: "DIRECTION",
+          options: [
+            ["\u524D\u8FDB", "advance"],
+            ["\u540E\u9000", "retreat"],
+            ["\u5411\u5DE6\u8F6C", "left"],
+            ["\u5411\u53F3\u8F6C", "right"]
+          ]
+        },
+        { type: "input_value", name: "POWER", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movStop,
+      message0: "%1 %2 \u505C\u6B62\u8FD0\u52A8",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movForPowerSeconds,
+      message0: "%1 %2 \u4EE5\u5DE6\u529F\u7387 %3 %\u548C\u53F3\u529F\u7387 %4 %\u79FB\u52A8 %5 \u79D2",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "input_value",
+          name: "LEFT_POWER",
+          check: "Number"
+        },
+        { type: "input_value", name: "RIGHT_POWER", check: "Number" },
+        { type: "input_value", name: "SECONDS", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movPower,
+      message0: "%1 %2 \u4EE5\u5DE6\u529F\u7387 %3 %\u548C\u53F3\u529F\u7387 %4 %\u79FB\u52A8",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "input_value",
+          name: "LEFT_POWER",
+          check: "Number"
+        },
+        { type: "input_value", name: "RIGHT_POWER", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movFindLineInit,
+      message0: "%1 %2 \u5DE1\u7EBF\u53C2\u6570\u521D\u59CB\u5316",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
+      style: "move_blocks"
+    },
+    {
+      type: BLOCK_TYPES.move.movFindLineRun,
+      message0: "%1 %2 \u53CC\u5DE1\u7EBF \u5DE6\u4F20\u611F\u5668 %3 \u53F3\u4F20\u611F\u5668 %4 \u5DE6\u529F\u7387 %5 %\u53F3\u529F\u7387 %6 %KP %7 KD %8",
+      args0: [
+        {
+          type: "field_image",
+          src: block_combined_motor_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "input_value",
+          name: "LEFT_SENSOR",
+          check: "Number"
+        },
+        {
+          type: "input_value",
+          name: "RIGHT_SENSOR",
+          check: "Number"
+        },
+        {
+          type: "input_value",
+          name: "LEFT_POWER",
+          check: "Number"
+        },
+        { type: "input_value", name: "RIGHT_POWER", check: "Number" },
+        { type: "input_value", name: "KP", check: "Number" },
+        { type: "input_value", name: "KD", check: "Number" }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      inputsInline: true,
       style: "move_blocks"
     }
   ];
@@ -23002,6 +23264,71 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         },
         fields: {
           DIRECTION: "3"
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.moveSetStopModule,
+        fields: {
+          DIRECTION: "1"
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movDirPowerSeconds,
+        inputs: {
+          POWER: { shadow: integerSliderShadow(50) },
+          SECONDS: { shadow: positiveKeyboardShadow(1) }
+        },
+        fields: {
+          DIRECTION: "advance"
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movDirPower,
+        inputs: {
+          POWER: { shadow: integerSliderShadow(50) }
+        },
+        fields: {
+          DIRECTION: "advance"
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movStop
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movForPowerSeconds,
+        inputs: {
+          LEFT_POWER: { shadow: integerSliderShadow(50) },
+          RIGHT_POWER: { shadow: integerSliderShadow(50) },
+          SECONDS: { shadow: positiveKeyboardShadow(1) }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movPower,
+        inputs: {
+          LEFT_POWER: { shadow: integerSliderShadow(50) },
+          RIGHT_POWER: { shadow: integerSliderShadow(50) }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movFindLineInit
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.move.movFindLineRun,
+        inputs: {
+          LEFT_SENSOR: { shadow: positiveKeyboardShadow(50) },
+          RIGHT_SENSOR: { shadow: positiveKeyboardShadow(50) },
+          LEFT_POWER: { shadow: integerSliderShadow(50) },
+          RIGHT_POWER: { shadow: integerSliderShadow(50) },
+          KP: { shadow: positiveKeyboardShadow(0.1) },
+          KD: { shadow: positiveKeyboardShadow(0.6) }
         }
       }
     ]
