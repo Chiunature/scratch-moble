@@ -32,7 +32,7 @@ export const moveBlockDefinitions = [
         ],
       },
     ],
-
+    inputsInline: true,
     previousStatement: null,
     nextStatement: null,
     style: 'move_blocks',

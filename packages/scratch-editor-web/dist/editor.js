@@ -22719,6 +22719,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           ]
         }
       ],
+      inputsInline: true,
       previousStatement: null,
       nextStatement: null,
       style: "move_blocks"
