@@ -22656,12 +22656,161 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // assets/block/block_matrix.svg
+  var block_matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/block/block_separator_vertical.svg
+  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
+
+  // ../shared/src/utils/portFieldValue.ts
+  var DEFAULT_PORT = "0";
+  function parsePortFieldValue(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return [DEFAULT_PORT];
+    }
+    if (!trimmed.includes(",")) {
+      return [trimmed];
+    }
+    const ports = trimmed.split(",").map((v2) => v2.trim()).filter((v2) => v2.length > 0);
+    return ports.length > 0 ? ports : [DEFAULT_PORT];
+  }
+  function normalizePortValues(values, maxSelections) {
+    const max = Math.max(1, maxSelections);
+    const seen = /* @__PURE__ */ new Set();
+    const unique = [];
+    for (const v2 of values) {
+      const s2 = String(v2).trim();
+      if (!s2 || seen.has(s2)) {
+        continue;
+      }
+      seen.add(s2);
+      unique.push(s2);
+    }
+    unique.sort((a2, b2) => Number(a2) - Number(b2));
+    if (unique.length === 0) {
+      return [DEFAULT_PORT];
+    }
+    if (max === 1) {
+      return [unique[0]];
+    }
+    return unique.slice(0, max);
+  }
+  function formatPortFieldValue(ports, mode, maxSelections = 2) {
+    const max = mode === "multi" ? maxSelections : 1;
+    const normalized = normalizePortValues(ports, max);
+    if (mode === "single") {
+      return normalized[0];
+    }
+    return normalized.join(",");
+  }
+  function coercePortFieldValue(raw, opts) {
+    const max = opts.mode === "multi" ? opts.maxSelections ?? 2 : 1;
+    const ports = normalizePortValues(parsePortFieldValue(raw), max);
+    return formatPortFieldValue(ports, opts.mode, opts.maxSelections ?? 2);
+  }
+  function formatPortFieldDisplay(raw) {
+    const ports = parsePortFieldValue(raw);
+    if (ports.length === 1) {
+      return ports[0];
+    }
+    return ports.join("+");
+  }
+
+  // ../shared/src/utils/matrixLightRows.ts
+  var MATRIX_LIGHT_ROW_COUNT = 7;
+  var MATRIX_LIGHT_COL_COUNT = 5;
+  var DEFAULT_MATRIX_LIGHT_ROWS = [
+    "1F",
+    "1F",
+    "1F",
+    "1F",
+    "1F",
+    "1F",
+    "1F"
+  ];
+  var ROW_DELIMITER = ",";
+  function normalizeRowHex(raw) {
+    const trimmed = raw.trim().replace(/^0x/i, "");
+    if (!trimmed) {
+      return "00";
+    }
+    const parsed = Number.parseInt(trimmed, 16);
+    if (Number.isNaN(parsed)) {
+      return "00";
+    }
+    const masked = parsed & 31;
+    return masked.toString(16).toUpperCase().padStart(2, "0");
+  }
+  function coerceMatrixLightRows(input) {
+    if (Array.isArray(input)) {
+      const parts = input.map((item) => normalizeRowHex(String(item ?? "")));
+      while (parts.length < MATRIX_LIGHT_ROW_COUNT) {
+        parts.push("00");
+      }
+      return parts.slice(0, MATRIX_LIGHT_ROW_COUNT);
+    }
+    if (typeof input === "string") {
+      const parts = input.split(ROW_DELIMITER).map((part) => normalizeRowHex(part));
+      while (parts.length < MATRIX_LIGHT_ROW_COUNT) {
+        parts.push("00");
+      }
+      return parts.slice(0, MATRIX_LIGHT_ROW_COUNT);
+    }
+    return [...DEFAULT_MATRIX_LIGHT_ROWS];
+  }
+  function serializeMatrixLightRows(rows) {
+    return coerceMatrixLightRows(rows).join(ROW_DELIMITER);
+  }
+  function parseMatrixLightRows(serialized) {
+    return coerceMatrixLightRows(serialized);
+  }
+  function parseMatrixLightRowBits(rowHex) {
+    const parsed = Number.parseInt(normalizeRowHex(rowHex), 16);
+    const value = Number.isNaN(parsed) ? 0 : parsed & 31;
+    return Array.from({ length: MATRIX_LIGHT_COL_COUNT }, (_2, col) => ({
+      on: (value >> col & 1) === 1
+    }));
+  }
+  function parseMatrixLightGrid(serialized) {
+    const rows = parseMatrixLightRows(serialized);
+    return Array.from(
+      { length: MATRIX_LIGHT_ROW_COUNT },
+      (_2, rowIndex) => parseMatrixLightRowBits(rows[rowIndex] ?? "00")
+    );
+  }
+  function matrixLightRowsToPythonArgs(serialized) {
+    const rows = parseMatrixLightRows(serialized);
+    return rows.map((row) => `0x${row}`).join(", ");
+  }
+
   // src/blocks/blockDefinitions/matrixLight.ts
   var matrixLightBlockDefinitions = [
     {
       type: BLOCK_TYPES.matrixLight.show,
-      message0: "\u77E9\u9635\u706F %1",
-      args0: [{ type: "input_value", name: "TIMES", check: "Number" }],
+      message0: "%1 %2 \u663E\u793A\u77E9\u9635\u706F %3",
+      args0: [
+        {
+          type: "field_image",
+          src: block_matrix_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "field_matrix_light",
+          name: "MATRIX",
+          value: serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS)
+        }
+      ],
+      inputsInline: true,
       previousStatement: null,
       nextStatement: null,
       style: "looks_blocks"
@@ -22670,9 +22819,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
 
   // assets/block/block_motor_sensing.svg
   var block_motor_sensing_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g id="XMLID_00000064332656542466190760000003885663620856589749_">%0D%0A%09<path class="st0" d="M11.34,2.87c-4.68,0-8.47,3.79-8.47,8.47c0,4.68,3.79,8.47,8.47,8.47c4.68,0,8.47-3.79,8.47-8.47%0D%0A%09%09C19.81,6.66,16.02,2.87,11.34,2.87z M5.69,13.46c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C7.81,12.51,6.86,13.46,5.69,13.46z M11.34,19.1c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C13.46,18.15,12.51,19.1,11.34,19.1z M13.17,10.64v1.41h-1.13v1.13h-1.41%0D%0A%09%09v-1.13H9.5v-1.41h1.13V9.5h1.41v1.13H13.17z M11.34,7.81c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C13.46,6.86,12.51,7.81,11.34,7.81z M16.98,13.46c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C19.1,12.51,18.15,13.46,16.98,13.46z"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
-
-  // assets/block/block_separator_vertical.svg
-  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
 
   // src/blocks/blockDefinitions/motor.ts
   var motorBlockDefinitions = [
@@ -23266,13 +23412,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       {
         kind: "block",
         type: BLOCK_TYPES.matrixLight.show,
-        inputs: {
-          TIMES: {
-            shadow: {
-              type: "math_number",
-              fields: { NUM: 10 }
-            }
-          }
+        fields: {
+          MATRIX: serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS)
         }
       }
     ]
@@ -23586,61 +23727,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     });
   }
 
-  // ../shared/src/utils/portFieldValue.ts
-  var DEFAULT_PORT = "0";
-  function parsePortFieldValue(raw) {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-      return [DEFAULT_PORT];
-    }
-    if (!trimmed.includes(",")) {
-      return [trimmed];
-    }
-    const ports = trimmed.split(",").map((v2) => v2.trim()).filter((v2) => v2.length > 0);
-    return ports.length > 0 ? ports : [DEFAULT_PORT];
-  }
-  function normalizePortValues(values, maxSelections) {
-    const max = Math.max(1, maxSelections);
-    const seen = /* @__PURE__ */ new Set();
-    const unique = [];
-    for (const v2 of values) {
-      const s2 = String(v2).trim();
-      if (!s2 || seen.has(s2)) {
-        continue;
-      }
-      seen.add(s2);
-      unique.push(s2);
-    }
-    unique.sort((a2, b2) => Number(a2) - Number(b2));
-    if (unique.length === 0) {
-      return [DEFAULT_PORT];
-    }
-    if (max === 1) {
-      return [unique[0]];
-    }
-    return unique.slice(0, max);
-  }
-  function formatPortFieldValue(ports, mode, maxSelections = 2) {
-    const max = mode === "multi" ? maxSelections : 1;
-    const normalized = normalizePortValues(ports, max);
-    if (mode === "single") {
-      return normalized[0];
-    }
-    return normalized.join(",");
-  }
-  function coercePortFieldValue(raw, opts) {
-    const max = opts.mode === "multi" ? opts.maxSelections ?? 2 : 1;
-    const ports = normalizePortValues(parsePortFieldValue(raw), max);
-    return formatPortFieldValue(ports, opts.mode, opts.maxSelections ?? 2);
-  }
-  function formatPortFieldDisplay(raw) {
-    const ports = parsePortFieldValue(raw);
-    if (ports.length === 1) {
-      return ports[0];
-    }
-    return ports.join("+");
-  }
-
   // src/workspace-custom/fields/portPickerEditor.ts
   var sessions2 = /* @__PURE__ */ new Map();
   var fieldDropdownShowEditor = H.prototype.showEditor_;
@@ -23760,6 +23846,106 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     });
   }
 
+  // src/bridge/codeGenNotify.ts
+  var flushCodeGeneration = null;
+  function registerCodeGenerationFlush(flush) {
+    flushCodeGeneration = flush;
+  }
+  function notifyCodeGenerationNeeded() {
+    flushCodeGeneration?.();
+  }
+
+  // src/workspace-custom/fields/matrixLightEditor.ts
+  var sessions3 = /* @__PURE__ */ new Map();
+  var RN_OPEN_SUPPRESS_MS = 400;
+  var rnLastOpenAt = /* @__PURE__ */ new WeakMap();
+  function shouldSuppressDuplicateRnOpen(field) {
+    const now = performance.now();
+    const last = rnLastOpenAt.get(field) ?? 0;
+    if (now - last < RN_OPEN_SUPPRESS_MS) {
+      return true;
+    }
+    rnLastOpenAt.set(field, now);
+    return false;
+  }
+  function createSessionId3(field) {
+    const id = field.id_;
+    return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function findSessionEntryForField(field) {
+    for (const [sessionId, session] of sessions3) {
+      if (session.field === field) {
+        return [sessionId, session];
+      }
+    }
+    return null;
+  }
+  function refreshMatrixFieldDisplay(field) {
+    field.updateMatrix_?.();
+    const block = field.getSourceBlock();
+    if (block?.rendered && typeof block.queueRender === "function") {
+      block.queueRender();
+      const parent = block.getParent?.();
+      if (parent?.rendered && typeof parent.queueRender === "function") {
+        parent.queueRender();
+      }
+    }
+    qt.triggerQueuedRenders();
+  }
+  function commitSession(sessionId, rows) {
+    const session = sessions3.get(sessionId);
+    if (!session) {
+      return;
+    }
+    sessions3.delete(sessionId);
+    session.field.setValue(serializeMatrixLightRows(rows), true);
+    refreshMatrixFieldDisplay(session.field);
+    notifyCodeGenerationNeeded();
+  }
+  function closeSession3(sessionId) {
+    sessions3.delete(sessionId);
+  }
+  function handleMatrixLightInbound(message) {
+    if (message.type !== "editor.matrixLight.commit" && message.type !== "editor.matrixLight.close") {
+      return;
+    }
+    if (message.type === "editor.matrixLight.commit") {
+      commitSession(message.sessionId, message.rows);
+      return;
+    }
+    closeSession3(message.sessionId);
+  }
+  function openMatrixLightEditor(field, _e2) {
+    if (!isReactNativeHost()) {
+      return;
+    }
+    if (shouldSuppressDuplicateRnOpen(field)) {
+      return;
+    }
+    const block = field.getSourceBlock();
+    if (!block) {
+      return;
+    }
+    const rows = field.getValue();
+    const existing = findSessionEntryForField(field);
+    if (existing) {
+      const [sessionId2] = existing;
+      postToReactNative({
+        type: "editor.matrixLight.open",
+        sessionId: sessionId2,
+        rows
+      });
+      return;
+    }
+    const sessionId = createSessionId3(field);
+    sessions3.set(sessionId, { field });
+    postToReactNative({
+      type: "editor.matrixLight.open",
+      sessionId,
+      rows
+    });
+  }
+
   // src/bridge/nativeInbound.ts
   function handleMessageFromNative(message) {
     switch (message.type) {
@@ -23770,6 +23956,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       case "editor.portPicker.value":
       case "editor.portPicker.close":
         handlePortPickerInbound(message);
+        break;
+      case "editor.matrixLight.commit":
+      case "editor.matrixLight.close":
+        handleMatrixLightInbound(message);
         break;
     }
   }
@@ -23783,9 +23973,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
   function postToReactNative(message) {
     const bridge = window.ReactNativeWebView;
-    if (bridge?.postMessage) {
-      bridge.postMessage(JSON.stringify(message));
+    if (!bridge?.postMessage) {
+      return;
     }
+    bridge.postMessage(JSON.stringify(message));
   }
 
   // src/codegen/helpers.ts
@@ -23869,8 +24060,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return `${indent(context)}move_pair()`;
     },
     [BLOCK_TYPES.matrixLight.show](block, context) {
-      const v2 = valueToPython(block, "TIMES", "10");
-      return `${indent(context)}matrix_light_show(${v2})`;
+      const matrix = getFieldValue(block, "MATRIX") ?? "1F,1F,1F,1F,1F,1F,1F";
+      return `${indent(context)}_matrix.show(${matrixLightRowsToPythonArgs(matrix)})`;
     },
     [BLOCK_TYPES.sound.playMusic](_block, context) {
       return `${indent(context)}play_music()`;
@@ -24147,6 +24338,172 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   }
   function patchFieldPortPicker() {
     registerPortPickerField();
+  }
+
+  // src/workspace-custom/fields/patchFieldMatrixLight.ts
+  var THUMB_NODE = 4;
+  var THUMB_GAP = 1;
+  var MATRIX_ON = "#ffffff";
+  var MATRIX_OFF = "#1e293b";
+  var THUMB_WIDTH = MATRIX_LIGHT_COL_COUNT * (THUMB_NODE + THUMB_GAP) + THUMB_GAP;
+  var THUMB_HEIGHT = MATRIX_LIGHT_ROW_COUNT * (THUMB_NODE + THUMB_GAP) + THUMB_GAP;
+  var fieldsRegistered3 = false;
+  function registerMatrixLightField() {
+    if (fieldsRegistered3) {
+      return;
+    }
+    fieldsRegistered3 = true;
+    class FieldMatrixLight extends U {
+      ledThumbNodes_ = [];
+      matrixSvg_ = null;
+      /** 同一次触摸只触发一次 open，避免 pointerdown + showEditor_ 重复 */
+      rnOpenGuardPointerId_ = null;
+      static fromJson(options) {
+        const value = typeof options.value === "string" ? options.value : serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS);
+        return new FieldMatrixLight(value, void 0, options);
+      }
+      constructor(value, validator, config) {
+        super(
+          value ?? serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS),
+          validator ?? null,
+          config
+        );
+      }
+      initView() {
+        const svgNs = "http://www.w3.org/2000/svg";
+        this.matrixSvg_ = document.createElementNS(svgNs, "svg");
+        this.matrixSvg_.setAttribute("width", String(THUMB_WIDTH));
+        this.matrixSvg_.setAttribute("height", String(THUMB_HEIGHT));
+        this.matrixSvg_.style.cursor = "pointer";
+        this.matrixSvg_.style.pointerEvents = "all";
+        for (let row = 0; row < MATRIX_LIGHT_ROW_COUNT; row += 1) {
+          for (let col = 0; col < MATRIX_LIGHT_COL_COUNT; col += 1) {
+            const rect = document.createElementNS(svgNs, "rect");
+            rect.setAttribute(
+              "x",
+              String(THUMB_GAP + col * (THUMB_NODE + THUMB_GAP))
+            );
+            rect.setAttribute(
+              "y",
+              String(THUMB_GAP + row * (THUMB_NODE + THUMB_GAP))
+            );
+            rect.setAttribute("width", String(THUMB_NODE));
+            rect.setAttribute("height", String(THUMB_NODE));
+            rect.setAttribute("rx", "1");
+            this.ledThumbNodes_.push(rect);
+            this.matrixSvg_.appendChild(rect);
+          }
+        }
+        if (this.fieldGroup_) {
+          this.fieldGroup_.appendChild(this.matrixSvg_);
+        }
+        this.bindRefreshMatrixThumb_();
+        this.bindRnOpenOnPointerDown_();
+        this.updateMatrix_();
+      }
+      /**
+       * RN：拖完飞栏积木后 showEditor_ 可能很晚才触发；在整块 field 区域 pointerdown 即尝试打开。
+       * showEditor_ 仍保留作 pointerup 兜底。
+       */
+      bindRnOpenOnPointerDown_() {
+        if (!isReactNativeHost()) {
+          return;
+        }
+        const field = this;
+        const borderRect = this.borderRect_;
+        const targets = [this.fieldGroup_, this.matrixSvg_, borderRect].filter(
+          (el) => el != null
+        );
+        const tryOpenFromPointer = (event) => {
+          const pointerEvent = event;
+          if (pointerEvent.button !== 0) {
+            return;
+          }
+          if (this.rnOpenGuardPointerId_ === pointerEvent.pointerId) {
+            return;
+          }
+          this.rnOpenGuardPointerId_ = pointerEvent.pointerId;
+          if (!field.updateMatrix_) {
+            this.bindRefreshMatrixThumb_();
+          }
+          openMatrixLightEditor(field, pointerEvent);
+        };
+        const clearPointerGuard = (event) => {
+          const pointerEvent = event;
+          if (this.rnOpenGuardPointerId_ === pointerEvent.pointerId) {
+            this.rnOpenGuardPointerId_ = null;
+          }
+        };
+        for (const el of targets) {
+          el.addEventListener("pointerdown", tryOpenFromPointer, true);
+          el.addEventListener("pointerup", clearPointerGuard, true);
+          el.addEventListener("pointercancel", clearPointerGuard, true);
+        }
+      }
+      /** 供 matrixLightEditor 刷新缩略图；须走 prototype，避免覆盖实例方法后自调用栈溢出 */
+      bindRefreshMatrixThumb_() {
+        const field = this;
+        field.updateMatrix_ = (valueOverride) => {
+          FieldMatrixLight.prototype.updateMatrix_.call(this, valueOverride);
+        };
+      }
+      updateSize_() {
+        this.size_.width = THUMB_WIDTH;
+        this.size_.height = THUMB_HEIGHT;
+        this.positionBorderRect_();
+      }
+      updateMatrix_(valueOverride) {
+        if (!this.matrixSvg_ || this.ledThumbNodes_.length === 0) {
+          return;
+        }
+        const raw = valueOverride ?? this.getValue();
+        if (raw == null || raw === "") {
+          return;
+        }
+        const grid = parseMatrixLightGrid(String(raw));
+        for (let row = 0; row < MATRIX_LIGHT_ROW_COUNT; row += 1) {
+          for (let col = 0; col < MATRIX_LIGHT_COL_COUNT; col += 1) {
+            const node = this.ledThumbNodes_[row * MATRIX_LIGHT_COL_COUNT + col];
+            if (!node) {
+              continue;
+            }
+            const rowCells = grid[row];
+            const on2 = rowCells?.[col]?.on ?? false;
+            node.setAttribute("fill", on2 ? MATRIX_ON : MATRIX_OFF);
+          }
+        }
+      }
+      doClassValidation_(newValue) {
+        if (newValue == null || newValue === "") {
+          return serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS);
+        }
+        return serializeMatrixLightRows(String(newValue));
+      }
+      doValueUpdate_(newValue) {
+        super.doValueUpdate_(newValue);
+        this.updateMatrix_(String(newValue));
+      }
+      showEditor_(e3) {
+        const field = this;
+        if (!field.updateMatrix_) {
+          this.bindRefreshMatrixThumb_();
+        }
+        openMatrixLightEditor(field, e3);
+      }
+      getText_() {
+        return "";
+      }
+      getDisplayText_() {
+        return "";
+      }
+    }
+    pt.register(
+      "field_matrix_light",
+      FieldMatrixLight
+    );
+  }
+  function patchFieldMatrixLight() {
+    registerMatrixLightField();
   }
 
   // src/workspace-custom/flyout/flyoutWidthClamp.ts
@@ -24554,6 +24911,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     registerEditorBlocks();
     patchFieldNumberEditor();
     patchFieldPortPicker();
+    patchFieldMatrixLight();
     const host = document.getElementById("workspace");
     if (!host) {
       return;
@@ -24611,6 +24969,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       setupFlyoutWidthClamp(workspace);
     });
     const { schedule: scheduleCodePublish, flush: flushCodePublish } = createCodeGenerationPublisher(workspace);
+    registerCodeGenerationFlush(flushCodePublish);
     workspace.addChangeListener(() => scheduleCodePublish());
     flushCodePublish();
   }

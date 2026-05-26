@@ -16,11 +16,9 @@ export function isReactNativeHost(): boolean {
 import type { EditorOutMessage } from '@scratch-mobile/shared';
 
 export function postToReactNative(message: EditorOutMessage): void {
-  // 检查webview是否运行在react native环境中
   const bridge = (window as RNWindow).ReactNativeWebView;
-  // 如果webview运行在react native环境中，则发送消息到React Native
-  if (bridge?.postMessage) {
-    // 发送消息到React Native
-    bridge.postMessage(JSON.stringify(message));
+  if (!bridge?.postMessage) {
+    return;
   }
+  bridge.postMessage(JSON.stringify(message));
 }

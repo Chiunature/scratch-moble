@@ -8,11 +8,12 @@ import type {
   EditorOutMessage,
   RnNumberSliderOpenMessage,
   RnPortPickerOpenMessage,
+  RnMatrixLightOpenMessage,
 } from '@scratch-mobile/shared';
-
 import {
   EDITOR_BUNDLE_HTML,
   injectEditorMessage,
+  MatrixLightOverlay,
   NumberSliderOverlay,
   PortPickerOverlay,
   resetInjectEditorMessageDedup,
@@ -38,6 +39,8 @@ export function EditorScreen() {
     useState<RnNumberSliderOpenMessage | null>(null);
   const [rnPortPickerSession, setRnPortPickerSession] =
     useState<RnPortPickerOpenMessage | null>(null);
+  const [rnMatrixLightSession, setRnMatrixLightSession] =
+    useState<RnMatrixLightOpenMessage | null>(null);
   //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   //存储积木数量
@@ -79,6 +82,22 @@ export function EditorScreen() {
         return;
       case 'editor.portPicker.close':
         setRnPortPickerSession(current =>
+          current?.sessionId === message.sessionId ? null : current,
+        );
+        return;
+      case 'editor.matrixLight.open':
+        setRnMatrixLightSession(current => {
+          if (
+            current?.sessionId === message.sessionId &&
+            current.rows === message.rows
+          ) {
+            return current;
+          }
+          return message;
+        });
+        return;
+      case 'editor.matrixLight.close':
+        setRnMatrixLightSession(current =>
           current?.sessionId === message.sessionId ? null : current,
         );
         return;
@@ -163,6 +182,26 @@ export function EditorScreen() {
             resetInjectEditorMessageDedup();
             injectEditorMessage(webViewRef.current, {
               type: 'editor.portPicker.close',
+              sessionId,
+            });
+          }}
+        />
+        <MatrixLightOverlay
+          session={rnMatrixLightSession}
+          onCommit={(sessionId, rows) => {
+            setRnMatrixLightSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.matrixLight.commit',
+              sessionId,
+              rows,
+            });
+          }}
+          onClose={sessionId => {
+            setRnMatrixLightSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.matrixLight.close',
               sessionId,
             });
           }}

@@ -32,6 +32,16 @@ export type EditorOutMessage =
   | {
       type: 'editor.portPicker.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.matrixLight.open';
+      sessionId: string;
+      /** 逗号分隔的 7 行 hex，与 field_matrix_light 存储格式一致 */
+      rows: string;
+    }
+  | {
+      type: 'editor.matrixLight.close';
+      sessionId: string;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -53,6 +63,16 @@ export type EditorInMessage =
   | {
       type: 'editor.portPicker.close';
       sessionId: string;
+    }
+  | {
+      /** 确认保存：一次注入完成写值并关会话 */
+      type: 'editor.matrixLight.commit';
+      sessionId: string;
+      rows: string;
+    }
+  | {
+      type: 'editor.matrixLight.close';
+      sessionId: string;
     };
 
 export type RnNumberSliderOpenMessage = Extract<
@@ -63,4 +83,9 @@ export type RnNumberSliderOpenMessage = Extract<
 export type RnPortPickerOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.portPicker.open' }
+>;
+
+export type RnMatrixLightOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.matrixLight.open' }
 >;

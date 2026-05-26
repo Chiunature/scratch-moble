@@ -3,6 +3,7 @@ export {
   resetInjectEditorMessageDedup,
 } from './bridge/injectEditorMessage';
 export { BubbleSlider } from './components/BubbleSlider';
+export { MatrixLightOverlay } from './components/MatrixLightOverlay';
 export { NumberSliderOverlay } from './components/NumberSliderOverlay';
 export { PortPickerOverlay } from './components/PortPickerOverlay';
 export {

@@ -8,6 +8,7 @@ import * as ScratchBlocks from 'scratch-blocks';
 import { registerEditorBlocks } from './blocks/registerBlocks';
 import { toolboxJson } from './blocks/toolbox';
 import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
+import { registerCodeGenerationFlush } from './bridge/codeGenNotify';
 import { registerNativeInboundBridge } from './bridge/index';
 import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
@@ -15,6 +16,7 @@ import {
   ensureScratchZoomControlsIfMissing,
   patchFieldNumberEditor,
   patchFieldPortPicker,
+  patchFieldMatrixLight,
   patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
@@ -33,6 +35,7 @@ function bootstrap(): void {
   registerEditorBlocks(); //— 注册 shadow 积木
   patchFieldNumberEditor();
   patchFieldPortPicker();
+  patchFieldMatrixLight();
 
   const host = document.getElementById('workspace');
 
@@ -87,6 +90,7 @@ function bootstrap(): void {
   const { schedule: scheduleCodePublish, flush: flushCodePublish } =
     createCodeGenerationPublisher(workspace);
 
+  registerCodeGenerationFlush(flushCodePublish);
   workspace.addChangeListener(() => scheduleCodePublish());
   flushCodePublish();
 }

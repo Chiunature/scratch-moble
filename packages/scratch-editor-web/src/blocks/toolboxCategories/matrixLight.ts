@@ -1,5 +1,9 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import { toolboxCategoryIconClasses } from './shared';
+import {
+  serializeMatrixLightRows,
+  DEFAULT_MATRIX_LIGHT_ROWS,
+} from '@scratch-mobile/shared';
 
 export const matrixLightToolboxCategory = {
   kind: 'category',
@@ -13,13 +17,8 @@ export const matrixLightToolboxCategory = {
     {
       kind: 'block',
       type: BLOCK_TYPES.matrixLight.show,
-      inputs: {
-        TIMES: {
-          shadow: {
-            type: 'math_number',
-            fields: { NUM: 10 },
-          },
-        },
+      fields: {
+        MATRIX: serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS),
       },
     },
   ],

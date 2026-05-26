@@ -38,19 +38,19 @@
 
 ## `packages/scratch-editor-web` 目录结构
 
-| 路径 | 作用 |
-|------|------|
-| `src/main.ts` | 编辑器入口：注册积木、`ScratchBlocks.inject`、订阅变更、调用 `workspace-custom` 中的定制逻辑。 |
-| `src/blocks/` | 积木相关：`blockTypes.ts`（type 常量）、`registerBlocks.ts`（`defineBlocksWithJsonArray`）、`toolbox.ts`（`categoryToolbox` JSON 与默认 shadow）。 |
-| `src/codegen/` | 工作区 → Python：`types.ts`、`helpers.ts`、`generators.ts`（按块类型生成语句与 `renderPythonCode`）。 |
-| `src/theme.ts` | `Theme.defineTheme`：块色、分类色、工作区/工具栏等 `componentStyles`。 |
-| `src/bridge.ts` | 与 React Native WebView 通信：`postMessage` 与 `editor.code.generated` 消息类型。 |
-| `src/workspace-custom/` | 注入后定制：`patchScratchZoom.ts`（缩放条内置 SVG）、`toolboxDoubleClickHideFlyout.ts`（已选分类再次点击关闭飞出栏）、`flyoutWidthClamp.ts`（飞出栏默认最大宽度 + 横向裁剪，指针进入/按下时展开）；`index.ts` 统一导出。样式配合见 `scripts/build.mjs` 内 `.scratch-flyout-*`。 |
-| `assets/zoom/` | 缩放按钮用的 SVG（构建时打成 data URL 打进包内）；替换图标只需改这三个文件并重新 build。 |
-| `scripts/build.mjs` | esbuild 打包 `src/main.ts` → `dist/editor.js`，内联页面 CSS，合并为 `dist/index.html`。 |
-| `scripts/sync-to-mobile.mjs` | 将 `dist/index.html` 写入 `apps/mobile/src/features/editor/generated/editorBundleHtml.ts`。 |
-| `scripts/preview.mjs` | 本地预览 `dist`（详见脚本内说明）。 |
-| `dist/` | 构建产物（`editor.js`、`index.html`），勿手改；由 `build` 生成。 |
+| 路径                         | 作用                                                                                                                                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.ts`                | 编辑器入口：注册积木、`ScratchBlocks.inject`、订阅变更、调用 `workspace-custom` 中的定制逻辑。                                                                                                                                                                                  |
+| `src/blocks/`                | 积木相关：`blockTypes.ts`（type 常量）、`registerBlocks.ts`（`defineBlocksWithJsonArray`）、`toolbox.ts`（`categoryToolbox` JSON 与默认 shadow）。                                                                                                                              |
+| `src/codegen/`               | 工作区 → Python：`types.ts`、`helpers.ts`、`generators.ts`（按块类型生成语句与 `renderPythonCode`）。                                                                                                                                                                           |
+| `src/theme.ts`               | `Theme.defineTheme`：块色、分类色、工作区/工具栏等 `componentStyles`。                                                                                                                                                                                                          |
+| `src/bridge.ts`              | 与 React Native WebView 通信：`postMessage` 与 `editor.code.generated` 消息类型。                                                                                                                                                                                               |
+| `src/workspace-custom/`      | 注入后定制：`patchScratchZoom.ts`（缩放条内置 SVG）、`toolboxDoubleClickHideFlyout.ts`（已选分类再次点击关闭飞出栏）、`flyoutWidthClamp.ts`（飞出栏默认最大宽度 + 横向裁剪，指针进入/按下时展开）；`index.ts` 统一导出。样式配合见 `scripts/build.mjs` 内 `.scratch-flyout-*`。 |
+| `assets/zoom/`               | 缩放按钮用的 SVG（构建时打成 data URL 打进包内）；替换图标只需改这三个文件并重新 build。                                                                                                                                                                                        |
+| `scripts/build.mjs`          | esbuild 打包 `src/main.ts` → `dist/editor.js`，内联页面 CSS，合并为 `dist/index.html`。                                                                                                                                                                                         |
+| `scripts/sync-to-mobile.mjs` | 将 `dist/index.html` 写入 `apps/mobile/src/features/editor/generated/editorBundleHtml.ts`。                                                                                                                                                                                     |
+| `scripts/preview.mjs`        | 本地预览 `dist`（详见脚本内说明）。                                                                                                                                                                                                                                             |
+| `dist/`                      | 构建产物（`editor.js`、`index.html`），勿手改；由 `build` 生成。                                                                                                                                                                                                                |
 
 ## 开发流程
 

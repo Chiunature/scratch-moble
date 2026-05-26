@@ -8,7 +8,7 @@
  *
  * 新增积木时只需在 statementGenerators 里追加一个 key-function 对即可。
  */
-import { parsePortFieldValue } from '@scratch-mobile/shared';
+import { parsePortFieldValue, matrixLightRowsToPythonArgs } from '@scratch-mobile/shared';
 
 import {
   BLOCK_TYPES,
@@ -109,8 +109,9 @@ const statementGenerators: Record<string, StatementGenerator> = {
   },
 
   [BLOCK_TYPES.matrixLight.show](block, context) {
-    const v = valueToPython(block, 'TIMES', '10');
-    return `${indent(context)}matrix_light_show(${v})`;
+    const matrix =
+      getFieldValue(block, 'MATRIX') ?? '1F,1F,1F,1F,1F,1F,1F';
+    return `${indent(context)}_matrix.show(${matrixLightRowsToPythonArgs(matrix)})`;
   },
 
   [BLOCK_TYPES.sound.playMusic](_block, context) {
