@@ -26,7 +26,7 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#ff33a3',
       colourTertiary: '#e03cb1',
     },
-    looks_blocks: {
+    matrix_light_blocks: {
       colourPrimary: '#9966FF',
       colourSecondary: '#855CD6',
       colourTertiary: '#774DCB',
@@ -57,7 +57,7 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourTertiary: '#CC9900',
     },
 
-    looks: {
+    looks_blocks: {
       colourPrimary: '#9966FF',
       colourSecondary: '#855CD6',
       colourTertiary: '#774DCB',

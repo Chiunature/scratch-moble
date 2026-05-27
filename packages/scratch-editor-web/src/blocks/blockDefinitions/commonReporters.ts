@@ -4,8 +4,10 @@
  */
 import { numberShadowReporterDefinitions } from './numberShadowReporters';
 import { portDropdownReporterDefinitions } from './portDropdown';
+import { basicDropdownNumBlockDefinitions } from './BasicDropdownNum';
 
 export const commonReporterDefinitions = [
   ...numberShadowReporterDefinitions,
   ...portDropdownReporterDefinitions,
+  ...basicDropdownNumBlockDefinitions,
 ] as const;

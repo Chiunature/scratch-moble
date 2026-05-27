@@ -1,5 +1,9 @@
 /**
- * port_dropdown 阴影块：插入父积木后同步父块颜色。
+ * 带 colours_from_parent 的阴影块（port_dropdown、basic_dropdown_num 等）：
+ * 插入父积木后同步父块配色。
+ *
+ * 须用 setStyle(父块 styleName)，勿用 setColour(getColour())，否则阴影会变成
+ * auto_#9966ff，打开 field_dropdown 时会拼成 auto_#9966ff_selected 并触发 Invalid colour。
  * RN 端口弹窗使用自有主题（portPickerOptions），不从 Web 取色。
  */
 import * as ScratchBlocks from 'scratch-blocks';
@@ -27,7 +31,12 @@ function getHostParent(block: ColouredBlock): ColouredBlock | null {
 function syncColourFromParent(block: ColouredBlock): void {
   const parent = getHostParent(block);
   if (parent) {
-    block.setColour(parent.getColour());
+    const styleName = parent.getStyleName();
+    if (styleName) {
+      block.setStyle(styleName);
+    } else {
+      block.setColour(parent.getColour());
+    }
     return;
   }
   // 飞出栏内单独展示时用中性文本域色
@@ -42,21 +51,27 @@ export function registerPortDropdownExtensions(): void {
   }
   extensionsRegistered = true;
 
-  ScratchBlocks.Extensions.register('colours_from_parent', function coloursFromParent() {
-    const block = this as ColouredBlock;
+  ScratchBlocks.Extensions.register(
+    'colours_from_parent',
+    function coloursFromParent() {
+      const block = this as ColouredBlock;
 
-    const apply = () => syncColourFromParent(block);
+      const apply = () => syncColourFromParent(block);
 
-    apply();
+      apply();
 
-    block.setOnChange((event: Events.Abstract) => {
-      if (!event) {
-        apply();
-        return;
-      }
-      if (event.type === Events.BLOCK_MOVE || event.type === Events.BLOCK_CREATE) {
-        apply();
-      }
-    });
-  });
+      block.setOnChange((event: Events.Abstract) => {
+        if (!event) {
+          apply();
+          return;
+        }
+        if (
+          event.type === Events.BLOCK_MOVE ||
+          event.type === Events.BLOCK_CREATE
+        ) {
+          apply();
+        }
+      });
+    },
+  );
 }

@@ -44,3 +44,33 @@ export function positiveKeyboardShadow(num: number) {
     fields: { NUM: num },
   } as const;
 }
+
+/** toolbox `inputs.<name>.shadow`：字符串（Scratch 内置 text reporter） */
+export function stringShadow(text: string) {
+  return {
+    type: 'text',
+    fields: { TEXT: text },
+  } as const;
+}
+
+/**
+ * toolbox `inputs.X.shadow`：矩阵灯列坐标（0 ~ 列数-1）。
+ * `num` 为阴影块字段 NUM 的初值，不是选项个数。
+ */
+export function basicDropdownNumColShadow(num: string | number = 0) {
+  return {
+    type: BLOCK_TYPES.common.basicDropdownNumCol,
+    fields: { NUM: String(num) },
+  } as const;
+}
+
+/**
+ * toolbox `inputs.Y.shadow`：矩阵灯行坐标（0 ~ 行数-1）。
+ * `num` 为阴影块字段 NUM 的初值，不是选项个数。
+ */
+export function basicDropdownNumRowShadow(num: string | number = 0) {
+  return {
+    type: BLOCK_TYPES.common.basicDropdownNumRow,
+    fields: { NUM: String(num) },
+  } as const;
+}

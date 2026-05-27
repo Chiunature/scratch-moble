@@ -22436,7 +22436,11 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       /** 小数滑块阴影（默认 precision=0.1） */
       decimalSlider: "number_slider_decimal",
       /** 非负整数键盘阴影（历史 type 名保留兼容） */
-      positiveKeyboard: "math_positive_number_keyboard"
+      positiveKeyboard: "math_positive_number_keyboard",
+      /** 矩阵灯列坐标阴影（0 ~ MATRIX_LIGHT_COL_COUNT-1，默认 5 列） */
+      basicDropdownNumCol: "basic_dropdown_num_col",
+      /** 矩阵灯行坐标阴影（0 ~ MATRIX_LIGHT_ROW_COUNT-1，默认 7 行） */
+      basicDropdownNumRow: "basic_dropdown_num_row"
     },
     motor: {
       runForPowerSeconds: "run_for_power_seconds",
@@ -22456,7 +22460,11 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       movFindLineRun: "mov_find_line_run"
     },
     matrixLight: {
-      show: "show"
+      show: "show",
+      clear: "clear",
+      setBrightness: "set_brightness",
+      showRoll: "show_roll",
+      setPixelBrightness: "set_pixel_brightness"
     },
     sound: {
       playMusic: "play_music"
@@ -22482,7 +22490,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   var CUSTOM_NUMERIC_LITERAL_TYPES = [
     BLOCK_TYPES.common.integerSlider,
     BLOCK_TYPES.common.decimalSlider,
-    BLOCK_TYPES.common.positiveKeyboard
+    BLOCK_TYPES.common.positiveKeyboard,
+    BLOCK_TYPES.common.basicDropdownNumCol,
+    BLOCK_TYPES.common.basicDropdownNumRow
   ];
 
   // src/blocks/blockDefinitions/control.ts
@@ -22553,29 +22563,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       extensions: ["colours_from_parent"]
     }
   ];
-
-  // src/blocks/blockDefinitions/commonReporters.ts
-  var commonReporterDefinitions = [
-    ...numberShadowReporterDefinitions,
-    ...portDropdownReporterDefinitions
-  ];
-
-  // src/blocks/blockDefinitions/event.ts
-  var eventBlockDefinitions = [
-    {
-      type: BLOCK_TYPES.event.whenFlagClicked,
-      message0: "\u5F53\u5F00\u59CB\u8FD0\u884C",
-      nextStatement: null,
-      style: "event_blocks",
-      extensions: ["shape_hat"]
-    }
-  ];
-
-  // assets/block/block_matrix.svg
-  var block_matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
-
-  // assets/block/block_separator_vertical.svg
-  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
 
   // ../shared/src/utils/portFieldValue.ts
   var DEFAULT_PORT = "0";
@@ -22699,6 +22686,59 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return rows.map((row) => `0x${row}`).join(", ");
   }
 
+  // src/blocks/blockDefinitions/BasicDropdownNum.ts
+  var BASIC_DROPDOWN_NUM_OPTIONS = (count) => Array.from({ length: count }, (_2, i2) => [String(i2), String(i2)]);
+  function basicDropdownNumDefinition(type, optionCount) {
+    return {
+      type,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_dropdown",
+          name: "NUM",
+          options: BASIC_DROPDOWN_NUM_OPTIONS(optionCount)
+        }
+      ],
+      output: "Number",
+      outputShape: 2,
+      extensions: ["colours_from_parent"]
+    };
+  }
+  var basicDropdownNumBlockDefinitions = [
+    basicDropdownNumDefinition(
+      BLOCK_TYPES.common.basicDropdownNumCol,
+      MATRIX_LIGHT_COL_COUNT
+    ),
+    basicDropdownNumDefinition(
+      BLOCK_TYPES.common.basicDropdownNumRow,
+      MATRIX_LIGHT_ROW_COUNT
+    )
+  ];
+
+  // src/blocks/blockDefinitions/commonReporters.ts
+  var commonReporterDefinitions = [
+    ...numberShadowReporterDefinitions,
+    ...portDropdownReporterDefinitions,
+    ...basicDropdownNumBlockDefinitions
+  ];
+
+  // src/blocks/blockDefinitions/event.ts
+  var eventBlockDefinitions = [
+    {
+      type: BLOCK_TYPES.event.whenFlagClicked,
+      message0: "\u5F53\u5F00\u59CB\u8FD0\u884C",
+      nextStatement: null,
+      style: "event_blocks",
+      extensions: ["shape_hat"]
+    }
+  ];
+
+  // assets/block/block_matrix.svg
+  var block_matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+
+  // assets/block/block_separator_vertical.svg
+  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
+
   // src/blocks/blockDefinitions/matrixLight.ts
   var matrixLightBlockDefinitions = [
     {
@@ -22728,7 +22768,133 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       inputsInline: true,
       previousStatement: null,
       nextStatement: null,
-      style: "looks_blocks"
+      style: "matrix_light_blocks"
+    },
+    {
+      type: BLOCK_TYPES.matrixLight.clear,
+      message0: "%1 %2 \u6E05\u9664\u663E\u793A\u5185\u5BB9",
+      args0: [
+        {
+          type: "field_image",
+          src: block_matrix_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        }
+      ],
+      inputsInline: true,
+      previousStatement: null,
+      nextStatement: null,
+      style: "matrix_light_blocks"
+    },
+    {
+      type: BLOCK_TYPES.matrixLight.setBrightness,
+      message0: "%1 %2 \u5C06\u77E9\u9635\u706F\u7684\u4EAE\u5EA6\u8BBE\u7F6E\u4E3A %3",
+      args0: [
+        {
+          type: "field_image",
+          src: block_matrix_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "field_dropdown",
+          name: "BRIGHTNESS",
+          options: [
+            ["0", "0"],
+            ["1", "1"],
+            ["2", "2"],
+            ["3", "3"],
+            ["4", "4"],
+            ["5", "5"],
+            ["6", "6"],
+            ["7", "7"]
+          ]
+        }
+      ],
+      inputsInline: true,
+      previousStatement: null,
+      nextStatement: null,
+      style: "matrix_light_blocks"
+    },
+    {
+      type: BLOCK_TYPES.matrixLight.showRoll,
+      message0: "%1 %2 \u663E\u793A\u6587\u5B57 %3",
+      args0: [
+        {
+          type: "field_image",
+          src: block_matrix_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        {
+          type: "input_value",
+          name: "TEXT",
+          check: "String"
+        }
+      ],
+      inputsInline: true,
+      previousStatement: null,
+      nextStatement: null,
+      style: "matrix_light_blocks"
+    },
+    {
+      type: BLOCK_TYPES.matrixLight.setPixelBrightness,
+      // %3 X、%4 Y 为 Number 值槽，默认阴影见 toolbox matrixLight + shadowPresets
+      message0: "%1 %2 \u5C06x %3 y %4 %5",
+      args0: [
+        {
+          type: "field_image",
+          src: block_matrix_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "X", check: "Number" },
+        { type: "input_value", name: "Y", check: "Number" },
+        {
+          type: "field_dropdown",
+          name: "OPEN",
+          options: [
+            ["\u6253\u5F00", "0"],
+            ["\u5173\u95ED", "1"]
+          ]
+        }
+      ],
+      inputsInline: true,
+      previousStatement: null,
+      nextStatement: null,
+      style: "matrix_light_blocks"
     }
   ];
 
@@ -23197,7 +23363,12 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function syncColourFromParent(block) {
     const parent = getHostParent(block);
     if (parent) {
-      block.setColour(parent.getColour());
+      const styleName = parent.getStyleName();
+      if (styleName) {
+        block.setStyle(styleName);
+      } else {
+        block.setColour(parent.getColour());
+      }
       return;
     }
     block.setStyle("text_blocks");
@@ -23208,20 +23379,23 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return;
     }
     extensionsRegistered = true;
-    F.register("colours_from_parent", function coloursFromParent() {
-      const block = this;
-      const apply = () => syncColourFromParent(block);
-      apply();
-      block.setOnChange((event) => {
-        if (!event) {
-          apply();
-          return;
-        }
-        if (event.type === f.BLOCK_MOVE || event.type === f.BLOCK_CREATE) {
-          apply();
-        }
-      });
-    });
+    F.register(
+      "colours_from_parent",
+      function coloursFromParent() {
+        const block = this;
+        const apply = () => syncColourFromParent(block);
+        apply();
+        block.setOnChange((event) => {
+          if (!event) {
+            apply();
+            return;
+          }
+          if (event.type === f.BLOCK_MOVE || event.type === f.BLOCK_CREATE) {
+            apply();
+          }
+        });
+      }
+    );
   }
 
   // src/blocks/registerBlocks.ts
@@ -23314,26 +23488,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     contents: [{ kind: "block", type: BLOCK_TYPES.event.whenFlagClicked }]
   };
 
-  // src/blocks/toolboxCategories/matrixLight.ts
-  var matrixLightToolboxCategory = {
-    kind: "category",
-    id: "matrixLight",
-    name: "\u77E9\u9635\u706F",
-    categorystyle: "matrixLight_category",
-    cssconfig: {
-      icon: toolboxCategoryIconClasses("matrixLight")
-    },
-    contents: [
-      {
-        kind: "block",
-        type: BLOCK_TYPES.matrixLight.show,
-        fields: {
-          MATRIX: serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS)
-        }
-      }
-    ]
-  };
-
   // src/blocks/toolboxCategories/shadowPresets.ts
   function portShadow(port = "0") {
     return {
@@ -23359,6 +23513,75 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       fields: { NUM: num }
     };
   }
+  function stringShadow(text) {
+    return {
+      type: "text",
+      fields: { TEXT: text }
+    };
+  }
+  function basicDropdownNumColShadow(num = 0) {
+    return {
+      type: BLOCK_TYPES.common.basicDropdownNumCol,
+      fields: { NUM: String(num) }
+    };
+  }
+  function basicDropdownNumRowShadow(num = 0) {
+    return {
+      type: BLOCK_TYPES.common.basicDropdownNumRow,
+      fields: { NUM: String(num) }
+    };
+  }
+
+  // src/blocks/toolboxCategories/matrixLight.ts
+  var matrixLightToolboxCategory = {
+    kind: "category",
+    id: "matrixLight",
+    name: "\u77E9\u9635\u706F",
+    categorystyle: "matrixLight_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("matrixLight")
+    },
+    contents: [
+      {
+        kind: "block",
+        type: BLOCK_TYPES.matrixLight.show,
+        // fields.MATRIX：7×5 点阵序列化串（行 hex，逗号分隔）
+        fields: {
+          MATRIX: serializeMatrixLightRows(DEFAULT_MATRIX_LIGHT_ROWS)
+        }
+      },
+      { kind: "block", type: BLOCK_TYPES.matrixLight.clear },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.matrixLight.setBrightness,
+        // fields.BRIGHTNESS：全局亮度 0–7
+        fields: {
+          BRIGHTNESS: "0"
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.matrixLight.showRoll,
+        // inputs.TEXT.shadow.fields.TEXT：默认滚动文字
+        inputs: {
+          TEXT: { shadow: stringShadow("ABCD") }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.matrixLight.setPixelBrightness,
+        // inputs：对应块定义里嵌套阴影槽名；shadow.fields.NUM = 列/行坐标初值
+        inputs: {
+          X: { shadow: basicDropdownNumColShadow(0) },
+          Y: { shadow: basicDropdownNumRowShadow(0) }
+        },
+        // fields：父块自身字段；OPEN 下拉「打开」='0'、「关闭」='1'
+        fields: {
+          OPEN: "0"
+        }
+      }
+    ]
+  };
 
   // src/blocks/toolboxCategories/motor.ts
   var motorToolboxCategory = {
@@ -23976,7 +24199,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     },
     [BLOCK_TYPES.matrixLight.show](block, context) {
       const matrix = getFieldValue(block, "MATRIX") ?? "1F,1F,1F,1F,1F,1F,1F";
-      return `${indent(context)}_matrix.show(${matrixLightRowsToPythonArgs(matrix)})`;
+      return `${indent(context)}_matrix.show(${matrixLightRowsToPythonArgs(
+        matrix
+      )})`;
     },
     [BLOCK_TYPES.sound.playMusic](_block, context) {
       return `${indent(context)}play_music()`;
@@ -24068,7 +24293,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         colourSecondary: "#ff33a3",
         colourTertiary: "#e03cb1"
       },
-      looks_blocks: {
+      matrix_light_blocks: {
         colourPrimary: "#9966FF",
         colourSecondary: "#855CD6",
         colourTertiary: "#774DCB"
@@ -24098,7 +24323,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         colourSecondary: "#E6AC00",
         colourTertiary: "#CC9900"
       },
-      looks: {
+      looks_blocks: {
         colourPrimary: "#9966FF",
         colourSecondary: "#855CD6",
         colourTertiary: "#774DCB"

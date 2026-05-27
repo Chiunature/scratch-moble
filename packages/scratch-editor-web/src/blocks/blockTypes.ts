@@ -12,6 +12,10 @@ export const BLOCK_TYPES = {
     decimalSlider: 'number_slider_decimal',
     /** 非负整数键盘阴影（历史 type 名保留兼容） */
     positiveKeyboard: 'math_positive_number_keyboard',
+    /** 矩阵灯列坐标阴影（0 ~ MATRIX_LIGHT_COL_COUNT-1，默认 5 列） */
+    basicDropdownNumCol: 'basic_dropdown_num_col',
+    /** 矩阵灯行坐标阴影（0 ~ MATRIX_LIGHT_ROW_COUNT-1，默认 7 行） */
+    basicDropdownNumRow: 'basic_dropdown_num_row',
   },
   motor: {
     runForPowerSeconds: 'run_for_power_seconds',
@@ -32,6 +36,10 @@ export const BLOCK_TYPES = {
   },
   matrixLight: {
     show: 'show',
+    clear: 'clear',
+    setBrightness: 'set_brightness',
+    showRoll: 'show_roll',
+    setPixelBrightness: 'set_pixel_brightness',
   },
   sound: {
     playMusic: 'play_music',
@@ -60,4 +68,6 @@ export const CUSTOM_NUMERIC_LITERAL_TYPES = [
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,
   BLOCK_TYPES.common.positiveKeyboard,
+  BLOCK_TYPES.common.basicDropdownNumCol,
+  BLOCK_TYPES.common.basicDropdownNumRow,
 ] as const;
