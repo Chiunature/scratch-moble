@@ -22560,7 +22560,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       whenFlagClicked: "event_when_flag_clicked"
     },
     control: {
-      sleepSeconds: "control_sleep_seconds"
+      sleepS: "sleep_s",
+      wait: "control_wait",
+      break: "control_break",
+      whileTimes: "control_while_times",
+      while: "control_while",
+      if: "control_if",
+      ifElse: "control_if_else",
+      whileDo: "control_while_do",
+      stopExit: "control_stop_exit"
     },
     sensor: {
       touch_sensor: {
@@ -22585,12 +22593,100 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/blocks/blockDefinitions/control.ts
   var controlBlockDefinitions = [
     {
-      type: BLOCK_TYPES.control.sleepSeconds,
+      type: BLOCK_TYPES.control.sleepS,
       message0: "\u7B49\u5F85 %1 \u79D2",
-      args0: [{ type: "input_value", name: "STEPS", check: "Number" }],
+      args0: [{ type: "input_value", name: "SECONDS", check: "Number" }],
       previousStatement: null,
       nextStatement: null,
-      style: "loop_blocks"
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.wait,
+      message0: "\u7B49\u5F85 %1",
+      args0: [
+        {
+          type: "input_value",
+          name: "CONDITION",
+          check: "Boolean"
+        }
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.break,
+      message0: "\u8DF3\u51FA\u5FAA\u73AF",
+      previousStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_end"]
+    },
+    {
+      type: BLOCK_TYPES.control.whileTimes,
+      message0: "\u91CD\u590D\u6267\u884C %1 \u6B21",
+      message1: "%1",
+      args0: [{ type: "input_value", name: "TIMES", check: "Number" }],
+      args1: [{ type: "input_statement", name: "SUBSTACK" }],
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.while,
+      message0: "\u91CD\u590D\u6267\u884C",
+      message1: "%1",
+      args1: [{ type: "input_statement", name: "SUBSTACK" }],
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.if,
+      message0: "\u5982\u679C %1 \u90A3\u4E48",
+      message1: "%1",
+      args0: [{ type: "input_value", name: "CONDITION", check: "Boolean" }],
+      args1: [{ type: "input_statement", name: "SUBSTACK" }],
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.ifElse,
+      message0: "\u5982\u679C %1 \u90A3\u4E48",
+      message1: "%1",
+      message2: "\u5426\u5219",
+      message3: "%1",
+      args0: [{ type: "input_value", name: "CONDITION", check: "Boolean" }],
+      args1: [{ type: "input_statement", name: "SUBSTACK" }],
+      args3: [{ type: "input_statement", name: "SUBSTACK2" }],
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.whileDo,
+      message0: "\u91CD\u590D\u6267\u884C\u76F4\u5230 %1",
+      message1: "%1",
+      args0: [{ type: "input_value", name: "CONDITION", check: "Boolean" }],
+      args1: [{ type: "input_statement", name: "SUBSTACK" }],
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.control.stopExit,
+      message0: "\u505C\u6B62\u5E76\u4E14\u9000\u51FA\u7A0B\u5E8F",
+      previousStatement: null,
+      nextStatement: null,
+      style: "control_blocks",
+      extensions: ["shape_statement"]
     }
   ];
 
@@ -22875,22 +22971,42 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     ...basicDropdownNumBlockDefinitions
   ];
 
+  // assets/block/block_start_program.svg
+  var block_start_program_default = 'data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg id="_\u56FE\u5C42_1" data-name="\u56FE\u5C42 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.68 22.68">%0A  <defs>%0A    <style>%0A      .cls-1 {%0A        fill: %23fff;%0A      }%0A    </style>%0A  </defs>%0A  <polygon class="cls-1" points="18.12 11.34 4.55 3.51 4.55 19.17 18.12 11.34"/>%0A</svg>';
+
+  // assets/block/block_separator_vertical.svg
+  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
+
   // src/blocks/blockDefinitions/event.ts
   var eventBlockDefinitions = [
     {
       type: BLOCK_TYPES.event.whenFlagClicked,
-      message0: "\u5F53\u5F00\u59CB\u8FD0\u884C",
+      message0: "%1 %2 \u5F53\u7A0B\u5E8F\u542F\u52A8\u65F6",
+      args0: [
+        {
+          type: "field_image",
+          src: block_start_program_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        }
+      ],
+      inputsInline: true,
       nextStatement: null,
-      style: "event_blocks",
+      style: "start_program_blocks",
       extensions: ["shape_hat"]
     }
   ];
 
   // assets/block/block_matrix.svg
   var block_matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0A</g>%0A</svg>%0A';
-
-  // assets/block/block_separator_vertical.svg
-  var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
 
   // src/blocks/blockDefinitions/matrixLight.ts
   var matrixLightBlockDefinitions = [
@@ -23518,7 +23634,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       ],
       previousStatement: null,
       nextStatement: null,
-      style: "looks_blocks"
+      style: "sounds_blocks"
     }
   ];
 
@@ -23625,43 +23741,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return `toolbox-category-icon toolbox-category-icon-${categoryId}`;
   }
 
-  // src/blocks/toolboxCategories/control.ts
-  var controlToolboxCategory = {
-    kind: "category",
-    id: "control",
-    name: "\u63A7\u5236",
-    categorystyle: "control_category",
-    cssconfig: {
-      icon: toolboxCategoryIconClasses("control")
-    },
-    contents: [
-      {
-        kind: "block",
-        type: BLOCK_TYPES.control.sleepSeconds,
-        inputs: {
-          STEPS: {
-            shadow: {
-              type: "math_number",
-              fields: { NUM: 15 }
-            }
-          }
-        }
-      }
-    ]
-  };
-
-  // src/blocks/toolboxCategories/event.ts
-  var eventToolboxCategory = {
-    kind: "category",
-    id: "event",
-    name: "\u4E8B\u4EF6",
-    categorystyle: "event_category",
-    cssconfig: {
-      icon: toolboxCategoryIconClasses("event")
-    },
-    contents: [{ kind: "block", type: BLOCK_TYPES.event.whenFlagClicked }]
-  };
-
   // src/blocks/toolboxCategories/shadowPresets.ts
   function portShadow(port = "0") {
     return {
@@ -23711,6 +23790,68 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       fields: { NOTE: String(pitch) }
     };
   }
+
+  // src/blocks/toolboxCategories/control.ts
+  var controlToolboxCategory = {
+    kind: "category",
+    id: "control",
+    name: "\u63A7\u5236",
+    categorystyle: "control_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("control")
+    },
+    contents: [
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.sleepS,
+        inputs: {
+          SECONDS: { shadow: positiveKeyboardShadow(1) }
+        }
+      },
+      // CONDITION 槽不设 shadow，保留空六角位供用户拖入布尔 reporter
+      { kind: "block", type: BLOCK_TYPES.control.wait },
+      { kind: "block", type: BLOCK_TYPES.control.break },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.whileTimes,
+        inputs: {
+          TIMES: { shadow: positiveKeyboardShadow(10) }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.while
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.if
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.ifElse
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.whileDo
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.control.stopExit
+      }
+    ]
+  };
+
+  // src/blocks/toolboxCategories/event.ts
+  var eventToolboxCategory = {
+    kind: "category",
+    id: "event",
+    name: "\u4E8B\u4EF6",
+    categorystyle: "event_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("event")
+    },
+    contents: [{ kind: "block", type: BLOCK_TYPES.event.whenFlagClicked }]
+  };
 
   // src/blocks/toolboxCategories/matrixLight.ts
   var matrixLightToolboxCategory = {
@@ -24457,6 +24598,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     "math_integer",
     ...CUSTOM_NUMERIC_LITERAL_TYPES
   ]);
+  function inputExpressionToPython(block, inputName, fallback) {
+    const target = getInputTargetBlock(block, inputName);
+    return target ? expressionBlockToPython(target) : fallback;
+  }
   function expressionBlockToPython(block) {
     if (NUMERIC_LITERAL_BLOCK_TYPES.has(block.type)) {
       return getFieldValue(block, "NUM") ?? "0";
@@ -24477,6 +24622,24 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const pitch = Number(raw);
       const name2 = Number.isFinite(pitch) ? pitchToDisplayName(clampNotePitch(pitch)) : raw;
       return quotePythonString(name2);
+    }
+    if (block.type === "operator_equals") {
+      return `(${inputExpressionToPython(block, "OPERAND1", "0")} == ${inputExpressionToPython(block, "OPERAND2", "0")})`;
+    }
+    if (block.type === "operator_lt") {
+      return `(${inputExpressionToPython(block, "OPERAND1", "0")} < ${inputExpressionToPython(block, "OPERAND2", "0")})`;
+    }
+    if (block.type === "operator_gt") {
+      return `(${inputExpressionToPython(block, "OPERAND1", "0")} > ${inputExpressionToPython(block, "OPERAND2", "0")})`;
+    }
+    if (block.type === "operator_and") {
+      return `(${inputExpressionToPython(block, "OPERAND1", "False")} and ${inputExpressionToPython(block, "OPERAND2", "False")})`;
+    }
+    if (block.type === "operator_or") {
+      return `(${inputExpressionToPython(block, "OPERAND1", "False")} or ${inputExpressionToPython(block, "OPERAND2", "False")})`;
+    }
+    if (block.type === "operator_not") {
+      return `(not ${inputExpressionToPython(block, "OPERAND", "False")})`;
     }
     return `None  # TODO: unsupported expression ${block.type}`;
   }
@@ -24503,6 +24666,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return expressionBlockToPython(targetBlock);
     }
     return quotePythonString(pitchToDisplayName(defaultPitch));
+  }
+  function nestedStatementsToPython(block, inputName, context) {
+    const inner = getInputTargetBlock(block, inputName);
+    if (!inner) {
+      return `${indent({ indent: context.indent + 1 })}pass`;
+    }
+    return statementChainToPython(inner, { indent: context.indent + 1 });
   }
   var statementGenerators = {
     [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
@@ -24547,9 +24717,23 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const duration = valueToPython(block, "DURATION", "1");
       return `${indent(context)}play_music(${note}, ${duration})`;
     },
-    [BLOCK_TYPES.control.sleepSeconds](block, context) {
-      const v2 = valueToPython(block, "STEPS", "1");
-      return `${indent(context)}sleep_seconds(${v2})`;
+    [BLOCK_TYPES.control.sleepS](block, context) {
+      const v2 = valueToPython(block, "SECONDS", "1");
+      return `${indent(context)}sleep_s(${v2})`;
+    },
+    [BLOCK_TYPES.control.wait](block, context) {
+      const cond = valueToPython(block, "CONDITION", "False");
+      return `${indent(context)}while not (${cond}):
+${indent({ indent: context.indent + 1 })}pass`;
+    },
+    [BLOCK_TYPES.control.break](_block, context) {
+      return `${indent(context)}break`;
+    },
+    [BLOCK_TYPES.control.whileTimes](block, context) {
+      const times = valueToPython(block, "TIMES", "10");
+      const body = nestedStatementsToPython(block, "SUBSTACK", context);
+      return `${indent(context)}for _ in range(int(${times})):
+${body}`;
     },
     [BLOCK_TYPES.sensor.touch_sensor.oneCalibrate](_block, context) {
       return `${indent(context)}sensor_one_calibrate()`;
@@ -24619,11 +24803,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   var editorTheme = ye.defineTheme("scratch-mobile", {
     name: "scratch-mobile",
     blockStyles: {
-      event_blocks: {
-        colourPrimary: "#FFBF00",
-        colourSecondary: "#E6AC00",
-        colourTertiary: "#CC9900"
-      },
       motion_blocks: {
         colourPrimary: "#4C97FF",
         colourSecondary: "#4280D7",
@@ -24639,30 +24818,25 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         colourSecondary: "#855CD6",
         colourTertiary: "#774DCB"
       },
+      start_program_blocks: {
+        colourPrimary: "#FFBF00",
+        colourSecondary: "#DEB12D",
+        colourTertiary: "#CC9900"
+      },
+      sounds_blocks: {
+        colourPrimary: "#CF63CF",
+        colourSecondary: "#BF57B3",
+        colourTertiary: "#A34B99"
+      },
+      control_blocks: {
+        colourPrimary: "#FFAB19",
+        colourSecondary: "#CF8D17",
+        colourTertiary: "#F2A118"
+      },
       math_blocks: {
         colourPrimary: "#59C059",
         colourSecondary: "#46B946",
         colourTertiary: "#389438"
-      },
-      text_blocks: {
-        colourPrimary: "#FFBF00",
-        colourSecondary: "#E6AC00",
-        colourTertiary: "#CC9900"
-      },
-      logic_blocks: {
-        colourPrimary: "#4C97FF",
-        colourSecondary: "#4280D7",
-        colourTertiary: "#3373CC"
-      },
-      loop_blocks: {
-        colourPrimary: "#0FBD8C",
-        colourSecondary: "#0DA57A",
-        colourTertiary: "#0B8E69"
-      },
-      event: {
-        colourPrimary: "#FFBF00",
-        colourSecondary: "#E6AC00",
-        colourTertiary: "#CC9900"
       },
       looks_blocks: {
         colourPrimary: "#9966FF",

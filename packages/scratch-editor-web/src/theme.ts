@@ -11,11 +11,6 @@ import { TOOLBOX_CATEGORIES } from './blocks/toolbox';
 export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
   name: 'scratch-mobile',
   blockStyles: {
-    event_blocks: {
-      colourPrimary: '#FFBF00',
-      colourSecondary: '#E6AC00',
-      colourTertiary: '#CC9900',
-    },
     motion_blocks: {
       colourPrimary: '#4C97FF',
       colourSecondary: '#4280D7',
@@ -31,32 +26,27 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#855CD6',
       colourTertiary: '#774DCB',
     },
+
+    start_program_blocks: {
+      colourPrimary: '#FFBF00',
+      colourSecondary: '#DEB12D',
+      colourTertiary: '#CC9900',
+    },
+    sounds_blocks:{
+      colourPrimary: '#CF63CF',
+      colourSecondary: '#BF57B3',
+      colourTertiary: '#A34B99',
+    },
+    control_blocks: {
+      colourPrimary: '#FFAB19',
+      colourSecondary: '#CF8D17',
+      colourTertiary: '#F2A118',
+    },
     math_blocks: {
       colourPrimary: '#59C059',
       colourSecondary: '#46B946',
       colourTertiary: '#389438',
     },
-    text_blocks: {
-      colourPrimary: '#FFBF00',
-      colourSecondary: '#E6AC00',
-      colourTertiary: '#CC9900',
-    },
-    logic_blocks: {
-      colourPrimary: '#4C97FF',
-      colourSecondary: '#4280D7',
-      colourTertiary: '#3373CC',
-    },
-    loop_blocks: {
-      colourPrimary: '#0FBD8C',
-      colourSecondary: '#0DA57A',
-      colourTertiary: '#0B8E69',
-    },
-    event: {
-      colourPrimary: '#FFBF00',
-      colourSecondary: '#E6AC00',
-      colourTertiary: '#CC9900',
-    },
-
     looks_blocks: {
       colourPrimary: '#9966FF',
       colourSecondary: '#855CD6',

@@ -50,7 +50,15 @@ export const BLOCK_TYPES = {
     whenFlagClicked: 'event_when_flag_clicked',
   },
   control: {
-    sleepSeconds: 'control_sleep_seconds',
+    sleepS: 'sleep_s',
+    wait: 'control_wait',
+    break: 'control_break',
+    whileTimes: 'control_while_times',
+    while: 'control_while',
+    if: 'control_if',
+    ifElse: 'control_if_else',
+    whileDo: 'control_while_do',
+    stopExit: 'control_stop_exit',
   },
   sensor: {
     touch_sensor: {

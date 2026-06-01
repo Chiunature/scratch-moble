@@ -1,5 +1,6 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import { toolboxCategoryIconClasses } from './shared';
+import { positiveKeyboardShadow } from './shadowPresets';
 
 export const controlToolboxCategory = {
   kind: 'category',
@@ -12,15 +13,40 @@ export const controlToolboxCategory = {
   contents: [
     {
       kind: 'block',
-      type: BLOCK_TYPES.control.sleepSeconds,
+      type: BLOCK_TYPES.control.sleepS,
       inputs: {
-        STEPS: {
-          shadow: {
-            type: 'math_number',
-            fields: { NUM: 15 },
-          },
-        },
+        SECONDS: { shadow: positiveKeyboardShadow(1) },
       },
+    },
+    // CONDITION 槽不设 shadow，保留空六角位供用户拖入布尔 reporter
+    { kind: 'block', type: BLOCK_TYPES.control.wait },
+    { kind: 'block', type: BLOCK_TYPES.control.break },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.control.whileTimes,
+      inputs: {
+        TIMES: { shadow: positiveKeyboardShadow(10) },
+      },
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.control.while
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.control.if,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.control.ifElse,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.control.whileDo,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.control.stopExit,
     },
   ],
 } as const;

@@ -27,6 +27,6 @@ export const soundBlockDefinitions = [
     ],
     previousStatement: null,
     nextStatement: null,
-    style: 'looks_blocks',
+    style: 'sounds_blocks',
   },
 ] as const;

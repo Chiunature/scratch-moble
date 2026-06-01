@@ -45,6 +45,15 @@ const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
   ...CUSTOM_NUMERIC_LITERAL_TYPES,
 ]);
 
+function inputExpressionToPython(
+  block: ScratchBlock,
+  inputName: string,
+  fallback: string,
+): string {
+  const target = getInputTargetBlock(block, inputName);
+  return target ? expressionBlockToPython(target) : fallback;
+}
+
 function expressionBlockToPython(block: ScratchBlock): string {
   if (NUMERIC_LITERAL_BLOCK_TYPES.has(block.type)) {
     return getFieldValue(block, 'NUM') ?? '0';
@@ -70,6 +79,25 @@ function expressionBlockToPython(block: ScratchBlock): string {
       ? pitchToDisplayName(clampNotePitch(pitch))
       : raw;
     return quotePythonString(name);
+  }
+
+  if (block.type === 'operator_equals') {
+    return `(${inputExpressionToPython(block, 'OPERAND1', '0')} == ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
+  }
+  if (block.type === 'operator_lt') {
+    return `(${inputExpressionToPython(block, 'OPERAND1', '0')} < ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
+  }
+  if (block.type === 'operator_gt') {
+    return `(${inputExpressionToPython(block, 'OPERAND1', '0')} > ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
+  }
+  if (block.type === 'operator_and') {
+    return `(${inputExpressionToPython(block, 'OPERAND1', 'False')} and ${inputExpressionToPython(block, 'OPERAND2', 'False')})`;
+  }
+  if (block.type === 'operator_or') {
+    return `(${inputExpressionToPython(block, 'OPERAND1', 'False')} or ${inputExpressionToPython(block, 'OPERAND2', 'False')})`;
+  }
+  if (block.type === 'operator_not') {
+    return `(not ${inputExpressionToPython(block, 'OPERAND', 'False')})`;
   }
 
   return `None  # TODO: unsupported expression ${block.type}`;
@@ -112,6 +140,18 @@ function noteValueToPython(
   }
 
   return quotePythonString(pitchToDisplayName(defaultPitch));
+}
+
+function nestedStatementsToPython(
+  block: ScratchBlock,
+  inputName: string,
+  context: GenerateContext,
+): string {
+  const inner = getInputTargetBlock(block, inputName);
+  if (!inner) {
+    return `${indent({ indent: context.indent + 1 })}pass`;
+  }
+  return statementChainToPython(inner, { indent: context.indent + 1 });
 }
 
 const statementGenerators: Record<string, StatementGenerator> = {
@@ -165,9 +205,24 @@ const statementGenerators: Record<string, StatementGenerator> = {
     return `${indent(context)}play_music(${note}, ${duration})`;
   },
 
-  [BLOCK_TYPES.control.sleepSeconds](block, context) {
-    const v = valueToPython(block, 'STEPS', '1');
-    return `${indent(context)}sleep_seconds(${v})`;
+  [BLOCK_TYPES.control.sleepS](block, context) {
+    const v = valueToPython(block, 'SECONDS', '1');
+    return `${indent(context)}sleep_s(${v})`;
+  },
+
+  [BLOCK_TYPES.control.wait](block, context) {
+    const cond = valueToPython(block, 'CONDITION', 'False');
+    return `${indent(context)}while not (${cond}):\n${indent({ indent: context.indent + 1 })}pass`;
+  },
+
+  [BLOCK_TYPES.control.break](_block, context) {
+    return `${indent(context)}break`;
+  },
+
+  [BLOCK_TYPES.control.whileTimes](block, context) {
+    const times = valueToPython(block, 'TIMES', '10');
+    const body = nestedStatementsToPython(block, 'SUBSTACK', context);
+    return `${indent(context)}for _ in range(int(${times})):\n${body}`;
   },
 
   [BLOCK_TYPES.sensor.touch_sensor.oneCalibrate](_block, context) {
