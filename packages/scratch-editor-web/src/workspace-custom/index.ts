@@ -7,7 +7,7 @@
  * - toolbox：工具箱 DOM / 图标 / 交互
  * - zoom：缩放控件补丁
  */
-export { patchFieldNumberEditor, patchFieldPortPicker, patchFieldMatrixLight } from './fields';
+export { patchFieldNumberEditor, patchFieldPortPicker, patchFieldMatrixLight, patchFieldNotePicker } from './fields';
 export { patchFlyoutGetWidthWhenHidden, setupFlyoutWidthClamp } from './flyout';
 export {
   patchToolboxCategoryIcons,

@@ -17,6 +17,7 @@ import {
   patchFieldNumberEditor,
   patchFieldPortPicker,
   patchFieldMatrixLight,
+  patchFieldNotePicker,
   patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
@@ -36,6 +37,7 @@ function bootstrap(): void {
   patchFieldNumberEditor();
   patchFieldPortPicker();
   patchFieldMatrixLight();
+  patchFieldNotePicker();
 
   const host = document.getElementById('workspace');
 

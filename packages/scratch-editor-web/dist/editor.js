@@ -22440,7 +22440,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       /** 矩阵灯列坐标阴影（0 ~ MATRIX_LIGHT_COL_COUNT-1，默认 5 列） */
       basicDropdownNumCol: "basic_dropdown_num_col",
       /** 矩阵灯行坐标阴影（0 ~ MATRIX_LIGHT_ROW_COUNT-1，默认 7 行） */
-      basicDropdownNumRow: "basic_dropdown_num_row"
+      basicDropdownNumRow: "basic_dropdown_num_row",
+      /** 音符选择阴影（pitch 0–36 存盘；codegen 经 pitchToDisplayName 输出音名） */
+      notePicker: "note_picker"
     },
     motor: {
       runForPowerSeconds: "run_for_power_seconds",
@@ -22545,6 +22547,24 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // src/blocks/blockDefinitions/noteShadowReporter.ts
+  var noteShadowReporterDefinitions = [
+    {
+      type: BLOCK_TYPES.common.notePicker,
+      message0: "%1",
+      args0: [
+        {
+          type: "field_note_picker",
+          name: "NOTE",
+          value: "12"
+        }
+      ],
+      output: "Number",
+      outputShape: 2,
+      extensions: ["colours_from_parent"]
+    }
+  ];
+
   // src/blocks/blockDefinitions/portDropdown.ts
   var portDropdownReporterDefinitions = [
     {
@@ -22563,6 +22583,53 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       extensions: ["colours_from_parent"]
     }
   ];
+
+  // ../shared/src/utils/notePitch.ts
+  var NOTE_PITCH_MAX = 36;
+  var OCTAVE_KEY_TEMPLATE = [
+    { name: "C", semitone: 0 },
+    { name: "C#", semitone: 1, isBlack: true },
+    { name: "D", semitone: 2 },
+    { name: "E", semitone: 4 },
+    { name: "E#", semitone: 3, isBlack: true },
+    { name: "F", semitone: 5 },
+    { name: "F#", semitone: 6, isBlack: true },
+    { name: "G", semitone: 7 },
+    { name: "G#", semitone: 8, isBlack: true },
+    { name: "A", semitone: 9 },
+    { name: "B", semitone: 11 },
+    { name: "B#", semitone: 10, isBlack: true },
+    { name: "C", semitone: 12 }
+  ];
+  function clampNotePitch(value) {
+    return Math.max(0, Math.min(NOTE_PITCH_MAX, Math.round(value)));
+  }
+  function pitchToDisplayName(pitch) {
+    const clamped = clampNotePitch(pitch);
+    const octave = Math.min(2, Math.floor(clamped / 12));
+    const key = buildOctaveKeys(octave).find((k2) => k2.pitch === clamped);
+    return key?.displayName ?? String(clamped);
+  }
+  function buildOctaveKeys(octave) {
+    const o2 = Math.max(0, Math.min(2, octave));
+    return OCTAVE_KEY_TEMPLATE.flatMap((template) => {
+      const pitch = o2 * 12 + template.semitone;
+      if (pitch > NOTE_PITCH_MAX) {
+        return [];
+      }
+      const isBlack = "isBlack" in template && template.isBlack === true;
+      const displayName = template.name === "C" && template.semitone === 12 ? `C${o2 + 1}` : o2 === 0 ? template.name : `${template.name}${o2}`;
+      return [
+        {
+          pitch,
+          name: template.name,
+          displayName,
+          isBlack,
+          octave: o2
+        }
+      ];
+    });
+  }
 
   // ../shared/src/utils/portFieldValue.ts
   var DEFAULT_PORT = "0";
@@ -22718,6 +22785,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/blocks/blockDefinitions/commonReporters.ts
   var commonReporterDefinitions = [
     ...numberShadowReporterDefinitions,
+    ...noteShadowReporterDefinitions,
     ...portDropdownReporterDefinitions,
     ...basicDropdownNumBlockDefinitions
   ];
@@ -22734,7 +22802,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   ];
 
   // assets/block/block_matrix.svg
-  var block_matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+  var block_matrix_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<rect x="3.13" y="2.96" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="9.08" y="2.96" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="15.03" y="2.96" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="3.13" y="9.08" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="9.08" y="9.08" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="15.03" y="9.08" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="3.13" y="15.19" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="9.08" y="15.19" class="st0" width="4.52" height="4.52"/>%0A%09<rect x="15.03" y="15.19" class="st0" width="4.52" height="4.52"/>%0A</g>%0A</svg>%0A';
 
   // assets/block/block_separator_vertical.svg
   var block_separator_vertical_default = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="30" viewBox="0 0 2 20" aria-hidden="true">%0A  <rect x="0" y="0" width="2" height="30" rx="0.5" fill="rgba(95,95,95,0.5)"/>%0A</svg>%0A';
@@ -22899,7 +22967,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   ];
 
   // assets/block/block_motor_sensing.svg
-  var block_motor_sensing_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g id="XMLID_00000064332656542466190760000003885663620856589749_">%0D%0A%09<path class="st0" d="M11.34,2.87c-4.68,0-8.47,3.79-8.47,8.47c0,4.68,3.79,8.47,8.47,8.47c4.68,0,8.47-3.79,8.47-8.47%0D%0A%09%09C19.81,6.66,16.02,2.87,11.34,2.87z M5.69,13.46c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C7.81,12.51,6.86,13.46,5.69,13.46z M11.34,19.1c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C13.46,18.15,12.51,19.1,11.34,19.1z M13.17,10.64v1.41h-1.13v1.13h-1.41%0D%0A%09%09v-1.13H9.5v-1.41h1.13V9.5h1.41v1.13H13.17z M11.34,7.81c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0D%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C13.46,6.86,12.51,7.81,11.34,7.81z M16.98,13.46c-1.17,0-2.12-0.95-2.12-2.12%0D%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C19.1,12.51,18.15,13.46,16.98,13.46z"/>%0D%0A</g>%0D%0A</svg>%0D%0A';
+  var block_motor_sensing_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g id="XMLID_00000064332656542466190760000003885663620856589749_">%0A%09<path class="st0" d="M11.34,2.87c-4.68,0-8.47,3.79-8.47,8.47c0,4.68,3.79,8.47,8.47,8.47c4.68,0,8.47-3.79,8.47-8.47%0A%09%09C19.81,6.66,16.02,2.87,11.34,2.87z M5.69,13.46c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C7.81,12.51,6.86,13.46,5.69,13.46z M11.34,19.1c-1.17,0-2.12-0.95-2.12-2.12%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C13.46,18.15,12.51,19.1,11.34,19.1z M13.17,10.64v1.41h-1.13v1.13h-1.41%0A%09%09v-1.13H9.5v-1.41h1.13V9.5h1.41v1.13H13.17z M11.34,7.81c-1.17,0-2.12-0.95-2.12-2.12c0-1.17,0.95-2.12,2.12-2.12%0A%09%09c1.17,0,2.12,0.95,2.12,2.12C13.46,6.86,12.51,7.81,11.34,7.81z M16.98,13.46c-1.17,0-2.12-0.95-2.12-2.12%0A%09%09c0-1.17,0.95-2.12,2.12-2.12c1.17,0,2.12,0.95,2.12,2.12C19.1,12.51,18.15,13.46,16.98,13.46z"/>%0A</g>%0A</svg>%0A';
 
   // src/blocks/blockDefinitions/motor.ts
   var motorBlockDefinitions = [
@@ -23005,7 +23073,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   ];
 
   // assets/block/block_combined_motor.svg
-  var block_combined_motor_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0D%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0D%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0D%0A<style type="text/css">%0D%0A%09.st0{fill:%23FFFFFF;}%0D%0A%09.st1{fill:%230090F5;}%0D%0A%09.st2{fill:%23FF4CCD;}%0D%0A%09.st3{fill:%239B6AF6;}%0D%0A%09.st4{fill:%23BE60EF;}%0D%0A%09.st5{fill:%2334CBF0;}%0D%0A%09.st6{fill:%235CB1D6;}%0D%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0D%0A</style>%0D%0A<g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M9.82,5.92c-3.83,0-6.93,3.1-6.93,6.94c0,3.83,3.1,6.93,6.93,6.93c3.83,0,6.94-3.1,6.94-6.93%0D%0A%09%09%09C16.76,9.02,13.66,5.92,9.82,5.92z M5.2,14.59c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0D%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C6.94,13.81,6.16,14.59,5.2,14.59z M9.82,19.21c-0.96,0-1.73-0.78-1.73-1.73%0D%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C11.56,18.43,10.78,19.21,9.82,19.21z M11.33,12.28v1.16H10.4v0.92H9.25%0D%0A%09%09%09v-0.92H8.32v-1.16h0.93v-0.93h1.16v0.93H11.33z M9.82,9.96c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0D%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C11.56,9.18,10.78,9.96,9.82,9.96z M14.45,14.59c-0.96,0-1.73-0.78-1.73-1.73%0D%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C16.18,13.81,15.41,14.59,14.45,14.59z"/>%0D%0A%09</g>%0D%0A%09<g>%0D%0A%09%09<path class="st0" d="M12.85,2.89c-2.41,0-4.54,1.23-5.78,3.1c0.85-0.34,1.78-0.53,2.75-0.53c0.46,0,0.9,0.04,1.34,0.12%0D%0A%09%09%09c-0.03-0.12-0.04-0.25-0.04-0.39c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73c0,0.6-0.3,1.13-0.76,1.44%0D%0A%09%09%09c0.89,0.57,1.64,1.33,2.22,2.21c0.31-0.46,0.84-0.76,1.44-0.76c0.96,0,1.73,0.78,1.73,1.73c0,0.96-0.78,1.73-1.73,1.73%0D%0A%09%09%09c-0.13,0-0.26-0.01-0.39-0.04c0.08,0.43,0.12,0.88,0.12,1.34c0,0.97-0.19,1.9-0.53,2.75c1.87-1.24,3.1-3.37,3.1-5.78%0D%0A%09%09%09C19.79,6,16.68,2.89,12.85,2.89z"/>%0D%0A%09</g>%0D%0A</g>%0D%0A</svg>%0D%0A';
+  var block_combined_motor_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<g>%0A%09%09<path class="st0" d="M9.82,5.92c-3.83,0-6.93,3.1-6.93,6.94c0,3.83,3.1,6.93,6.93,6.93c3.83,0,6.94-3.1,6.94-6.93%0A%09%09%09C16.76,9.02,13.66,5.92,9.82,5.92z M5.2,14.59c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C6.94,13.81,6.16,14.59,5.2,14.59z M9.82,19.21c-0.96,0-1.73-0.78-1.73-1.73%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C11.56,18.43,10.78,19.21,9.82,19.21z M11.33,12.28v1.16H10.4v0.92H9.25%0A%09%09%09v-0.92H8.32v-1.16h0.93v-0.93h1.16v0.93H11.33z M9.82,9.96c-0.96,0-1.73-0.78-1.73-1.73c0-0.96,0.78-1.73,1.73-1.73%0A%09%09%09c0.96,0,1.73,0.78,1.73,1.73C11.56,9.18,10.78,9.96,9.82,9.96z M14.45,14.59c-0.96,0-1.73-0.78-1.73-1.73%0A%09%09%09c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73C16.18,13.81,15.41,14.59,14.45,14.59z"/>%0A%09</g>%0A%09<g>%0A%09%09<path class="st0" d="M12.85,2.89c-2.41,0-4.54,1.23-5.78,3.1c0.85-0.34,1.78-0.53,2.75-0.53c0.46,0,0.9,0.04,1.34,0.12%0A%09%09%09c-0.03-0.12-0.04-0.25-0.04-0.39c0-0.96,0.78-1.73,1.73-1.73c0.96,0,1.73,0.78,1.73,1.73c0,0.6-0.3,1.13-0.76,1.44%0A%09%09%09c0.89,0.57,1.64,1.33,2.22,2.21c0.31-0.46,0.84-0.76,1.44-0.76c0.96,0,1.73,0.78,1.73,1.73c0,0.96-0.78,1.73-1.73,1.73%0A%09%09%09c-0.13,0-0.26-0.01-0.39-0.04c0.08,0.43,0.12,0.88,0.12,1.34c0,0.97-0.19,1.9-0.53,2.75c1.87-1.24,3.1-3.37,3.1-5.78%0A%09%09%09C19.79,6,16.68,2.89,12.85,2.89z"/>%0A%09</g>%0A</g>%0A</svg>%0A';
 
   // assets/block/left.svg
   var left_default = 'data:image/svg+xml,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1779696958672" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8871" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M966.656 567.296q0 43.008-20.48 58.368t-65.536 15.36l-64.512 0q-44.032 0-93.696 0.512t-96.768 0.512l-74.752 0q-38.912 0-61.952 7.68t-22.016 35.328q0 20.48-1.024 48.64t-1.024 49.664q0 35.84-19.456 45.568t-50.176-13.824q-30.72-24.576-72.704-57.856t-85.504-68.096-86.016-68.608-75.264-59.392q-30.72-24.576-31.232-46.592t28.16-45.568q28.672-24.576 68.608-56.832t82.944-66.56 84.48-68.096 74.24-60.416q35.84-28.672 58.88-22.016t23.04 43.52l0 25.6q0 14.336 0.512 29.696t1.024 30.208 0.512 26.112q1.024 25.6 16.384 32.256t41.984 6.656q29.696 0 77.824-0.512t100.352-0.512 101.376-0.512 79.872-0.512q13.312 0 27.648 2.048t26.112 9.728 19.456 21.504 7.68 36.352q0 27.648 0.512 53.248t0.512 57.344z" p-id="8872" fill="%23ffffff"></path></svg>';
@@ -23337,11 +23405,32 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // assets/block/block_music.svg
+  var block_music_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<path class="st0" d="M11.16,4.66l-0.11,0.23l-3.63,7.77c-0.08-0.06-0.16-0.12-0.24-0.18c-0.22-0.15-0.47-0.26-0.74-0.34%0A%09c-0.25-0.08-0.53-0.12-0.8-0.12c-0.08,0-0.15,0-0.23,0.01c-0.34,0.03-0.67,0.11-0.97,0.25c-0.31,0.14-0.58,0.33-0.81,0.58%0A%09c-0.23,0.25-0.41,0.54-0.53,0.86c-0.12,0.33-0.17,0.65-0.14,0.96c0.03,0.31,0.12,0.61,0.28,0.88c0.15,0.27,0.36,0.51,0.61,0.73%0A%09c0.25,0.21,0.54,0.4,0.88,0.56c0.3,0.14,0.6,0.21,0.91,0.21c0.04,0,0.07,0,0.11,0c0.34-0.02,0.66-0.11,0.97-0.26%0A%09c0.3-0.15,0.57-0.36,0.82-0.62c0.24-0.26,0.45-0.55,0.6-0.87l0.17-0.37l3.66-7.93l5.12,1.35l-2.5,5.33%0A%09c-0.25-0.25-0.56-0.46-0.92-0.63c-0.26-0.12-0.53-0.18-0.81-0.18c-0.09,0-0.17,0.01-0.26,0.02c-0.36,0.05-0.7,0.16-1.02,0.35%0A%09c-0.31,0.18-0.6,0.41-0.84,0.7c-0.25,0.28-0.43,0.59-0.55,0.91c-0.12,0.33-0.16,0.65-0.11,0.95c0.05,0.3,0.16,0.57,0.33,0.82%0A%09c0.17,0.24,0.39,0.46,0.66,0.65c0.25,0.18,0.54,0.35,0.85,0.49c0.36,0.17,0.71,0.26,1.03,0.26c0.13,0,0.26-0.01,0.38-0.04%0A%09c0.4-0.09,0.75-0.25,1.03-0.47c0.32-0.24,0.6-0.55,0.85-0.92l0.01-0.02l0.01-0.02l4.35-9.29l0.16-0.34l-0.36-0.09l-7.96-2.1%0A%09L11.16,4.66z"/>%0A</svg>%0A';
+
   // src/blocks/blockDefinitions/sound.ts
   var soundBlockDefinitions = [
     {
       type: BLOCK_TYPES.sound.playMusic,
-      message0: "\u64AD\u653E\u97F3\u4E50",
+      message0: "%1 %2 \u6F14\u594F\u97F3\u7B26 %3 %4 \u62CD",
+      args0: [
+        {
+          type: "field_image",
+          src: block_music_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "NOTE", check: "Number" },
+        { type: "input_value", name: "DURATION", check: "Number" }
+      ],
       previousStatement: null,
       nextStatement: null,
       style: "looks_blocks"
@@ -23529,6 +23618,12 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return {
       type: BLOCK_TYPES.common.basicDropdownNumRow,
       fields: { NUM: String(num) }
+    };
+  }
+  function noteShadow(pitch = 12) {
+    return {
+      type: BLOCK_TYPES.common.notePicker,
+      fields: { NOTE: String(pitch) }
     };
   }
 
@@ -23740,7 +23835,14 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     cssconfig: {
       icon: toolboxCategoryIconClasses("sound")
     },
-    contents: [{ kind: "block", type: BLOCK_TYPES.sound.playMusic }]
+    contents: [{
+      kind: "block",
+      type: BLOCK_TYPES.sound.playMusic,
+      inputs: {
+        NOTE: { shadow: noteShadow(12) },
+        DURATION: { shadow: positiveKeyboardShadow(1) }
+      }
+    }]
   };
 
   // src/blocks/toolboxCategories/index.ts
@@ -24084,6 +24186,128 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     });
   }
 
+  // src/workspace-custom/fields/notePickerEditor.ts
+  var sessions4 = /* @__PURE__ */ new Map();
+  var RN_OPEN_SUPPRESS_MS2 = 400;
+  var rnLastOpenAt2 = /* @__PURE__ */ new WeakMap();
+  function shouldSuppressDuplicateRnOpen2(field) {
+    const now = performance.now();
+    const last = rnLastOpenAt2.get(field) ?? 0;
+    if (now - last < RN_OPEN_SUPPRESS_MS2) {
+      return true;
+    }
+    rnLastOpenAt2.set(field, now);
+    return false;
+  }
+  function createSessionId4(field) {
+    const id = field.id_;
+    return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function findSessionEntryForField2(field) {
+    for (const [sessionId, session] of sessions4) {
+      if (session.field === field) {
+        return [sessionId, session];
+      }
+    }
+    return null;
+  }
+  function refreshNoteFieldDisplay(field) {
+    const block = field.getSourceBlock();
+    if (block?.rendered && typeof block.queueRender === "function") {
+      block.queueRender();
+      const parent = block.getParent?.();
+      if (parent?.rendered && typeof parent.queueRender === "function") {
+        parent.queueRender();
+      }
+    }
+    qt.triggerQueuedRenders();
+  }
+  function fireFieldChangeIfNeeded3(field, oldValue) {
+    const block = field.getSourceBlock();
+    const newValue = field.getValue();
+    if (!block || oldValue === newValue) {
+      return;
+    }
+    if (f.isEnabled()) {
+      f.fire(
+        new f.BlockChange(
+          block,
+          "field",
+          field.name ?? null,
+          oldValue,
+          newValue
+        )
+      );
+    }
+  }
+  function closeSession4(sessionId, notifyNativeHost) {
+    const session = sessions4.get(sessionId);
+    if (!session) {
+      return;
+    }
+    sessions4.delete(sessionId);
+    refreshNoteFieldDisplay(session.field);
+    fireFieldChangeIfNeeded3(session.field, session.valueWhenOpened);
+    if (notifyNativeHost) {
+      postToReactNative({ type: "editor.notePicker.close", sessionId });
+    }
+  }
+  function handleNotePickerInbound(message) {
+    if (message.type !== "editor.notePicker.commit" && message.type !== "editor.notePicker.close") {
+      return;
+    }
+    const session = sessions4.get(message.sessionId);
+    if (!session) {
+      return;
+    }
+    if (message.type === "editor.notePicker.commit") {
+      const clamped = String(clampNotePitch(message.value));
+      session.field.setValue(clamped, false);
+      sessions4.delete(message.sessionId);
+      refreshNoteFieldDisplay(session.field);
+      fireFieldChangeIfNeeded3(session.field, session.valueWhenOpened);
+      return;
+    }
+    closeSession4(message.sessionId, false);
+  }
+  function openNotePickerEditor(field, _e2) {
+    if (!isReactNativeHost()) {
+      return;
+    }
+    if (shouldSuppressDuplicateRnOpen2(field)) {
+      return;
+    }
+    if (!field.getSourceBlock()) {
+      return;
+    }
+    const rawValue = field.getValue();
+    const pitch = clampNotePitch(Number(rawValue));
+    const existing = findSessionEntryForField2(field);
+    if (existing) {
+      const [sessionId2] = existing;
+      postToReactNative({
+        type: "editor.notePicker.open",
+        sessionId: sessionId2,
+        value: pitch
+      });
+      return;
+    }
+    const sessionId = createSessionId4(field);
+    sessions4.set(sessionId, { field, valueWhenOpened: rawValue });
+    postToReactNative({
+      type: "editor.notePicker.open",
+      sessionId,
+      value: pitch
+    });
+  }
+  function formatNoteLabel(raw) {
+    const pitch = Number(raw);
+    if (!Number.isFinite(pitch)) {
+      return raw;
+    }
+    return pitchToDisplayName(clampNotePitch(pitch));
+  }
+
   // src/bridge/nativeInbound.ts
   function handleMessageFromNative(message) {
     switch (message.type) {
@@ -24098,6 +24322,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       case "editor.matrixLight.commit":
       case "editor.matrixLight.close":
         handleMatrixLightInbound(message);
+        break;
+      case "editor.notePicker.commit":
+      case "editor.notePicker.close":
+        handleNotePickerInbound(message);
         break;
     }
   }
@@ -24159,11 +24387,37 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     if (block.type === "text") {
       return quotePythonString(getFieldValue(block, "TEXT") ?? "");
     }
+    if (block.type === BLOCK_TYPES.common.notePicker) {
+      const raw = getFieldValue(block, "NOTE") ?? "12";
+      const pitch = Number(raw);
+      const name2 = Number.isFinite(pitch) ? pitchToDisplayName(clampNotePitch(pitch)) : raw;
+      return quotePythonString(name2);
+    }
     return `None  # TODO: unsupported expression ${block.type}`;
   }
   function valueToPython(block, inputName, fallback) {
     const targetBlock = getInputTargetBlock(block, inputName);
     return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
+  }
+  function noteValueToPython(block, inputName, defaultPitch) {
+    const targetBlock = getInputTargetBlock(block, inputName);
+    if (!targetBlock) {
+      return quotePythonString(pitchToDisplayName(defaultPitch));
+    }
+    if (targetBlock.type === BLOCK_TYPES.common.notePicker) {
+      return expressionBlockToPython(targetBlock);
+    }
+    if (NUMERIC_LITERAL_BLOCK_TYPES.has(targetBlock.type)) {
+      const raw = getFieldValue(targetBlock, "NUM") ?? String(defaultPitch);
+      const pitch = Number(raw);
+      if (Number.isFinite(pitch)) {
+        return quotePythonString(pitchToDisplayName(clampNotePitch(pitch)));
+      }
+    }
+    if (targetBlock.type === "text") {
+      return expressionBlockToPython(targetBlock);
+    }
+    return quotePythonString(pitchToDisplayName(defaultPitch));
   }
   var statementGenerators = {
     [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
@@ -24203,8 +24457,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         matrix
       )})`;
     },
-    [BLOCK_TYPES.sound.playMusic](_block, context) {
-      return `${indent(context)}play_music()`;
+    [BLOCK_TYPES.sound.playMusic](block, context) {
+      const note = noteValueToPython(block, "NOTE", 12);
+      const duration = valueToPython(block, "DURATION", "1");
+      return `${indent(context)}play_music(${note}, ${duration})`;
     },
     [BLOCK_TYPES.control.sleepSeconds](block, context) {
       const v2 = valueToPython(block, "STEPS", "1");
@@ -24646,6 +24902,57 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     registerMatrixLightField();
   }
 
+  // src/workspace-custom/fields/patchFieldNotePicker.ts
+  var fieldsRegistered4 = false;
+  var NOTE_PICKER_OPTIONS = Array.from(
+    { length: 37 },
+    (_2, i2) => {
+      const s2 = String(i2);
+      return [s2, s2];
+    }
+  );
+  function registerNotePickerField() {
+    if (fieldsRegistered4) {
+      return;
+    }
+    fieldsRegistered4 = true;
+    class FieldNotePicker extends H {
+      static fromJson(options) {
+        const rawValue = typeof options.value === "string" ? options.value : "12";
+        return new FieldNotePicker(NOTE_PICKER_OPTIONS, void 0, {
+          ...options,
+          value: String(clampNotePitch(Number(rawValue)))
+        });
+      }
+      showEditor_(e3) {
+        openNotePickerEditor(this, e3);
+      }
+      doClassValidation_(newValue) {
+        if (newValue == null || newValue === "") {
+          return "12";
+        }
+        const pitch = Number(newValue);
+        if (!Number.isFinite(pitch)) {
+          return "12";
+        }
+        return String(clampNotePitch(pitch));
+      }
+      getText_() {
+        return formatNoteLabel(String(this.getValue()));
+      }
+      getDisplayText_() {
+        return this.getText_();
+      }
+    }
+    pt.register(
+      "field_note_picker",
+      FieldNotePicker
+    );
+  }
+  function patchFieldNotePicker() {
+    registerNotePickerField();
+  }
+
   // src/workspace-custom/flyout/flyoutWidthClamp.ts
   function setupFlyoutWidthClamp(workspace) {
     const tryBind = () => {
@@ -25052,6 +25359,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     patchFieldNumberEditor();
     patchFieldPortPicker();
     patchFieldMatrixLight();
+    patchFieldNotePicker();
     const host = document.getElementById("workspace");
     if (!host) {
       return;

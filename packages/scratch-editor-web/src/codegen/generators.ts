@@ -11,6 +11,8 @@
 import {
   parsePortFieldValue,
   matrixLightRowsToPythonArgs,
+  pitchToDisplayName,
+  clampNotePitch,
 } from '@scratch-mobile/shared';
 
 import {
@@ -61,6 +63,15 @@ function expressionBlockToPython(block: ScratchBlock): string {
     return quotePythonString(getFieldValue(block, 'TEXT') ?? '');
   }
 
+  if (block.type === BLOCK_TYPES.common.notePicker) {
+    const raw = getFieldValue(block, 'NOTE') ?? '12';
+    const pitch = Number(raw);
+    const name = Number.isFinite(pitch)
+      ? pitchToDisplayName(clampNotePitch(pitch))
+      : raw;
+    return quotePythonString(name);
+  }
+
   return `None  # TODO: unsupported expression ${block.type}`;
 }
 
@@ -71,6 +82,36 @@ function valueToPython(
 ): string {
   const targetBlock = getInputTargetBlock(block, inputName);
   return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
+}
+
+/** play_music 第一参：统一输出带引号的音名字符串（非 pitch 整数）。 */
+function noteValueToPython(
+  block: ScratchBlock,
+  inputName: string,
+  defaultPitch: number,
+): string {
+  const targetBlock = getInputTargetBlock(block, inputName);
+  if (!targetBlock) {
+    return quotePythonString(pitchToDisplayName(defaultPitch));
+  }
+
+  if (targetBlock.type === BLOCK_TYPES.common.notePicker) {
+    return expressionBlockToPython(targetBlock);
+  }
+
+  if (NUMERIC_LITERAL_BLOCK_TYPES.has(targetBlock.type)) {
+    const raw = getFieldValue(targetBlock, 'NUM') ?? String(defaultPitch);
+    const pitch = Number(raw);
+    if (Number.isFinite(pitch)) {
+      return quotePythonString(pitchToDisplayName(clampNotePitch(pitch)));
+    }
+  }
+
+  if (targetBlock.type === 'text') {
+    return expressionBlockToPython(targetBlock);
+  }
+
+  return quotePythonString(pitchToDisplayName(defaultPitch));
 }
 
 const statementGenerators: Record<string, StatementGenerator> = {
@@ -118,8 +159,10 @@ const statementGenerators: Record<string, StatementGenerator> = {
     )})`;
   },
 
-  [BLOCK_TYPES.sound.playMusic](_block, context) {
-    return `${indent(context)}play_music()`;
+  [BLOCK_TYPES.sound.playMusic](block, context) {
+    const note = noteValueToPython(block, 'NOTE', 12);
+    const duration = valueToPython(block, 'DURATION', '1');
+    return `${indent(context)}play_music(${note}, ${duration})`;
   },
 
   [BLOCK_TYPES.control.sleepSeconds](block, context) {

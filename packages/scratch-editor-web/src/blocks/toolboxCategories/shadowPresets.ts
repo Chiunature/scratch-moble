@@ -74,3 +74,14 @@ export function basicDropdownNumRowShadow(num: string | number = 0) {
     fields: { NUM: String(num) },
   } as const;
 }
+
+/**
+ * toolbox `inputs.<name>.shadow`：音符选择（pitch 0–36）。
+ * `pitch` 为初始音高编号，field_note_picker 会将其显示为音名（如 "C1"）。
+ */
+export function noteShadow(pitch: number = 12) {
+  return {
+    type: BLOCK_TYPES.common.notePicker,
+    fields: { NOTE: String(pitch) },
+  } as const;
+}

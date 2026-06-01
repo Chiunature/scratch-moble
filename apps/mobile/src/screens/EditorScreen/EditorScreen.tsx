@@ -6,14 +6,16 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import type {
   EditorOutMessage,
+  RnMatrixLightOpenMessage,
+  RnNotePickerOpenMessage,
   RnNumberSliderOpenMessage,
   RnPortPickerOpenMessage,
-  RnMatrixLightOpenMessage,
 } from '@scratch-mobile/shared';
 import {
   EDITOR_BUNDLE_HTML,
   injectEditorMessage,
   MatrixLightOverlay,
+  NotePickerOverlay,
   NumberSliderOverlay,
   PortPickerOverlay,
   resetInjectEditorMessageDedup,
@@ -41,6 +43,8 @@ export function EditorScreen() {
     useState<RnPortPickerOpenMessage | null>(null);
   const [rnMatrixLightSession, setRnMatrixLightSession] =
     useState<RnMatrixLightOpenMessage | null>(null);
+  const [rnNotePickerSession, setRnNotePickerSession] =
+    useState<RnNotePickerOpenMessage | null>(null);
   //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   //存储积木数量
@@ -98,6 +102,19 @@ export function EditorScreen() {
         return;
       case 'editor.matrixLight.close':
         setRnMatrixLightSession(current =>
+          current?.sessionId === message.sessionId ? null : current,
+        );
+        return;
+      case 'editor.notePicker.open':
+        setRnNotePickerSession(current =>
+          current?.sessionId === message.sessionId &&
+          current.value === message.value
+            ? current
+            : message,
+        );
+        return;
+      case 'editor.notePicker.close':
+        setRnNotePickerSession(current =>
           current?.sessionId === message.sessionId ? null : current,
         );
         return;
@@ -202,6 +219,26 @@ export function EditorScreen() {
             resetInjectEditorMessageDedup();
             injectEditorMessage(webViewRef.current, {
               type: 'editor.matrixLight.close',
+              sessionId,
+            });
+          }}
+        />
+        <NotePickerOverlay
+          session={rnNotePickerSession}
+          onCommit={(sessionId, value) => {
+            setRnNotePickerSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.notePicker.commit',
+              sessionId,
+              value,
+            });
+          }}
+          onClose={sessionId => {
+            setRnNotePickerSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.notePicker.close',
               sessionId,
             });
           }}

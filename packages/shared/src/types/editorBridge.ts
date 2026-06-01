@@ -42,6 +42,16 @@ export type EditorOutMessage =
   | {
       type: 'editor.matrixLight.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.notePicker.open';
+      sessionId: string;
+      /** 固件音高 pitch（0–36） */
+      value: number;
+    }
+  | {
+      type: 'editor.notePicker.close';
+      sessionId: string;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -73,6 +83,17 @@ export type EditorInMessage =
   | {
       type: 'editor.matrixLight.close';
       sessionId: string;
+    }
+  | {
+      /** 确认保存：一次注入完成写值并关会话（选键过程不桥接，仅 commit/close） */
+      type: 'editor.notePicker.commit';
+      sessionId: string;
+      /** 固件音高 pitch（0–36） */
+      value: number;
+    }
+  | {
+      type: 'editor.notePicker.close';
+      sessionId: string;
     };
 
 export type RnNumberSliderOpenMessage = Extract<
@@ -88,4 +109,9 @@ export type RnPortPickerOpenMessage = Extract<
 export type RnMatrixLightOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.matrixLight.open' }
+>;
+
+export type RnNotePickerOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.notePicker.open' }
 >;

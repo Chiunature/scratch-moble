@@ -1,5 +1,6 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import { toolboxCategoryIconClasses } from './shared';
+import { noteShadow, positiveKeyboardShadow } from './shadowPresets';
 
 export const soundToolboxCategory = {
   kind: 'category',
@@ -9,5 +10,10 @@ export const soundToolboxCategory = {
   cssconfig: {
     icon: toolboxCategoryIconClasses('sound'),
   },
-  contents: [{ kind: 'block', type: BLOCK_TYPES.sound.playMusic }],
+  contents: [{ kind: 'block', type: BLOCK_TYPES.sound.playMusic,
+    inputs: {
+      NOTE: { shadow: noteShadow(12) },
+      DURATION: { shadow: positiveKeyboardShadow(1) },
+    },
+  }],
 } as const;

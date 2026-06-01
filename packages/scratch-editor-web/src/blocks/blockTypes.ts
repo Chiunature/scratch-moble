@@ -16,6 +16,8 @@ export const BLOCK_TYPES = {
     basicDropdownNumCol: 'basic_dropdown_num_col',
     /** 矩阵灯行坐标阴影（0 ~ MATRIX_LIGHT_ROW_COUNT-1，默认 7 行） */
     basicDropdownNumRow: 'basic_dropdown_num_row',
+    /** 音符选择阴影（pitch 0–36 存盘；codegen 经 pitchToDisplayName 输出音名） */
+    notePicker: 'note_picker',
   },
   motor: {
     runForPowerSeconds: 'run_for_power_seconds',

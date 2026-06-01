@@ -4,6 +4,7 @@ export {
 } from './bridge/injectEditorMessage';
 export { BubbleSlider } from './components/BubbleSlider';
 export { MatrixLightOverlay } from './components/MatrixLightOverlay';
+export { NotePickerOverlay } from './components/NotePickerOverlay';
 export { NumberSliderOverlay } from './components/NumberSliderOverlay';
 export { PortPickerOverlay } from './components/PortPickerOverlay';
 export {
