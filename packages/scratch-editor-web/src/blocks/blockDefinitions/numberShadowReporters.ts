@@ -23,7 +23,7 @@ function sliderShadowReporter(
         precision,
       },
     ],
-    output: 'Number',
+    extensions: ['output_number'],
   };
 }
 
@@ -41,7 +41,7 @@ export const numberShadowReporterDefinitions = [
         min: 0,
       },
     ],
-    output: 'Number',
     style: 'math_blocks',
+    extensions: ['output_number'],
   },
 ] as const;

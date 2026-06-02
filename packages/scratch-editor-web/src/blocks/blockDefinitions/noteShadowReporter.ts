@@ -15,8 +15,6 @@ export const noteShadowReporterDefinitions = [
         value: '12',
       },
     ],
-    output: 'Number',
-    outputShape: 2,
-    extensions: ['colours_from_parent'],
+    extensions: ['output_number', 'colours_from_parent'],
   },
 ] as const;

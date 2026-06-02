@@ -25,9 +25,7 @@ function basicDropdownNumDefinition(
         options: BASIC_DROPDOWN_NUM_OPTIONS(optionCount),
       },
     ],
-    output: 'Number',
-    outputShape: 2,
-    extensions: ['colours_from_parent'],
+    extensions: ['output_number', 'colours_from_parent'],
   };
 }
 

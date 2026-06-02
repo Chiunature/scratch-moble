@@ -62,10 +62,20 @@ export const BLOCK_TYPES = {
   },
   sensor: {
     touch_sensor: {
-      oneCalibrate: 'one_calibrate',
+      state: 'state',
+    },
+    gray_sensor: {
+      cmpLux: 'cmp_lux',
+      lux:"lux",
+      setColorThresholdValue: 'set_color_threshold_value',
+      luxState:"lux_state",
+      oneCalibrate:"one_calibrate",
+      twoCalibrate:"two_calibrate"
+
     },
     ultrasonic_sensor: {
-      value: 'ultrasonic_sensor_value',
+      cmpValue: 'cmp_value',
+      value: 'value',
     },
     clicker_sensor: {
       // press: 'clicker_press',

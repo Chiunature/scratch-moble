@@ -47,10 +47,10 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#46B946',
       colourTertiary: '#389438',
     },
-    looks_blocks: {
-      colourPrimary: '#9966FF',
-      colourSecondary: '#855CD6',
-      colourTertiary: '#774DCB',
+    sensors_blocks: {
+      colourPrimary: '#34CCF1',
+      colourSecondary: '#2EB4D4',
+      colourTertiary: '#49C2E1',
     },
   },
   categoryStyles: Object.fromEntries(

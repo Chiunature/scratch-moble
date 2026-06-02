@@ -22572,10 +22572,19 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     },
     sensor: {
       touch_sensor: {
-        oneCalibrate: "one_calibrate"
+        state: "state"
+      },
+      gray_sensor: {
+        cmpLux: "cmp_lux",
+        lux: "lux",
+        setColorThresholdValue: "set_color_threshold_value",
+        luxState: "lux_state",
+        oneCalibrate: "one_calibrate",
+        twoCalibrate: "two_calibrate"
       },
       ultrasonic_sensor: {
-        value: "ultrasonic_sensor_value"
+        cmpValue: "cmp_value",
+        value: "value"
       },
       clicker_sensor: {
         // press: 'clicker_press',
@@ -22704,7 +22713,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           precision
         }
       ],
-      output: "Number"
+      extensions: ["output_number"]
     };
   }
   var numberShadowReporterDefinitions = [
@@ -22723,8 +22732,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           min: 0
         }
       ],
-      output: "Number",
-      style: "math_blocks"
+      style: "math_blocks",
+      extensions: ["output_number"]
     }
   ];
 
@@ -22740,9 +22749,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           value: "12"
         }
       ],
-      output: "Number",
-      outputShape: 2,
-      extensions: ["colours_from_parent"]
+      extensions: ["output_number", "colours_from_parent"]
     }
   ];
 
@@ -22759,9 +22766,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           selectionMode: "single"
         }
       ],
-      output: "Number",
-      outputShape: 2,
-      extensions: ["colours_from_parent"]
+      extensions: ["output_number", "colours_from_parent"]
     }
   ];
 
@@ -22947,9 +22952,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           options: BASIC_DROPDOWN_NUM_OPTIONS(optionCount)
         }
       ],
-      output: "Number",
-      outputShape: 2,
-      extensions: ["colours_from_parent"]
+      extensions: ["output_number", "colours_from_parent"]
     };
   }
   var basicDropdownNumBlockDefinitions = [
@@ -23587,22 +23590,252 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // assets/block/block_touch.svg
+  var block_touch_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<path class="st0" d="M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28%0A%09H12V12h1.29v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28%0A%09v1.28H12V12h1.29v-1.32H12z M16.67,2.83H6.01C4.26,2.83,2.84,4.25,2.84,6v10.67c0,1.75,1.42,3.17,3.17,3.17h10.66%0A%09c1.76,0,3.17-1.42,3.17-3.17V6C19.84,4.25,18.43,2.83,16.67,2.83z M14.62,11.34c0,1.14-0.59,2.15-1.48,2.73%0A%09c-0.52,0.34-1.14,0.54-1.8,0.54c-0.66,0-1.28-0.2-1.8-0.54c-0.89-0.58-1.48-1.59-1.48-2.73c0-1.14,0.59-2.15,1.48-2.74%0A%09c0.52-0.34,1.14-0.54,1.8-0.54c0.66,0,1.28,0.2,1.8,0.54C14.03,9.19,14.62,10.2,14.62,11.34z M5.29,14.07%0A%09c-0.43,0-0.78-0.35-0.78-0.78V9.38c0-0.43,0.35-0.78,0.78-0.78h2.77c-0.63,0.74-1,1.7-1,2.74c0,1.03,0.37,1.99,1,2.73H5.29z%0A%09 M18.17,13.29c0,0.43-0.35,0.78-0.78,0.78h-2.77c0.63-0.74,1-1.7,1-2.73c0-1.04-0.37-2-1-2.74h2.77c0.43,0,0.78,0.35,0.78,0.78%0A%09V13.29z M10.68,9.39v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12V9.39H10.68z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29%0A%09v-1.32H12z M12,10.68V9.39h-1.32v1.29H9.4V12h1.28v1.28H12V12h1.29v-1.32H12z"/>%0A</svg>%0A';
+
+  // assets/block/block_ultrasonic.svg
+  var block_ultrasonic_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<g>%0A%09%09<path class="st0" d="M18.02,6.76H4.66c-1.26,0-2.29,1.03-2.29,2.29v4.84c0,1.27,1.03,2.3,2.29,2.3h13.36%0A%09%09%09c1.26,0,2.29-1.03,2.29-2.3V9.05C20.31,7.79,19.28,6.76,18.02,6.76z M15.96,14.87c-1.43,0-2.65-0.89-3.13-2.15h-3.1%0A%09%09%09c-0.47,1.26-1.7,2.15-3.13,2.15c-1.85,0-3.34-1.49-3.34-3.34c0-1.85,1.49-3.35,3.34-3.35h9.35c1.85,0,3.35,1.5,3.35,3.35%0A%09%09%09C19.31,13.38,17.81,14.87,15.96,14.87z"/>%0A%09</g>%0A%09<g>%0A%09%09<g>%0A%09%09%09<path class="st0" d="M16.01,8.76H6.56c-1.53,0-2.77,1.24-2.77,2.77c0,1.53,1.24,2.77,2.77,2.77c1.44,0,2.63-1.1,2.75-2.51h3.94%0A%09%09%09%09c0.12,1.41,1.31,2.51,2.75,2.51c1.54,0,2.77-1.24,2.77-2.77C18.78,9.99,17.55,8.76,16.01,8.76z M6.56,13.71%0A%09%09%09%09c-1.2,0-2.18-0.98-2.18-2.18c0-1.2,0.98-2.18,2.18-2.18c1.2,0,2.18,0.98,2.18,2.18c0,0.08-0.01,0.17-0.02,0.26%0A%09%09%09%09C8.6,12.87,7.68,13.71,6.56,13.71z M16.01,13.71c-1.12,0-2.04-0.85-2.17-1.93c-0.01-0.08-0.02-0.17-0.02-0.26%0A%09%09%09%09c0-1.2,0.98-2.18,2.18-2.18c1.2,0,2.18,0.98,2.18,2.18C18.19,12.73,17.21,13.71,16.01,13.71z"/>%0A%09%09</g>%0A%09</g>%0A</g>%0A</svg>%0A';
+
+  // assets/block/block_gray_scale.svg
+  var block_gray_scale_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<path class="st0" d="M16.67,2.83H6.01C4.25,2.83,2.83,4.25,2.83,6v10.67c0,1.75,1.42,3.17,3.18,3.17h10.66%0A%09%09c1.75,0,3.17-1.42,3.17-3.17V6C19.84,4.25,18.42,2.83,16.67,2.83z M15.89,13.62h-0.94c-0.75,1.2-2.09,1.99-3.61,1.99%0A%09%09s-2.86-0.79-3.61-1.99H6.79c-1.26,0-2.28-1.02-2.28-2.28c0-0.63,0.25-1.2,0.67-1.61c0.41-0.41,0.98-0.67,1.61-0.67h0.94%0A%09%09c0.75-1.2,2.09-1.99,3.61-1.99s2.86,0.79,3.61,1.99h0.94c1.26,0,2.28,1.02,2.28,2.28S17.15,13.62,15.89,13.62z"/>%0A%09<path class="st0" d="M13.95,11.34c0,0.98-0.54,1.84-1.35,2.28c-0.37,0.21-0.8,0.33-1.26,0.33s-0.89-0.12-1.26-0.33%0A%09%09c-0.81-0.44-1.35-1.3-1.35-2.28s0.54-1.84,1.35-2.28c0.37-0.21,0.8-0.33,1.26-0.33s0.89,0.12,1.26,0.33%0A%09%09C13.41,9.5,13.95,10.36,13.95,11.34z"/>%0A</g>%0A</svg>%0A';
+
   // src/blocks/blockDefinitions/sensor.ts
   var sensorBlockDefinitions = [
     {
-      type: BLOCK_TYPES.sensor.touch_sensor.oneCalibrate,
-      message0: "\u4F20\u611F\u5668 \u5355\u6B21\u6821\u51C6",
+      type: BLOCK_TYPES.sensor.touch_sensor.state,
+      message0: "%1 %2\u89E6\u78B0\u4F20\u611F\u5668 %3 \u88AB\u6309\u4E0B?",
+      args0: [
+        {
+          type: "field_image",
+          src: block_touch_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_boolean"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.gray_sensor.cmpLux,
+      message0: "%1 %2 \u7070\u5EA6\u4F20\u611F\u5668 %3 \u7684\u53CD\u5C04\u5149 %4 %5",
+      args0: [
+        {
+          type: "field_image",
+          src: block_touch_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        {
+          type: "field_dropdown",
+          name: "CMP",
+          options: [
+            [">", ">"],
+            ["<", "<"],
+            ["=", "="]
+          ]
+        },
+        { type: "input_value", name: "VALUE", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_boolean"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.gray_sensor.lux,
+      message0: "%1 %2 \u7070\u5EA6\u4F20\u611F\u5668 %3 \u7684\u6570\u503C",
+      args0: [
+        {
+          type: "field_image",
+          src: block_gray_scale_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_number"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.gray_sensor.setColorThresholdValue,
+      message0: "%1 %2 \u7070\u5EA6\u4F20\u611F\u5668 %3 \u9608\u503C\u8BBE\u4E3A %4",
+      args0: [
+        {
+          type: "field_image",
+          src: block_gray_scale_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "VALUE", check: "Number" }
+      ],
+      style: "sensors_blocks",
       previousStatement: null,
       nextStatement: null,
-      style: "looks_blocks"
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.gray_sensor.luxState,
+      message0: "%1 %2 \u7070\u5EA6\u4F20\u611F\u5668 %3 \u662F\u5426\u89E6\u53D1",
+      args0: [
+        {
+          type: "field_image",
+          src: block_gray_scale_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_boolean"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.gray_sensor.oneCalibrate,
+      message0: "%1 %2 \u6821\u51C6 %3 \u7070\u5EA6\u4F20\u611F\u5668 %4 \u79D2",
+      args0: [
+        {
+          type: "field_image",
+          src: block_gray_scale_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "SECONDS", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      previousStatement: null,
+      nextStatement: null,
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
+      message0: "%1 %2 %3 \u7070\u5EA6\u4F20\u611F\u5668 %4 \u79D2",
+      args0: [
+        {
+          type: "field_image",
+          src: block_gray_scale_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "SECONDS", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      previousStatement: null,
+      nextStatement: null,
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
+      message0: "%1 %2 \u8D85\u58F0\u6CE2\u4F20\u611F\u5668 %3 \u7684\u8DDD\u79BB\u662F\u5426 %4 %5 cm",
+      args0: [
+        {
+          type: "field_image",
+          src: block_ultrasonic_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        {
+          type: "field_dropdown",
+          name: "CMP",
+          options: [
+            [">", ">"],
+            ["<", "<"],
+            ["=", "="]
+          ]
+        },
+        { type: "input_value", name: "VALUE", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_boolean"]
     },
     {
       type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
-      message0: "\u8D85\u58F0\u6CE2\u4F20\u611F\u5668 \u6570\u503C",
-      output: "Number",
-      outputShape: 2,
-      //2：圆角，1：六角，3：矩形
-      style: "sensor_blocks"
+      message0: "%1 %2 \u8D85\u58F0\u6CE2\u4F20\u611F\u5668 %3 \u7684\u6570\u503C",
+      args0: [
+        {
+          type: "field_image",
+          src: block_ultrasonic_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_number"]
     }
   ];
 
@@ -24047,8 +24280,79 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       icon: toolboxCategoryIconClasses("sensor")
     },
     contents: [
-      { kind: "block", type: BLOCK_TYPES.sensor.touch_sensor.oneCalibrate },
-      { kind: "block", type: BLOCK_TYPES.sensor.ultrasonic_sensor.value }
+      { kind: "label", text: "\u89E6\u78B0\u4F20\u611F\u5668" },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.touch_sensor.state,
+        inputs: { PORTS: { shadow: portShadow("0") } }
+      },
+      { kind: "label", text: "\u7070\u5EA6\u4F20\u611F\u5668" },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.gray_sensor.lux,
+        inputs: { PORTS: { shadow: portShadow("0") } }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.gray_sensor.cmpLux,
+        inputs: {
+          PORTS: { shadow: portShadow("0") },
+          VALUE: { shadow: positiveKeyboardShadow(50) }
+        },
+        fields: {
+          CMP: "="
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.gray_sensor.setColorThresholdValue,
+        inputs: {
+          PORTS: { shadow: portShadow("0") },
+          VALUE: { shadow: positiveKeyboardShadow(1e3) }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.gray_sensor.luxState,
+        inputs: {
+          PORTS: { shadow: portShadow("0") }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.gray_sensor.oneCalibrate,
+        inputs: {
+          PORTS: { shadow: portShadow("0") },
+          SECONDS: { shadow: positiveKeyboardShadow(1) }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
+        inputs: {
+          PORTS: { shadow: portShadowMulti(["0", "1"]) },
+          SECONDS: { shadow: positiveKeyboardShadow(1) }
+        }
+      },
+      { kind: "label", text: "\u8D85\u58F0\u6CE2\u4F20\u611F\u5668" },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
+        inputs: {
+          PORTS: { shadow: portShadow("0") },
+          VALUE: { shadow: positiveKeyboardShadow(100) }
+        },
+        fields: {
+          CMP: "="
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
+        inputs: {
+          PORTS: { shadow: portShadow("0") }
+        }
+      }
     ]
   };
 
@@ -24838,10 +25142,10 @@ ${body}`;
         colourSecondary: "#46B946",
         colourTertiary: "#389438"
       },
-      looks_blocks: {
-        colourPrimary: "#9966FF",
-        colourSecondary: "#855CD6",
-        colourTertiary: "#774DCB"
+      sensors_blocks: {
+        colourPrimary: "#34CCF1",
+        colourSecondary: "#2EB4D4",
+        colourTertiary: "#49C2E1"
       }
     },
     categoryStyles: Object.fromEntries(
