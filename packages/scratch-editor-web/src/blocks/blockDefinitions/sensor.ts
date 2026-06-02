@@ -3,7 +3,7 @@ import touchIcon from '../../../assets/block/block_touch.svg';
 import ultrasonicIcon from '../../../assets/block/block_ultrasonic.svg';
 import distanceIcon from '../../../assets/block/block_gray_scale.svg';
 import separatorVertical from '../../../assets/block/block_separator_vertical.svg';
-import { Blocks } from 'scratch-blocks';
+import handleShankIcon from '../../../assets/block/block_handleShank.svg';
 export const sensorBlockDefinitions = [
   {
     type: BLOCK_TYPES.sensor.touch_sensor.state,
@@ -233,5 +233,84 @@ export const sensorBlockDefinitions = [
     ],
     style: 'sensors_blocks',
     extensions: ['output_number'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
+    message0: '%1 %2 手柄 %3 是否 %4',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+      { type: 'input_value', name: 'PORTS', check: 'Number' },
+      { type: 'field_dropdown',
+        name: 'STATE',
+        options: [
+          ['被按下', 'press'],
+          ['未按下', 'unpress'],
+        ],
+      },
+    ],
+    style: 'sensors_blocks',
+    extensions: ['output_boolean'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.clicker_sensor.left,
+    message0: '%1 %2 设置手柄前进偏移量为左 %3 右 %4',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+      { type: 'input_value', name: 'LEFT_OFFSET', check: 'Number' },
+      { type: 'input_value', name: 'RIGHT_OFFSET', check: 'Number' },
+    ],
+    style: 'sensors_blocks',
+    previousStatement: null, 
+    nextStatement: null,
+    extensions: ['shape_statement'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.clicker_sensor.right,
+    message0: '%1 %2 设置手柄后退偏移量为左 %3 右 %4',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+      { type: 'input_value', name: 'LEFT_OFFSET', check: 'Number' },
+      { type: 'input_value', name: 'RIGHT_OFFSET', check: 'Number' },
+    ],
+    style: 'sensors_blocks',
+    previousStatement: null,
+    nextStatement: null,
+    extensions: ['shape_statement'],
   },
 ] as const;

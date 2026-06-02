@@ -1,3 +1,5 @@
+import { TOOLBOX_AT_RIGHT } from "scratch-blocks";
+
 /**
  * 所有积木的 type ID 集中在这里管理。
  * 新增积木时先在此处注册，再在 blockDefinitions/<分类>.ts、toolbox.ts、generators.ts 补充实现。
@@ -78,7 +80,13 @@ export const BLOCK_TYPES = {
       value: 'value',
     },
     clicker_sensor: {
-      // press: 'clicker_press',
+      keyRemote: 'key_remote',
+      left:"left",
+      right:"right",
+      1:"up",
+      2:"down",
+      3:"enter",
+      4:"escape",
     },
   },
 } as const;

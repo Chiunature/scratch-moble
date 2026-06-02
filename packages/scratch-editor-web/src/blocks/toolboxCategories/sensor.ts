@@ -1,6 +1,10 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import { toolboxCategoryIconClasses } from './shared';
-import { portShadow, positiveKeyboardShadow,portShadowMulti } from './shadowPresets';
+import {
+  portShadow,
+  positiveKeyboardShadow,
+  portShadowMulti,
+} from './shadowPresets';
 
 export const sensorToolboxCategory = {
   kind: 'category',
@@ -58,14 +62,14 @@ export const sensorToolboxCategory = {
       },
     },
     {
-      kind:'block',
+      kind: 'block',
       type: BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
       inputs: {
         PORTS: { shadow: portShadowMulti(['0', '1']) },
         SECONDS: { shadow: positiveKeyboardShadow(1) },
       },
     },
-    {kind:'label',text:'超声波传感器'},
+    { kind: 'label', text: '超声波传感器' },
     {
       kind: 'block',
       type: BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
@@ -82,6 +86,33 @@ export const sensorToolboxCategory = {
       type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
       inputs: {
         PORTS: { shadow: portShadow('0') },
+      },
+    },
+    { kind: 'label', text: '遥控器' },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
+      inputs: {
+        PORTS: { shadow: portShadow('0') },
+      },
+      fields: {
+        STATE: '=',
+      },
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.clicker_sensor.left,
+      inputs: {
+        LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+        RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+      },
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.clicker_sensor.right,
+      inputs: {
+        LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+        RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) },
       },
     },
   ],

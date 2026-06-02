@@ -22502,7 +22502,13 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         value: "value"
       },
       clicker_sensor: {
-        // press: 'clicker_press',
+        keyRemote: "key_remote",
+        left: "left",
+        right: "right",
+        1: "up",
+        2: "down",
+        3: "enter",
+        4: "escape"
       }
     }
   };
@@ -23514,6 +23520,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // assets/block/block_gray_scale.svg
   var block_gray_scale_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<path class="st0" d="M16.67,2.83H6.01C4.25,2.83,2.83,4.25,2.83,6v10.67c0,1.75,1.42,3.17,3.18,3.17h10.66%0A%09%09c1.75,0,3.17-1.42,3.17-3.17V6C19.84,4.25,18.42,2.83,16.67,2.83z M15.89,13.62h-0.94c-0.75,1.2-2.09,1.99-3.61,1.99%0A%09%09s-2.86-0.79-3.61-1.99H6.79c-1.26,0-2.28-1.02-2.28-2.28c0-0.63,0.25-1.2,0.67-1.61c0.41-0.41,0.98-0.67,1.61-0.67h0.94%0A%09%09c0.75-1.2,2.09-1.99,3.61-1.99s2.86,0.79,3.61,1.99h0.94c1.26,0,2.28,1.02,2.28,2.28S17.15,13.62,15.89,13.62z"/>%0A%09<path class="st0" d="M13.95,11.34c0,0.98-0.54,1.84-1.35,2.28c-0.37,0.21-0.8,0.33-1.26,0.33s-0.89-0.12-1.26-0.33%0A%09%09c-0.81-0.44-1.35-1.3-1.35-2.28s0.54-1.84,1.35-2.28c0.37-0.21,0.8-0.33,1.26-0.33s0.89,0.12,1.26,0.33%0A%09%09C13.41,9.5,13.95,10.36,13.95,11.34z"/>%0A</g>%0A</svg>%0A';
 
+  // assets/block/block_handleShank.svg
+  var block_handleShank_default = 'data:image/svg+xml,<?xml version="1.0" encoding="utf-8"?>%0A<!-- Generator: Adobe Illustrator 26.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg version="1.1" id="\u56FE\u5C42_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"%0A%09 viewBox="0 0 22.68 22.68" style="enable-background:new 0 0 22.68 22.68;" xml:space="preserve">%0A<style type="text/css">%0A%09.st0{fill:%23FFFFFF;}%0A%09.st1{fill:%230090F5;}%0A%09.st2{fill:%23FF4CCD;}%0A%09.st3{fill:%239B6AF6;}%0A%09.st4{fill:%23BE60EF;}%0A%09.st5{fill:%2334CBF0;}%0A%09.st6{fill:%235CB1D6;}%0A%09.st7{fill:none;stroke:%232E8EB8;stroke-linecap:round;stroke-miterlimit:10;}%0A%09.st8{fill:none;stroke:%23FFFFFF;stroke-width:1.2;stroke-linecap:round;stroke-miterlimit:10;}%0A</style>%0A<g>%0A%09<path class="st0" d="M16.24,6.95c-0.06,0-0.11,0-0.17,0.01V6.95H6.44c-2.43,0-4.39,1.97-4.39,4.39c0,2.42,1.97,4.39,4.39,4.39%0A%09%09c1.29,0,2.46-0.56,3.25-1.46h3.29c0.8,0.89,1.97,1.46,3.26,1.46c2.43,0,4.39-1.97,4.39-4.39C20.63,8.92,18.67,6.95,16.24,6.95z%0A%09%09 M15.24,11.34c0,0.48-0.39,0.87-0.87,0.87c-0.49,0-0.87-0.39-0.87-0.87c0-0.49,0.38-0.88,0.87-0.88%0A%09%09C14.85,10.47,15.24,10.86,15.24,11.34z M5.49,13.73v-1.65H3.83v-1.46h1.66V8.95h1.46v1.66h1.66v1.46H6.96v1.65H5.49z M16.38,14.21%0A%09%09c-0.11,0-0.21-0.02-0.31-0.06c-0.32-0.12-0.56-0.44-0.56-0.81c0-0.37,0.24-0.69,0.56-0.81c0.09-0.04,0.2-0.06,0.31-0.06%0A%09%09c0.49,0,0.87,0.39,0.87,0.87C17.24,13.82,16.86,14.21,16.38,14.21z M16.38,10.2c-0.11,0-0.21-0.02-0.31-0.06%0A%09%09c-0.32-0.12-0.56-0.44-0.56-0.81c0-0.37,0.24-0.69,0.56-0.81c0.09-0.04,0.2-0.06,0.31-0.06c0.49,0,0.87,0.39,0.87,0.87%0A%09%09C17.24,9.81,16.86,10.2,16.38,10.2z M18.39,12.21c-0.49,0-0.87-0.39-0.87-0.87c0-0.49,0.38-0.88,0.87-0.88%0A%09%09c0.48,0,0.87,0.39,0.87,0.88C19.25,11.82,18.86,12.21,18.39,12.21z"/>%0A</g>%0A</svg>%0A';
+
   // src/blocks/blockDefinitions/sensor.ts
   var sensorBlockDefinitions = [
     {
@@ -23751,6 +23760,89 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       ],
       style: "sensors_blocks",
       extensions: ["output_number"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
+      message0: "%1 %2 \u624B\u67C4 %3 \u662F\u5426 %4",
+      args0: [
+        {
+          type: "field_image",
+          src: block_handleShank_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "PORTS", check: "Number" },
+        {
+          type: "field_dropdown",
+          name: "STATE",
+          options: [
+            ["\u88AB\u6309\u4E0B", "press"],
+            ["\u672A\u6309\u4E0B", "unpress"]
+          ]
+        }
+      ],
+      style: "sensors_blocks",
+      extensions: ["output_boolean"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.clicker_sensor.left,
+      message0: "%1 %2 \u8BBE\u7F6E\u624B\u67C4\u524D\u8FDB\u504F\u79FB\u91CF\u4E3A\u5DE6 %3 \u53F3 %4",
+      args0: [
+        {
+          type: "field_image",
+          src: block_handleShank_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "LEFT_OFFSET", check: "Number" },
+        { type: "input_value", name: "RIGHT_OFFSET", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      previousStatement: null,
+      nextStatement: null,
+      extensions: ["shape_statement"]
+    },
+    {
+      type: BLOCK_TYPES.sensor.clicker_sensor.right,
+      message0: "%1 %2 \u8BBE\u7F6E\u624B\u67C4\u540E\u9000\u504F\u79FB\u91CF\u4E3A\u5DE6 %3 \u53F3 %4",
+      args0: [
+        {
+          type: "field_image",
+          src: block_handleShank_default,
+          width: 24,
+          height: 24,
+          alt: "*"
+        },
+        {
+          type: "field_image",
+          src: block_separator_vertical_default,
+          width: 2,
+          height: 30,
+          alt: ""
+        },
+        { type: "input_value", name: "LEFT_OFFSET", check: "Number" },
+        { type: "input_value", name: "RIGHT_OFFSET", check: "Number" }
+      ],
+      style: "sensors_blocks",
+      previousStatement: null,
+      nextStatement: null,
+      extensions: ["shape_statement"]
     }
   ];
 
@@ -24266,6 +24358,33 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
         inputs: {
           PORTS: { shadow: portShadow("0") }
+        }
+      },
+      { kind: "label", text: "\u9065\u63A7\u5668" },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
+        inputs: {
+          PORTS: { shadow: portShadow("0") }
+        },
+        fields: {
+          STATE: "="
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.clicker_sensor.left,
+        inputs: {
+          LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+          RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) }
+        }
+      },
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sensor.clicker_sensor.right,
+        inputs: {
+          LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+          RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) }
         }
       }
     ]
