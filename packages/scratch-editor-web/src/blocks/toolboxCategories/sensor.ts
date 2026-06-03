@@ -92,17 +92,17 @@ export const sensorToolboxCategory = {
     { kind: 'label', text: '遥控器' },
     {
       kind: 'block',
-      type: BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
+      type: BLOCK_TYPES.sensor.remote_control_sensor.keyRemote,
       inputs: {
         HANDLESHANK: { shadow: handleShankShadow('up') },
       },
       fields: {
-        STATE: '=',
+        STATE: 'press',
       },
     },
     {
       kind: 'block',
-      type: BLOCK_TYPES.sensor.clicker_sensor.left,
+      type: BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset,
       inputs: {
         LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
         RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) },
@@ -110,11 +110,48 @@ export const sensorToolboxCategory = {
     },
     {
       kind: 'block',
-      type: BLOCK_TYPES.sensor.clicker_sensor.right,
+      type: BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset,
       inputs: {
         LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
         RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) },
       },
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.remote_control_sensor.readAdcanceLeftOffset,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.remote_control_sensor.readAdvanceRightOffset,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatLeftOffset,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
+    },
+    {kind:'label',text:'其他'},
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.other.keyMast,
+      fields: {
+        KEY: 'left',
+        STATE: '1',
+      },
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.other.timer,
+    },
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sensor.other.resetTimer,
     },
   ],
 } as const;

@@ -81,15 +81,20 @@ export const BLOCK_TYPES = {
       cmpValue: 'cmp_value',
       value: 'value',
     },
-    clicker_sensor: {
+    remote_control_sensor: {
       keyRemote: 'key_remote',
-      left:"left",
-      right:"right",
-      1:"up",
-      2:"down",
-      3:"enter",
-      4:"escape",
+      movSetAdvanceOffset:"mov_set_advance_offset",
+      movSetRetreatOffset:"mov_set_retreat_offset",
+      readAdcanceLeftOffset:"read_adcance_left_offset",
+      readAdvanceRightOffset:"read_advance_right_offset",
+      readRetreatLeftOffset:"read_retreat_left_offset",
+      readRetreatRightOffset:"read_retreat_right_offset",
     },
+    other:{
+      keyMast:'key_mast',
+      timer:"timer",
+      resetTimer:"resetTimer",
+    }
   },
 } as const;
 

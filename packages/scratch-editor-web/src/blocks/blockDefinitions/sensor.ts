@@ -235,7 +235,7 @@ export const sensorBlockDefinitions = [
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
+    type:BLOCK_TYPES.sensor.remote_control_sensor.keyRemote,
     message0: '%1 %2 手柄 %3 是否 %4',
     args0: [
       {type: 'field_image',
@@ -264,7 +264,7 @@ export const sensorBlockDefinitions = [
     extensions: ['output_boolean'],
   },
   {
-    type:BLOCK_TYPES.sensor.clicker_sensor.left,
+    type:BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset,
     message0: '%1 %2 设置手柄前进偏移量为左 %3 右 %4',
     args0: [
       {type: 'field_image',
@@ -289,7 +289,7 @@ export const sensorBlockDefinitions = [
     extensions: ['shape_statement'],
   },
   {
-    type:BLOCK_TYPES.sensor.clicker_sensor.right,
+    type:BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset,
     message0: '%1 %2 设置手柄后退偏移量为左 %3 右 %4',
     args0: [
       {type: 'field_image',
@@ -313,4 +313,126 @@ export const sensorBlockDefinitions = [
     nextStatement: null,
     extensions: ['shape_statement'],
   },
+  {
+    type:BLOCK_TYPES.sensor.remote_control_sensor.readAdcanceLeftOffset,
+    message0: '%1 %2 读取前进左偏移量',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+    ],
+    style: 'sensors_blocks',
+    extensions: ['output_number'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.remote_control_sensor.readAdvanceRightOffset,
+    message0: '%1 %2 读取前进右偏移量',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+    ],
+    style: 'sensors_blocks',
+    extensions: ['output_number'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.remote_control_sensor.readRetreatLeftOffset,
+    message0: '%1 %2 读取后退左偏移量',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+    ],
+    style: 'sensors_blocks',
+    extensions: ['output_number'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
+    message0: '%1 %2 读取后退右偏移量',
+    args0: [
+      {type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+    ],
+    style: 'sensors_blocks',
+    extensions: ['output_number'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.other.keyMast,
+    message0: '主机 %1 按钮是否 %2',
+    args0: [
+      {
+        type:'field_dropdown',
+        name: 'KEY',
+        options: [
+          ['左', 'left'],
+          ['有', 'right'],
+        ],
+      },  
+      {
+        type: 'field_dropdown',
+        name: 'STATE',
+        options: [
+          ['被按下', '1'],
+          ['未按下', '0'],
+        ],
+      },
+    ],
+    style: 'sensors_blocks',
+    extensions: ['output_boolean'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.other.timer,
+    message0: '计时器',
+    style: 'sensors_blocks',
+    extensions: ['output_number'],
+  },
+  {
+    type:BLOCK_TYPES.sensor.other.resetTimer,
+    message0: '重置计时器',
+    style: 'sensors_blocks',
+    previousStatement: null,
+    nextStatement: null,
+    extensions: ['shape_statement'],
+  }
 ] as const;
