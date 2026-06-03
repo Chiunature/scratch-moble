@@ -6,6 +6,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import type {
   EditorOutMessage,
+  RnHandleShankOpenMessage,
   RnMatrixLightOpenMessage,
   RnNotePickerOpenMessage,
   RnNumberSliderOpenMessage,
@@ -13,6 +14,7 @@ import type {
 } from '@scratch-mobile/shared';
 import {
   EDITOR_BUNDLE_HTML,
+  HandleShankPickerOverlay,
   injectEditorMessage,
   MatrixLightOverlay,
   NotePickerOverlay,
@@ -45,6 +47,8 @@ export function EditorScreen() {
     useState<RnMatrixLightOpenMessage | null>(null);
   const [rnNotePickerSession, setRnNotePickerSession] =
     useState<RnNotePickerOpenMessage | null>(null);
+  const [rnHandleShankSession, setRnHandleShankSession] =
+    useState<RnHandleShankOpenMessage | null>(null);
   //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   //存储积木数量
@@ -115,6 +119,16 @@ export function EditorScreen() {
         return;
       case 'editor.notePicker.close':
         setRnNotePickerSession(current =>
+          current?.sessionId === message.sessionId ? null : current,
+        );
+        return;
+      case 'editor.handleShank.open':
+        setRnHandleShankSession(current =>
+          current?.sessionId === message.sessionId ? current : message,
+        );
+        return;
+      case 'editor.handleShank.close':
+        setRnHandleShankSession(current =>
           current?.sessionId === message.sessionId ? null : current,
         );
         return;
@@ -239,6 +253,26 @@ export function EditorScreen() {
             resetInjectEditorMessageDedup();
             injectEditorMessage(webViewRef.current, {
               type: 'editor.notePicker.close',
+              sessionId,
+            });
+          }}
+        />
+        <HandleShankPickerOverlay
+          session={rnHandleShankSession}
+          onCommit={(sessionId, value) => {
+            setRnHandleShankSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.handleShank.commit',
+              sessionId,
+              value,
+            });
+          }}
+          onClose={sessionId => {
+            setRnHandleShankSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.handleShank.close',
               sessionId,
             });
           }}

@@ -6,10 +6,12 @@ import { numberShadowReporterDefinitions } from './numberShadowReporters';
 import { noteShadowReporterDefinitions } from './noteShadowReporter';
 import { portDropdownReporterDefinitions } from './portDropdown';
 import { basicDropdownNumBlockDefinitions } from './BasicDropdownNum';
+import { handleShankShadowReporterDefinitions } from './handleShankShadowReporter';
 
 export const commonReporterDefinitions = [
   ...numberShadowReporterDefinitions,
   ...noteShadowReporterDefinitions,
   ...portDropdownReporterDefinitions,
   ...basicDropdownNumBlockDefinitions,
+  ...handleShankShadowReporterDefinitions,
 ] as const;

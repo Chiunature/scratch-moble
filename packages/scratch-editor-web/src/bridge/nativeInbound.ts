@@ -3,6 +3,7 @@ import { handleNumberSliderInbound } from '../workspace-custom/fields/numberSlid
 import { handlePortPickerInbound } from '../workspace-custom/fields/portPickerEditor';
 import { handleMatrixLightInbound } from '../workspace-custom/fields/matrixLightEditor';
 import { handleNotePickerInbound } from '../workspace-custom/fields/notePickerEditor';
+import { handleHandleShankInbound } from '../workspace-custom/fields/handleShankPickerEditor';
 
 export function handleMessageFromNative(message: EditorInMessage): void {
   switch (message.type) {
@@ -21,6 +22,10 @@ export function handleMessageFromNative(message: EditorInMessage): void {
     case 'editor.notePicker.commit':
     case 'editor.notePicker.close':
       handleNotePickerInbound(message);
+      break;
+    case 'editor.handleShank.commit':
+    case 'editor.handleShank.close':
+      handleHandleShankInbound(message);
       break;
   }
 }

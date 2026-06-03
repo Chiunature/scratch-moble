@@ -251,7 +251,7 @@ export const sensorBlockDefinitions = [
         height: 30,
         alt: '',
       },
-      { type: 'input_value', name: 'PORTS', check: 'Number' },
+      { type: 'input_value', name: 'HANDLESHANK', check: 'String' },
       { type: 'field_dropdown',
         name: 'STATE',
         options: [

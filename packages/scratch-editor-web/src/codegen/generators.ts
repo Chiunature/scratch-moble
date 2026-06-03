@@ -13,6 +13,7 @@ import {
   matrixLightRowsToPythonArgs,
   pitchToDisplayName,
   clampNotePitch,
+  normalizeHandleShankKey,
 } from '@scratch-mobile/shared';
 
 import {
@@ -79,6 +80,11 @@ function expressionBlockToPython(block: ScratchBlock): string {
       ? pitchToDisplayName(clampNotePitch(pitch))
       : raw;
     return quotePythonString(name);
+  }
+
+  if (block.type === BLOCK_TYPES.common.handleShankPicker) {
+    const raw = getFieldValue(block, 'HANDLESHANK') ?? 'up';
+    return quotePythonString(normalizeHandleShankKey(raw));
   }
 
   if (block.type === 'operator_equals') {

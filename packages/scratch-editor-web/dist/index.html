@@ -22527,7 +22527,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       /** 矩阵灯行坐标阴影（0 ~ MATRIX_LIGHT_ROW_COUNT-1，默认 7 行） */
       basicDropdownNumRow: "basic_dropdown_num_row",
       /** 音符选择阴影（pitch 0–36 存盘；codegen 经 pitchToDisplayName 输出音名） */
-      notePicker: "note_picker"
+      notePicker: "note_picker",
+      /** 手柄按键选择阴影（按键名字符串） */
+      handleShankPicker: "handle_shank_picker"
     },
     motor: {
       runForPowerSeconds: "run_for_power_seconds",
@@ -22776,6 +22778,39 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   ];
 
+  // ../shared/src/constants/handleShank.ts
+  var HANDLE_SHANK_KEYS = [
+    "up",
+    "down",
+    "left",
+    "right",
+    "L1",
+    "R1",
+    "y",
+    "a",
+    "b",
+    "x"
+  ];
+  var DEFAULT_HANDLE_SHANK_KEY = "up";
+  var HANDLE_SHANK_KEY_LABELS = {
+    up: "\u65B9\u5411\u4E0A",
+    down: "\u65B9\u5411\u4E0B",
+    left: "\u65B9\u5411\u5DE6",
+    right: "\u65B9\u5411\u53F3",
+    L1: "\u5DE6\u80A9\u952E L1",
+    R1: "\u53F3\u80A9\u952E R1",
+    y: "Y \u952E",
+    a: "A \u952E",
+    b: "B \u952E",
+    x: "X \u952E"
+  };
+  function isHandleShankKey(value) {
+    return HANDLE_SHANK_KEYS.includes(value);
+  }
+  function normalizeHandleShankKey(value) {
+    return value && isHandleShankKey(value) ? value : DEFAULT_HANDLE_SHANK_KEY;
+  }
+
   // ../shared/src/utils/notePitch.ts
   var NOTE_PITCH_MAX = 36;
   var OCTAVE_KEY_TEMPLATE = [
@@ -22972,12 +23007,30 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     )
   ];
 
+  // src/blocks/blockDefinitions/handleShankShadowReporter.ts
+  var handleShankShadowReporterDefinitions = [
+    {
+      type: BLOCK_TYPES.common.handleShankPicker,
+      message0: "%1",
+      output: "String",
+      args0: [
+        {
+          type: "field_handle_shank_picker",
+          name: "HANDLESHANK",
+          value: "up"
+        }
+      ],
+      extensions: ["colours_from_parent"]
+    }
+  ];
+
   // src/blocks/blockDefinitions/commonReporters.ts
   var commonReporterDefinitions = [
     ...numberShadowReporterDefinitions,
     ...noteShadowReporterDefinitions,
     ...portDropdownReporterDefinitions,
-    ...basicDropdownNumBlockDefinitions
+    ...basicDropdownNumBlockDefinitions,
+    ...handleShankShadowReporterDefinitions
   ];
 
   // assets/block/block_start_program.svg
@@ -23864,7 +23917,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           height: 30,
           alt: ""
         },
-        { type: "input_value", name: "PORTS", check: "Number" },
+        { type: "input_value", name: "HANDLESHANK", check: "String" },
         {
           type: "field_dropdown",
           name: "STATE",
@@ -24113,6 +24166,12 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return {
       type: BLOCK_TYPES.common.notePicker,
       fields: { NOTE: String(pitch) }
+    };
+  }
+  function handleShankShadow(value = "up") {
+    return {
+      type: BLOCK_TYPES.common.handleShankPicker,
+      fields: { HANDLESHANK: normalizeHandleShankKey(value) }
     };
   }
 
@@ -24450,7 +24509,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
         inputs: {
-          PORTS: { shadow: portShadow("0") }
+          HANDLESHANK: { shadow: handleShankShadow("up") }
         },
         fields: {
           STATE: "="
@@ -24957,6 +25016,121 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return pitchToDisplayName(clampNotePitch(pitch));
   }
 
+  // src/workspace-custom/fields/handleShankPickerEditor.ts
+  var sessions5 = /* @__PURE__ */ new Map();
+  var RN_OPEN_SUPPRESS_MS3 = 400;
+  var rnLastOpenAt3 = /* @__PURE__ */ new WeakMap();
+  function shouldSuppressDuplicateRnOpen3(field) {
+    const now = performance.now();
+    const last = rnLastOpenAt3.get(field) ?? 0;
+    if (now - last < RN_OPEN_SUPPRESS_MS3) {
+      return true;
+    }
+    rnLastOpenAt3.set(field, now);
+    return false;
+  }
+  function createSessionId5(field) {
+    const id = field.id_;
+    return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function findSessionEntryForField3(field) {
+    for (const [sessionId, session] of sessions5) {
+      if (session.field === field) {
+        return [sessionId, session];
+      }
+    }
+    return null;
+  }
+  function refreshHandleShankFieldDisplay(field) {
+    const block = field.getSourceBlock();
+    if (block?.rendered && typeof block.queueRender === "function") {
+      block.queueRender();
+      const parent = block.getParent?.();
+      if (parent?.rendered && typeof parent.queueRender === "function") {
+        parent.queueRender();
+      }
+    }
+    qt.triggerQueuedRenders();
+  }
+  function fireFieldChangeIfNeeded4(field, oldValue) {
+    const block = field.getSourceBlock();
+    const newValue = field.getValue();
+    if (!block || oldValue === newValue) {
+      return;
+    }
+    if (f.isEnabled()) {
+      f.fire(
+        new f.BlockChange(
+          block,
+          "field",
+          field.name ?? null,
+          oldValue,
+          newValue
+        )
+      );
+    }
+  }
+  function closeSession5(sessionId, notifyNativeHost) {
+    const session = sessions5.get(sessionId);
+    if (!session) {
+      return;
+    }
+    sessions5.delete(sessionId);
+    refreshHandleShankFieldDisplay(session.field);
+    fireFieldChangeIfNeeded4(session.field, session.valueWhenOpened);
+    if (notifyNativeHost) {
+      postToReactNative({ type: "editor.handleShank.close", sessionId });
+    }
+  }
+  function handleHandleShankInbound(message) {
+    if (message.type !== "editor.handleShank.commit" && message.type !== "editor.handleShank.close") {
+      return;
+    }
+    const session = sessions5.get(message.sessionId);
+    if (!session) {
+      return;
+    }
+    if (message.type === "editor.handleShank.commit") {
+      session.field.setValue(normalizeHandleShankKey(message.value), false);
+      sessions5.delete(message.sessionId);
+      refreshHandleShankFieldDisplay(session.field);
+      fireFieldChangeIfNeeded4(session.field, session.valueWhenOpened);
+      return;
+    }
+    closeSession5(message.sessionId, false);
+  }
+  function openHandleShankPickerEditor(field, _e2) {
+    if (!isReactNativeHost()) {
+      return false;
+    }
+    if (shouldSuppressDuplicateRnOpen3(field)) {
+      return true;
+    }
+    if (!field.getSourceBlock()) {
+      return true;
+    }
+    const rawValue = field.getValue();
+    const value = normalizeHandleShankKey(rawValue);
+    const existing = findSessionEntryForField3(field);
+    if (existing) {
+      const [sessionId2] = existing;
+      postToReactNative({
+        type: "editor.handleShank.open",
+        sessionId: sessionId2,
+        value
+      });
+      return true;
+    }
+    const sessionId = createSessionId5(field);
+    sessions5.set(sessionId, { field, valueWhenOpened: rawValue });
+    postToReactNative({
+      type: "editor.handleShank.open",
+      sessionId,
+      value
+    });
+    return true;
+  }
+
   // src/bridge/nativeInbound.ts
   function handleMessageFromNative(message) {
     switch (message.type) {
@@ -24975,6 +25149,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       case "editor.notePicker.commit":
       case "editor.notePicker.close":
         handleNotePickerInbound(message);
+        break;
+      case "editor.handleShank.commit":
+      case "editor.handleShank.close":
+        handleHandleShankInbound(message);
         break;
     }
   }
@@ -25045,6 +25223,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const pitch = Number(raw);
       const name2 = Number.isFinite(pitch) ? pitchToDisplayName(clampNotePitch(pitch)) : raw;
       return quotePythonString(name2);
+    }
+    if (block.type === BLOCK_TYPES.common.handleShankPicker) {
+      const raw = getFieldValue(block, "HANDLESHANK") ?? "up";
+      return quotePythonString(normalizeHandleShankKey(raw));
     }
     if (block.type === "operator_equals") {
       return `(${inputExpressionToPython(block, "OPERAND1", "0")} == ${inputExpressionToPython(block, "OPERAND2", "0")})`;
@@ -25635,6 +25817,55 @@ ${body}`;
     registerNotePickerField();
   }
 
+  // src/workspace-custom/fields/patchFieldHandleShankPicker.ts
+  var fieldsRegistered5 = false;
+  var HANDLE_SHANK_OPTIONS = HANDLE_SHANK_KEYS.map((k2) => [
+    HANDLE_SHANK_KEY_LABELS[k2],
+    k2
+  ]);
+  function registerHandleShankPickerField() {
+    if (fieldsRegistered5) {
+      return;
+    }
+    fieldsRegistered5 = true;
+    class FieldHandleShankPicker extends H {
+      static fromJson(options) {
+        const rawValue = typeof options.value === "string" ? options.value : "up";
+        const valid = normalizeHandleShankKey(rawValue);
+        return new FieldHandleShankPicker(HANDLE_SHANK_OPTIONS, void 0, {
+          ...options,
+          value: valid
+        });
+      }
+      showEditor_(e3) {
+        const handledByNative = openHandleShankPickerEditor(
+          this,
+          e3
+        );
+        if (!handledByNative) {
+          super.showEditor_(e3);
+        }
+      }
+      doClassValidation_(newValue) {
+        return normalizeHandleShankKey(newValue);
+      }
+      getText_() {
+        const value = normalizeHandleShankKey(String(this.getValue()));
+        return HANDLE_SHANK_KEY_LABELS[value];
+      }
+      getDisplayText_() {
+        return this.getText_();
+      }
+    }
+    pt.register(
+      "field_handle_shank_picker",
+      FieldHandleShankPicker
+    );
+  }
+  function patchFieldHandleShankPicker() {
+    registerHandleShankPickerField();
+  }
+
   // src/workspace-custom/flyout/flyoutWidthClamp.ts
   function setupFlyoutWidthClamp(workspace) {
     const tryBind = () => {
@@ -26042,6 +26273,7 @@ ${body}`;
     patchFieldPortPicker();
     patchFieldMatrixLight();
     patchFieldNotePicker();
+    patchFieldHandleShankPicker();
     const host = document.getElementById("workspace");
     if (!host) {
       return;

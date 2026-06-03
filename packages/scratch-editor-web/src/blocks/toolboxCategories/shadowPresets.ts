@@ -1,3 +1,5 @@
+import { normalizeHandleShankKey } from '@scratch-mobile/shared';
+
 import { BLOCK_TYPES } from '../blockTypes';
 
 /** toolbox `inputs.<name>.shadow`：单选端口（0–7） */
@@ -83,5 +85,16 @@ export function noteShadow(pitch: number = 12) {
   return {
     type: BLOCK_TYPES.common.notePicker,
     fields: { NOTE: String(pitch) },
+  } as const;
+}
+
+/**
+ * toolbox `inputs.<name>.shadow`：手柄按键选择。
+ * `value` 为按键名字符串（up/down/left/right/L1/R1/y/a/b/x）。
+ */
+export function handleShankShadow(value: string = 'up') {
+  return {
+    type: BLOCK_TYPES.common.handleShankPicker,
+    fields: { HANDLESHANK: normalizeHandleShankKey(value) },
   } as const;
 }

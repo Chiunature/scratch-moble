@@ -2,6 +2,7 @@
  * WebView 与 React Native 的编辑器桥接协议（跨端单一来源）。
  * mobile 与 scratch-editor-web 均从此模块导入，勿再维护副本。
  */
+import type { HandleShankKey } from '../constants/handleShank';
 
 /** WebView → React Native */
 export type EditorOutMessage =
@@ -52,6 +53,15 @@ export type EditorOutMessage =
   | {
       type: 'editor.notePicker.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.handleShank.open';
+      sessionId: string;
+      value: HandleShankKey;
+    }
+  | {
+      type: 'editor.handleShank.close';
+      sessionId: string;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -94,6 +104,16 @@ export type EditorInMessage =
   | {
       type: 'editor.notePicker.close';
       sessionId: string;
+    }
+  | {
+      /** 确认保存：一次注入完成写值并关会话 */
+      type: 'editor.handleShank.commit';
+      sessionId: string;
+      value: HandleShankKey;
+    }
+  | {
+      type: 'editor.handleShank.close';
+      sessionId: string;
     };
 
 export type RnNumberSliderOpenMessage = Extract<
@@ -114,4 +134,9 @@ export type RnMatrixLightOpenMessage = Extract<
 export type RnNotePickerOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.notePicker.open' }
+>;
+
+export type RnHandleShankOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.handleShank.open' }
 >;

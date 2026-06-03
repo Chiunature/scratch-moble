@@ -7,6 +7,7 @@ export { MatrixLightOverlay } from './components/MatrixLightOverlay';
 export { NotePickerOverlay } from './components/NotePickerOverlay';
 export { NumberSliderOverlay } from './components/NumberSliderOverlay';
 export { PortPickerOverlay } from './components/PortPickerOverlay';
+export { HandleShankPickerOverlay } from './components/HandleShankPickerOverlay';
 export {
   getPortDefinition,
   PORT_DEFINITIONS,

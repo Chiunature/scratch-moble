@@ -20,6 +20,8 @@ export const BLOCK_TYPES = {
     basicDropdownNumRow: 'basic_dropdown_num_row',
     /** 音符选择阴影（pitch 0–36 存盘；codegen 经 pitchToDisplayName 输出音名） */
     notePicker: 'note_picker',
+    /** 手柄按键选择阴影（按键名字符串） */
+    handleShankPicker: 'handle_shank_picker',
   },
   motor: {
     runForPowerSeconds: 'run_for_power_seconds',

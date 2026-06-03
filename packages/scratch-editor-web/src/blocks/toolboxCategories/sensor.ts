@@ -4,6 +4,7 @@ import {
   portShadow,
   positiveKeyboardShadow,
   portShadowMulti,
+  handleShankShadow,
 } from './shadowPresets';
 
 export const sensorToolboxCategory = {
@@ -93,7 +94,7 @@ export const sensorToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.sensor.clicker_sensor.keyRemote,
       inputs: {
-        PORTS: { shadow: portShadow('0') },
+        HANDLESHANK: { shadow: handleShankShadow('up') },
       },
       fields: {
         STATE: '=',
