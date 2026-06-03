@@ -132,10 +132,6 @@ export const sensorToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
     },
-    {
-      kind: 'block',
-      type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
-    },
     {kind:'label',text:'其他'},
     {
       kind: 'block',
