@@ -2,7 +2,7 @@ import { BLOCK_TYPES } from '../blockTypes';
 import { toolboxCategoryIconClasses } from './shared';
 import {
   portShadow,
-  positiveKeyboardShadow,
+  numberKeyboardShadow,
   portShadowMulti,
   handleShankShadow,
 } from './shadowPresets';
@@ -33,7 +33,7 @@ export const sensorToolboxCategory = {
       type: BLOCK_TYPES.sensor.gray_sensor.cmpLux,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        VALUE: { shadow: positiveKeyboardShadow(50) },
+        VALUE: { shadow: numberKeyboardShadow(50) },
       },
       fields: {
         CMP: '=',
@@ -44,7 +44,7 @@ export const sensorToolboxCategory = {
       type: BLOCK_TYPES.sensor.gray_sensor.setColorThresholdValue,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        VALUE: { shadow: positiveKeyboardShadow(1000) },
+        VALUE: { shadow: numberKeyboardShadow(1000) },
       },
     },
     {
@@ -59,7 +59,7 @@ export const sensorToolboxCategory = {
       type: BLOCK_TYPES.sensor.gray_sensor.oneCalibrate,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        SECONDS: { shadow: positiveKeyboardShadow(1) },
+        SECONDS: { shadow: numberKeyboardShadow(1) },
       },
     },
     {
@@ -67,7 +67,7 @@ export const sensorToolboxCategory = {
       type: BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
       inputs: {
         PORTS: { shadow: portShadowMulti(['0', '1']) },
-        SECONDS: { shadow: positiveKeyboardShadow(1) },
+        SECONDS: { shadow: numberKeyboardShadow(1) },
       },
     },
     { kind: 'label', text: '超声波传感器' },
@@ -76,7 +76,7 @@ export const sensorToolboxCategory = {
       type: BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
       inputs: {
         PORTS: { shadow: portShadow('0') },
-        VALUE: { shadow: positiveKeyboardShadow(100) },
+        VALUE: { shadow: numberKeyboardShadow(100) },
       },
       fields: {
         CMP: '=',
@@ -104,16 +104,16 @@ export const sensorToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset,
       inputs: {
-        LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
-        RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+        LEFT_OFFSET: { shadow: numberKeyboardShadow(0) },
+        RIGHT_OFFSET: { shadow: numberKeyboardShadow(0) },
       },
     },
     {
       kind: 'block',
       type: BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset,
       inputs: {
-        LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
-        RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) },
+        LEFT_OFFSET: { shadow: numberKeyboardShadow(0) },
+        RIGHT_OFFSET: { shadow: numberKeyboardShadow(0) },
       },
     },
     {

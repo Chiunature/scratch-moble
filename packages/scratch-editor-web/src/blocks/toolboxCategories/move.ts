@@ -2,7 +2,7 @@ import { BLOCK_TYPES } from '../blockTypes';
 import {
   portShadowMulti,
   integerSliderShadow,
-  positiveKeyboardShadow,
+  numberKeyboardShadow,
 } from './shadowPresets';
 import { toolboxCategoryIconClasses } from './shared';
 export const moveToolboxCategory = {
@@ -36,7 +36,7 @@ export const moveToolboxCategory = {
       type: BLOCK_TYPES.move.movDirPowerSeconds,
       inputs: {
         POWER: { shadow: integerSliderShadow(50) },
-        SECONDS: { shadow: positiveKeyboardShadow(1) },
+        SECONDS: { shadow: numberKeyboardShadow(1) },
       },
       fields: {
         DIRECTION: 'advance',
@@ -62,7 +62,7 @@ export const moveToolboxCategory = {
       inputs: {
         LEFT_POWER: { shadow: integerSliderShadow(50) },
         RIGHT_POWER: { shadow: integerSliderShadow(50) },
-        SECONDS: { shadow: positiveKeyboardShadow(1) },
+        SECONDS: { shadow: numberKeyboardShadow(1) },
       },
     },
     {
@@ -81,12 +81,12 @@ export const moveToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.move.movFindLineRun,
       inputs: {
-        LEFT_SENSOR: { shadow: positiveKeyboardShadow(50) },
-        RIGHT_SENSOR: { shadow: positiveKeyboardShadow(50) },
+        LEFT_SENSOR: { shadow: numberKeyboardShadow(50) },
+        RIGHT_SENSOR: { shadow: numberKeyboardShadow(50) },
         LEFT_POWER: { shadow: integerSliderShadow(50) },
         RIGHT_POWER: { shadow: integerSliderShadow(50) },
-        KP: { shadow: positiveKeyboardShadow(0.1) },
-        KD: { shadow: positiveKeyboardShadow(0.6) },
+        KP: { shadow: numberKeyboardShadow(0.1) },
+        KD: { shadow: numberKeyboardShadow(0.6) },
       },
     },
   ],

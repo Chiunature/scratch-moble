@@ -12,7 +12,7 @@ export const BLOCK_TYPES = {
     integerSlider: 'number_slider_integer',
     /** 小数滑块阴影（默认 precision=0.1） */
     decimalSlider: 'number_slider_decimal',
-    /** 非负整数键盘阴影（历史 type 名保留兼容） */
+    /** 键盘输入数字阴影（任意实数；历史 type 名 math_positive_number_keyboard 保留兼容） */
     positiveKeyboard: 'math_positive_number_keyboard',
     /** 矩阵灯列坐标阴影（0 ~ MATRIX_LIGHT_COL_COUNT-1，默认 5 列） */
     basicDropdownNumCol: 'basic_dropdown_num_col',

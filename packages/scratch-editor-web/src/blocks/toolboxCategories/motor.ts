@@ -2,7 +2,7 @@ import { BLOCK_TYPES } from '../blockTypes';
 import {
   integerSliderShadow,
   portShadow,
-  positiveKeyboardShadow,
+  numberKeyboardShadow,
 } from './shadowPresets';
 import { toolboxCategoryIconClasses } from './shared';
 
@@ -22,7 +22,7 @@ export const motorToolboxCategory = {
       inputs: {
         PORTS: { shadow: portShadow('0') },
         POWER: { shadow: integerSliderShadow(50) },
-        SECONDS: { shadow: positiveKeyboardShadow(2) },
+        SECONDS: { shadow: numberKeyboardShadow(2) },
       },
     },
     {

@@ -22520,7 +22520,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       integerSlider: "number_slider_integer",
       /** 小数滑块阴影（默认 precision=0.1） */
       decimalSlider: "number_slider_decimal",
-      /** 非负整数键盘阴影（历史 type 名保留兼容） */
+      /** 键盘输入数字阴影（任意实数；历史 type 名 math_positive_number_keyboard 保留兼容） */
       positiveKeyboard: "math_positive_number_keyboard",
       /** 矩阵灯列坐标阴影（0 ~ MATRIX_LIGHT_COL_COUNT-1，默认 5 列） */
       basicDropdownNumCol: "basic_dropdown_num_col",
@@ -22741,8 +22741,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         {
           type: "field_number_keyboard",
           name: "NUM",
-          value: 0,
-          min: 0
+          value: 0
         }
       ],
       style: "math_blocks",
@@ -24220,15 +24219,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     { id: "sound", displayText: "\u58F0\u97F3", colour: "#cf63cf" },
     { id: "event", displayText: "\u4E8B\u4EF6", colour: "#ffbf00" },
     { id: "control", displayText: "\u63A7\u5236", colour: "#ffab19" },
-    { id: "sensor", displayText: "\u4F20\u611F\u5668", colour: "#34ccf1" }
+    { id: "sensor", displayText: "\u4F20\u611F\u5668", colour: "#34ccf1" },
+    { id: "operation", displayText: "\u8FD0\u7B97", colour: "#59c059" }
   ];
   var PLANNED_TOOLBOX_CATEGORIES = [
-    {
-      id: "operation",
-      displayText: "\u8FD0\u7B97",
-      colour: "#59c059",
-      planned: true
-    },
     {
       id: "variable",
       displayText: "\u53D8\u91CF",
@@ -24269,7 +24263,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       fields: { NUM: num }
     };
   }
-  function positiveKeyboardShadow(num) {
+  function numberKeyboardShadow(num) {
     return {
       type: BLOCK_TYPES.common.positiveKeyboard,
       fields: { NUM: num }
@@ -24320,7 +24314,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.control.sleepS,
         inputs: {
-          SECONDS: { shadow: positiveKeyboardShadow(1) }
+          SECONDS: { shadow: numberKeyboardShadow(1) }
         }
       },
       // CONDITION 槽不设 shadow，保留空六角位供用户拖入布尔 reporter
@@ -24330,7 +24324,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.control.whileTimes,
         inputs: {
-          TIMES: { shadow: positiveKeyboardShadow(10) }
+          TIMES: { shadow: numberKeyboardShadow(10) }
         }
       },
       {
@@ -24435,7 +24429,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         inputs: {
           PORTS: { shadow: portShadow("0") },
           POWER: { shadow: integerSliderShadow(50) },
-          SECONDS: { shadow: positiveKeyboardShadow(2) }
+          SECONDS: { shadow: numberKeyboardShadow(2) }
         }
       },
       {
@@ -24496,7 +24490,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.move.movDirPowerSeconds,
         inputs: {
           POWER: { shadow: integerSliderShadow(50) },
-          SECONDS: { shadow: positiveKeyboardShadow(1) }
+          SECONDS: { shadow: numberKeyboardShadow(1) }
         },
         fields: {
           DIRECTION: "advance"
@@ -24522,7 +24516,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         inputs: {
           LEFT_POWER: { shadow: integerSliderShadow(50) },
           RIGHT_POWER: { shadow: integerSliderShadow(50) },
-          SECONDS: { shadow: positiveKeyboardShadow(1) }
+          SECONDS: { shadow: numberKeyboardShadow(1) }
         }
       },
       {
@@ -24541,13 +24535,112 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.move.movFindLineRun,
         inputs: {
-          LEFT_SENSOR: { shadow: positiveKeyboardShadow(50) },
-          RIGHT_SENSOR: { shadow: positiveKeyboardShadow(50) },
+          LEFT_SENSOR: { shadow: numberKeyboardShadow(50) },
+          RIGHT_SENSOR: { shadow: numberKeyboardShadow(50) },
           LEFT_POWER: { shadow: integerSliderShadow(50) },
           RIGHT_POWER: { shadow: integerSliderShadow(50) },
-          KP: { shadow: positiveKeyboardShadow(0.1) },
-          KD: { shadow: positiveKeyboardShadow(0.6) }
+          KP: { shadow: numberKeyboardShadow(0.1) },
+          KD: { shadow: numberKeyboardShadow(0.6) }
         }
+      }
+    ]
+  };
+
+  // src/blocks/toolboxCategories/operation.ts
+  var numShadow = (n2) => ({ shadow: numberKeyboardShadow(n2) });
+  var strShadow = (text) => ({ shadow: stringShadow(text) });
+  var operationToolboxCategory = {
+    kind: "category",
+    id: "operation",
+    name: "\u8FD0\u7B97",
+    categorystyle: "operation_category",
+    cssconfig: {
+      icon: toolboxCategoryIconClasses("operation")
+    },
+    contents: [
+      { kind: "label", text: "\u6570\u5B57" },
+      {
+        kind: "block",
+        type: "operator_add",
+        inputs: { NUM1: numShadow(0), NUM2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_subtract",
+        inputs: { NUM1: numShadow(0), NUM2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_multiply",
+        inputs: { NUM1: numShadow(0), NUM2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_divide",
+        inputs: { NUM1: numShadow(0), NUM2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_random",
+        inputs: { FROM: numShadow(1), TO: numShadow(10) }
+      },
+      { kind: "label", text: "\u6BD4\u8F83" },
+      {
+        kind: "block",
+        type: "operator_gt",
+        inputs: { OPERAND1: numShadow(0), OPERAND2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_lt",
+        inputs: { OPERAND1: numShadow(0), OPERAND2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_equals",
+        inputs: { OPERAND1: numShadow(0), OPERAND2: numShadow(0) }
+      },
+      { kind: "label", text: "\u903B\u8F91" },
+      { kind: "block", type: "operator_and" },
+      { kind: "block", type: "operator_or" },
+      { kind: "block", type: "operator_not" },
+      { kind: "label", text: "\u5B57\u7B26\u4E32" },
+      {
+        kind: "block",
+        type: "operator_join",
+        inputs: { STRING1: strShadow("hello"), STRING2: strShadow("world") }
+      },
+      {
+        kind: "block",
+        type: "operator_letter_of",
+        inputs: { LETTER: numShadow(1), STRING: strShadow("hello") }
+      },
+      {
+        kind: "block",
+        type: "operator_length",
+        inputs: { STRING: strShadow("hello") }
+      },
+      {
+        kind: "block",
+        type: "operator_contains",
+        inputs: { STRING1: strShadow("hello"), STRING2: strShadow("e") }
+      },
+      { kind: "label", text: "\u9AD8\u7EA7" },
+      {
+        kind: "block",
+        type: "operator_mod",
+        inputs: { NUM1: numShadow(0), NUM2: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_round",
+        inputs: { NUM: numShadow(0) }
+      },
+      {
+        kind: "block",
+        type: "operator_mathop",
+        fields: { OPERATOR: "abs" },
+        inputs: { NUM: numShadow(0) }
       }
     ]
   };
@@ -24579,7 +24672,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.sensor.gray_sensor.cmpLux,
         inputs: {
           PORTS: { shadow: portShadow("0") },
-          VALUE: { shadow: positiveKeyboardShadow(50) }
+          VALUE: { shadow: numberKeyboardShadow(50) }
         },
         fields: {
           CMP: "="
@@ -24590,7 +24683,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.sensor.gray_sensor.setColorThresholdValue,
         inputs: {
           PORTS: { shadow: portShadow("0") },
-          VALUE: { shadow: positiveKeyboardShadow(1e3) }
+          VALUE: { shadow: numberKeyboardShadow(1e3) }
         }
       },
       {
@@ -24605,7 +24698,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.sensor.gray_sensor.oneCalibrate,
         inputs: {
           PORTS: { shadow: portShadow("0") },
-          SECONDS: { shadow: positiveKeyboardShadow(1) }
+          SECONDS: { shadow: numberKeyboardShadow(1) }
         }
       },
       {
@@ -24613,7 +24706,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
         inputs: {
           PORTS: { shadow: portShadowMulti(["0", "1"]) },
-          SECONDS: { shadow: positiveKeyboardShadow(1) }
+          SECONDS: { shadow: numberKeyboardShadow(1) }
         }
       },
       { kind: "label", text: "\u8D85\u58F0\u6CE2\u4F20\u611F\u5668" },
@@ -24622,7 +24715,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         type: BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
         inputs: {
           PORTS: { shadow: portShadow("0") },
-          VALUE: { shadow: positiveKeyboardShadow(100) }
+          VALUE: { shadow: numberKeyboardShadow(100) }
         },
         fields: {
           CMP: "="
@@ -24650,16 +24743,16 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset,
         inputs: {
-          LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
-          RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) }
+          LEFT_OFFSET: { shadow: numberKeyboardShadow(0) },
+          RIGHT_OFFSET: { shadow: numberKeyboardShadow(0) }
         }
       },
       {
         kind: "block",
         type: BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset,
         inputs: {
-          LEFT_OFFSET: { shadow: positiveKeyboardShadow(0) },
-          RIGHT_OFFSET: { shadow: positiveKeyboardShadow(0) }
+          LEFT_OFFSET: { shadow: numberKeyboardShadow(0) },
+          RIGHT_OFFSET: { shadow: numberKeyboardShadow(0) }
         }
       },
       {
@@ -24716,7 +24809,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       type: BLOCK_TYPES.sound.playMusic,
       inputs: {
         NOTE: { shadow: noteShadow(12) },
-        DURATION: { shadow: positiveKeyboardShadow(1) }
+        DURATION: { shadow: numberKeyboardShadow(1) }
       }
     }]
   };
@@ -24729,7 +24822,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     soundToolboxCategory,
     eventToolboxCategory,
     controlToolboxCategory,
-    sensorToolboxCategory
+    sensorToolboxCategory,
+    operationToolboxCategory
   ];
 
   // src/blocks/toolbox.ts
@@ -25396,6 +25490,63 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const raw = getFieldValue(block, "HANDLESHANK") ?? "up";
       return quotePythonString(normalizeHandleShankKey(raw));
     }
+    if (block.type === "operator_add") {
+      return `(${inputExpressionToPython(block, "NUM1", "0")} + ${inputExpressionToPython(block, "NUM2", "0")})`;
+    }
+    if (block.type === "operator_subtract") {
+      return `(${inputExpressionToPython(block, "NUM1", "0")} - ${inputExpressionToPython(block, "NUM2", "0")})`;
+    }
+    if (block.type === "operator_multiply") {
+      return `(${inputExpressionToPython(block, "NUM1", "0")} * ${inputExpressionToPython(block, "NUM2", "0")})`;
+    }
+    if (block.type === "operator_divide") {
+      return `(${inputExpressionToPython(block, "NUM1", "0")} / ${inputExpressionToPython(block, "NUM2", "1")})`;
+    }
+    if (block.type === "operator_random") {
+      return `random.randint(int(${inputExpressionToPython(block, "FROM", "1")}), int(${inputExpressionToPython(block, "TO", "10")}))`;
+    }
+    if (block.type === "operator_mod") {
+      return `(${inputExpressionToPython(block, "NUM1", "0")} % ${inputExpressionToPython(block, "NUM2", "1")})`;
+    }
+    if (block.type === "operator_round") {
+      return `round(${inputExpressionToPython(block, "NUM", "0")})`;
+    }
+    if (block.type === "operator_mathop") {
+      const op = getFieldValue(block, "OPERATOR") ?? "abs";
+      const num = inputExpressionToPython(block, "NUM", "0");
+      switch (op) {
+        case "abs":
+          return `abs(${num})`;
+        case "floor":
+          return `math.floor(${num})`;
+        case "ceiling":
+          return `math.ceil(${num})`;
+        case "sqrt":
+          return `math.sqrt(${num})`;
+        case "sin":
+          return `math.sin(math.radians(${num}))`;
+        case "cos":
+          return `math.cos(math.radians(${num}))`;
+        case "tan":
+          return `math.tan(math.radians(${num}))`;
+        case "asin":
+          return `math.degrees(math.asin(${num}))`;
+        case "acos":
+          return `math.degrees(math.acos(${num}))`;
+        case "atan":
+          return `math.degrees(math.atan(${num}))`;
+        case "ln":
+          return `math.log(${num})`;
+        case "log":
+          return `math.log10(${num})`;
+        case "e ^":
+          return `math.exp(${num})`;
+        case "10 ^":
+          return `(10 ** ${num})`;
+        default:
+          return `None  # TODO: unsupported mathop ${op}`;
+      }
+    }
     if (block.type === "operator_equals") {
       return `(${inputExpressionToPython(block, "OPERAND1", "0")} == ${inputExpressionToPython(block, "OPERAND2", "0")})`;
     }
@@ -25413,6 +25564,22 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
     if (block.type === "operator_not") {
       return `(not ${inputExpressionToPython(block, "OPERAND", "False")})`;
+    }
+    if (block.type === "operator_join") {
+      return `str(${inputExpressionToPython(block, "STRING1", "''")}) + str(${inputExpressionToPython(block, "STRING2", "''")})`;
+    }
+    if (block.type === "operator_letter_of") {
+      const index = inputExpressionToPython(block, "LETTER", "1");
+      const text = inputExpressionToPython(block, "STRING", "''");
+      return `(str(${text})[max(0, int(${index}) - 1)] if str(${text}) else '')`;
+    }
+    if (block.type === "operator_length") {
+      return `len(str(${inputExpressionToPython(block, "STRING", "''")}))`;
+    }
+    if (block.type === "operator_contains") {
+      const haystack = inputExpressionToPython(block, "STRING1", "''");
+      const needle = inputExpressionToPython(block, "STRING2", "''");
+      return `(str(${needle}) in str(${haystack}))`;
     }
     return `None  # TODO: unsupported expression ${block.type}`;
   }
@@ -25508,7 +25675,7 @@ ${indent({ indent: context.indent + 1 })}pass`;
       return `${indent(context)}for _ in range(int(${times})):
 ${body}`;
     },
-    [BLOCK_TYPES.sensor.touch_sensor.oneCalibrate](_block, context) {
+    [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](_block, context) {
       return `${indent(context)}sensor_one_calibrate()`;
     }
   };
@@ -25606,7 +25773,8 @@ ${body}`;
         colourSecondary: "#CF8D17",
         colourTertiary: "#F2A118"
       },
-      math_blocks: {
+      /** scratch-blocks 内置 operator_* 使用 colours_operators → style 名 operators */
+      operators: {
         colourPrimary: "#59C059",
         colourSecondary: "#46B946",
         colourTertiary: "#389438"
@@ -26435,6 +26603,7 @@ ${body}`;
     patchToolboxCategoryIcons(workspace);
   }
   function bootstrap() {
+    bi.setLocale("zh-cn");
     registerNativeInboundBridge();
     registerEditorBlocks();
     patchFieldNumberEditor();

@@ -1,6 +1,6 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import { toolboxCategoryIconClasses } from './shared';
-import { positiveKeyboardShadow } from './shadowPresets';
+import { numberKeyboardShadow } from './shadowPresets';
 
 export const controlToolboxCategory = {
   kind: 'category',
@@ -15,7 +15,7 @@ export const controlToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.control.sleepS,
       inputs: {
-        SECONDS: { shadow: positiveKeyboardShadow(1) },
+        SECONDS: { shadow: numberKeyboardShadow(1) },
       },
     },
     // CONDITION 槽不设 shadow，保留空六角位供用户拖入布尔 reporter
@@ -25,7 +25,7 @@ export const controlToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.control.whileTimes,
       inputs: {
-        TIMES: { shadow: positiveKeyboardShadow(10) },
+        TIMES: { shadow: numberKeyboardShadow(10) },
       },
     },
     {

@@ -38,7 +38,6 @@ export const numberShadowReporterDefinitions = [
         type: 'field_number_keyboard',
         name: 'NUM',
         value: 0,
-        min: 0,
       },
     ],
     style: 'math_blocks',

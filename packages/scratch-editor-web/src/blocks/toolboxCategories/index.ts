@@ -3,6 +3,7 @@ import { eventToolboxCategory } from './event';
 import { matrixLightToolboxCategory } from './matrixLight';
 import { motorToolboxCategory } from './motor';
 import { moveToolboxCategory } from './move';
+import { operationToolboxCategory } from './operation';
 import { sensorToolboxCategory } from './sensor';
 import { soundToolboxCategory } from './sound';
 
@@ -16,4 +17,5 @@ export const toolboxCategoryContents = [
   eventToolboxCategory,
   controlToolboxCategory,
   sensorToolboxCategory,
+  operationToolboxCategory,
 ] as const;

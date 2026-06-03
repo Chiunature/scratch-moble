@@ -11,18 +11,13 @@ export const IMPLEMENTED_TOOLBOX_CATEGORIES = [
   { id: 'matrixLight', displayText: '矩阵灯', colour: '#9966ff' },
   { id: 'sound', displayText: '声音', colour: '#cf63cf' },
   { id: 'event', displayText: '事件', colour: '#ffbf00' },
-  { id: 'control', displayText: '控制', colour: '#ffab19' },
+  { id: 'control', displayText: '控制', colour: '#ffab19' }, 
   { id: 'sensor', displayText: '传感器', colour: '#34ccf1' },
+  { id: 'operation', displayText: '运算', colour: '#59c059' },
 ] as const;
 
 /** 规划中：已有主题色与图标映射，尚未加入 toolboxCategoryContents */
 export const PLANNED_TOOLBOX_CATEGORIES = [
-  {
-    id: 'operation',
-    displayText: '运算',
-    colour: '#59c059',
-    planned: true as const,
-  },
   {
     id: 'variable',
     displayText: '变量',

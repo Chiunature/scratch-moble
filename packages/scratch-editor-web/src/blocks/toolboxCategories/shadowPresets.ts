@@ -39,8 +39,8 @@ export function decimalSliderShadow(num: number) {
   } as const;
 }
 
-/** toolbox `inputs.<name>.shadow`：非负整数键盘 */
-export function positiveKeyboardShadow(num: number) {
+/** toolbox `inputs.<name>.shadow`：键盘输入任意数字（含负数、小数） */
+export function numberKeyboardShadow(num: number) {
   return {
     type: BLOCK_TYPES.common.positiveKeyboard,
     fields: { NUM: num },

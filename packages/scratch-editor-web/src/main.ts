@@ -33,6 +33,9 @@ function refreshToolboxDomAfterLayout(workspace: Workspace): void {
 }
 
 function bootstrap(): void {
+  // 内置 operator_* / control_* 等积木的 message0 来自 Blockly.Msg，须先加载语言包
+  ScratchBlocks.ScratchMsgs.setLocale('zh-cn');
+
   registerNativeInboundBridge(); //挂载WebView与React Native的桥接
   registerEditorBlocks(); //— 注册 shadow 积木
   patchFieldNumberEditor();

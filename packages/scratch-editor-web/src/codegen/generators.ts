@@ -87,6 +87,63 @@ function expressionBlockToPython(block: ScratchBlock): string {
     return quotePythonString(normalizeHandleShankKey(raw));
   }
 
+  if (block.type === 'operator_add') {
+    return `(${inputExpressionToPython(block, 'NUM1', '0')} + ${inputExpressionToPython(block, 'NUM2', '0')})`;
+  }
+  if (block.type === 'operator_subtract') {
+    return `(${inputExpressionToPython(block, 'NUM1', '0')} - ${inputExpressionToPython(block, 'NUM2', '0')})`;
+  }
+  if (block.type === 'operator_multiply') {
+    return `(${inputExpressionToPython(block, 'NUM1', '0')} * ${inputExpressionToPython(block, 'NUM2', '0')})`;
+  }
+  if (block.type === 'operator_divide') {
+    return `(${inputExpressionToPython(block, 'NUM1', '0')} / ${inputExpressionToPython(block, 'NUM2', '1')})`;
+  }
+  if (block.type === 'operator_random') {
+    return `random.randint(int(${inputExpressionToPython(block, 'FROM', '1')}), int(${inputExpressionToPython(block, 'TO', '10')}))`;
+  }
+  if (block.type === 'operator_mod') {
+    return `(${inputExpressionToPython(block, 'NUM1', '0')} % ${inputExpressionToPython(block, 'NUM2', '1')})`;
+  }
+  if (block.type === 'operator_round') {
+    return `round(${inputExpressionToPython(block, 'NUM', '0')})`;
+  }
+  if (block.type === 'operator_mathop') {
+    const op = getFieldValue(block, 'OPERATOR') ?? 'abs';
+    const num = inputExpressionToPython(block, 'NUM', '0');
+    switch (op) {
+      case 'abs':
+        return `abs(${num})`;
+      case 'floor':
+        return `math.floor(${num})`;
+      case 'ceiling':
+        return `math.ceil(${num})`;
+      case 'sqrt':
+        return `math.sqrt(${num})`;
+      case 'sin':
+        return `math.sin(math.radians(${num}))`;
+      case 'cos':
+        return `math.cos(math.radians(${num}))`;
+      case 'tan':
+        return `math.tan(math.radians(${num}))`;
+      case 'asin':
+        return `math.degrees(math.asin(${num}))`;
+      case 'acos':
+        return `math.degrees(math.acos(${num}))`;
+      case 'atan':
+        return `math.degrees(math.atan(${num}))`;
+      case 'ln':
+        return `math.log(${num})`;
+      case 'log':
+        return `math.log10(${num})`;
+      case 'e ^':
+        return `math.exp(${num})`;
+      case '10 ^':
+        return `(10 ** ${num})`;
+      default:
+        return `None  # TODO: unsupported mathop ${op}`;
+    }
+  }
   if (block.type === 'operator_equals') {
     return `(${inputExpressionToPython(block, 'OPERAND1', '0')} == ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
   }
@@ -104,6 +161,22 @@ function expressionBlockToPython(block: ScratchBlock): string {
   }
   if (block.type === 'operator_not') {
     return `(not ${inputExpressionToPython(block, 'OPERAND', 'False')})`;
+  }
+  if (block.type === 'operator_join') {
+    return `str(${inputExpressionToPython(block, 'STRING1', "''")}) + str(${inputExpressionToPython(block, 'STRING2', "''")})`;
+  }
+  if (block.type === 'operator_letter_of') {
+    const index = inputExpressionToPython(block, 'LETTER', '1');
+    const text = inputExpressionToPython(block, 'STRING', "''");
+    return `(str(${text})[max(0, int(${index}) - 1)] if str(${text}) else '')`;
+  }
+  if (block.type === 'operator_length') {
+    return `len(str(${inputExpressionToPython(block, 'STRING', "''")}))`;
+  }
+  if (block.type === 'operator_contains') {
+    const haystack = inputExpressionToPython(block, 'STRING1', "''");
+    const needle = inputExpressionToPython(block, 'STRING2', "''");
+    return `(str(${needle}) in str(${haystack}))`;
   }
 
   return `None  # TODO: unsupported expression ${block.type}`;
@@ -231,7 +304,7 @@ const statementGenerators: Record<string, StatementGenerator> = {
     return `${indent(context)}for _ in range(int(${times})):\n${body}`;
   },
 
-  [BLOCK_TYPES.sensor.touch_sensor.oneCalibrate](_block, context) {
+  [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](_block, context) {
     return `${indent(context)}sensor_one_calibrate()`;
   },
 };

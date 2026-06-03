@@ -42,7 +42,8 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#CF8D17',
       colourTertiary: '#F2A118',
     },
-    math_blocks: {
+    /** scratch-blocks 内置 operator_* 使用 colours_operators → style 名 operators */
+    operators: {
       colourPrimary: '#59C059',
       colourSecondary: '#46B946',
       colourTertiary: '#389438',
