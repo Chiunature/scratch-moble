@@ -14,29 +14,12 @@ export const IMPLEMENTED_TOOLBOX_CATEGORIES = [
   { id: 'control', displayText: '控制', colour: '#ffab19' }, 
   { id: 'sensor', displayText: '传感器', colour: '#34ccf1' },
   { id: 'operation', displayText: '运算', colour: '#59c059' },
+  { id: 'variable', displayText: '变量', colour: '#ff8c1a' },
+  { id: 'customBlock', displayText: '自制积木', colour: '#ff6680' },
 ] as const;
 
-/** 规划中：已有主题色与图标映射，尚未加入 toolboxCategoryContents */
-export const PLANNED_TOOLBOX_CATEGORIES = [
-  {
-    id: 'variable',
-    displayText: '变量',
-    colour: '#ff8c1a',
-    planned: true as const,
-  },
-  {
-    id: 'customBlock',
-    displayText: '自制积木',
-    colour: '#ff6680',
-    planned: true as const,
-  },
-] as const;
-
-/** 全部分类（含规划），供主题与图标补丁使用 */
-export const TOOLBOX_CATEGORIES = [
-  ...IMPLEMENTED_TOOLBOX_CATEGORIES,
-  ...PLANNED_TOOLBOX_CATEGORIES,
-] as const;
+/** 全部分类，供主题与图标补丁使用 */
+export const TOOLBOX_CATEGORIES = IMPLEMENTED_TOOLBOX_CATEGORIES;
 
 /**
  * Blockly 会把返回值写进分类项的 class；后缀与分类 id 一致，

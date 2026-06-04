@@ -179,6 +179,31 @@ function expressionBlockToPython(block: ScratchBlock): string {
     return `(str(${needle}) in str(${haystack}))`;
   }
 
+  if (block.type === 'data_variable') {
+    return variableFieldToPython(block, 'VARIABLE');
+  }
+  if (block.type === 'data_listcontents') {
+    return variableFieldToPython(block, 'LIST');
+  }
+  if (block.type === 'data_itemoflist') {
+    const lst = variableFieldToPython(block, 'LIST');
+    const index = valueToPython(block, 'INDEX', '1');
+    return `${lst}[int(${index}) - 1]`;
+  }
+  if (block.type === 'data_lengthoflist') {
+    return `len(${variableFieldToPython(block, 'LIST')})`;
+  }
+  if (block.type === 'data_listcontainsitem') {
+    const lst = variableFieldToPython(block, 'LIST');
+    const item = valueToPython(block, 'ITEM', 'None');
+    return `(${item} in ${lst})`;
+  }
+  if (block.type === 'data_itemnumoflist') {
+    const lst = variableFieldToPython(block, 'LIST');
+    const item = valueToPython(block, 'ITEM', 'None');
+    return `(${lst}.index(${item}) + 1 if ${item} in ${lst} else 0)`;
+  }
+
   return `None  # TODO: unsupported expression ${block.type}`;
 }
 
@@ -189,6 +214,43 @@ function valueToPython(
 ): string {
   const targetBlock = getInputTargetBlock(block, inputName);
   return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
+}
+
+function variableFieldToPython(block: ScratchBlock, fieldName: string): string {
+  const name = getFieldValue(block, fieldName);
+  if (!name) {
+    return 'unnamed_var';
+  }
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) ? name : `_${name.replace(/\W/g, '_')}`;
+}
+
+function procCodeToPythonIdentifier(procCode: string): string {
+  const base = procCode
+    .replace(/%[nsb]/gi, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+  return base && /^[A-Za-z_]/.test(base) ? base : `proc_${base || 'block'}`;
+}
+
+type BlockWithProcCode = ScratchBlock & { getProcCode?: () => string };
+
+function getProcCodeFromBlock(block: ScratchBlock): string {
+  const procCode = (block as BlockWithProcCode).getProcCode?.();
+  return procCode ?? '';
+}
+
+function procedureCallArgsToPython(block: ScratchBlock): string {
+  const argExprs: string[] = [];
+  for (const input of block.inputList ?? []) {
+    if (input.type !== 1 || input.name === 'custom_block') {
+      continue;
+    }
+    argExprs.push(valueToPython(block, input.name, 'None'));
+  }
+  return argExprs.join(', ');
 }
 
 /** play_music 第一参：统一输出带引号的音名字符串（非 pitch 整数）。 */
@@ -307,6 +369,75 @@ const statementGenerators: Record<string, StatementGenerator> = {
   [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](_block, context) {
     return `${indent(context)}sensor_one_calibrate()`;
   },
+
+  data_setvariableto(block, context) {
+    const name = variableFieldToPython(block, 'VARIABLE');
+    const value = valueToPython(block, 'VALUE', '0');
+    return `${indent(context)}${name} = ${value}`;
+  },
+  data_changevariableby(block, context) {
+    const name = variableFieldToPython(block, 'VARIABLE');
+    const delta = valueToPython(block, 'VALUE', '1');
+    return `${indent(context)}${name} = ${name} + (${delta})`;
+  },
+  data_showvariable(block, context) {
+    const name = variableFieldToPython(block, 'VARIABLE');
+    return `${indent(context)}# show variable ${name}`;
+  },
+  data_hidevariable(block, context) {
+    const name = variableFieldToPython(block, 'VARIABLE');
+    return `${indent(context)}# hide variable ${name}`;
+  },
+  data_addtolist(block, context) {
+    const lst = variableFieldToPython(block, 'LIST');
+    const item = valueToPython(block, 'ITEM', 'None');
+    return `${indent(context)}${lst}.append(${item})`;
+  },
+  data_deleteoflist(block, context) {
+    const lst = variableFieldToPython(block, 'LIST');
+    const index = valueToPython(block, 'INDEX', '1');
+    return `${indent(context)}del ${lst}[int(${index}) - 1]`;
+  },
+  data_deletealloflist(block, context) {
+    const lst = variableFieldToPython(block, 'LIST');
+    return `${indent(context)}${lst}.clear()`;
+  },
+  data_insertatlist(block, context) {
+    const lst = variableFieldToPython(block, 'LIST');
+    const index = valueToPython(block, 'INDEX', '1');
+    const item = valueToPython(block, 'ITEM', 'None');
+    return `${indent(context)}${lst}.insert(int(${index}) - 1, ${item})`;
+  },
+  data_replaceitemoflist(block, context) {
+    const lst = variableFieldToPython(block, 'LIST');
+    const index = valueToPython(block, 'INDEX', '1');
+    const item = valueToPython(block, 'ITEM', 'None');
+    return `${indent(context)}${lst}[int(${index}) - 1] = ${item}`;
+  },
+  data_showlist(block, context) {
+    const name = variableFieldToPython(block, 'LIST');
+    return `${indent(context)}# show list ${name}`;
+  },
+  data_hidelist(block, context) {
+    const name = variableFieldToPython(block, 'LIST');
+    return `${indent(context)}# hide list ${name}`;
+  },
+  procedures_call(block, context) {
+    const fn = procCodeToPythonIdentifier(getProcCodeFromBlock(block));
+    const args = procedureCallArgsToPython(block);
+    return `${indent(context)}${fn}(${args})`;
+  },
+  procedures_definition(block, context) {
+    const proto = getInputTargetBlock(block, 'custom_block');
+    const fn = procCodeToPythonIdentifier(
+      proto ? getProcCodeFromBlock(proto) : '',
+    );
+    const next = getNextBlock(block);
+    const body = next
+      ? statementChainToPython(next, { indent: context.indent + 1 })
+      : `${indent({ indent: context.indent + 1 })}pass`;
+    return `${indent(context)}def ${fn}():\n${body}`;
+  },
 };
 
 function blockToPython(block: ScratchBlock, context: GenerateContext): string {
@@ -328,6 +459,9 @@ function statementChainToPython(
 
   while (currentBlock) {
     lines.push(blockToPython(currentBlock, context));
+    if (currentBlock.type === 'procedures_definition') {
+      break;
+    }
     currentBlock = getNextBlock(currentBlock);
   }
 
@@ -345,8 +479,16 @@ export function renderPythonCode(workspace: Workspace): string {
     return '# 拖拽飞出栏积木后生成 Python 代码';
   }
 
-  return blocks
+  const defs = blocks
+    .filter(b => b.type === 'procedures_definition')
+    .map(block => blockToPython(block, { indent: 0 }));
+  const scripts = blocks
+    .filter(b => b.type !== 'procedures_definition')
     .map(block => statementChainToPython(block, { indent: 0 }))
-    .filter(Boolean)
-    .join('\n\n');
+    .filter(Boolean);
+
+  const sections = [...defs, ...scripts].filter(Boolean);
+  return sections.length > 0
+    ? sections.join('\n\n')
+    : '# 拖拽飞出栏积木后生成 Python 代码';
 }

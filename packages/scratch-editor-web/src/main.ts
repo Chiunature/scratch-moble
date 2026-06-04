@@ -24,6 +24,7 @@ import {
   patchToolboxCategoryIcons,
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
+  setupDynamicToolboxCategoriesAndRefreshFlyout,
 } from './workspace-custom';
 
 /** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
@@ -80,6 +81,8 @@ function bootstrap(): void {
     // FieldTextInput#showPromptEditor → window.prompt（RN WebView 里像「JS 弹窗」），且 CHANGE_VALUE_TITLE 常为空。
     modalInputs: false,
   });
+
+  setupDynamicToolboxCategoriesAndRefreshFlyout(workspace);
 
   // 确保缩放控件存在
   ensureScratchZoomControlsIfMissing(workspace);

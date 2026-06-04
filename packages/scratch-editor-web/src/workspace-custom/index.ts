@@ -17,3 +17,8 @@ export {
   ensureScratchZoomControlsIfMissing,
   patchScratchZoomControlImages,
 } from './zoom';
+export {
+  setupDynamicToolboxCategories,
+  setupDynamicToolboxCategoriesAndRefreshFlyout,
+  rebuildContinuousFlyout,
+} from './dynamicToolbox';

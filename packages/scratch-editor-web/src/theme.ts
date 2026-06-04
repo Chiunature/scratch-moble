@@ -53,6 +53,41 @@ export const editorTheme = ScratchBlocks.Theme.defineTheme('scratch-mobile', {
       colourSecondary: '#2EB4D4',
       colourTertiary: '#49C2E1',
     },
+    /** scratch-blocks 内置 data_* / data_lists */
+    data: {
+      colourPrimary: '#FF8C1A',
+      colourSecondary: '#DB6E00',
+      colourTertiary: '#CC6600',
+    },
+    data_lists: {
+      colourPrimary: '#FF661A',
+      colourSecondary: '#DB5500',
+      colourTertiary: '#CC4D00',
+    },
+    /** scratch-blocks 内置 procedures_*（colours_more） */
+    more: {
+      colourPrimary: '#FF6680',
+      colourSecondary: '#E64D66',
+      colourTertiary: '#CC3D55',
+    },
+    /** scratch-blocks 内置 math_number / text 等（colours_textfield） */
+    textField: {
+      colourPrimary: '#FFFFFF',
+      colourSecondary: '#FFFFFF',
+      colourTertiary: '#C8C8C8',
+    },
+    /** colours_from_parent 在飞栏内无父块时的兜底；与 textField 一致 */
+    text_blocks: {
+      colourPrimary: '#FFFFFF',
+      colourSecondary: '#FFFFFF',
+      colourTertiary: '#C8C8C8',
+    },
+    /** 键盘数字阴影、滑块阴影（math_positive_number_keyboard 等） */
+    math_blocks: {
+      colourPrimary: '#FFFFFF',
+      colourSecondary: '#FFFFFF',
+      colourTertiary: '#C8C8C8',
+    },
   },
   categoryStyles: Object.fromEntries(
     // 键须与 toolboxJson 里各分类的 categorystyle 一致（如 motor → motor_category）

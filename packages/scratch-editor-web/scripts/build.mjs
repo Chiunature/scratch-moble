@@ -80,6 +80,17 @@ body {
   margin: 0 auto;
   width: 24px;
 }
+
+/* 变量/自制积木飞栏按钮：保证中文标签在浅色背景上可见 */
+.blocklyFlyoutButton .blocklyText {
+  fill: #fff !important;
+  font-size: 12pt;
+}
+.blocklyFlyoutButtonBackground {
+  fill: #ff8c1a !important;
+  stroke: #cc6600;
+  stroke-width: 1;
+}
 `;
 
 const htmlTemplate = jsCode => `<!doctype html>

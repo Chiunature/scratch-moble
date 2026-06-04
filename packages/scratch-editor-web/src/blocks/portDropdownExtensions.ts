@@ -39,8 +39,8 @@ function syncColourFromParent(block: ColouredBlock): void {
     }
     return;
   }
-  // 飞出栏内单独展示时用中性文本域色
-  block.setStyle('text_blocks');
+  // 飞出栏内单独展示时用中性文本域色（与 theme textField / text_blocks 一致）
+  block.setStyle('textField');
 }
 
 let extensionsRegistered = false;

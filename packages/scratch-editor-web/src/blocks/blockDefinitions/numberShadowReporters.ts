@@ -23,6 +23,7 @@ function sliderShadowReporter(
         precision,
       },
     ],
+    style: 'math_blocks',
     extensions: ['output_number'],
   };
 }
