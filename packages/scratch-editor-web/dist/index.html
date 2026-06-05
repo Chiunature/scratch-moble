@@ -25741,7 +25741,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return value == null ? null : String(value);
   }
 
-  // src/codegen/generators.ts
+  // src/codegen/expressions.ts
   var NUMERIC_LITERAL_BLOCK_TYPES = /* @__PURE__ */ new Set([
     "math_number",
     "math_positive_number",
@@ -25906,24 +25906,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
     return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name2) ? name2 : `_${name2.replace(/\W/g, "_")}`;
   }
-  function procCodeToPythonIdentifier(procCode) {
-    const base = procCode.replace(/%[nsb]/gi, "").trim().replace(/\s+/g, "_").replace(/[^\w]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
-    return base && /^[A-Za-z_]/.test(base) ? base : `proc_${base || "block"}`;
-  }
-  function getProcCodeFromBlock(block) {
-    const procCode = block.getProcCode?.();
-    return procCode ?? "";
-  }
-  function procedureCallArgsToPython(block) {
-    const argExprs = [];
-    for (const input of block.inputList ?? []) {
-      if (input.type !== 1 || input.name === "custom_block") {
-        continue;
-      }
-      argExprs.push(valueToPython(block, input.name, "None"));
-    }
-    return argExprs.join(", ");
-  }
   function noteValueToPython(block, inputName, defaultPitch) {
     const targetBlock = getInputTargetBlock(block, inputName);
     if (!targetBlock) {
@@ -25944,77 +25926,53 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
     return quotePythonString(pitchToDisplayName(defaultPitch));
   }
-  function nestedStatementsToPython(block, inputName, context) {
-    const inner = getInputTargetBlock(block, inputName);
-    if (!inner) {
-      return `${indent({ indent: context.indent + 1 })}pass`;
+
+  // src/codegen/moduleCall.ts
+  var PYTHON_MODULES = {
+    motor: "_motor",
+    move: "_move",
+    matrix: "_matrix",
+    sound: "_sound",
+    control: "_control",
+    sensor: {
+      touch_sensor: "_touch_sensor",
+      gray_sensor: "_gray_sensor",
+      ultrasonic_sensor: "_ultrasonic_sensor",
+      remote_control_sensor: "_remote_control_sensor",
+      other: "_sensor_other"
     }
-    return statementChainToPython(inner, { indent: context.indent + 1 });
+  };
+  function moduleCall(context, module, method, args = []) {
+    return `${indent(context)}${module}.${method}(${args.join(", ")})`;
   }
-  var statementGenerators = {
-    [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
-      return `${indent(context)}# \u5F53\u5F00\u59CB\u8FD0\u884C`;
-    },
-    // 端口、功率、秒数 → 固件侧自行实现 motor_run_for_power_seconds
-    [BLOCK_TYPES.motor.runForPowerSeconds](block, context) {
-      const port = valueToPython(block, "PORTS", "1");
-      const power = valueToPython(block, "POWER", "50");
-      const seconds = valueToPython(block, "SECONDS", "2");
-      return `${indent(
-        context
-      )}motor_run_for_power_seconds(${port}, ${power}, ${seconds})`;
-    },
-    // 端口、功率（无时长）
-    [BLOCK_TYPES.motor.runPower](block, context) {
-      const port = valueToPython(block, "PORTS", "1");
-      const power = valueToPython(block, "POWER", "50");
-      return `${indent(context)}motor_run_power(${port}, ${power})`;
-    },
-    // 仅关断端口
-    [BLOCK_TYPES.motor.stop](block, context) {
-      const port = valueToPython(block, "PORTS", "1");
-      return `${indent(context)}motor_stop(${port})`;
-    },
-    [BLOCK_TYPES.motor.stopModule](block, context) {
-      const port = valueToPython(block, "PORTS", "1");
-      const mode = valueToPython(block, "BLOCK", "0");
-      return `${indent(context)}motor_stop_module(${port}, ${mode})`;
-    },
-    [BLOCK_TYPES.move.pair](_block, context) {
-      return `${indent(context)}move_pair()`;
-    },
-    [BLOCK_TYPES.matrixLight.show](block, context) {
-      const matrix = getFieldValue(block, "MATRIX") ?? "1F,1F,1F,1F,1F,1F,1F";
-      return `${indent(context)}_matrix.show(${matrixLightRowsToPythonArgs(
-        matrix
-      )})`;
-    },
-    [BLOCK_TYPES.sound.playMusic](block, context) {
-      const note = noteValueToPython(block, "NOTE", 12);
-      const duration = valueToPython(block, "DURATION", "1");
-      return `${indent(context)}play_music(${note}, ${duration})`;
-    },
-    [BLOCK_TYPES.control.sleepS](block, context) {
-      const v2 = valueToPython(block, "SECONDS", "1");
-      return `${indent(context)}sleep_s(${v2})`;
-    },
-    [BLOCK_TYPES.control.wait](block, context) {
-      const cond = valueToPython(block, "CONDITION", "False");
-      return `${indent(context)}while not (${cond}):
+
+  // src/codegen/statements/control.ts
+  function createControlStatementGenerators(nestedStatementsToPython) {
+    return {
+      [BLOCK_TYPES.control.sleepS](block, context) {
+        return moduleCall(context, PYTHON_MODULES.control, "sleep_s", [
+          valueToPython(block, "SECONDS", "1")
+        ]);
+      },
+      [BLOCK_TYPES.control.wait](block, context) {
+        const cond = valueToPython(block, "CONDITION", "False");
+        return `${indent(context)}while not (${cond}):
 ${indent({ indent: context.indent + 1 })}pass`;
-    },
-    [BLOCK_TYPES.control.break](_block, context) {
-      return `${indent(context)}break`;
-    },
-    [BLOCK_TYPES.control.whileTimes](block, context) {
-      const times = valueToPython(block, "TIMES", "10");
-      const body = nestedStatementsToPython(block, "SUBSTACK", context);
-      return `${indent(context)}for _ in range(int(${times})):
+      },
+      [BLOCK_TYPES.control.break](_block, context) {
+        return `${indent(context)}break`;
+      },
+      [BLOCK_TYPES.control.whileTimes](block, context) {
+        const times = valueToPython(block, "TIMES", "10");
+        const body = nestedStatementsToPython(block, "SUBSTACK", context);
+        return `${indent(context)}for _ in range(int(${times})):
 ${body}`;
-    },
-    [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](_block, context) {
-      return `${indent(context)}sensor_one_calibrate()`;
-    },
+      }
+    };
+  }
+
+  // src/codegen/statements/data.ts
+  var dataStatementGenerators = {
     data_setvariableto(block, context) {
       const name2 = variableFieldToPython(block, "VARIABLE");
       const value = valueToPython(block, "VALUE", "0");
@@ -26066,23 +26024,157 @@ ${body}`;
     data_hidelist(block, context) {
       const name2 = variableFieldToPython(block, "LIST");
       return `${indent(context)}# hide list ${name2}`;
-    },
-    procedures_call(block, context) {
-      const fn2 = procCodeToPythonIdentifier(getProcCodeFromBlock(block));
-      const args = procedureCallArgsToPython(block);
-      return `${indent(context)}${fn2}(${args})`;
-    },
-    procedures_definition(block, context) {
-      const proto = getInputTargetBlock(block, "custom_block");
-      const fn2 = procCodeToPythonIdentifier(
-        proto ? getProcCodeFromBlock(proto) : ""
-      );
-      const next = getNextBlock(block);
-      const body = next ? statementChainToPython(next, { indent: context.indent + 1 }) : `${indent({ indent: context.indent + 1 })}pass`;
-      return `${indent(context)}def ${fn2}():
-${body}`;
     }
   };
+
+  // src/codegen/statements/event.ts
+  var eventStatementGenerators = {
+    [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
+      return `${indent(context)}# \u5F53\u5F00\u59CB\u8FD0\u884C`;
+    }
+  };
+
+  // src/codegen/statements/matrixLight.ts
+  var matrixLightStatementGenerators = {
+    [BLOCK_TYPES.matrixLight.show](block, context) {
+      const matrix = getFieldValue(block, "MATRIX") ?? "1F,1F,1F,1F,1F,1F,1F";
+      return moduleCall(context, PYTHON_MODULES.matrix, "show", [
+        matrixLightRowsToPythonArgs(matrix)
+      ]);
+    }
+  };
+
+  // src/codegen/statements/motor.ts
+  var motorStatementGenerators = {
+    [BLOCK_TYPES.motor.runForPowerSeconds](block, context) {
+      return moduleCall(context, PYTHON_MODULES.motor, "run_for_power_seconds", [
+        valueToPython(block, "PORTS", "1"),
+        valueToPython(block, "POWER", "50"),
+        valueToPython(block, "SECONDS", "2")
+      ]);
+    },
+    [BLOCK_TYPES.motor.runPower](block, context) {
+      return moduleCall(context, PYTHON_MODULES.motor, "run_power", [
+        valueToPython(block, "PORTS", "1"),
+        valueToPython(block, "POWER", "50")
+      ]);
+    },
+    [BLOCK_TYPES.motor.stop](block, context) {
+      return moduleCall(context, PYTHON_MODULES.motor, "stop", [
+        valueToPython(block, "PORTS", "1")
+      ]);
+    },
+    [BLOCK_TYPES.motor.stopModule](block, context) {
+      return moduleCall(context, PYTHON_MODULES.motor, "stop_module", [
+        valueToPython(block, "PORTS", "1"),
+        valueToPython(block, "BLOCK", "0")
+      ]);
+    }
+  };
+
+  // src/codegen/statements/move.ts
+  var moveStatementGenerators = {
+    [BLOCK_TYPES.move.pair](_block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "pair");
+    }
+  };
+
+  // src/codegen/statements/nested.ts
+  function createNestedStatementsToPython(statementChainToPython2) {
+    return (block, inputName, context) => {
+      const inner = getInputTargetBlock(block, inputName);
+      if (!inner) {
+        return `${indent({ indent: context.indent + 1 })}pass`;
+      }
+      return statementChainToPython2(inner, { indent: context.indent + 1 });
+    };
+  }
+
+  // src/codegen/statements/procedures.ts
+  function procCodeToPythonIdentifier(procCode) {
+    const base = procCode.replace(/%[nsb]/gi, "").trim().replace(/\s+/g, "_").replace(/[^\w]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+    return base && /^[A-Za-z_]/.test(base) ? base : `proc_${base || "block"}`;
+  }
+  function getProcCodeFromBlock(block) {
+    const procCode = block.getProcCode?.();
+    return procCode ?? "";
+  }
+  function procedureCallArgsToPython(block) {
+    const argExprs = [];
+    for (const input of block.inputList ?? []) {
+      if (input.type !== 1 || input.name === "custom_block") {
+        continue;
+      }
+      argExprs.push(valueToPython(block, input.name, "None"));
+    }
+    return argExprs.join(", ");
+  }
+  function createProcedureStatementGenerators(statementChainToPython2) {
+    return {
+      procedures_call(block, context) {
+        const fn2 = procCodeToPythonIdentifier(getProcCodeFromBlock(block));
+        const args = procedureCallArgsToPython(block);
+        return `${indent(context)}${fn2}(${args})`;
+      },
+      procedures_definition(block, context) {
+        const proto = getInputTargetBlock(block, "custom_block");
+        const fn2 = procCodeToPythonIdentifier(
+          proto ? getProcCodeFromBlock(proto) : ""
+        );
+        const next = getNextBlock(block);
+        const body = next ? statementChainToPython2(next, { indent: context.indent + 1 }) : `${indent({ indent: context.indent + 1 })}pass`;
+        return `${indent(context)}def ${fn2}():
+${body}`;
+      }
+    };
+  }
+
+  // src/codegen/statements/sensor/graySensor.ts
+  var graySensorStatementGenerators = {
+    [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](_block, context) {
+      return moduleCall(
+        context,
+        PYTHON_MODULES.sensor.gray_sensor,
+        "one_calibrate"
+      );
+    }
+  };
+
+  // src/codegen/statements/sensor/index.ts
+  var sensorStatementGenerators = {
+    ...graySensorStatementGenerators
+    // touch_sensor / ultrasonic_sensor / remote_control_sensor / other 按子类追加
+  };
+
+  // src/codegen/statements/sound.ts
+  var soundStatementGenerators = {
+    [BLOCK_TYPES.sound.playMusic](block, context) {
+      return moduleCall(context, PYTHON_MODULES.sound, "play_music", [
+        noteValueToPython(block, "NOTE", 12),
+        valueToPython(block, "DURATION", "1")
+      ]);
+    }
+  };
+
+  // src/codegen/statements/index.ts
+  function buildStatementGenerators(statementChainToPython2) {
+    const nestedStatementsToPython = createNestedStatementsToPython(
+      statementChainToPython2
+    );
+    return {
+      ...eventStatementGenerators,
+      ...motorStatementGenerators,
+      ...moveStatementGenerators,
+      ...matrixLightStatementGenerators,
+      ...soundStatementGenerators,
+      ...createControlStatementGenerators(nestedStatementsToPython),
+      ...sensorStatementGenerators,
+      ...dataStatementGenerators,
+      ...createProcedureStatementGenerators(statementChainToPython2)
+    };
+  }
+
+  // src/codegen/generators.ts
   function blockToPython(block, context) {
     const generator = statementGenerators[block.type];
     if (!generator) {
@@ -26102,6 +26194,7 @@ ${body}`;
     }
     return lines.join("\n");
   }
+  var statementGenerators = buildStatementGenerators(statementChainToPython);
   function renderPythonCode(workspace) {
     const blocks = workspace.getTopBlocks(true).sort(
       (a2, b2) => a2.getRelativeToSurfaceXY().y - b2.getRelativeToSurfaceXY().y
