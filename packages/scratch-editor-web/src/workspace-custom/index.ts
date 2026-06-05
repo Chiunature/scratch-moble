@@ -6,6 +6,7 @@
  * - flyout：飞出栏布局补丁
  * - toolbox：工具箱 DOM / 图标 / 交互
  * - zoom：缩放控件补丁
+ * - procedureDrag：自制积木拖动与拼接预览
  */
 export { patchFieldNumberEditor, patchFieldPortPicker, patchFieldMatrixLight, patchFieldNotePicker, patchFieldHandleShankPicker } from './fields';
 export { patchFlyoutGetWidthWhenHidden, setupFlyoutWidthClamp } from './flyout';
@@ -22,3 +23,14 @@ export {
   setupDynamicToolboxCategoriesAndRefreshFlyout,
   rebuildContinuousFlyout,
 } from './dynamicToolbox';
+export {
+  patchProcedureWorkspaceBehavior,
+  installProcedureDragDebug,
+} from './procedureDrag';
+export { patchDataVariableReporterOutput } from './patchDataVariableReporter';
+export { openVariablePrompt, handleVariablePromptInbound } from './variablePromptBridge';
+export {
+  ensureProcedureEditorModalDom,
+  openProcedureEditorModal,
+  closeProcedureEditorModal,
+} from './procedureEditor';

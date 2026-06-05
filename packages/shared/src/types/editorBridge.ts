@@ -62,6 +62,19 @@ export type EditorOutMessage =
   | {
       type: 'editor.handleShank.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.variablePrompt.open';
+      sessionId: string;
+      title: string;
+      message: string;
+      defaultValue: string;
+      /** scratch-blocks variable type: '' for scalar, 'list' for lists. */
+      varType?: string;
+    }
+  | {
+      type: 'editor.variablePrompt.close';
+      sessionId: string;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -114,6 +127,15 @@ export type EditorInMessage =
   | {
       type: 'editor.handleShank.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.variablePrompt.commit';
+      sessionId: string;
+      name: string;
+    }
+  | {
+      type: 'editor.variablePrompt.cancel';
+      sessionId: string;
     };
 
 export type RnNumberSliderOpenMessage = Extract<
@@ -139,4 +161,9 @@ export type RnNotePickerOpenMessage = Extract<
 export type RnHandleShankOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.handleShank.open' }
+>;
+
+export type RnVariablePromptOpenMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.variablePrompt.open' }
 >;

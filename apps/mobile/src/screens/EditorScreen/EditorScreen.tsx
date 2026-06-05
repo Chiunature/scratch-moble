@@ -11,6 +11,7 @@ import type {
   RnNotePickerOpenMessage,
   RnNumberSliderOpenMessage,
   RnPortPickerOpenMessage,
+  RnVariablePromptOpenMessage,
 } from '@scratch-mobile/shared';
 import {
   EDITOR_BUNDLE_HTML,
@@ -21,6 +22,7 @@ import {
   NumberSliderOverlay,
   PortPickerOverlay,
   resetInjectEditorMessageDedup,
+  VariablePromptOverlay,
 } from '../../features/editor';
 import { styles } from './EditorScreen.styles';
 import HomeIcon from '../../../assets/editorScreen/home.png';
@@ -49,6 +51,8 @@ export function EditorScreen() {
     useState<RnNotePickerOpenMessage | null>(null);
   const [rnHandleShankSession, setRnHandleShankSession] =
     useState<RnHandleShankOpenMessage | null>(null);
+  const [rnVariablePromptSession, setRnVariablePromptSession] =
+    useState<RnVariablePromptOpenMessage | null>(null);
   //存储生成的代码
   const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
   //存储积木数量
@@ -129,6 +133,16 @@ export function EditorScreen() {
         return;
       case 'editor.handleShank.close':
         setRnHandleShankSession(current =>
+          current?.sessionId === message.sessionId ? null : current,
+        );
+        return;
+      case 'editor.variablePrompt.open':
+        setRnVariablePromptSession(current =>
+          current?.sessionId === message.sessionId ? current : message,
+        );
+        return;
+      case 'editor.variablePrompt.close':
+        setRnVariablePromptSession(current =>
           current?.sessionId === message.sessionId ? null : current,
         );
         return;
@@ -273,6 +287,26 @@ export function EditorScreen() {
             resetInjectEditorMessageDedup();
             injectEditorMessage(webViewRef.current, {
               type: 'editor.handleShank.close',
+              sessionId,
+            });
+          }}
+        />
+        <VariablePromptOverlay
+          session={rnVariablePromptSession}
+          onCommit={(sessionId, name) => {
+            setRnVariablePromptSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.variablePrompt.commit',
+              sessionId,
+              name,
+            });
+          }}
+          onCancel={sessionId => {
+            setRnVariablePromptSession(null);
+            resetInjectEditorMessageDedup();
+            injectEditorMessage(webViewRef.current, {
+              type: 'editor.variablePrompt.cancel',
               sessionId,
             });
           }}

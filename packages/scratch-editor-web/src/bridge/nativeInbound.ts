@@ -4,6 +4,7 @@ import { handlePortPickerInbound } from '../workspace-custom/fields/portPickerEd
 import { handleMatrixLightInbound } from '../workspace-custom/fields/matrixLightEditor';
 import { handleNotePickerInbound } from '../workspace-custom/fields/notePickerEditor';
 import { handleHandleShankInbound } from '../workspace-custom/fields/handleShankPickerEditor';
+import { handleVariablePromptInbound } from '../workspace-custom/variablePromptBridge';
 
 export function handleMessageFromNative(message: EditorInMessage): void {
   switch (message.type) {
@@ -26,6 +27,10 @@ export function handleMessageFromNative(message: EditorInMessage): void {
     case 'editor.handleShank.commit':
     case 'editor.handleShank.close':
       handleHandleShankInbound(message);
+      break;
+    case 'editor.variablePrompt.commit':
+    case 'editor.variablePrompt.cancel':
+      handleVariablePromptInbound(message);
       break;
   }
 }

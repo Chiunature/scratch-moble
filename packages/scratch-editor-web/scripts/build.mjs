@@ -91,6 +91,157 @@ body {
   stroke: #cc6600;
   stroke-width: 1;
 }
+
+.scratch-variable-prompt-backdrop,
+.scratch-procedure-modal {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.28);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 100000;
+}
+.scratch-variable-prompt-panel {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.24);
+  max-width: 100%;
+  padding: 20px;
+  width: 320px;
+}
+.scratch-variable-prompt-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+.scratch-variable-prompt-message {
+  color: #475569;
+  font-size: 14px;
+  line-height: 20px;
+  margin-top: 12px;
+  text-align: center;
+}
+.scratch-variable-prompt-input {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #111827;
+  font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin-top: 18px;
+  outline: none;
+  padding: 12px 14px;
+  width: 100%;
+}
+.scratch-variable-prompt-actions,
+.scratch-procedure-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.scratch-variable-prompt-button,
+.scratch-procedure-button,
+.scratch-procedure-tool {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 10px 16px;
+}
+.scratch-variable-prompt-button-primary,
+.scratch-procedure-confirm,
+.scratch-procedure-tool {
+  background: #ff8c1a;
+  color: #fff;
+}
+.scratch-variable-prompt-button-secondary,
+.scratch-procedure-cancel {
+  background: #e2e8f0;
+  color: #111827;
+}
+.scratch-procedure-modal-hidden {
+  display: none;
+}
+.scratch-procedure-panel {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.24);
+  display: flex;
+  flex-direction: column;
+  height: min(680px, 82vh);
+  max-width: 960px;
+  overflow: hidden;
+  width: min(92vw, 960px);
+}
+.scratch-procedure-header {
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  padding: 14px 18px;
+}
+.scratch-procedure-title {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+}
+.scratch-procedure-close {
+  background: transparent;
+  border: 0;
+  color: #475569;
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+}
+.scratch-procedure-toolbar {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 18px;
+}
+.scratch-procedure-workspace {
+  background: #f3f6ff;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.scratch-procedure-workspace > .injectionDiv {
+  height: 100% !important;
+  inset: 0;
+  position: absolute !important;
+  width: 100% !important;
+}
+.scratch-procedure-footer {
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 14px 18px;
+}
+
+/* Blockly 字段编辑器须在自制积木弹窗(z-index:100000)之上。*/
+.blocklyWidgetDiv {
+  z-index: 100001 !important;
+}
+.blocklyWidgetDiv.fieldTextInput.removableTextInput {
+  overflow: visible !important;
+}
+.blocklyTextRemoveIcon {
+  cursor: pointer;
+  height: 24px !important;
+  left: 50% !important;
+  margin-left: -12px !important;
+  right: auto !important;
+  top: -40px !important;
+  transform: none;
+  width: 24px !important;
+}
 `;
 
 const htmlTemplate = jsCode => `<!doctype html>

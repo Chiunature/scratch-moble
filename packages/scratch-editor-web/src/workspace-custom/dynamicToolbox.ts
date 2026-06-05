@@ -4,12 +4,14 @@
 import * as ScratchBlocks from 'scratch-blocks';
 
 import type { Workspace } from '../codegen/types';
+import { openProcedureEditorModal } from './procedureEditor';
+import { openVariablePrompt } from './variablePromptBridge';
 
 type ContinuousToolboxLike = {
+  /** ScratchContinuousToolbox：须用 forceRerender，勿直接 getInitialFlyoutContents + show */
+  forceRerender?: () => void;
   getInitialFlyoutContents?: () => unknown;
   getFlyout?: () => { show: (contents: unknown) => void } | null;
-  getSelectedItem?: () => { getName?: () => string } | null;
-  forceRerender?: () => void;
 };
 
 /**
@@ -17,61 +19,151 @@ type ContinuousToolboxLike = {
  * 动态分类（VARIABLE / PROCEDURE）须在 registerToolboxCategoryCallback 之后重新 show，
  * 否则变量区只剩标签、自制积木区为空，收起再弹出才正常。
  */
+let flyoutRebuildFrame: number | null = null;
+let flyoutRebuildTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function rebuildContinuousFlyout(workspace: Workspace): void {
-  const toolbox = workspace.getToolbox() as ContinuousToolboxLike | null;
-  if (!toolbox?.getInitialFlyoutContents || !toolbox.getFlyout) {
-    return;
+  if (flyoutRebuildFrame !== null) {
+    cancelAnimationFrame(flyoutRebuildFrame);
   }
-  const contents = toolbox.getInitialFlyoutContents();
-  const flyout = toolbox.getFlyout();
-  flyout?.show(contents);
+  if (flyoutRebuildTimer !== null) {
+    clearTimeout(flyoutRebuildTimer);
+  }
+  flyoutRebuildTimer = setTimeout(() => {
+    flyoutRebuildTimer = null;
+    flyoutRebuildFrame = requestAnimationFrame(() => {
+      flyoutRebuildFrame = null;
+      const toolbox = workspace.getToolbox() as ContinuousToolboxLike | null;
+      if (!toolbox) {
+        return;
+      }
+      // ScratchContinuousToolbox.refreshSelection 是空操作；forceRerender 使用
+      // getInitialFlyoutContents_（正确绑定 this），并恢复当前选中的分类。
+      if (toolbox.forceRerender) {
+        toolbox.forceRerender();
+        return;
+      }
+      if (!toolbox.getInitialFlyoutContents || !toolbox.getFlyout) {
+        return;
+      }
+      const contents = toolbox.getInitialFlyoutContents();
+      toolbox.getFlyout()?.show(contents);
+    });
+  }, 150);
 }
 
 function refreshToolbox(workspace: Workspace): void {
   rebuildContinuousFlyout(workspace);
 }
 
-function defaultPromptHandler(
-  message: string,
-  defaultValue: string,
-  callback: (text: string) => void,
-  title?: string,
-): void {
-  const promptText = title ? `${title}\n${message}` : message;
-  const result = window.prompt(promptText, defaultValue);
-  if (result === null) {
-    callback('');
-    return;
-  }
-  callback(result);
+/** 等渲染队列结束再重建飞栏，避免 prototype / 调用块尚未落盘。 */
+function scheduleToolboxRefresh(workspace: Workspace): void {
+  void ScratchBlocks.renderManagement
+    .finishQueuedRenders()
+    .then(() => refreshToolbox(workspace));
 }
 
-/** 简易编辑：仅改 procCode 文案；完整参数编辑需后续接 RN / 浮层 */
-function externalProcedureDefCallback(
-  mutation: Element,
-  postEditCallback: (mutation?: Element) => void,
-): void {
-  const current = mutation.getAttribute('proccode') ?? '';
-  const next = window.prompt('自制积木名称', current);
-  if (next === null) {
-    return;
+const PROCEDURE_BLOCK_TYPES = new Set([
+  'procedures_definition',
+  'procedures_call',
+  'procedures_prototype',
+]);
+
+type SerializedBlockState = {
+  type?: string;
+  inputs?: Record<string, { block?: SerializedBlockState; shadow?: SerializedBlockState }>;
+  next?: { block?: SerializedBlockState; shadow?: SerializedBlockState };
+};
+
+function serializedStateHasProcedureBlock(
+  state: SerializedBlockState | undefined,
+): boolean {
+  if (!state?.type) {
+    return false;
   }
-  const trimmed = next.trim();
-  if (trimmed) {
-    mutation.setAttribute('proccode', trimmed);
+  if (PROCEDURE_BLOCK_TYPES.has(state.type)) {
+    return true;
   }
-  postEditCallback(mutation);
+  for (const input of Object.values(state.inputs ?? {})) {
+    if (
+      serializedStateHasProcedureBlock(input.block) ||
+      serializedStateHasProcedureBlock(input.shadow)
+    ) {
+      return true;
+    }
+  }
+  const next = state.next;
+  if (next) {
+    return (
+      serializedStateHasProcedureBlock(next.block) ||
+      serializedStateHasProcedureBlock(next.shadow)
+    );
+  }
+  return false;
+}
+
+function xmlHasProcedureBlock(node: Element | DocumentFragment): boolean {
+  if (node instanceof Element) {
+    if (node.tagName.toLowerCase() === 'block') {
+      const type = node.getAttribute('type');
+      if (type && PROCEDURE_BLOCK_TYPES.has(type)) {
+        return true;
+      }
+    }
+    for (const child of node.children) {
+      if (xmlHasProcedureBlock(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  for (const child of node.childNodes) {
+    if (child instanceof Element && xmlHasProcedureBlock(child)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Blockly create/delete 事件无 blockType，须从 json / xml 快照判断。 */
+function blockLifecycleEventAffectsProcedures(event: {
+  json?: SerializedBlockState;
+  oldJson?: SerializedBlockState;
+  xml?: Element | DocumentFragment;
+  oldXml?: Element | DocumentFragment;
+}): boolean {
+  return (
+    serializedStateHasProcedureBlock(event.json) ||
+    serializedStateHasProcedureBlock(event.oldJson) ||
+    (event.xml ? xmlHasProcedureBlock(event.xml) : false) ||
+    (event.oldXml ? xmlHasProcedureBlock(event.oldXml) : false)
+  );
 }
 
 export function setupDynamicToolboxCategories(workspace: Workspace): void {
-  ScratchBlocks.ScratchVariables.setPromptHandler((message, defaultValue, callback) => {
-    defaultPromptHandler(message, defaultValue, (text) => {
-      callback(text, []);
-    });
-  });
+  ScratchBlocks.ScratchVariables.setPromptHandler(
+    (message, defaultValue, callback, title, varType) => {
+      openVariablePrompt({
+        message,
+        defaultValue,
+        callback,
+        title,
+        varType,
+      });
+    },
+  );
 
-  ScratchBlocks.ScratchProcedures.externalProcedureDefCallback =
-    externalProcedureDefCallback;
+  ScratchBlocks.ScratchProcedures.externalProcedureDefCallback = (
+    mutation,
+    postEditCallback,
+  ) => {
+    openProcedureEditorModal({
+      mutation,
+      postEditCallback,
+      // 保存后须刷新飞栏；等渲染队列结束再 rebuild，避免 prototype 尚未更新完。
+      onSaved: () => scheduleToolboxRefresh(workspace),
+    });
+  };
 
   workspace.registerToolboxCategoryCallback(
     ScratchBlocks.VARIABLE_CATEGORY_NAME,
@@ -81,12 +173,6 @@ export function setupDynamicToolboxCategories(workspace: Workspace): void {
     ScratchBlocks.PROCEDURE_CATEGORY_NAME,
     ws => ScratchBlocks.ScratchProcedures.getProceduresCategory(ws),
   );
-
-  const procedureBlockTypes = new Set([
-    'procedures_definition',
-    'procedures_call',
-    'procedures_prototype',
-  ]);
 
   workspace.addChangeListener(event => {
     if (event.isUiEvent) {
@@ -101,10 +187,31 @@ export function setupDynamicToolboxCategories(workspace: Workspace): void {
       refreshToolbox(workspace);
       return;
     }
+    if (type === 'change') {
+      const changeEvent = event as {
+        blockId?: string;
+        element?: string;
+      };
+      if (changeEvent.element === 'mutation' && changeEvent.blockId) {
+        const block = workspace.getBlockById(changeEvent.blockId);
+        if (block && PROCEDURE_BLOCK_TYPES.has(block.type)) {
+          scheduleToolboxRefresh(workspace);
+        }
+      }
+      return;
+    }
     if (type === 'create' || type === 'delete') {
-      const blockType = (event as { blockType?: string }).blockType;
-      if (blockType && procedureBlockTypes.has(blockType)) {
-        refreshToolbox(workspace);
+      if (
+        blockLifecycleEventAffectsProcedures(
+          event as {
+            json?: SerializedBlockState;
+            oldJson?: SerializedBlockState;
+            xml?: Element | DocumentFragment;
+            oldXml?: Element | DocumentFragment;
+          },
+        )
+      ) {
+        scheduleToolboxRefresh(workspace);
       }
     }
   });

@@ -120,7 +120,6 @@ export const matrixLightBlockDefinitions = [
       {
         type: 'input_value',
         name: 'TEXT',
-        check: 'String',
       },
     ],
     inputsInline: true,

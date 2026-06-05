@@ -8,6 +8,7 @@ export { NotePickerOverlay } from './components/NotePickerOverlay';
 export { NumberSliderOverlay } from './components/NumberSliderOverlay';
 export { PortPickerOverlay } from './components/PortPickerOverlay';
 export { HandleShankPickerOverlay } from './components/HandleShankPickerOverlay';
+export { VariablePromptOverlay } from './components/VariablePromptOverlay';
 export {
   getPortDefinition,
   PORT_DEFINITIONS,

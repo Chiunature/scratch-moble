@@ -25,6 +25,10 @@ import {
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
   setupDynamicToolboxCategoriesAndRefreshFlyout,
+  ensureProcedureEditorModalDom,
+  patchProcedureWorkspaceBehavior,
+  installProcedureDragDebug,
+  patchDataVariableReporterOutput,
 } from './workspace-custom';
 
 /** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
@@ -39,6 +43,9 @@ function bootstrap(): void {
 
   registerNativeInboundBridge(); //挂载WebView与React Native的桥接
   registerEditorBlocks(); //— 注册 shadow 积木
+  patchProcedureWorkspaceBehavior();
+  patchDataVariableReporterOutput();
+  ensureProcedureEditorModalDom();
   patchFieldNumberEditor();
   patchFieldPortPicker();
   patchFieldMatrixLight();
@@ -83,6 +90,7 @@ function bootstrap(): void {
   });
 
   setupDynamicToolboxCategoriesAndRefreshFlyout(workspace);
+  installProcedureDragDebug(workspace);
 
   // 确保缩放控件存在
   ensureScratchZoomControlsIfMissing(workspace);
