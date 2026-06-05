@@ -46,7 +46,7 @@ export const motorToolboxCategory = {
       inputs: {
         PORTS: { shadow: portShadow('0') },
       },
-      fields: { BLOCK: '0' },
+      fields: { MODE: '0' },
     },
   ],
 } as const;

@@ -98,7 +98,7 @@ export const motorBlockDefinitions = [
       { type: 'input_value', name: 'PORTS', check: 'Number' },
       {
         type: 'field_dropdown',
-        name: 'BLOCK',
+        name: 'MODE',
         options: [
           ['惯性滑行', '0'],
           ['制动', '1'],

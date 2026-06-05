@@ -23240,7 +23240,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         { type: "input_value", name: "PORTS", check: "Number" },
         {
           type: "field_dropdown",
-          name: "BLOCK",
+          name: "MODE",
           options: [
             ["\u60EF\u6027\u6ED1\u884C", "0"],
             ["\u5236\u52A8", "1"]
@@ -24365,7 +24365,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         inputs: {
           PORTS: { shadow: portShadow("0") }
         },
-        fields: { BLOCK: "0" }
+        fields: { MODE: "0" }
       }
     ]
   };
@@ -25652,6 +25652,9 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     const targetBlock = getInputTargetBlock(block, inputName);
     return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
   }
+  function fieldToPython(block, fieldName, fallback) {
+    return getFieldValue(block, fieldName) ?? fallback;
+  }
   function variableFieldToPython(block, fieldName) {
     const name2 = getFieldValue(block, fieldName);
     if (!name2) {
@@ -25820,7 +25823,7 @@ ${body}`;
     [BLOCK_TYPES.motor.stopModule](block, context) {
       return moduleCall(context, PYTHON_MODULES.motor, "stop_module", [
         valueToPython(block, "PORTS", "1"),
-        valueToPython(block, "BLOCK", "0")
+        fieldToPython(block, "MODE", "0")
       ]);
     }
   };

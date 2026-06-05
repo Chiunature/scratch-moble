@@ -1,6 +1,6 @@
 import { BLOCK_TYPES } from '../../blocks/blockTypes';
 import { moduleCall, PYTHON_MODULES } from '../moduleCall';
-import { valueToPython } from '../expressions';
+import { fieldToPython, valueToPython } from '../expressions';
 import type { StatementGenerator } from '../types';
 
 export const motorStatementGenerators: Record<string, StatementGenerator> = {
@@ -28,7 +28,7 @@ export const motorStatementGenerators: Record<string, StatementGenerator> = {
   [BLOCK_TYPES.motor.stopModule](block, context) {
     return moduleCall(context, PYTHON_MODULES.motor, 'stop_module', [
       valueToPython(block, 'PORTS', '1'),
-      valueToPython(block, 'BLOCK', '0'),
+      fieldToPython(block, 'MODE', '0'),
     ]);
   },
 };

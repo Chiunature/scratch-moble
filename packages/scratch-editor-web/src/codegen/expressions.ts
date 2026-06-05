@@ -190,6 +190,15 @@ export function valueToPython(
   return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
 }
 
+/** field_dropdown / field_number 等直接挂在积木上的字段（非 input_value 槽） */
+export function fieldToPython(
+  block: ScratchBlock,
+  fieldName: string,
+  fallback: string,
+): string {
+  return getFieldValue(block, fieldName) ?? fallback;
+}
+
 export function variableFieldToPython(block: ScratchBlock, fieldName: string): string {
   const name = getFieldValue(block, fieldName);
   if (!name) {
