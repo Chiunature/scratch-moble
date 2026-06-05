@@ -27742,6 +27742,44 @@ ${body}`;
     });
   }
 
+  // src/workspace-custom/ensureStartHatBlock.ts
+  var START_HAT_X = 48;
+  var START_HAT_Y = 48;
+  function countStartHatBlocks(workspace) {
+    const getBlocksByType = workspace.getBlocksByType;
+    if (getBlocksByType) {
+      return getBlocksByType.call(
+        workspace,
+        BLOCK_TYPES.event.whenFlagClicked,
+        false
+      ).length;
+    }
+    return workspace.getTopBlocks(true).filter((block) => block.type === BLOCK_TYPES.event.whenFlagClicked).length;
+  }
+  function createStartHatBlock(workspace) {
+    const blockText = `
+    <xml>
+      <block type="${BLOCK_TYPES.event.whenFlagClicked}"
+             x="${START_HAT_X}"
+             y="${START_HAT_Y}">
+      </block>
+    </xml>`;
+    const blockDom = iE.xml.textToDom(blockText).firstElementChild;
+    if (!blockDom) {
+      throw new Error("Failed to create start hat block XML");
+    }
+    rt.domToBlock(blockDom, workspace);
+  }
+  function insertStartHatBlockIfMissing(workspace) {
+    if (countStartHatBlocks(workspace) > 0) {
+      return;
+    }
+    createStartHatBlock(workspace);
+  }
+  function setupStartHatBlock(workspace) {
+    insertStartHatBlockIfMissing(workspace);
+  }
+
   // src/main.ts
   function refreshToolboxDomAfterLayout(workspace) {
     patchScratchZoomControlImages(workspace);
@@ -27796,6 +27834,9 @@ ${body}`;
       media: "https://unpkg.com/scratch-blocks@2.1.19/media/",
       trashcan: false,
       //垃圾桶
+      maxInstances: {
+        [BLOCK_TYPES.event.whenFlagClicked]: 1
+      },
       theme: editorTheme,
       sounds: false,
       //交互音效
@@ -27806,6 +27847,7 @@ ${body}`;
       modalInputs: false
     });
     setupDynamicToolboxCategoriesAndRefreshFlyout(workspace);
+    setupStartHatBlock(workspace);
     installProcedureDragDebug(workspace);
     ensureScratchZoomControlsIfMissing(workspace);
     patchFlyoutGetWidthWhenHidden(workspace);

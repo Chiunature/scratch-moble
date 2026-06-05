@@ -6,6 +6,7 @@
 import * as ScratchBlocks from 'scratch-blocks';
 
 import { registerEditorBlocks } from './blocks/registerBlocks';
+import { BLOCK_TYPES } from './blocks/blockTypes';
 import { toolboxJson } from './blocks/toolbox';
 import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
 import { registerCodeGenerationFlush } from './bridge/codeGenNotify';
@@ -29,6 +30,7 @@ import {
   patchProcedureWorkspaceBehavior,
   installProcedureDragDebug,
   patchDataVariableReporterOutput,
+  setupStartHatBlock,
 } from './workspace-custom';
 
 /** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
@@ -81,6 +83,9 @@ function bootstrap(): void {
     },
     media: 'https://unpkg.com/scratch-blocks@2.1.19/media/',
     trashcan: false, //垃圾桶
+    maxInstances: {
+      [BLOCK_TYPES.event.whenFlagClicked]: 1,
+    },
     theme: editorTheme,
     sounds: false, //交互音效
     toolbox: toolboxJson, //工具箱定义 xml或者json
@@ -90,6 +95,7 @@ function bootstrap(): void {
   });
 
   setupDynamicToolboxCategoriesAndRefreshFlyout(workspace);
+  setupStartHatBlock(workspace);
   installProcedureDragDebug(workspace);
 
   // 确保缩放控件存在

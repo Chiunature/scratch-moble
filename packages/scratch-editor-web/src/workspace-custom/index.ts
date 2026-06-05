@@ -28,6 +28,10 @@ export {
   installProcedureDragDebug,
 } from './procedureDrag';
 export { patchDataVariableReporterOutput } from './patchDataVariableReporter';
+export {
+  insertStartHatBlockIfMissing,
+  setupStartHatBlock,
+} from './ensureStartHatBlock';
 export { openVariablePrompt, handleVariablePromptInbound } from './variablePromptBridge';
 export {
   ensureProcedureEditorModalDom,
