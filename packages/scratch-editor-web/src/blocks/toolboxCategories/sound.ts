@@ -10,10 +10,14 @@ export const soundToolboxCategory = {
   cssconfig: {
     icon: toolboxCategoryIconClasses('sound'),
   },
-  contents: [{ kind: 'block', type: BLOCK_TYPES.sound.playMusic,
-    inputs: {
-      NOTE: { shadow: noteShadow(12) },
-      DURATION: { shadow: numberKeyboardShadow(1) },
+  contents: [
+    {
+      kind: 'block',
+      type: BLOCK_TYPES.sound.playMusic,
+      inputs: {
+        NOTE: { shadow: noteShadow(12) },
+        DURATION: { shadow: numberKeyboardShadow(0.25) },
+      },
     },
-  }],
+  ],
 } as const;

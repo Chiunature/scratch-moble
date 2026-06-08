@@ -6,6 +6,7 @@
  * - statementChainToPython：沿 next 链遍历同一级的一串积木
  * - renderPythonCode：从工作区顶层积木开始，生成完整的 Python 代码字符串
  */
+import { BLOCK_TYPES } from '../blocks/blockTypes';
 import { getNextBlock, indent } from './helpers';
 import { buildStatementGenerators } from './statements';
 import type {
@@ -13,6 +14,9 @@ import type {
   ScratchBlock,
   Workspace,
 } from './types';
+
+const EMPTY_WORKSPACE_HINT = '# 拖拽飞出栏积木后生成 Python 代码';
+const NO_START_HAT_HINT = '# 请从「当程序启动时」积木开始搭建程序';
 
 function blockToPython(block: ScratchBlock, context: GenerateContext): string {
   const generator = statementGenerators[block.type];
@@ -44,6 +48,15 @@ function statementChainToPython(
 
 const statementGenerators = buildStatementGenerators(statementChainToPython);
 
+function startHatScriptToPython(hat: ScratchBlock): string {
+  const lines = [blockToPython(hat, { indent: 0 })];
+  const firstStatement = getNextBlock(hat);
+  if (firstStatement) {
+    lines.push(statementChainToPython(firstStatement, { indent: 0 }));
+  }
+  return lines.filter(Boolean).join('\n');
+}
+
 export function renderPythonCode(workspace: Workspace): string {
   const blocks = workspace
     .getTopBlocks(true)
@@ -52,19 +65,23 @@ export function renderPythonCode(workspace: Workspace): string {
     );
 
   if (blocks.length === 0) {
-    return '# 拖拽飞出栏积木后生成 Python 代码';
+    return EMPTY_WORKSPACE_HINT;
   }
 
   const defs = blocks
     .filter(b => b.type === 'procedures_definition')
     .map(block => blockToPython(block, { indent: 0 }));
-  const scripts = blocks
-    .filter(b => b.type !== 'procedures_definition')
-    .map(block => statementChainToPython(block, { indent: 0 }))
-    .filter(Boolean);
+  const startHats = blocks.filter(
+    b => b.type === BLOCK_TYPES.event.whenFlagClicked,
+  );
+  const scripts = startHats.map(startHatScriptToPython).filter(Boolean);
+
+  if (scripts.length === 0 && defs.length === 0) {
+    return blocks.some(b => b.type !== BLOCK_TYPES.event.whenFlagClicked)
+      ? NO_START_HAT_HINT
+      : EMPTY_WORKSPACE_HINT;
+  }
 
   const sections = [...defs, ...scripts].filter(Boolean);
-  return sections.length > 0
-    ? sections.join('\n\n')
-    : '# 拖拽飞出栏积木后生成 Python 代码';
+  return sections.length > 0 ? sections.join('\n\n') : EMPTY_WORKSPACE_HINT;
 }

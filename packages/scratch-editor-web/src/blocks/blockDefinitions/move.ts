@@ -61,7 +61,7 @@ export const moveBlockDefinitions = [
       },
       {
         type: 'field_dropdown',
-        name: 'DIRECTION',
+        name: 'MODE',
         options: [
           ['惯性滑行', '0'],
           ['制动', '1'],

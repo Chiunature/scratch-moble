@@ -199,6 +199,37 @@ export function fieldToPython(
   return getFieldValue(block, fieldName) ?? fallback;
 }
 
+/** 下拉字段值为字符串枚举（如 advance / retreat）时，输出带引号的 Python 字符串 */
+export function fieldStringToPython(
+  block: ScratchBlock,
+  fieldName: string,
+  fallback: string,
+): string {
+  return quotePythonString(getFieldValue(block, fieldName) ?? fallback);
+}
+
+/**
+ * portShadowMulti 等多端口输入：展开为独立位置参数 `2, 3`，而非 `[2, 3]`。
+ * 单端口场景（motor 等）仍用 valueToPython。
+ */
+export function multiPortsInputToPythonArgs(
+  block: ScratchBlock,
+  inputName: string,
+  fallback: string,
+): string[] {
+  const targetBlock = getInputTargetBlock(block, inputName);
+  if (!targetBlock) {
+    return parsePortFieldValue(fallback);
+  }
+
+  if (targetBlock.type === BLOCK_TYPES.common.portDropdown) {
+    const raw = getFieldValue(targetBlock, 'PORT') ?? fallback;
+    return parsePortFieldValue(raw);
+  }
+
+  return [expressionBlockToPython(targetBlock)];
+}
+
 export function variableFieldToPython(block: ScratchBlock, fieldName: string): string {
   const name = getFieldValue(block, fieldName);
   if (!name) {

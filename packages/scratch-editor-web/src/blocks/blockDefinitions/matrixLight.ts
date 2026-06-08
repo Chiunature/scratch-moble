@@ -152,8 +152,8 @@ export const matrixLightBlockDefinitions = [
         type: 'field_dropdown',
         name: 'OPEN',
         options: [
-          ['打开', '0'],
-          ['关闭', '1'],
+          ['打开', '1'],
+          ['关闭', '0'],
         ],
       },
     ],

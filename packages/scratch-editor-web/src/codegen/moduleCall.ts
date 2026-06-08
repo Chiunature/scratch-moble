@@ -8,7 +8,7 @@ import type { GenerateContext } from './types';
  */
 export const PYTHON_MODULES = {
   motor: '_motor',
-  move: '_move',
+  move: '_motor',
   matrix: '_matrix',
   sound: '_sound',
   control: '_control',
@@ -21,11 +21,14 @@ export const PYTHON_MODULES = {
   },
 } as const;
 
+export type ModuleCallArg = string | readonly string[];
+
 export function moduleCall(
   context: GenerateContext,
   module: string,
   method: string,
-  args: string[] = [],
+  args: readonly ModuleCallArg[] = [],
 ): string {
-  return `${indent(context)}${module}.${method}(${args.join(', ')})`;
+  const flatArgs = args.flatMap(arg => (typeof arg === 'string' ? [arg] : [...arg]));
+  return `${indent(context)}${module}.${method}(${flatArgs.join(', ')})`;
 }

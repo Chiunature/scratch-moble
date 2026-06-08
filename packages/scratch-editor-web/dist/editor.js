@@ -23136,8 +23136,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
           type: "field_dropdown",
           name: "OPEN",
           options: [
-            ["\u6253\u5F00", "0"],
-            ["\u5173\u95ED", "1"]
+            ["\u6253\u5F00", "1"],
+            ["\u5173\u95ED", "0"]
           ]
         }
       ],
@@ -23326,7 +23326,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         },
         {
           type: "field_dropdown",
-          name: "DIRECTION",
+          name: "MODE",
           options: [
             ["\u60EF\u6027\u6ED1\u884C", "0"],
             ["\u5236\u52A8", "1"]
@@ -24394,7 +24394,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.move.moveSetStopModule,
         fields: {
-          DIRECTION: "1"
+          MODE: "1"
         }
       },
       {
@@ -24447,10 +24447,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
         kind: "block",
         type: BLOCK_TYPES.move.movFindLineRun,
         inputs: {
-          LEFT_SENSOR: { shadow: numberKeyboardShadow(50) },
-          RIGHT_SENSOR: { shadow: numberKeyboardShadow(50) },
-          LEFT_POWER: { shadow: integerSliderShadow(50) },
-          RIGHT_POWER: { shadow: integerSliderShadow(50) },
+          LEFT_SENSOR: { shadow: numberKeyboardShadow(0) },
+          RIGHT_SENSOR: { shadow: numberKeyboardShadow(0) },
+          LEFT_POWER: { shadow: integerSliderShadow(80) },
+          RIGHT_POWER: { shadow: integerSliderShadow(80) },
           KP: { shadow: numberKeyboardShadow(0.1) },
           KD: { shadow: numberKeyboardShadow(0.6) }
         }
@@ -24712,14 +24712,16 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     cssconfig: {
       icon: toolboxCategoryIconClasses("sound")
     },
-    contents: [{
-      kind: "block",
-      type: BLOCK_TYPES.sound.playMusic,
-      inputs: {
-        NOTE: { shadow: noteShadow(12) },
-        DURATION: { shadow: numberKeyboardShadow(1) }
+    contents: [
+      {
+        kind: "block",
+        type: BLOCK_TYPES.sound.playMusic,
+        inputs: {
+          NOTE: { shadow: noteShadow(12) },
+          DURATION: { shadow: numberKeyboardShadow(0.25) }
+        }
       }
-    }]
+    ]
   };
 
   // src/blocks/toolboxCategories/variable.ts
@@ -25655,6 +25657,20 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function fieldToPython(block, fieldName, fallback) {
     return getFieldValue(block, fieldName) ?? fallback;
   }
+  function fieldStringToPython(block, fieldName, fallback) {
+    return quotePythonString(getFieldValue(block, fieldName) ?? fallback);
+  }
+  function multiPortsInputToPythonArgs(block, inputName, fallback) {
+    const targetBlock = getInputTargetBlock(block, inputName);
+    if (!targetBlock) {
+      return parsePortFieldValue(fallback);
+    }
+    if (targetBlock.type === BLOCK_TYPES.common.portDropdown) {
+      const raw = getFieldValue(targetBlock, "PORT") ?? fallback;
+      return parsePortFieldValue(raw);
+    }
+    return [expressionBlockToPython(targetBlock)];
+  }
   function variableFieldToPython(block, fieldName) {
     const name2 = getFieldValue(block, fieldName);
     if (!name2) {
@@ -25686,7 +25702,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   // src/codegen/moduleCall.ts
   var PYTHON_MODULES = {
     motor: "_motor",
-    move: "_move",
+    move: "_motor",
     matrix: "_matrix",
     sound: "_sound",
     control: "_control",
@@ -25699,7 +25715,8 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   };
   function moduleCall(context, module, method, args = []) {
-    return `${indent(context)}${module}.${method}(${args.join(", ")})`;
+    const flatArgs = args.flatMap((arg) => typeof arg === "string" ? [arg] : [...arg]);
+    return `${indent(context)}${module}.${method}(${flatArgs.join(", ")})`;
   }
 
   // src/codegen/statements/control.ts
@@ -25793,9 +25810,30 @@ ${body}`;
   // src/codegen/statements/matrixLight.ts
   var matrixLightStatementGenerators = {
     [BLOCK_TYPES.matrixLight.show](block, context) {
-      const matrix = getFieldValue(block, "MATRIX") ?? "1F,1F,1F,1F,1F,1F,1F";
+      const matrix = fieldToPython(block, "MATRIX", "1F,1F,1F,1F,1F,1F,1F");
       return moduleCall(context, PYTHON_MODULES.matrix, "show", [
         matrixLightRowsToPythonArgs(matrix)
+      ]);
+    },
+    [BLOCK_TYPES.matrixLight.clear](_block, context) {
+      return moduleCall(context, PYTHON_MODULES.matrix, "clear");
+    },
+    [BLOCK_TYPES.matrixLight.setBrightness](block, context) {
+      return moduleCall(context, PYTHON_MODULES.matrix, "set_brightness", [
+        fieldToPython(block, "BRIGHTNESS", "0")
+      ]);
+    },
+    [BLOCK_TYPES.matrixLight.showRoll](block, context) {
+      const text = valueToPython(block, "TEXT", quotePythonString("ABCD"));
+      return moduleCall(context, PYTHON_MODULES.matrix, "show_roll", [
+        `str(${text})`
+      ]);
+    },
+    [BLOCK_TYPES.matrixLight.setPixelBrightness](block, context) {
+      return moduleCall(context, PYTHON_MODULES.matrix, "set_pixel_brightness", [
+        valueToPython(block, "X", "0"),
+        valueToPython(block, "Y", "0"),
+        fieldToPython(block, "OPEN", "0")
       ]);
     }
   };
@@ -25830,8 +25868,58 @@ ${body}`;
 
   // src/codegen/statements/move.ts
   var moveStatementGenerators = {
-    [BLOCK_TYPES.move.pair](_block, context) {
-      return moduleCall(context, PYTHON_MODULES.move, "pair");
+    [BLOCK_TYPES.move.pair](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "pair", [
+        multiPortsInputToPythonArgs(block, "PORTS", "0,1"),
+        fieldToPython(block, "DIRECTION", "0")
+      ]);
+    },
+    [BLOCK_TYPES.move.moveSetStopModule](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "move_set_stop_module", [
+        fieldToPython(block, "MODE", "1")
+      ]);
+    },
+    [BLOCK_TYPES.move.movDirPowerSeconds](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_dir_power_seconds", [
+        fieldStringToPython(block, "DIRECTION", "advance"),
+        valueToPython(block, "POWER", "50"),
+        valueToPython(block, "SECONDS", "1")
+      ]);
+    },
+    [BLOCK_TYPES.move.movDirPower](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_dir_power", [
+        fieldStringToPython(block, "DIRECTION", "advance"),
+        valueToPython(block, "POWER", "50")
+      ]);
+    },
+    [BLOCK_TYPES.move.movStop](_block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_stop");
+    },
+    [BLOCK_TYPES.move.movForPowerSeconds](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_for_power_seconds", [
+        valueToPython(block, "LEFT_POWER", "50"),
+        valueToPython(block, "RIGHT_POWER", "50"),
+        valueToPython(block, "SECONDS", "1")
+      ]);
+    },
+    [BLOCK_TYPES.move.movPower](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_power", [
+        valueToPython(block, "LEFT_POWER", "50"),
+        valueToPython(block, "RIGHT_POWER", "50")
+      ]);
+    },
+    [BLOCK_TYPES.move.movFindLineInit](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_find_line_init");
+    },
+    [BLOCK_TYPES.move.movFindLineRun](block, context) {
+      return moduleCall(context, PYTHON_MODULES.move, "mov_find_line_run", [
+        valueToPython(block, "LEFT_SENSOR", "0"),
+        valueToPython(block, "RIGHT_SENSOR", "1"),
+        valueToPython(block, "LEFT_POWER", "50"),
+        valueToPython(block, "RIGHT_POWER", "50"),
+        valueToPython(block, "KP", "0.1"),
+        valueToPython(block, "KD", "0.6")
+      ]);
     }
   };
 
@@ -25931,6 +26019,8 @@ ${body}`;
   }
 
   // src/codegen/generators.ts
+  var EMPTY_WORKSPACE_HINT = "# \u62D6\u62FD\u98DE\u51FA\u680F\u79EF\u6728\u540E\u751F\u6210 Python \u4EE3\u7801";
+  var NO_START_HAT_HINT = "# \u8BF7\u4ECE\u300C\u5F53\u7A0B\u5E8F\u542F\u52A8\u65F6\u300D\u79EF\u6728\u5F00\u59CB\u642D\u5EFA\u7A0B\u5E8F";
   function blockToPython(block, context) {
     const generator = statementGenerators[block.type];
     if (!generator) {
@@ -25951,17 +26041,31 @@ ${body}`;
     return lines.join("\n");
   }
   var statementGenerators = buildStatementGenerators(statementChainToPython);
+  function startHatScriptToPython(hat) {
+    const lines = [blockToPython(hat, { indent: 0 })];
+    const firstStatement = getNextBlock(hat);
+    if (firstStatement) {
+      lines.push(statementChainToPython(firstStatement, { indent: 0 }));
+    }
+    return lines.filter(Boolean).join("\n");
+  }
   function renderPythonCode(workspace) {
     const blocks = workspace.getTopBlocks(true).sort(
       (a2, b2) => a2.getRelativeToSurfaceXY().y - b2.getRelativeToSurfaceXY().y
     );
     if (blocks.length === 0) {
-      return "# \u62D6\u62FD\u98DE\u51FA\u680F\u79EF\u6728\u540E\u751F\u6210 Python \u4EE3\u7801";
+      return EMPTY_WORKSPACE_HINT;
     }
     const defs = blocks.filter((b2) => b2.type === "procedures_definition").map((block) => blockToPython(block, { indent: 0 }));
-    const scripts = blocks.filter((b2) => b2.type !== "procedures_definition").map((block) => statementChainToPython(block, { indent: 0 })).filter(Boolean);
+    const startHats = blocks.filter(
+      (b2) => b2.type === BLOCK_TYPES.event.whenFlagClicked
+    );
+    const scripts = startHats.map(startHatScriptToPython).filter(Boolean);
+    if (scripts.length === 0 && defs.length === 0) {
+      return blocks.some((b2) => b2.type !== BLOCK_TYPES.event.whenFlagClicked) ? NO_START_HAT_HINT : EMPTY_WORKSPACE_HINT;
+    }
     const sections = [...defs, ...scripts].filter(Boolean);
-    return sections.length > 0 ? sections.join("\n\n") : "# \u62D6\u62FD\u98DE\u51FA\u680F\u79EF\u6728\u540E\u751F\u6210 Python \u4EE3\u7801";
+    return sections.length > 0 ? sections.join("\n\n") : EMPTY_WORKSPACE_HINT;
   }
 
   // src/bridge/codeGenerationPublisher.ts

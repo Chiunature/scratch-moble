@@ -28,7 +28,7 @@ export const moveToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.move.moveSetStopModule,
       fields: {
-        DIRECTION: '1',
+        MODE: '1',
       },
     },
     {
@@ -81,10 +81,10 @@ export const moveToolboxCategory = {
       kind: 'block',
       type: BLOCK_TYPES.move.movFindLineRun,
       inputs: {
-        LEFT_SENSOR: { shadow: numberKeyboardShadow(50) },
-        RIGHT_SENSOR: { shadow: numberKeyboardShadow(50) },
-        LEFT_POWER: { shadow: integerSliderShadow(50) },
-        RIGHT_POWER: { shadow: integerSliderShadow(50) },
+        LEFT_SENSOR: { shadow: numberKeyboardShadow(0) },
+        RIGHT_SENSOR: { shadow: numberKeyboardShadow(0) },
+        LEFT_POWER: { shadow: integerSliderShadow(80) },
+        RIGHT_POWER: { shadow: integerSliderShadow(80) },
         KP: { shadow: numberKeyboardShadow(0.1) },
         KD: { shadow: numberKeyboardShadow(0.6) },
       },
