@@ -9,7 +9,12 @@ import {
   BLOCK_TYPES,
   CUSTOM_NUMERIC_LITERAL_TYPES,
 } from '../blocks/blockTypes';
-import { getFieldValue, getInputTargetBlock, quotePythonString } from './helpers';
+import { moduleExpression, PYTHON_MODULES } from './moduleCall';
+import {
+  getFieldValue,
+  getInputTargetBlock,
+  quotePythonString,
+} from './helpers';
 import type { ScratchBlock } from './types';
 
 const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
@@ -62,22 +67,46 @@ export function expressionBlockToPython(block: ScratchBlock): string {
   }
 
   if (block.type === 'operator_add') {
-    return `(${inputExpressionToPython(block, 'NUM1', '0')} + ${inputExpressionToPython(block, 'NUM2', '0')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'NUM1',
+      '0',
+    )} + ${inputExpressionToPython(block, 'NUM2', '0')})`;
   }
   if (block.type === 'operator_subtract') {
-    return `(${inputExpressionToPython(block, 'NUM1', '0')} - ${inputExpressionToPython(block, 'NUM2', '0')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'NUM1',
+      '0',
+    )} - ${inputExpressionToPython(block, 'NUM2', '0')})`;
   }
   if (block.type === 'operator_multiply') {
-    return `(${inputExpressionToPython(block, 'NUM1', '0')} * ${inputExpressionToPython(block, 'NUM2', '0')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'NUM1',
+      '0',
+    )} * ${inputExpressionToPython(block, 'NUM2', '0')})`;
   }
   if (block.type === 'operator_divide') {
-    return `(${inputExpressionToPython(block, 'NUM1', '0')} / ${inputExpressionToPython(block, 'NUM2', '1')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'NUM1',
+      '0',
+    )} / ${inputExpressionToPython(block, 'NUM2', '1')})`;
   }
   if (block.type === 'operator_random') {
-    return `random.randint(int(${inputExpressionToPython(block, 'FROM', '1')}), int(${inputExpressionToPython(block, 'TO', '10')}))`;
+    return `random.randint(int(${inputExpressionToPython(
+      block,
+      'FROM',
+      '1',
+    )}), int(${inputExpressionToPython(block, 'TO', '10')}))`;
   }
   if (block.type === 'operator_mod') {
-    return `(${inputExpressionToPython(block, 'NUM1', '0')} % ${inputExpressionToPython(block, 'NUM2', '1')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'NUM1',
+      '0',
+    )} % ${inputExpressionToPython(block, 'NUM2', '1')})`;
   }
   if (block.type === 'operator_round') {
     return `round(${inputExpressionToPython(block, 'NUM', '0')})`;
@@ -119,25 +148,49 @@ export function expressionBlockToPython(block: ScratchBlock): string {
     }
   }
   if (block.type === 'operator_equals') {
-    return `(${inputExpressionToPython(block, 'OPERAND1', '0')} == ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'OPERAND1',
+      '0',
+    )} == ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
   }
   if (block.type === 'operator_lt') {
-    return `(${inputExpressionToPython(block, 'OPERAND1', '0')} < ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'OPERAND1',
+      '0',
+    )} < ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
   }
   if (block.type === 'operator_gt') {
-    return `(${inputExpressionToPython(block, 'OPERAND1', '0')} > ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'OPERAND1',
+      '0',
+    )} > ${inputExpressionToPython(block, 'OPERAND2', '0')})`;
   }
   if (block.type === 'operator_and') {
-    return `(${inputExpressionToPython(block, 'OPERAND1', 'False')} and ${inputExpressionToPython(block, 'OPERAND2', 'False')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'OPERAND1',
+      'False',
+    )} and ${inputExpressionToPython(block, 'OPERAND2', 'False')})`;
   }
   if (block.type === 'operator_or') {
-    return `(${inputExpressionToPython(block, 'OPERAND1', 'False')} or ${inputExpressionToPython(block, 'OPERAND2', 'False')})`;
+    return `(${inputExpressionToPython(
+      block,
+      'OPERAND1',
+      'False',
+    )} or ${inputExpressionToPython(block, 'OPERAND2', 'False')})`;
   }
   if (block.type === 'operator_not') {
     return `(not ${inputExpressionToPython(block, 'OPERAND', 'False')})`;
   }
   if (block.type === 'operator_join') {
-    return `str(${inputExpressionToPython(block, 'STRING1', "''")}) + str(${inputExpressionToPython(block, 'STRING2', "''")})`;
+    return `str(${inputExpressionToPython(
+      block,
+      'STRING1',
+      "''",
+    )}) + str(${inputExpressionToPython(block, 'STRING2', "''")})`;
   }
   if (block.type === 'operator_letter_of') {
     const index = inputExpressionToPython(block, 'LETTER', '1');
@@ -178,6 +231,10 @@ export function expressionBlockToPython(block: ScratchBlock): string {
     return `(${lst}.index(${item}) + 1 if ${item} in ${lst} else 0)`;
   }
 
+  const sensorBoolean = sensorBooleanReporterToPython(block);
+  const sensorNumber = sensorNumberReporterToPython(block);
+  if (sensorBoolean != null) return sensorBoolean;
+  if (sensorNumber != null) return sensorNumber;
   return `None  # TODO: unsupported expression ${block.type}`;
 }
 
@@ -208,6 +265,93 @@ export function fieldStringToPython(
   return quotePythonString(getFieldValue(block, fieldName) ?? fallback);
 }
 
+/** 传感器等布尔 reporter 嵌在 CONDITION 等输入槽时的表达式生成 */
+function sensorBooleanReporterToPython(block: ScratchBlock): string | null {
+  switch (block.type) {
+    case BLOCK_TYPES.sensor.touch_sensor.state:
+      return moduleExpression(PYTHON_MODULES.sensor.touch_sensor, 'state', [
+        valueToPython(block, 'PORTS', '1'),
+      ]);
+
+    case BLOCK_TYPES.sensor.gray_sensor.cmpLux:
+      return moduleExpression(PYTHON_MODULES.sensor.gray_sensor, 'cmp_lux', [
+        valueToPython(block, 'PORTS', '1'),
+        fieldStringToPython(block, 'CMP', '>'),
+        valueToPython(block, 'VALUE', '50'),
+      ]);
+
+    case BLOCK_TYPES.sensor.gray_sensor.luxState:
+      return moduleExpression(PYTHON_MODULES.sensor.gray_sensor, 'lux_state', [
+        valueToPython(block, 'PORTS', '1'),
+      ]);
+
+    case BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue:
+      return moduleExpression(
+        PYTHON_MODULES.sensor.ultrasonic_sensor,
+        'cmp_value',
+        [
+          valueToPython(block, 'PORTS', '1'),
+          fieldStringToPython(block, 'CMP', '>'),
+          valueToPython(block, 'VALUE', '100'),
+        ],
+      );
+
+    case BLOCK_TYPES.sensor.remote_control_sensor.keyRemote:
+      return moduleExpression(PYTHON_MODULES.sensor.other, 'key_remote', [
+        valueToPython(block, 'HANDLESHANK', quotePythonString('up')),
+        fieldStringToPython(block, 'STATE', 'press'),
+      ]);
+
+    case BLOCK_TYPES.sensor.other.keyMast:
+      console.log('1', typeof fieldToPython(block, 'STATE', '1'));
+      return moduleExpression(PYTHON_MODULES.sensor.other, 'key_mast', [
+        fieldStringToPython(block, 'KEY', 'left'),
+        fieldToPython(block, 'STATE', '1'),
+      ]);
+
+    default:
+      return null;
+  }
+}
+
+const sensorNumberReporterToPython = (block: ScratchBlock): string | null => {
+  switch (block.type) {
+    case BLOCK_TYPES.sensor.gray_sensor.lux:
+      return moduleExpression(PYTHON_MODULES.sensor.gray_sensor, 'lux', [
+        valueToPython(block, 'PORTS', '1'),
+      ]);
+    case BLOCK_TYPES.sensor.ultrasonic_sensor.value:
+      return moduleExpression(
+        PYTHON_MODULES.sensor.ultrasonic_sensor,
+        'value',
+        [valueToPython(block, 'PORTS', '1')],
+      );
+    case BLOCK_TYPES.sensor.remote_control_sensor.readAdcanceLeftOffset:
+      return moduleExpression(
+        PYTHON_MODULES.sensor.other,
+        'read_adcance_left_offset',
+      );
+    case BLOCK_TYPES.sensor.remote_control_sensor.readAdvanceRightOffset:
+      return moduleExpression(
+        PYTHON_MODULES.sensor.other,
+        'read_advance_right_offset',
+      );
+    case BLOCK_TYPES.sensor.remote_control_sensor.readRetreatLeftOffset:
+      return moduleExpression(
+        PYTHON_MODULES.sensor.other,
+        'read_retreat_left_offset',
+      );
+    case BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset:
+      return moduleExpression(
+        PYTHON_MODULES.sensor.other,
+        'read_retreat_right_offset',
+      );
+    case BLOCK_TYPES.sensor.other.timer:
+      return moduleExpression(PYTHON_MODULES.control, 'timer');
+    default:
+      return null;
+  }
+};
 /**
  * portShadowMulti 等多端口输入：展开为独立位置参数 `2, 3`，而非 `[2, 3]`。
  * 单端口场景（motor 等）仍用 valueToPython。
@@ -230,12 +374,17 @@ export function multiPortsInputToPythonArgs(
   return [expressionBlockToPython(targetBlock)];
 }
 
-export function variableFieldToPython(block: ScratchBlock, fieldName: string): string {
+export function variableFieldToPython(
+  block: ScratchBlock,
+  fieldName: string,
+): string {
   const name = getFieldValue(block, fieldName);
   if (!name) {
     return 'unnamed_var';
   }
-  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) ? name : `_${name.replace(/\W/g, '_')}`;
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+    ? name
+    : `_${name.replace(/\W/g, '_')}`;
 }
 
 /** play_music 第一参：统一输出带引号的音名字符串（非 pitch 整数）。 */

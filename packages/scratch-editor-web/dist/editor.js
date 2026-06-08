@@ -25505,6 +25505,32 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     return value == null ? null : String(value);
   }
 
+  // src/codegen/moduleCall.ts
+  var PYTHON_MODULES = {
+    motor: "_motor",
+    move: "_motor",
+    matrix: "_matrix",
+    sound: "_sound",
+    control: "_os",
+    sensor: {
+      touch_sensor: "_touch",
+      gray_sensor: "_color",
+      ultrasonic_sensor: "_ultrasion",
+      remote_control_sensor: "_remote_control_sensor",
+      other: "_key"
+    }
+  };
+  function flattenModuleCallArgs(args) {
+    return args.flatMap((arg) => typeof arg === "string" ? [arg] : [...arg]);
+  }
+  function moduleExpression(module, method, args = []) {
+    const flatArgs = flattenModuleCallArgs(args);
+    return `${module}.${method}(${flatArgs.join(", ")})`;
+  }
+  function moduleCall(context, module, method, args = []) {
+    return line(context, moduleExpression(module, method, args));
+  }
+
   // src/codegen/expressions.ts
   var NUMERIC_LITERAL_BLOCK_TYPES = /* @__PURE__ */ new Set([
     "math_number",
@@ -25543,22 +25569,46 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return quotePythonString(normalizeHandleShankKey(raw));
     }
     if (block.type === "operator_add") {
-      return `(${inputExpressionToPython(block, "NUM1", "0")} + ${inputExpressionToPython(block, "NUM2", "0")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "NUM1",
+        "0"
+      )} + ${inputExpressionToPython(block, "NUM2", "0")})`;
     }
     if (block.type === "operator_subtract") {
-      return `(${inputExpressionToPython(block, "NUM1", "0")} - ${inputExpressionToPython(block, "NUM2", "0")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "NUM1",
+        "0"
+      )} - ${inputExpressionToPython(block, "NUM2", "0")})`;
     }
     if (block.type === "operator_multiply") {
-      return `(${inputExpressionToPython(block, "NUM1", "0")} * ${inputExpressionToPython(block, "NUM2", "0")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "NUM1",
+        "0"
+      )} * ${inputExpressionToPython(block, "NUM2", "0")})`;
     }
     if (block.type === "operator_divide") {
-      return `(${inputExpressionToPython(block, "NUM1", "0")} / ${inputExpressionToPython(block, "NUM2", "1")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "NUM1",
+        "0"
+      )} / ${inputExpressionToPython(block, "NUM2", "1")})`;
     }
     if (block.type === "operator_random") {
-      return `random.randint(int(${inputExpressionToPython(block, "FROM", "1")}), int(${inputExpressionToPython(block, "TO", "10")}))`;
+      return `random.randint(int(${inputExpressionToPython(
+        block,
+        "FROM",
+        "1"
+      )}), int(${inputExpressionToPython(block, "TO", "10")}))`;
     }
     if (block.type === "operator_mod") {
-      return `(${inputExpressionToPython(block, "NUM1", "0")} % ${inputExpressionToPython(block, "NUM2", "1")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "NUM1",
+        "0"
+      )} % ${inputExpressionToPython(block, "NUM2", "1")})`;
     }
     if (block.type === "operator_round") {
       return `round(${inputExpressionToPython(block, "NUM", "0")})`;
@@ -25600,25 +25650,49 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       }
     }
     if (block.type === "operator_equals") {
-      return `(${inputExpressionToPython(block, "OPERAND1", "0")} == ${inputExpressionToPython(block, "OPERAND2", "0")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "OPERAND1",
+        "0"
+      )} == ${inputExpressionToPython(block, "OPERAND2", "0")})`;
     }
     if (block.type === "operator_lt") {
-      return `(${inputExpressionToPython(block, "OPERAND1", "0")} < ${inputExpressionToPython(block, "OPERAND2", "0")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "OPERAND1",
+        "0"
+      )} < ${inputExpressionToPython(block, "OPERAND2", "0")})`;
     }
     if (block.type === "operator_gt") {
-      return `(${inputExpressionToPython(block, "OPERAND1", "0")} > ${inputExpressionToPython(block, "OPERAND2", "0")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "OPERAND1",
+        "0"
+      )} > ${inputExpressionToPython(block, "OPERAND2", "0")})`;
     }
     if (block.type === "operator_and") {
-      return `(${inputExpressionToPython(block, "OPERAND1", "False")} and ${inputExpressionToPython(block, "OPERAND2", "False")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "OPERAND1",
+        "False"
+      )} and ${inputExpressionToPython(block, "OPERAND2", "False")})`;
     }
     if (block.type === "operator_or") {
-      return `(${inputExpressionToPython(block, "OPERAND1", "False")} or ${inputExpressionToPython(block, "OPERAND2", "False")})`;
+      return `(${inputExpressionToPython(
+        block,
+        "OPERAND1",
+        "False"
+      )} or ${inputExpressionToPython(block, "OPERAND2", "False")})`;
     }
     if (block.type === "operator_not") {
       return `(not ${inputExpressionToPython(block, "OPERAND", "False")})`;
     }
     if (block.type === "operator_join") {
-      return `str(${inputExpressionToPython(block, "STRING1", "''")}) + str(${inputExpressionToPython(block, "STRING2", "''")})`;
+      return `str(${inputExpressionToPython(
+        block,
+        "STRING1",
+        "''"
+      )}) + str(${inputExpressionToPython(block, "STRING2", "''")})`;
     }
     if (block.type === "operator_letter_of") {
       const index = inputExpressionToPython(block, "LETTER", "1");
@@ -25657,6 +25731,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const item = valueToPython(block, "ITEM", "None");
       return `(${lst}.index(${item}) + 1 if ${item} in ${lst} else 0)`;
     }
+    const sensorBoolean = sensorBooleanReporterToPython(block);
+    const sensorNumber = sensorNumberReporterToPython(block);
+    if (sensorBoolean != null) return sensorBoolean;
+    if (sensorNumber != null) return sensorNumber;
     return `None  # TODO: unsupported expression ${block.type}`;
   }
   function valueToPython(block, inputName, fallback) {
@@ -25669,6 +25747,85 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function fieldStringToPython(block, fieldName, fallback) {
     return quotePythonString(getFieldValue(block, fieldName) ?? fallback);
   }
+  function sensorBooleanReporterToPython(block) {
+    switch (block.type) {
+      case BLOCK_TYPES.sensor.touch_sensor.state:
+        return moduleExpression(PYTHON_MODULES.sensor.touch_sensor, "state", [
+          valueToPython(block, "PORTS", "1")
+        ]);
+      case BLOCK_TYPES.sensor.gray_sensor.cmpLux:
+        return moduleExpression(PYTHON_MODULES.sensor.gray_sensor, "cmp_lux", [
+          valueToPython(block, "PORTS", "1"),
+          fieldStringToPython(block, "CMP", ">"),
+          valueToPython(block, "VALUE", "50")
+        ]);
+      case BLOCK_TYPES.sensor.gray_sensor.luxState:
+        return moduleExpression(PYTHON_MODULES.sensor.gray_sensor, "lux_state", [
+          valueToPython(block, "PORTS", "1")
+        ]);
+      case BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue:
+        return moduleExpression(
+          PYTHON_MODULES.sensor.ultrasonic_sensor,
+          "cmp_value",
+          [
+            valueToPython(block, "PORTS", "1"),
+            fieldStringToPython(block, "CMP", ">"),
+            valueToPython(block, "VALUE", "100")
+          ]
+        );
+      case BLOCK_TYPES.sensor.remote_control_sensor.keyRemote:
+        return moduleExpression(PYTHON_MODULES.sensor.other, "key_remote", [
+          valueToPython(block, "HANDLESHANK", quotePythonString("up")),
+          fieldStringToPython(block, "STATE", "press")
+        ]);
+      case BLOCK_TYPES.sensor.other.keyMast:
+        console.log("1", typeof fieldToPython(block, "STATE", "1"));
+        return moduleExpression(PYTHON_MODULES.sensor.other, "key_mast", [
+          fieldStringToPython(block, "KEY", "left"),
+          fieldToPython(block, "STATE", "1")
+        ]);
+      default:
+        return null;
+    }
+  }
+  var sensorNumberReporterToPython = (block) => {
+    switch (block.type) {
+      case BLOCK_TYPES.sensor.gray_sensor.lux:
+        return moduleExpression(PYTHON_MODULES.sensor.gray_sensor, "lux", [
+          valueToPython(block, "PORTS", "1")
+        ]);
+      case BLOCK_TYPES.sensor.ultrasonic_sensor.value:
+        return moduleExpression(
+          PYTHON_MODULES.sensor.ultrasonic_sensor,
+          "value",
+          [valueToPython(block, "PORTS", "1")]
+        );
+      case BLOCK_TYPES.sensor.remote_control_sensor.readAdcanceLeftOffset:
+        return moduleExpression(
+          PYTHON_MODULES.sensor.other,
+          "read_adcance_left_offset"
+        );
+      case BLOCK_TYPES.sensor.remote_control_sensor.readAdvanceRightOffset:
+        return moduleExpression(
+          PYTHON_MODULES.sensor.other,
+          "read_advance_right_offset"
+        );
+      case BLOCK_TYPES.sensor.remote_control_sensor.readRetreatLeftOffset:
+        return moduleExpression(
+          PYTHON_MODULES.sensor.other,
+          "read_retreat_left_offset"
+        );
+      case BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset:
+        return moduleExpression(
+          PYTHON_MODULES.sensor.other,
+          "read_retreat_right_offset"
+        );
+      case BLOCK_TYPES.sensor.other.timer:
+        return moduleExpression(PYTHON_MODULES.control, "timer");
+      default:
+        return null;
+    }
+  };
   function multiPortsInputToPythonArgs(block, inputName, fallback) {
     const targetBlock = getInputTargetBlock(block, inputName);
     if (!targetBlock) {
@@ -25706,28 +25863,6 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       return expressionBlockToPython(targetBlock);
     }
     return quotePythonString(pitchToDisplayName(defaultPitch));
-  }
-
-  // src/codegen/moduleCall.ts
-  var PYTHON_MODULES = {
-    motor: "_motor",
-    move: "_motor",
-    matrix: "_matrix",
-    sound: "_sound",
-    control: "_os",
-    sensor: {
-      touch_sensor: "_touch_sensor",
-      gray_sensor: "_gray_sensor",
-      ultrasonic_sensor: "_ultrasonic_sensor",
-      remote_control_sensor: "_remote_control_sensor",
-      other: "_sensor_other"
-    }
-  };
-  function moduleCall(context, module, method, args = []) {
-    const flatArgs = args.flatMap(
-      (arg) => typeof arg === "string" ? [arg] : [...arg]
-    );
-    return line(context, `${module}.${method}(${flatArgs.join(", ")})`);
   }
 
   // src/codegen/statements/control.ts
@@ -26032,18 +26167,69 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
 
   // src/codegen/statements/sensor/graySensor.ts
   var graySensorStatementGenerators = {
-    [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](_block, context) {
+    [BLOCK_TYPES.sensor.gray_sensor.setColorThresholdValue](block, context) {
       return moduleCall(
         context,
         PYTHON_MODULES.sensor.gray_sensor,
-        "one_calibrate"
+        "set_color_threshold_value",
+        [
+          valueToPython(block, "PORTS", "1"),
+          valueToPython(block, "VALUE", "1000")
+        ]
       );
+    },
+    [BLOCK_TYPES.sensor.gray_sensor.oneCalibrate](block, context) {
+      return moduleCall(
+        context,
+        PYTHON_MODULES.sensor.gray_sensor,
+        "one_calibrate",
+        [
+          valueToPython(block, "PORTS", "1"),
+          valueToPython(block, "SECONDS", "1")
+        ]
+      );
+    },
+    [BLOCK_TYPES.sensor.gray_sensor.twoCalibrate](block, context) {
+      return moduleCall(
+        context,
+        PYTHON_MODULES.sensor.gray_sensor,
+        "two_calibrate",
+        [
+          multiPortsInputToPythonArgs(block, "PORTS", "0,1"),
+          valueToPython(block, "SECONDS", "1")
+        ]
+      );
+    }
+  };
+
+  // src/codegen/statements/sensor/remoteControlSensor.ts
+  var remoteControlSensor = {
+    [BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset](block, context) {
+      return moduleCall(context, PYTHON_MODULES.motor, "mov_set_advance_offset", [
+        valueToPython(block, "LEFT_OFFSET", "0"),
+        valueToPython(block, "RIGHT_OFFSET", "0")
+      ]);
+    },
+    [BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset](block, context) {
+      return moduleCall(context, PYTHON_MODULES.motor, "mov_set_retreat_offset", [
+        valueToPython(block, "LEFT_OFFSET", "0"),
+        valueToPython(block, "RIGHT_OFFSET", "0")
+      ]);
+    }
+  };
+
+  // src/codegen/statements/sensor/otherSensor.ts
+  var otherSensor = {
+    [BLOCK_TYPES.sensor.other.resetTimer](block, context) {
+      return moduleCall(context, PYTHON_MODULES.control, "reset_timer");
     }
   };
 
   // src/codegen/statements/sensor/index.ts
   var sensorStatementGenerators = {
-    ...graySensorStatementGenerators
+    ...graySensorStatementGenerators,
+    ...remoteControlSensor,
+    ...otherSensor
     // touch_sensor / ultrasonic_sensor / remote_control_sensor / other 按子类追加
   };
 

@@ -13,15 +13,29 @@ export const PYTHON_MODULES = {
   sound: '_sound',
   control: '_os',
   sensor: {
-    touch_sensor: '_touch_sensor',
-    gray_sensor: '_gray_sensor',
-    ultrasonic_sensor: '_ultrasonic_sensor',
+    touch_sensor: '_touch',
+    gray_sensor: '_color',
+    ultrasonic_sensor: '_ultrasion',
     remote_control_sensor: '_remote_control_sensor',
-    other: '_sensor_other',
+    other: '_key',
   },
 } as const;
 
 export type ModuleCallArg = string | readonly string[];
+
+function flattenModuleCallArgs(args: readonly ModuleCallArg[]): string[] {
+  return args.flatMap(arg => (typeof arg === 'string' ? [arg] : [...arg]));
+}
+
+/** 嵌在输入槽里的模块调用（无行首缩进），如布尔 reporter */
+export function moduleExpression(
+  module: string,
+  method: string,
+  args: readonly ModuleCallArg[] = [],
+): string {
+  const flatArgs = flattenModuleCallArgs(args);
+  return `${module}.${method}(${flatArgs.join(', ')})`;
+}
 
 export function moduleCall(
   context: GenerateContext,
@@ -29,8 +43,5 @@ export function moduleCall(
   method: string,
   args: readonly ModuleCallArg[] = [],
 ): string {
-  const flatArgs = args.flatMap(arg =>
-    typeof arg === 'string' ? [arg] : [...arg],
-  );
-  return line(context, `${module}.${method}(${flatArgs.join(', ')})`);
+  return line(context, moduleExpression(module, method, args));
 }
