@@ -1,4 +1,4 @@
-import { getInputTargetBlock, indent } from '../helpers';
+import { childContext, getInputTargetBlock, line } from '../helpers';
 import type { GenerateContext, ScratchBlock } from '../types';
 import type { NestedStatementsFn, StatementChainFn } from './types';
 
@@ -10,10 +10,11 @@ export function createNestedStatementsToPython(
     inputName: string,
     context: GenerateContext,
   ): string => {
-    const inner = getInputTargetBlock(block, inputName);
-    if (!inner) {
-      return `${indent({ indent: context.indent + 1 })}pass`;
+    const inner = childContext(context);
+    const first = getInputTargetBlock(block, inputName);
+    if (!first) {
+      return line(inner, '');
     }
-    return statementChainToPython(inner, { indent: context.indent + 1 });
+    return statementChainToPython(first, inner);
   };
 }

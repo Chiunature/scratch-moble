@@ -7,7 +7,7 @@
  * - renderPythonCode：从工作区顶层积木开始，生成完整的 Python 代码字符串
  */
 import { BLOCK_TYPES } from '../blocks/blockTypes';
-import { getNextBlock, indent } from './helpers';
+import { getNextBlock, line } from './helpers';
 import { buildStatementGenerators } from './statements';
 import type {
   GenerateContext,
@@ -22,7 +22,7 @@ function blockToPython(block: ScratchBlock, context: GenerateContext): string {
   const generator = statementGenerators[block.type];
 
   if (!generator) {
-    return `${indent(context)}# TODO: unsupported block ${block.type}`;
+    return line(context, `# TODO: unsupported block ${block.type}`);
   }
 
   return generator(block, context);

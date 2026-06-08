@@ -12,6 +12,7 @@ export type GenerateContext = {
   indent: number;
 };
 
+//定义了一个函数类型，接收积木块代码和空格缩进，然后返回对应代码字符串
 export type StatementGenerator = (
   block: ScratchBlock,
   context: GenerateContext,

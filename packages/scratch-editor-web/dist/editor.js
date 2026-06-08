@@ -25482,6 +25482,15 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
   function indent(context) {
     return INDENT_TEXT.repeat(context.indent);
   }
+  function childContext(context) {
+    return { indent: context.indent + 1 };
+  }
+  function line(context, code) {
+    return `${indent(context)}${code}`;
+  }
+  function joinLines(...lines) {
+    return lines.filter(Boolean).join("\n");
+  }
   function quotePythonString(value) {
     return JSON.stringify(value);
   }
@@ -25705,7 +25714,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     move: "_motor",
     matrix: "_matrix",
     sound: "_sound",
-    control: "_control",
+    control: "_os",
     sensor: {
       touch_sensor: "_touch_sensor",
       gray_sensor: "_gray_sensor",
@@ -25715,8 +25724,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     }
   };
   function moduleCall(context, module, method, args = []) {
-    const flatArgs = args.flatMap((arg) => typeof arg === "string" ? [arg] : [...arg]);
-    return `${indent(context)}${module}.${method}(${flatArgs.join(", ")})`;
+    const flatArgs = args.flatMap(
+      (arg) => typeof arg === "string" ? [arg] : [...arg]
+    );
+    return line(context, `${module}.${method}(${flatArgs.join(", ")})`);
   }
 
   // src/codegen/statements/control.ts
@@ -25729,17 +25740,62 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       },
       [BLOCK_TYPES.control.wait](block, context) {
         const cond = valueToPython(block, "CONDITION", "False");
-        return `${indent(context)}while not (${cond}):
-${indent({ indent: context.indent + 1 })}pass`;
+        const inner = childContext(context);
+        return joinLines(
+          line(context, `while not (${cond}):`),
+          line(inner, "_os.sleep_s(0.001)")
+        );
       },
       [BLOCK_TYPES.control.break](_block, context) {
-        return `${indent(context)}break`;
+        return line(context, "break");
       },
       [BLOCK_TYPES.control.whileTimes](block, context) {
         const times = valueToPython(block, "TIMES", "10");
         const body = nestedStatementsToPython(block, "SUBSTACK", context);
-        return `${indent(context)}for _ in range(int(${times})):
-${body}`;
+        const inner = childContext(context);
+        return joinLines(
+          line(context, `for count in range(${times}):`),
+          body,
+          line(inner, "_os.sleep_s(0.001)")
+        );
+      },
+      [BLOCK_TYPES.control.while](block, context) {
+        const body = nestedStatementsToPython(block, "SUBSTACK", context);
+        const inner = childContext(context);
+        return joinLines(
+          line(context, "while True:"),
+          body,
+          line(inner, "_os.sleep_s(0.001)")
+        );
+      },
+      [BLOCK_TYPES.control.if](block, context) {
+        const cond = valueToPython(block, "CONDITION", "False");
+        const body = nestedStatementsToPython(block, "SUBSTACK", context);
+        return joinLines(line(context, `if ${cond}:`), body);
+      },
+      [BLOCK_TYPES.control.ifElse](block, context) {
+        const cond = valueToPython(block, "CONDITION", "False");
+        const body = nestedStatementsToPython(block, "SUBSTACK", context);
+        const body2 = nestedStatementsToPython(block, "SUBSTACK2", context);
+        return joinLines(
+          line(context, `if ${cond}:`),
+          body,
+          line(context, `else:`),
+          body2
+        );
+      },
+      [BLOCK_TYPES.control.whileDo](block, context) {
+        const cond = valueToPython(block, "CONDITION", "False");
+        const body = nestedStatementsToPython(block, "SUBSTACK", context);
+        const inner = childContext(context);
+        return joinLines(
+          line(context, `while not (${cond}):`),
+          body,
+          line(inner, "_os.sleep_s(0.001)")
+        );
+      },
+      [BLOCK_TYPES.control.stopExit](_block, context) {
+        return moduleCall(context, PYTHON_MODULES.control, "stop_exit");
       }
     };
   }
@@ -25749,61 +25805,61 @@ ${body}`;
     data_setvariableto(block, context) {
       const name2 = variableFieldToPython(block, "VARIABLE");
       const value = valueToPython(block, "VALUE", "0");
-      return `${indent(context)}${name2} = ${value}`;
+      return line(context, `${name2} = ${value}`);
     },
     data_changevariableby(block, context) {
       const name2 = variableFieldToPython(block, "VARIABLE");
       const delta = valueToPython(block, "VALUE", "1");
-      return `${indent(context)}${name2} = ${name2} + (${delta})`;
+      return line(context, `${name2} = ${name2} + (${delta})`);
     },
     data_showvariable(block, context) {
       const name2 = variableFieldToPython(block, "VARIABLE");
-      return `${indent(context)}# show variable ${name2}`;
+      return line(context, `# show variable ${name2}`);
     },
     data_hidevariable(block, context) {
       const name2 = variableFieldToPython(block, "VARIABLE");
-      return `${indent(context)}# hide variable ${name2}`;
+      return line(context, `# hide variable ${name2}`);
     },
     data_addtolist(block, context) {
       const lst = variableFieldToPython(block, "LIST");
       const item = valueToPython(block, "ITEM", "None");
-      return `${indent(context)}${lst}.append(${item})`;
+      return line(context, `${lst}.append(${item})`);
     },
     data_deleteoflist(block, context) {
       const lst = variableFieldToPython(block, "LIST");
       const index = valueToPython(block, "INDEX", "1");
-      return `${indent(context)}del ${lst}[int(${index}) - 1]`;
+      return line(context, `del ${lst}[int(${index}) - 1]`);
     },
     data_deletealloflist(block, context) {
       const lst = variableFieldToPython(block, "LIST");
-      return `${indent(context)}${lst}.clear()`;
+      return line(context, `${lst}.clear()`);
     },
     data_insertatlist(block, context) {
       const lst = variableFieldToPython(block, "LIST");
       const index = valueToPython(block, "INDEX", "1");
       const item = valueToPython(block, "ITEM", "None");
-      return `${indent(context)}${lst}.insert(int(${index}) - 1, ${item})`;
+      return line(context, `${lst}.insert(int(${index}) - 1, ${item})`);
     },
     data_replaceitemoflist(block, context) {
       const lst = variableFieldToPython(block, "LIST");
       const index = valueToPython(block, "INDEX", "1");
       const item = valueToPython(block, "ITEM", "None");
-      return `${indent(context)}${lst}[int(${index}) - 1] = ${item}`;
+      return line(context, `${lst}[int(${index}) - 1] = ${item}`);
     },
     data_showlist(block, context) {
       const name2 = variableFieldToPython(block, "LIST");
-      return `${indent(context)}# show list ${name2}`;
+      return line(context, `# show list ${name2}`);
     },
     data_hidelist(block, context) {
       const name2 = variableFieldToPython(block, "LIST");
-      return `${indent(context)}# hide list ${name2}`;
+      return line(context, `# hide list ${name2}`);
     }
   };
 
   // src/codegen/statements/event.ts
   var eventStatementGenerators = {
     [BLOCK_TYPES.event.whenFlagClicked](_block, context) {
-      return `${indent(context)}# \u5F53\u5F00\u59CB\u8FD0\u884C`;
+      return line(context, "# \u5F53\u5F00\u59CB\u8FD0\u884C");
     }
   };
 
@@ -25926,11 +25982,12 @@ ${body}`;
   // src/codegen/statements/nested.ts
   function createNestedStatementsToPython(statementChainToPython2) {
     return (block, inputName, context) => {
-      const inner = getInputTargetBlock(block, inputName);
-      if (!inner) {
-        return `${indent({ indent: context.indent + 1 })}pass`;
+      const inner = childContext(context);
+      const first = getInputTargetBlock(block, inputName);
+      if (!first) {
+        return line(inner, "");
       }
-      return statementChainToPython2(inner, { indent: context.indent + 1 });
+      return statementChainToPython2(first, inner);
     };
   }
 
@@ -25958,17 +26015,17 @@ ${body}`;
       procedures_call(block, context) {
         const fn2 = procCodeToPythonIdentifier(getProcCodeFromBlock(block));
         const args = procedureCallArgsToPython(block);
-        return `${indent(context)}${fn2}(${args})`;
+        return line(context, `${fn2}(${args})`);
       },
       procedures_definition(block, context) {
         const proto = getInputTargetBlock(block, "custom_block");
         const fn2 = procCodeToPythonIdentifier(
           proto ? getProcCodeFromBlock(proto) : ""
         );
+        const inner = childContext(context);
         const next = getNextBlock(block);
-        const body = next ? statementChainToPython2(next, { indent: context.indent + 1 }) : `${indent({ indent: context.indent + 1 })}pass`;
-        return `${indent(context)}def ${fn2}():
-${body}`;
+        const body = next ? statementChainToPython2(next, inner) : line(inner, "pass");
+        return joinLines(line(context, `def ${fn2}():`), body);
       }
     };
   }
@@ -26024,7 +26081,7 @@ ${body}`;
   function blockToPython(block, context) {
     const generator = statementGenerators[block.type];
     if (!generator) {
-      return `${indent(context)}# TODO: unsupported block ${block.type}`;
+      return line(context, `# TODO: unsupported block ${block.type}`);
     }
     return generator(block, context);
   }

@@ -1,5 +1,11 @@
 import { valueToPython } from '../expressions';
-import { getInputTargetBlock, getNextBlock, indent } from '../helpers';
+import {
+  childContext,
+  getInputTargetBlock,
+  getNextBlock,
+  joinLines,
+  line,
+} from '../helpers';
 import type { ScratchBlock, StatementGenerator } from '../types';
 import type { StatementChainFn } from './types';
 
@@ -39,18 +45,19 @@ export function createProcedureStatementGenerators(
     procedures_call(block, context) {
       const fn = procCodeToPythonIdentifier(getProcCodeFromBlock(block));
       const args = procedureCallArgsToPython(block);
-      return `${indent(context)}${fn}(${args})`;
+      return line(context, `${fn}(${args})`);
     },
     procedures_definition(block, context) {
       const proto = getInputTargetBlock(block, 'custom_block');
       const fn = procCodeToPythonIdentifier(
         proto ? getProcCodeFromBlock(proto) : '',
       );
+      const inner = childContext(context);
       const next = getNextBlock(block);
       const body = next
-        ? statementChainToPython(next, { indent: context.indent + 1 })
-        : `${indent({ indent: context.indent + 1 })}pass`;
-      return `${indent(context)}def ${fn}():\n${body}`;
+        ? statementChainToPython(next, inner)
+        : line(inner, 'pass');
+      return joinLines(line(context, `def ${fn}():`), body);
     },
   };
 }

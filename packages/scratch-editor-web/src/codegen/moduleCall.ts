@@ -1,4 +1,4 @@
-import { indent } from './helpers';
+import { line } from './helpers';
 import type { GenerateContext } from './types';
 
 /**
@@ -11,7 +11,7 @@ export const PYTHON_MODULES = {
   move: '_motor',
   matrix: '_matrix',
   sound: '_sound',
-  control: '_control',
+  control: '_os',
   sensor: {
     touch_sensor: '_touch_sensor',
     gray_sensor: '_gray_sensor',
@@ -29,6 +29,8 @@ export function moduleCall(
   method: string,
   args: readonly ModuleCallArg[] = [],
 ): string {
-  const flatArgs = args.flatMap(arg => (typeof arg === 'string' ? [arg] : [...arg]));
-  return `${indent(context)}${module}.${method}(${flatArgs.join(', ')})`;
+  const flatArgs = args.flatMap(arg =>
+    typeof arg === 'string' ? [arg] : [...arg],
+  );
+  return line(context, `${module}.${method}(${flatArgs.join(', ')})`);
 }
