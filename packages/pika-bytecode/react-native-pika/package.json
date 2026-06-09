@@ -1,0 +1,18 @@
+{
+  "name": "react-native-pika",
+  "version": "0.1.0",
+  "description": "React Native bindings for the PikaScript mobile runtime.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "react-native": "src/index.ts",
+  "files": [
+    "android",
+    "ios",
+    "src",
+    "react-native-pika.podspec"
+  ],
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}

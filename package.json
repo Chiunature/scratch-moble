@@ -5,7 +5,8 @@
   "packageManager": "yarn@1.22.22",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "packages/pika-bytecode/react-native-pika"
   ],
   "scripts": {
     "android": "yarn editor:web:sync && yarn workspace @scratch-mobile/mobile android",

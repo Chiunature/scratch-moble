@@ -1,5 +1,12 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, Image, View, Text } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  Image,
+  ScrollView,
+  View,
+  Text,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -24,9 +31,39 @@ import {
   resetInjectEditorMessageDedup,
   VariablePromptOverlay,
 } from '../../features/editor';
-import { styles } from './EditorScreen.styles';
+import {
+  compileGeneratedCode,
+  runCompiledBytecode,
+  runGeneratedCode,
+} from '../../services/pika';
+import { styles, pikaActionStyles } from './EditorScreen.styles';
 import HomeIcon from '../../../assets/editorScreen/home.png';
 import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
+
+type PikaActionState = 'idle' | 'compiling' | 'running';
+
+function formatPikaStatus(
+  action: PikaActionState,
+  feedback: 'compile' | 'run' | 'idle',
+  message: string,
+  bytecodeSize: number | null,
+  hexPreview: string,
+): string {
+  if (action === 'compiling') {
+    return '正在编译…';
+  }
+  if (action === 'running') {
+    return '正在运行…';
+  }
+  if (feedback === 'run' || feedback === 'idle') {
+    return message || '等待编译';
+  }
+  if (bytecodeSize != null && bytecodeSize > 0) {
+    const preview = hexPreview ? `，前缀 ${hexPreview}` : '';
+    return `编译成功：${bytecodeSize} 字节${preview}`;
+  }
+  return message || '等待编译';
+}
 
 function parseEditorOutMessage(raw: string): EditorOutMessage | null {
   try {
@@ -40,6 +77,7 @@ export function EditorScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const webViewRef = useRef<WebView>(null);
+  const lastCodeRef = useRef({ code: '', blockCount: 0 });
   //存储当前激活的数字滑块会话
   const [rnSliderSession, setRnSliderSession] =
     useState<RnNumberSliderOpenMessage | null>(null);
@@ -59,7 +97,26 @@ export function EditorScreen() {
   const [blockCount, setBlockCount] = useState(0);
   //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
-  const lastCodeRef = useRef({ code: '', blockCount: 0 });
+  const [pikaAction, setPikaAction] = useState<PikaActionState>('idle');
+  const [pikaStatusMessage, setPikaStatusMessage] = useState('等待编译');
+  const [pikaStatusKind, setPikaStatusKind] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
+  const [bytecodePath, setBytecodePath] = useState<string | null>(null);
+  const [bytecodeSize, setBytecodeSize] = useState<number | null>(null);
+  const [bytecodeHexPreview, setBytecodeHexPreview] = useState('');
+  const [pikaFeedback, setPikaFeedback] = useState<'compile' | 'run' | 'idle'>(
+    'idle',
+  );
+
+  useEffect(() => {
+    setBytecodePath(null);
+    setBytecodeSize(null);
+    setBytecodeHexPreview('');
+    setPikaStatusKind('idle');
+    setPikaStatusMessage('代码已更新，请重新编译');
+    setPikaFeedback('idle');
+  }, [generatedCode]);
 
   //处理WebView发送的消息
   const handleEditorMessage = useCallback((message: EditorOutMessage) => {
@@ -162,6 +219,93 @@ export function EditorScreen() {
       setBlockCount(0);
     },
     [handleEditorMessage],
+  );
+
+  const handleCompile = useCallback(async () => {
+    setPikaAction('compiling');
+    setPikaStatusKind('idle');
+    setPikaStatusMessage('正在编译…');
+    try {
+      const outcome = await compileGeneratedCode(generatedCode);
+      setPikaStatusKind(outcome.ok ? 'success' : 'error');
+      setPikaStatusMessage(outcome.message);
+      setBytecodePath(outcome.bytecodePath);
+      setBytecodeSize(outcome.ok ? outcome.bytecodeSize : null);
+      setBytecodeHexPreview(outcome.ok ? outcome.hexPreview : '');
+      setPikaFeedback(outcome.ok ? 'compile' : 'idle');
+    } catch (error) {
+      setPikaStatusKind('error');
+      setPikaStatusMessage(
+        error instanceof Error ? error.message : '编译失败',
+      );
+      setBytecodePath(null);
+      setBytecodeSize(null);
+      setBytecodeHexPreview('');
+      setPikaFeedback('idle');
+    } finally {
+      setPikaAction('idle');
+    }
+  }, [generatedCode]);
+
+  const handleRunSource = useCallback(async () => {
+    setPikaAction('running');
+    setPikaStatusKind('idle');
+    setPikaStatusMessage('正在运行源码…');
+    setPikaFeedback('run');
+    try {
+      const outcome = await runGeneratedCode(generatedCode);
+      setPikaStatusKind(outcome.ok ? 'success' : 'error');
+      setPikaStatusMessage(
+        outcome.ok
+          ? '源码运行完成（print 输出见终端 logcat）'
+          : outcome.message,
+      );
+    } catch (error) {
+      setPikaStatusKind('error');
+      setPikaStatusMessage(
+        error instanceof Error ? error.message : '运行失败',
+      );
+    } finally {
+      setPikaAction('idle');
+    }
+  }, [generatedCode]);
+
+  const handleRunBytecode = useCallback(async () => {
+    if (!bytecodePath) {
+      setPikaStatusKind('error');
+      setPikaStatusMessage('请先编译生成字节码');
+      return;
+    }
+
+    setPikaAction('running');
+    setPikaStatusKind('idle');
+    setPikaStatusMessage('正在运行字节码…');
+    setPikaFeedback('run');
+    try {
+      const outcome = await runCompiledBytecode(bytecodePath);
+      setPikaStatusKind(outcome.ok ? 'success' : 'error');
+      setPikaStatusMessage(
+        outcome.ok
+          ? '字节码运行完成（print 输出见终端 logcat）'
+          : outcome.message,
+      );
+    } catch (error) {
+      setPikaStatusKind('error');
+      setPikaStatusMessage(
+        error instanceof Error ? error.message : '运行失败',
+      );
+    } finally {
+      setPikaAction('idle');
+    }
+  }, [bytecodePath]);
+
+  const isPikaBusy = pikaAction !== 'idle';
+  const statusText = formatPikaStatus(
+    pikaAction,
+    pikaFeedback,
+    pikaStatusMessage,
+    bytecodeSize,
+    bytecodeHexPreview,
   );
 
   return (
@@ -313,9 +457,66 @@ export function EditorScreen() {
         />
         {isCodePanelOpen && (
           <View style={styles.codePanel}>
-            <Text style={styles.codeTitle}>RN 收到的生成代码</Text>
+            <Text style={styles.codeTitle}>生成代码</Text>
             <Text style={styles.meta}>积木数量：{blockCount}</Text>
-            <Text style={styles.code}>{generatedCode}</Text>
+            <View style={pikaActionStyles.actionRow}>
+              <Pressable
+                style={[
+                  pikaActionStyles.actionButton,
+                  isPikaBusy && pikaActionStyles.actionButtonDisabled,
+                ]}
+                disabled={isPikaBusy}
+                onPress={handleCompile}
+                accessibilityRole="button"
+                accessibilityLabel="编译 Python 字节码"
+              >
+                {pikaAction === 'compiling' ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={pikaActionStyles.actionButtonText}>编译</Text>
+                )}
+              </Pressable>
+              <Pressable
+                style={[
+                  pikaActionStyles.actionButton,
+                  pikaActionStyles.actionButtonSecondary,
+                  isPikaBusy && pikaActionStyles.actionButtonDisabled,
+                ]}
+                disabled={isPikaBusy}
+                onPress={handleRunSource}
+                accessibilityRole="button"
+                accessibilityLabel="本地运行源码"
+              >
+                <Text style={pikaActionStyles.actionButtonText}>运行源码</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              style={[
+                pikaActionStyles.actionButton,
+                (!bytecodePath || isPikaBusy) &&
+                  pikaActionStyles.actionButtonDisabled,
+              ]}
+              disabled={!bytecodePath || isPikaBusy}
+              onPress={handleRunBytecode}
+              accessibilityRole="button"
+              accessibilityLabel="本地运行字节码"
+            >
+              <Text style={pikaActionStyles.actionButtonText}>运行字节码</Text>
+            </Pressable>
+            <Text
+              style={[
+                pikaActionStyles.statusText,
+                pikaStatusKind === 'error' && pikaActionStyles.statusError,
+                pikaStatusKind === 'success' && pikaActionStyles.statusSuccess,
+              ]}
+            >
+              {statusText}
+            </Text>
+            <ScrollView style={styles.codeScroll} nestedScrollEnabled>
+              <Text style={styles.code} selectable>
+                {generatedCode}
+              </Text>
+            </ScrollView>
           </View>
         )}
       </View>

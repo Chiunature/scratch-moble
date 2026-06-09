@@ -56,4 +56,5 @@ yarn typecheck
 ```
 
 模块边界规则见 `docs/module-boundary.md`。
-scratch 的积木块更改规则见 `docs/scratch-blocks-guide.md`
+scratch 的积木块更改规则见 `docs/scratch-blocks-guide.md`。
+PikaScript 编译与本地运行（轨道 A）见 `docs/pika-runtime.md`。

@@ -74,6 +74,9 @@ packages/scratch-editor-web/dist/
 apps/mobile/src/features/editor/generated/*
 !apps/mobile/src/features/editor/generated/README.md
 
+# PikaScript bytecode (generated at runtime)
+*.py.o
+
 # Yarn
 .yarn/*
 !.yarn/patches
