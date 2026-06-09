@@ -25597,11 +25597,11 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       )} / ${inputExpressionToPython(block, "NUM2", "1")})`;
     }
     if (block.type === "operator_random") {
-      return `random.randint(int(${inputExpressionToPython(
+      return `_random.randint(${inputExpressionToPython(
         block,
         "FROM",
         "1"
-      )}), int(${inputExpressionToPython(block, "TO", "10")}))`;
+      )}, ${inputExpressionToPython(block, "TO", "10")})`;
     }
     if (block.type === "operator_mod") {
       return `(${inputExpressionToPython(
@@ -25618,33 +25618,33 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       const num = inputExpressionToPython(block, "NUM", "0");
       switch (op) {
         case "abs":
-          return `abs(${num})`;
+          return `_math.abs(${num})`;
         case "floor":
-          return `math.floor(${num})`;
+          return `_math.floor(${num})`;
         case "ceiling":
-          return `math.ceil(${num})`;
+          return `_math.ceil(${num})`;
         case "sqrt":
-          return `math.sqrt(${num})`;
+          return `_math.sqrt(${num})`;
         case "sin":
-          return `math.sin(math.radians(${num}))`;
+          return `_math.sin(_math.radians(${num}))`;
         case "cos":
-          return `math.cos(math.radians(${num}))`;
+          return `_math.cos(_math.radians(${num}))`;
         case "tan":
-          return `math.tan(math.radians(${num}))`;
+          return `_math.tan(_math.radians(${num}))`;
         case "asin":
-          return `math.degrees(math.asin(${num}))`;
+          return `_math.degrees(_math.asin(${num}))`;
         case "acos":
-          return `math.degrees(math.acos(${num}))`;
+          return `_math.degrees(_math.acos(${num}))`;
         case "atan":
-          return `math.degrees(math.atan(${num}))`;
+          return `_math.degrees(_math.atan(${num}))`;
         case "ln":
-          return `math.log(${num})`;
+          return `_math.log(${num})`;
         case "log":
-          return `math.log10(${num})`;
+          return `_math.log10(${num})`;
         case "e ^":
-          return `math.exp(${num})`;
+          return `_math.exp(${num})`;
         case "10 ^":
-          return `(10 ** ${num})`;
+          return `(_math.pow(10, ${num}))`;
         default:
           return `None  # TODO: unsupported mathop ${op}`;
       }
@@ -25685,7 +25685,7 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
       )} or ${inputExpressionToPython(block, "OPERAND2", "False")})`;
     }
     if (block.type === "operator_not") {
-      return `(not ${inputExpressionToPython(block, "OPERAND", "False")})`;
+      return `not (${inputExpressionToPython(block, "OPERAND", "False")})`;
     }
     if (block.type === "operator_join") {
       return `str(${inputExpressionToPython(
@@ -25697,10 +25697,10 @@ def ${E4.FUNCTION_NAME_PLACEHOLDER_}(text):
     if (block.type === "operator_letter_of") {
       const index = inputExpressionToPython(block, "LETTER", "1");
       const text = inputExpressionToPython(block, "STRING", "''");
-      return `(str(${text})[max(0, int(${index}) - 1)] if str(${text}) else '')`;
+      return `(str(${text})[int(${index}) - 1])`;
     }
     if (block.type === "operator_length") {
-      return `len(str(${inputExpressionToPython(block, "STRING", "''")}))`;
+      return `len(${inputExpressionToPython(block, "STRING", "''")})`;
     }
     if (block.type === "operator_contains") {
       const haystack = inputExpressionToPython(block, "STRING1", "''");
