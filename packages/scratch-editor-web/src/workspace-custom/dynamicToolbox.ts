@@ -69,9 +69,30 @@ const PROCEDURE_BLOCK_TYPES = new Set([
   'procedures_prototype',
 ]);
 
+/** 移动端不展示舞台监视器相关积木，仅从变量飞栏隐藏。 */
+const HIDDEN_VARIABLE_FLYOUT_BLOCK_TYPES = new Set([
+  'data_showvariable',
+  'data_hidevariable',
+  'data_showlist',
+  'data_hidelist',
+]);
+
+function filterVariableFlyoutContents(contents: Element[]): Element[] {
+  return contents.filter(element => {
+    if (element.tagName.toLowerCase() !== 'block') {
+      return true;
+    }
+    const blockType = element.getAttribute('type');
+    return !blockType || !HIDDEN_VARIABLE_FLYOUT_BLOCK_TYPES.has(blockType);
+  });
+}
+
 type SerializedBlockState = {
   type?: string;
-  inputs?: Record<string, { block?: SerializedBlockState; shadow?: SerializedBlockState }>;
+  inputs?: Record<
+    string,
+    { block?: SerializedBlockState; shadow?: SerializedBlockState }
+  >;
   next?: { block?: SerializedBlockState; shadow?: SerializedBlockState };
 };
 
@@ -167,7 +188,10 @@ export function setupDynamicToolboxCategories(workspace: Workspace): void {
 
   workspace.registerToolboxCategoryCallback(
     ScratchBlocks.VARIABLE_CATEGORY_NAME,
-    ws => ScratchBlocks.ScratchVariables.getVariablesCategory(ws),
+    ws =>
+      filterVariableFlyoutContents(
+        ScratchBlocks.ScratchVariables.getVariablesCategory(ws),
+      ),
   );
   workspace.registerToolboxCategoryCallback(
     ScratchBlocks.PROCEDURE_CATEGORY_NAME,

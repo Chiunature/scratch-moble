@@ -15,7 +15,16 @@ apps/mobile              React Native 主应用
 packages/core           纯 TypeScript 核心逻辑
 packages/protocol       纯 TypeScript 硬件协议逻辑
 packages/shared         共享类型、常量和 schema
+packages/scratch-editor-web   WebView 内嵌 Scratch 编辑器（esbuild 打包）
 ```
+
+编辑器网页 bundle 不入库，克隆后需先生成：
+
+```sh
+yarn editor:web
+```
+
+该命令会构建 `packages/scratch-editor-web` 并同步到 `apps/mobile/src/features/editor/generated/`。修改编辑器或积木逻辑后请重新执行；`yarn android` / `yarn ios` 也会在启动前自动 sync。
 
 ## 运行
 
@@ -41,6 +50,7 @@ yarn android
 
 ```sh
 yarn lint
+yarn editor:web
 yarn test
 yarn typecheck
 ```

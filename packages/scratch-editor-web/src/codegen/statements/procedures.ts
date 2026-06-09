@@ -6,25 +6,19 @@ import {
   joinLines,
   line,
 } from '../helpers';
+import {
+  procedureParamNamesFromProcCode,
+  procedureParamNamesFromProto,
+  resolveProcedurePythonName,
+} from '../procedureNames';
+import { prependGlobalDeclaration } from '../workspaceVariables';
 import type { ScratchBlock, StatementGenerator } from '../types';
 import type { StatementChainFn } from './types';
 
 type BlockWithProcCode = ScratchBlock & { getProcCode?: () => string };
 
-function procCodeToPythonIdentifier(procCode: string): string {
-  const base = procCode
-    .replace(/%[nsb]/gi, '')
-    .trim()
-    .replace(/\s+/g, '_')
-    .replace(/[^\w]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-  return base && /^[A-Za-z_]/.test(base) ? base : `proc_${base || 'block'}`;
-}
-
 function getProcCodeFromBlock(block: ScratchBlock): string {
-  const procCode = (block as BlockWithProcCode).getProcCode?.();
-  return procCode ?? '';
+  return (block as BlockWithProcCode).getProcCode?.() ?? '';
 }
 
 function procedureCallArgsToPython(block: ScratchBlock): string {
@@ -43,21 +37,34 @@ export function createProcedureStatementGenerators(
 ): Record<string, StatementGenerator> {
   return {
     procedures_call(block, context) {
-      const fn = procCodeToPythonIdentifier(getProcCodeFromBlock(block));
+      const procCode = getProcCodeFromBlock(block);
+      const fn = resolveProcedurePythonName(procCode, context.procedureNames);
       const args = procedureCallArgsToPython(block);
       return line(context, `${fn}(${args})`);
     },
     procedures_definition(block, context) {
       const proto = getInputTargetBlock(block, 'custom_block');
-      const fn = procCodeToPythonIdentifier(
-        proto ? getProcCodeFromBlock(proto) : '',
-      );
-      const inner = childContext(context);
+      const procCode = proto ? getProcCodeFromBlock(proto) : '';
+      const fn = resolveProcedurePythonName(procCode, context.procedureNames);
+      const inner = childContext({
+        ...context,
+        currentProcedureProcCode: procCode,
+      });
       const next = getNextBlock(block);
-      const body = next
-        ? statementChainToPython(next, inner)
-        : line(inner, 'pass');
-      return joinLines(line(context, `def ${fn}():`), body);
+      const body = prependGlobalDeclaration(
+        next ? statementChainToPython(next, inner) : line(inner, 'pass'),
+        inner,
+      );
+      const params =
+        context.procedureArguments?.get(procCode)?.paramNames ??
+        (proto
+          ? procedureParamNamesFromProto(
+              proto as ScratchBlock & { displayNames_?: string[] },
+            )
+          : procedureParamNamesFromProcCode(procCode));
+      const signature =
+        params.length > 0 ? `def ${fn}(${params.join(', ')}):` : `def ${fn}():`;
+      return joinLines(line(context, signature), body);
     },
   };
 }

@@ -13,8 +13,11 @@ import { moduleExpression, PYTHON_MODULES } from './moduleCall';
 import {
   getFieldValue,
   getInputTargetBlock,
+  getVariableFieldDisplayName,
   quotePythonString,
 } from './helpers';
+import { argumentReporterToPython } from './procedureNames';
+import { displayNameToPythonIdentifier } from './pythonIdentifier';
 import type { ScratchBlock } from './types';
 
 const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
@@ -206,6 +209,13 @@ export function expressionBlockToPython(block: ScratchBlock): string {
     return `(str(${needle}) in str(${haystack}))`;
   }
 
+  if (
+    block.type === 'argument_reporter_boolean' ||
+    block.type === 'argument_reporter_string_number'
+  ) {
+    return argumentReporterToPython(block) ?? 'None';
+  }
+
   if (block.type === 'data_variable') {
     return variableFieldToPython(block, 'VARIABLE');
   }
@@ -215,20 +225,21 @@ export function expressionBlockToPython(block: ScratchBlock): string {
   if (block.type === 'data_itemoflist') {
     const lst = variableFieldToPython(block, 'LIST');
     const index = valueToPython(block, 'INDEX', '1');
-    return `${lst}[int(${index}) - 1]`;
+    return `${lst}[${index}]`;
   }
   if (block.type === 'data_lengthoflist') {
-    return `len(${variableFieldToPython(block, 'LIST')})`;
+    const lst = variableFieldToPython(block, 'LIST');
+    return `${lst}.num()`;
   }
   if (block.type === 'data_listcontainsitem') {
     const lst = variableFieldToPython(block, 'LIST');
     const item = valueToPython(block, 'ITEM', 'None');
-    return `(${item} in ${lst})`;
+    return `(${lst}.list_if_data(${item}))`;
   }
   if (block.type === 'data_itemnumoflist') {
     const lst = variableFieldToPython(block, 'LIST');
     const item = valueToPython(block, 'ITEM', 'None');
-    return `(${lst}.index(${item}) + 1 if ${item} in ${lst} else 0)`;
+    return `(${lst}.dataToindex(${item}))`;
   }
 
   const sensorBoolean = sensorBooleanReporterToPython(block);
@@ -378,13 +389,11 @@ export function variableFieldToPython(
   block: ScratchBlock,
   fieldName: string,
 ): string {
-  const name = getFieldValue(block, fieldName);
+  const name = getVariableFieldDisplayName(block, fieldName);
   if (!name) {
     return 'unnamed_var';
   }
-  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
-    ? name
-    : `_${name.replace(/\W/g, '_')}`;
+  return displayNameToPythonIdentifier(name);
 }
 
 /** play_music 第一参：统一输出带引号的音名字符串（非 pitch 整数）。 */

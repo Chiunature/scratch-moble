@@ -5875,6 +5875,11 @@ picomatch@^4.0.4:
   resolved "https://registry.npmmirror.com/picomatch/-/picomatch-4.0.4.tgz"
   integrity sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==
 
+pinyin-pro@^3.26.0:
+  version "3.28.1"
+  resolved "https://registry.yarnpkg.com/pinyin-pro/-/pinyin-pro-3.28.1.tgz#dbc54ee79ab2d3025722322712f2be5b65444707"
+  integrity sha512-oqz8ulwRgtUXRi0vbqEfGNly19zpyCxYrjhkk5TibGcgSW6eNwS5woajCXRwqURi8Ehc2yOFTiB4uNoZ+NJOnA==
+
 pirates@^4.0.4:
   version "4.0.7"
   resolved "https://registry.npmmirror.com/pirates/-/pirates-4.0.7.tgz"

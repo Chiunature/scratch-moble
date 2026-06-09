@@ -15,9 +15,9 @@ export function indent(context: GenerateContext): string {
   return INDENT_TEXT.repeat(context.indent); //对空格字符串进行重复的次数
 }
 
-/** 当前层的子层（循环体、函数体等） */
+/** 当前层的子层（循环体、函数体等）；继承 globalNames / procedureNames 等上下文。 */
 export function childContext(context: GenerateContext): GenerateContext {
-  return { indent: context.indent + 1 };
+  return { ...context, indent: context.indent + 1 };
 }
 
 /** 在指定层级生成一行 Python（缩进 + 代码） */
@@ -52,4 +52,33 @@ export function getFieldValue(
 ): string | null {
   const value = block.getFieldValue?.(fieldName);
   return value == null ? null : String(value);
+}
+
+/**
+ * VARIABLE / LIST 字段的 getFieldValue 返回 Blockly 内部 variable id，
+ * 代码生成需要用户可见的变量名。
+ */
+export function getVariableFieldDisplayName(
+  block: ScratchBlock,
+  fieldName: string,
+): string | null {
+  type BlocklyField = { getText?: () => string };
+  const displayName = (
+    block as ScratchBlock & {
+      getField?: (name: string) => BlocklyField | null;
+    }
+  )
+    .getField?.(fieldName)
+    ?.getText?.();
+  if (displayName) {
+    return displayName;
+  }
+
+  const variableId = getFieldValue(block, fieldName);
+  if (!variableId) {
+    return null;
+  }
+
+  const variable = block.workspace?.getVariableById?.(variableId);
+  return variable?.getName?.() ?? variableId;
 }

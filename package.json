@@ -8,8 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "android": "yarn workspace @scratch-mobile/mobile android",
-    "ios": "yarn workspace @scratch-mobile/mobile ios",
+    "android": "yarn editor:web:sync && yarn workspace @scratch-mobile/mobile android",
+    "ios": "yarn editor:web:sync && yarn workspace @scratch-mobile/mobile ios",
     "start": "yarn workspace @scratch-mobile/mobile start",
     "usb": "adb reverse tcp:8081 tcp:8081 && yarn start --reset-cache",
     "editor:web:build": "yarn workspace @scratch-mobile/scratch-editor-web build",
@@ -20,7 +20,8 @@
     "logs:mobile:reset": "adb logcat -c && adb logcat -v time ReactNativeJS:I chromium:E *:S",
     "lint": "eslint . --ext .js,.ts,.tsx",
     "test": "jest",
-    "typecheck": "yarn typecheck:shared && yarn typecheck:core && yarn typecheck:protocol && yarn typecheck:mobile",
+    "typecheck": "yarn typecheck:shared && yarn typecheck:core && yarn typecheck:protocol && yarn typecheck:editor-web && yarn editor:web:sync && yarn typecheck:mobile",
+    "typecheck:editor-web": "tsc -p packages/scratch-editor-web/tsconfig.codegen.json --noEmit",
     "typecheck:core": "tsc -p packages/core/tsconfig.json --noEmit",
     "typecheck:mobile": "tsc -p apps/mobile/tsconfig.json --noEmit",
     "typecheck:protocol": "tsc -p packages/protocol/tsconfig.json --noEmit",

@@ -69,6 +69,11 @@ yarn-error.log
 # TypeScript
 *.tsbuildinfo
 
+# Editor web build outputs (regenerate with `yarn editor:web`)
+packages/scratch-editor-web/dist/
+apps/mobile/src/features/editor/generated/*
+!apps/mobile/src/features/editor/generated/README.md
+
 # Yarn
 .yarn/*
 !.yarn/patches

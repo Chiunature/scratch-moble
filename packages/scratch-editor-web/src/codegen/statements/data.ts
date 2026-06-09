@@ -11,7 +11,7 @@ export const dataStatementGenerators: Record<string, StatementGenerator> = {
   data_changevariableby(block, context) {
     const name = variableFieldToPython(block, 'VARIABLE');
     const delta = valueToPython(block, 'VALUE', '1');
-    return line(context, `${name} = ${name} + (${delta})`);
+    return line(context, `${name} += ${delta}`);
   },
   data_showvariable(block, context) {
     const name = variableFieldToPython(block, 'VARIABLE');
@@ -29,23 +29,23 @@ export const dataStatementGenerators: Record<string, StatementGenerator> = {
   data_deleteoflist(block, context) {
     const lst = variableFieldToPython(block, 'LIST');
     const index = valueToPython(block, 'INDEX', '1');
-    return line(context, `del ${lst}[int(${index}) - 1]`);
+    return line(context, `${lst}.remove_index(${index})`);
   },
   data_deletealloflist(block, context) {
     const lst = variableFieldToPython(block, 'LIST');
-    return line(context, `${lst}.clear()`);
+    return line(context, `${lst}.remove_all()`);
   },
   data_insertatlist(block, context) {
     const lst = variableFieldToPython(block, 'LIST');
     const index = valueToPython(block, 'INDEX', '1');
     const item = valueToPython(block, 'ITEM', 'None');
-    return line(context, `${lst}.insert(int(${index}) - 1, ${item})`);
+    return line(context, `${lst}.insert(${index}, ${item})`);
   },
   data_replaceitemoflist(block, context) {
     const lst = variableFieldToPython(block, 'LIST');
     const index = valueToPython(block, 'INDEX', '1');
     const item = valueToPython(block, 'ITEM', 'None');
-    return line(context, `${lst}[int(${index}) - 1] = ${item}`);
+    return line(context, `${lst}.set(${index},${item})`);
   },
   data_showlist(block, context) {
     const name = variableFieldToPython(block, 'LIST');

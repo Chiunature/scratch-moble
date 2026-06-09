@@ -27,11 +27,11 @@ jobs:
       - name: Lint
         run: yarn lint
 
+      - name: Build and sync editor web bundle
+        run: yarn editor:web
+
       - name: Typecheck
         run: yarn typecheck
-
-      - name: Build editor web bundle
-        run: yarn editor:web:build
 
       - name: Test
         run: yarn test
