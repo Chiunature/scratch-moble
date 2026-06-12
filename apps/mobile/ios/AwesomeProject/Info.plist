@@ -26,6 +26,20 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- iOS 13+ 蓝牙使用描述（必须） -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>此应用需要蓝牙权限来连接和控制蓝牙设备</string>
+	<!-- 后台模式（按需添加） -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
+	<!-- 可选：仅在应用使用时请求蓝牙权限（iOS 13+） -->
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>此应用需要蓝牙权限来扫描和连接附近的蓝牙设备</string>
+	<!-- ========== BLE 权限结束 ========== -->
+
 	<key>NSAppTransportSecurity</key>
 	<dict>
 	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->

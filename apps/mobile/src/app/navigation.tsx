@@ -6,6 +6,7 @@ import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
+import { BleDevicesScreen } from '../screens/BleDevicesScreen';
 import { colors, fontWeight } from '../theme';
 
 export type RootStackParamList = {
@@ -15,6 +16,7 @@ export type RootStackParamList = {
   RemoteControl: undefined;
   AiChat: undefined;
   Runtime: undefined;
+  BleDevices: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -58,6 +60,11 @@ export function RootNavigator() {
           name="Runtime"
           component={RuntimeScreen}
           options={{ title: 'Runtime Demo' }}
+        />
+        <Stack.Screen
+          name="BleDevices"
+          component={BleDevicesScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

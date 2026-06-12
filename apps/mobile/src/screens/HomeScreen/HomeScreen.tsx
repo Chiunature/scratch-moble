@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { APP_DISPLAY_NAME } from '@scratch-mobile/shared';
-
+import BleIcon from '../../../assets/homeScreen/bleIcon.png';
+import LogoIcon from '../../../assets/branding/AppLogo.png';
 import { type RootStackParamList } from '../../app/navigation';
 import { colors } from '../../theme';
 import { styles } from './HomeScreen.styles';
@@ -47,7 +48,7 @@ export function HomeScreen({ navigation }: Props) {
     return (
       <View style={styles.loadingContainer}>
         <Image
-          source={require('../../../assets/branding/AppLogo.png')}
+          source={LogoIcon}
           style={styles.loadingLogo}
           resizeMode="contain"
         />
@@ -60,14 +61,24 @@ export function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image
-          source={require('../../../assets/branding/AppLogo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Pressable style={styles.settingsButton}>
-          <Text style={styles.settingsText}>设置</Text>
-        </Pressable>
+        <Image source={LogoIcon} style={styles.logo} resizeMode="contain" />
+        <View style={styles.headerRightView}>
+          <Pressable
+            style={styles.bluetoothButton}
+            onPress={() => {
+              navigation.navigate('BleDevices');
+            }}
+          >
+            <Image
+              source={BleIcon}
+              style={styles.bluetoothIcon}
+              resizeMode="contain"
+            />
+          </Pressable>
+          <Pressable style={styles.settingsButton}>
+            <Text style={styles.settingsText}>设置</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.cardRow}>

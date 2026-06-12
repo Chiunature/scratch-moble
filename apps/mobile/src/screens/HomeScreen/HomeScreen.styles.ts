@@ -34,6 +34,16 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+  headerRightView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.xl,
+    borderWidth: 1,
+    borderColor: 'blue',
   },
   logo: {
     width: 76,
@@ -87,5 +97,17 @@ export const styles = StyleSheet.create({
     color: colors.textFaint,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
+  },
+  bluetoothButton: {
+    borderWidth: 1,
+    borderColor: 'blue',
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    backgroundColor: '#7d8a8e',
+    borderRadius: '50%',
+  },
+  bluetoothIcon: {
+    width: 24,
+    height: 24,
   },
 });
