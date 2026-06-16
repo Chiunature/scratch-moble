@@ -13,6 +13,7 @@
     "@babel/runtime": "^7.29.2",
     "@react-navigation/native": "^7.1.21",
     "@react-navigation/native-stack": "^7.8.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@scratch-mobile/core": "0.0.1",
     "@scratch-mobile/protocol": "0.0.1",
     "@scratch-mobile/shared": "0.0.1",

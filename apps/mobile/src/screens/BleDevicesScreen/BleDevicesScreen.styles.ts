@@ -73,7 +73,8 @@ export const styles = StyleSheet.create({
   connectStatusContainer: {
     flex: 0.25,
     borderWidth: 1,
-    borderColor: 'green',
+    borderColor: '#e5e7eb99',
+    boxShadow: '0 0 3px 0 rgba(0, 0, 0, 0.1)',
     marginHorizontal: spacing.md,
     marginVertical: spacing.sm,
     borderRadius: 12,
@@ -102,24 +103,38 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.ink,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: 'green',
-    backgroundColor: '#fefeff',
-  },
   statusText: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontSize: fontSize.sm,
     color: colors.textMuted,
   },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb99',
+    backgroundColor: '#fefeff',
+    padding: spacing.xs,
+  },
+  footerStatusText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    padding: spacing.xs,
+  },
   errorText: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
     fontSize: fontSize.sm,
     color: '#dc2626',
+  },
+  openSettingsButton: {
+    borderRadius: 60,
+    backgroundColor: '#f4f4f6',
+    padding: spacing.xs,
+  },
+  openSettingsText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
   listContent: {
     paddingHorizontal: spacing.md,
@@ -133,21 +148,64 @@ export const styles = StyleSheet.create({
     color: colors.textSubtle,
   },
   deviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: '#e5e7eb',
     borderRadius: 12,
     padding: spacing.md,
     marginTop: spacing.xs,
+    boxShadow: '0 0 3px 0 rgba(0, 0, 0, 0.1)',
+  },
+  deviceItemConnected: {
+    backgroundColor: '#007aff',
+    borderColor: '#007aff',
+  },
+  deviceNameConnected: {
+    color: '#ffffff',
+  },
+  deviceMetaConnected: {
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  onlineBadgeConnected: {
+    color: '#ffffff',
+  },
+  deviceHintConnected: {
+    color: 'rgba(255, 255, 255, 0.75)',
+  },
+  bleDeviceImage: {
+    borderRadius: 999,
+    width: 40,
+    height: 40,
+  },
+  deviceMetaContainer: {
+    flex: 1,
+    gap: 5,
+    flexDirection: 'column',
   },
   deviceName: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.black,
     color: colors.ink,
   },
   deviceMeta: {
-    marginTop: spacing.xs,
     fontSize: fontSize.sm,
     color: colors.textSubtle,
+  },
+  deviceHint: {
+    position: 'absolute',
+    right: 0,
+    fontSize: fontSize.xs,
+    color: colors.textFaint,
+  },
+  onlineBadge: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    fontSize: fontSize.xs,
+    color: '#007aff',
+    fontWeight: fontWeight.bold,
   },
 });
