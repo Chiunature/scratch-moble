@@ -40,13 +40,26 @@ export const styles = StyleSheet.create({
   },
   codePanel: {
     position: 'absolute',
-    width: 280,
-    height: '100%',
+    top: 0,
+    bottom: 0,
     right: 0,
-    gap: spacing.xs,
+    width: 280,
     borderRadius: spacing.xl,
     padding: spacing.md,
     backgroundColor: colors.codeBackground,
+    overflow: 'hidden',
+  },
+  codePanelBody: {
+    flex: 1,
+  },
+  codeSectionLabel: {
+    color: colors.primarySoft,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    marginTop: spacing.xs,
+  },
+  codeBlock: {
+    marginTop: spacing.xs,
   },
   codeTitle: {
     color: colors.surface,
@@ -56,10 +69,6 @@ export const styles = StyleSheet.create({
   meta: {
     color: colors.primarySoft,
     fontSize: fontSize.xs,
-  },
-  codeScroll: {
-    flex: 1,
-    minHeight: 0,
   },
   code: {
     color: colors.codeText,
@@ -86,6 +95,45 @@ export const pikaActionStyles = StyleSheet.create({
   },
   actionButtonSecondary: {
     backgroundColor: colors.primarySoft,
+  },
+  actionButtonUpload: {
+    marginTop: spacing.xs,
+    flex: undefined,
+    width: '100%',
+  },
+  slotRow: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  slotLabel: {
+    color: colors.primarySoft,
+    fontSize: fontSize.xs,
+  },
+  slotControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  slotButton: {
+    width: 36,
+    height: 36,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotButtonText: {
+    color: colors.surface,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    lineHeight: fontSize.lg,
+  },
+  slotValue: {
+    flex: 1,
+    textAlign: 'center',
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
   },
   actionButtonDisabled: {
     opacity: 0.45,

@@ -6,6 +6,17 @@ export {
   subscribeBluetoothState,
 } from './manager';
 
+export {
+  buildHostBytecodeFileName,
+  clampHostProgramSlot,
+  HOST_PROGRAM_SLOT_DEFAULT,
+  HOST_PROGRAM_SLOT_MAX,
+  HOST_PROGRAM_SLOT_MIN,
+  mapBleUploadErrorMessage,
+  uploadBytecodeToHost,
+  type UploadBytecodeToHostOptions,
+} from './bleUploadService';
+
 export type {
   BleDevice,
   DeleteFileOptions,

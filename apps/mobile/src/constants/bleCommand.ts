@@ -36,3 +36,6 @@ export const BLE_UPLOAD_TIMEOUT_MS = 5000;
 
 /** 获取文件列表前 stop_watch 等待时间 */
 export const BLE_FILE_LIST_DELAY_MS = 500;
+
+/** 连接后请求的 ATT MTU，便于上传较大协议帧 */
+export const BLE_REQUEST_MTU = 512;

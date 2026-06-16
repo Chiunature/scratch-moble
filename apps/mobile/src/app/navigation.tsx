@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
+import { RemoteControlScreen } from '../screens/RemoteControlScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
 import { BleDevicesScreen } from '../screens/BleDevicesScreen';
 import { colors, fontWeight } from '../theme';
@@ -48,7 +49,7 @@ export function RootNavigator() {
         />
         <Stack.Screen
           name="RemoteControl"
-          component={PlaceholderScreen}
+          component={RemoteControlScreen}
           options={{ title: '遥控模式' }}
         />
         <Stack.Screen

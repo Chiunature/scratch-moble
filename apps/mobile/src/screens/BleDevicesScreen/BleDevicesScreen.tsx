@@ -24,6 +24,7 @@ import {
   savePairedDevice,
   startScan,
   stopScan,
+  TARGET_DEVICE_NAME,
 } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
 import { styles } from './BleDevicesScreen.styles';
@@ -438,7 +439,7 @@ export function BleDevicesScreen() {
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                   <Text style={styles.emptyText}>
-                    正在搜索 EST_BLUE 设备...
+                    正在搜索 {TARGET_DEVICE_NAME} 设备...
                   </Text>
                 }
                 renderItem={({ item }) => renderDeviceItem(item)}

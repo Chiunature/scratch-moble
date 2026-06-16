@@ -2,6 +2,7 @@ import { Device, type Characteristic, type State } from 'react-native-ble-plx';
 
 import {
   BLE_FILE_LIST_DELAY_MS,
+  BLE_REQUEST_MTU,
   BLE_UPLOAD_CHUNK_SIZE,
   BLE_UPLOAD_TIMEOUT_MS,
   COMMANDS,
@@ -105,12 +106,21 @@ export class BleDeviceManager {
     return this.connectedDevice !== null;
   }
 
-  async sendCommand(command: number[]): Promise<void> {
+  /**
+   * 普通命令写入。上传帧请用 writeUploadFrame（业务 ACK 靠 Notify，不绑 GATT Write Response）。
+   */
+  private async writeFrame(
+    command: number[],
+    sign: BleSign,
+  ): Promise<void> {
     if (!this.characteristic) {
       throw new Error('设备未连接');
     }
 
-    // 检查是否支持 writeWithoutResponse
+    if (sign !== null) {
+      this.sign = sign;
+    }
+
     if (this.characteristic.writeWithoutResponse) {
       bleLog.tx('writeWithoutResponse', command);
       await this.characteristic.writeWithoutResponse(bytesToBase64(command));
@@ -118,13 +128,50 @@ export class BleDeviceManager {
       bleLog.tx('writeWithResponse', command);
       await Promise.race([
         this.characteristic.writeWithResponse(bytesToBase64(command)),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('设备无响应（符合预期）')), 500),
-        ),
+        delay(500),
       ]).catch(() => undefined);
     } else {
       throw new Error('Characteristic 不支持任何写入操作');
     }
+  }
+
+  /**
+   * 上传专用写入，对应 EST-link bleWrite(data, Boot_Bin)。
+   * EST-link 在 Noble 侧 write(withResponse) 但不等业务 GATT 回执；真正停等在 Notify ACK。
+   * Android 上大帧 writeWithResponse 易失败，故优先 writeWithoutResponse。
+   */
+  private async writeUploadFrame(command: number[]): Promise<void> {
+    if (!this.characteristic) {
+      throw new Error('设备未连接');
+    }
+
+    this.sign = BLE_SIGN.BOOT_BIN;
+    const payload = bytesToBase64(command);
+
+    if (this.characteristic.writeWithoutResponse) {
+      bleLog.tx('writeWithoutResponse upload', command);
+      await this.characteristic.writeWithoutResponse(payload);
+      return;
+    }
+
+    if (this.characteristic.writeWithResponse) {
+      bleLog.tx('writeWithResponse upload', command);
+      try {
+        await this.characteristic.writeWithResponse(payload);
+      } catch (error) {
+        bleLog.warn(
+          'upload GATT writeWithResponse 异常，继续等待 Notify ACK',
+          error,
+        );
+      }
+      return;
+    }
+
+    throw new Error('Characteristic 不支持任何写入操作');
+  }
+
+  async sendCommand(command: number[]): Promise<void> {
+    await this.writeFrame(command, null);
   }
 
   async sendData(data: number[], cmd: number): Promise<void> {
@@ -287,7 +334,9 @@ export class BleDeviceManager {
 
     this.disconnectCallback = onDisconnected ?? null;
     this.disconnectHandled = false;
-    this.connectedDevice = await this.bleManager.connectToDevice(deviceId);
+    this.connectedDevice = await this.bleManager.connectToDevice(deviceId, {
+      requestMTU: BLE_REQUEST_MTU,
+    });
     await this.connectedDevice.discoverAllServicesAndCharacteristics();
 
     const services = await this.connectedDevice.services();
@@ -578,7 +627,7 @@ export class BleDeviceManager {
     bleLog.info(`上传分包 ${index + 1}/${this.uploadTotalFrames}`);
 
     try {
-      await this.sendCommand(this.uploadFrames[index]);
+      await this.writeUploadFrame(this.uploadFrames[index]);
     } catch (error) {
       bleLog.error('上传分包发送失败', error);
       this.cancelUpload(
