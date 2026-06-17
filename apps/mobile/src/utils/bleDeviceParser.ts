@@ -22,9 +22,28 @@ export type WatchDeviceItem = Record<string, unknown> & {
   nfc?: unknown;
 };
 
+/** 主机程序运行状态（deviceWatch JSON 根字段 WillAiState） */
+export type HostWillAiState = 'run' | 'stop';
+
 export type DeviceWatchPayload = {
   deviceList: WatchDeviceItem[];
+  /** run = 程序运行中，stop = 未运行 */
+  WillAiState?: HostWillAiState | string;
+  flash?: { total?: string; free?: string };
+  adc?: { bat?: string };
+  version?: number;
+  heap?: string;
 };
+
+export function readHostWillAiState(
+  payload: DeviceWatchPayload | null | undefined,
+): HostWillAiState | undefined {
+  const raw = payload?.WillAiState;
+  if (raw === 'run' || raw === 'stop') {
+    return raw;
+  }
+  return undefined;
+}
 
 const MAX_DEVICE_WATCH_BUFFER_CHARS = 32_768;
 

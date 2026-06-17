@@ -30,12 +30,17 @@ import {
   resetInjectEditorMessageDedup,
   VariablePromptOverlay,
 } from '../../features/editor';
-import { buildHostBytecodeFileName } from '../../services/ble';
 import { ScrollablePanel } from '../../components/ScrollablePanel';
-import { styles, pikaActionStyles } from './EditorScreen.styles';
+import { styles } from './EditorScreen.styles';
+import { colors } from '../../theme';
 import { useEditorPikaWorkflow } from './useEditorPikaWorkflow';
+import { PikaWorkflowModal } from './PikaWorkflowModal';
+import { ProgramSlotPickerModal } from './ProgramSlotPickerModal';
 import HomeIcon from '../../../assets/editorScreen/home.png';
 import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
+import RunIcon from '../../../assets/editorScreen/run.png';
+import PauseIcon from '../../../assets/editorScreen/pause.png';
+import DownloadIcon from '../../../assets/editorScreen/download.png';
 
 function parseEditorOutMessage(raw: string): EditorOutMessage | null {
   try {
@@ -69,23 +74,19 @@ export function EditorScreen() {
   const [blockCount, setBlockCount] = useState(0);
   //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
+  const [isSlotPickerVisible, setIsSlotPickerVisible] = useState(false);
 
   const {
     pikaAction,
-    pikaStatusKind,
-    statusText,
-    bytecodePath,
+    activeHostAction,
+    workflowModal,
+    closeWorkflowModal,
     programSlot,
     setProgramSlot,
-    isBleConnected,
-    isPikaBusy,
-    canUploadToHost,
-    handleCompile,
-    handleRunSource,
-    handleRunBytecode,
-    handleUploadToHost,
-    hostProgramSlotMin,
-    hostProgramSlotMax,
+    canHostAction,
+    handleRunOnHost,
+    handlePauseHost,
+    handleDownloadToHost,
   } = useEditorPikaWorkflow(generatedCode);
 
   //处理WebView发送的消息
@@ -202,7 +203,65 @@ export function EditorScreen() {
         >
           <Image source={HomeIcon} style={styles.headerIcon} />
         </Pressable>
+        <View style={styles.headerHostActions}>
+          <Pressable
+            style={[
+              styles.hostActionButton,
+              !canHostAction && styles.hostActionButtonDisabled,
+            ]}
+            disabled={!canHostAction}
+            onPress={handleRunOnHost}
+            accessibilityRole="button"
+            accessibilityLabel="编译并在主机运行"
+          >
+            {activeHostAction === 'run' && pikaAction !== 'idle' ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Image source={RunIcon} style={styles.hostActionIcon} />
+            )}
+          </Pressable>
+          <Pressable
+            style={[
+              styles.hostActionButton,
+              !canHostAction && styles.hostActionButtonDisabled,
+            ]}
+            disabled={!canHostAction}
+            onPress={handlePauseHost}
+            accessibilityRole="button"
+            accessibilityLabel="暂停主机程序"
+          >
+            {activeHostAction === 'pause' && pikaAction !== 'idle' ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Image source={PauseIcon} style={styles.hostActionIcon} />
+            )}
+          </Pressable>
+          <Pressable
+            style={[
+              styles.hostActionButton,
+              !canHostAction && styles.hostActionButtonDisabled,
+            ]}
+            disabled={!canHostAction}
+            onPress={handleDownloadToHost}
+            accessibilityRole="button"
+            accessibilityLabel="编译并上传到主机"
+          >
+            {activeHostAction === 'download' && pikaAction !== 'idle' ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Image source={DownloadIcon} style={styles.hostActionIcon} />
+            )}
+          </Pressable>
+        </View>
         <View style={styles.headerContent}>
+          <Pressable
+            style={styles.slotBadgeButton}
+            onPress={() => setIsSlotPickerVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`当前程序槽 ${programSlot}，点击选择`}
+          >
+            <Text style={styles.slotBadgeText}>{programSlot}</Text>
+          </Pressable>
           <Pressable
             style={styles.headerPressable}
             onPress={() => setIsCodePanelOpen(open => !open)}
@@ -213,6 +272,13 @@ export function EditorScreen() {
           </Pressable>
         </View>
       </View>
+      <ProgramSlotPickerModal
+        visible={isSlotPickerVisible}
+        selectedSlot={programSlot}
+        onSelect={setProgramSlot}
+        onClose={() => setIsSlotPickerVisible(false)}
+      />
+      <PikaWorkflowModal {...workflowModal} onClose={closeWorkflowModal} />
       <View style={styles.editorPanel}>
         <WebView
           ref={webViewRef}
@@ -343,117 +409,7 @@ export function EditorScreen() {
             <ScrollablePanel style={styles.codePanelBody}>
               <Text style={styles.codeTitle}>生成代码</Text>
               <Text style={styles.meta}>积木数量：{blockCount}</Text>
-            <View style={pikaActionStyles.actionRow}>
-              <Pressable
-                style={[
-                  pikaActionStyles.actionButton,
-                  isPikaBusy && pikaActionStyles.actionButtonDisabled,
-                ]}
-                disabled={isPikaBusy}
-                onPress={handleCompile}
-                accessibilityRole="button"
-                accessibilityLabel="编译 Python 字节码"
-              >
-                {pikaAction === 'compiling' ? (
-                  <ActivityIndicator color="#ffffff" size="small" />
-                ) : (
-                  <Text style={pikaActionStyles.actionButtonText}>编译</Text>
-                )}
-              </Pressable>
-              <Pressable
-                style={[
-                  pikaActionStyles.actionButton,
-                  pikaActionStyles.actionButtonSecondary,
-                  isPikaBusy && pikaActionStyles.actionButtonDisabled,
-                ]}
-                disabled={isPikaBusy}
-                onPress={handleRunSource}
-                accessibilityRole="button"
-                accessibilityLabel="本地运行源码"
-              >
-                <Text style={pikaActionStyles.actionButtonText}>运行源码</Text>
-              </Pressable>
-            </View>
-            <Pressable
-              style={[
-                pikaActionStyles.actionButton,
-                (!bytecodePath || isPikaBusy) &&
-                  pikaActionStyles.actionButtonDisabled,
-              ]}
-              disabled={!bytecodePath || isPikaBusy}
-              onPress={handleRunBytecode}
-              accessibilityRole="button"
-              accessibilityLabel="本地运行字节码"
-            >
-              <Text style={pikaActionStyles.actionButtonText}>运行字节码</Text>
-            </Pressable>
-            <View style={pikaActionStyles.slotRow}>
-              <Text style={pikaActionStyles.slotLabel}>主机程序槽</Text>
-              <View style={pikaActionStyles.slotControls}>
-                <Pressable
-                  style={[
-                    pikaActionStyles.slotButton,
-                    (programSlot <= hostProgramSlotMin || isPikaBusy) &&
-                      pikaActionStyles.actionButtonDisabled,
-                  ]}
-                  disabled={programSlot <= hostProgramSlotMin || isPikaBusy}
-                  onPress={() =>
-                    setProgramSlot(slot => Math.max(hostProgramSlotMin, slot - 1))
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="减少程序槽位"
-                >
-                  <Text style={pikaActionStyles.slotButtonText}>−</Text>
-                </Pressable>
-                <Text style={pikaActionStyles.slotValue}>
-                  {buildHostBytecodeFileName(programSlot)}
-                </Text>
-                <Pressable
-                  style={[
-                    pikaActionStyles.slotButton,
-                    (programSlot >= hostProgramSlotMax || isPikaBusy) &&
-                      pikaActionStyles.actionButtonDisabled,
-                  ]}
-                  disabled={programSlot >= hostProgramSlotMax || isPikaBusy}
-                  onPress={() =>
-                    setProgramSlot(slot => Math.min(hostProgramSlotMax, slot + 1))
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="增加程序槽位"
-                >
-                  <Text style={pikaActionStyles.slotButtonText}>+</Text>
-                </Pressable>
-              </View>
-            </View>
-            <Pressable
-              style={[
-                pikaActionStyles.actionButton,
-                pikaActionStyles.actionButtonUpload,
-                !canUploadToHost && pikaActionStyles.actionButtonDisabled,
-              ]}
-              disabled={!canUploadToHost}
-              onPress={handleUploadToHost}
-              accessibilityRole="button"
-              accessibilityLabel="上传字节码到蓝牙主机"
-            >
-              {pikaAction === 'uploading' ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <Text style={pikaActionStyles.actionButtonText}>
-                  {isBleConnected ? '上传到主机' : '上传到主机（需连接蓝牙）'}
-                </Text>
-              )}
-            </Pressable>
-            <Text
-              style={[
-                pikaActionStyles.statusText,
-                pikaStatusKind === 'error' && pikaActionStyles.statusError,
-                pikaStatusKind === 'success' && pikaActionStyles.statusSuccess,
-              ]}
-            >
-              {statusText}
-            </Text>
-            <Text style={styles.codeSectionLabel}>Python 源码</Text>
+              <Text style={styles.codeSectionLabel}>Python 源码</Text>
             <View style={styles.codeBlock}>
               <Text style={styles.code} selectable>
                 {generatedCode}

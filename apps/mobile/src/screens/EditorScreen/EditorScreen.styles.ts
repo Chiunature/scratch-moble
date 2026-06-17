@@ -28,10 +28,42 @@ export const styles = StyleSheet.create({
     height: 24,
   },
   headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  slotBadgeButton: {
+    minWidth: 32,
+    height: 28,
+    paddingHorizontal: spacing.sm,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotBadgeText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  headerHostActions: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.lg,
+  },
+  hostActionButton: {
+    padding: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hostActionButtonDisabled: {
+    opacity: 0.35,
+  },
+  hostActionIcon: {
+    width: 28,
+    height: 28,
   },
   editorPanel: {
     flex: 1,
@@ -75,83 +107,5 @@ export const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: fontSize.xs,
     lineHeight: 20,
-  },
-});
-
-// PikaScript 编译/运行操作区（轨道 A）
-export const pikaActionStyles = StyleSheet.create({
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: spacing.sm,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  actionButtonSecondary: {
-    backgroundColor: colors.primarySoft,
-  },
-  actionButtonUpload: {
-    marginTop: spacing.xs,
-    flex: undefined,
-    width: '100%',
-  },
-  slotRow: {
-    marginTop: spacing.sm,
-    gap: spacing.xs,
-  },
-  slotLabel: {
-    color: colors.primarySoft,
-    fontSize: fontSize.xs,
-  },
-  slotControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  slotButton: {
-    width: 36,
-    height: 36,
-    borderRadius: spacing.sm,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slotButtonText: {
-    color: colors.surface,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    lineHeight: fontSize.lg,
-  },
-  slotValue: {
-    flex: 1,
-    textAlign: 'center',
-    color: colors.surface,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  actionButtonDisabled: {
-    opacity: 0.45,
-  },
-  actionButtonText: {
-    color: colors.surface,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  statusText: {
-    color: colors.primarySoft,
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
-  },
-  statusError: {
-    color: '#ff6b6b',
-  },
-  statusSuccess: {
-    color: '#7dffb2',
   },
 });

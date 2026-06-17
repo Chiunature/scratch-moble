@@ -16,6 +16,7 @@ import {
   distinguishDevice,
   drainDeviceWatchJsonBuffer,
   parseDeviceData,
+  readHostWillAiState,
   type DeviceWatchPayload,
 } from '../../utils/bleDeviceParser';
 import {
@@ -40,6 +41,7 @@ import {
   type ParsedFrame,
 } from '../../utils/bleProtocol';
 import { bleLog, isBleDisconnectError } from './logger';
+import { isDeviceWatchDebugEnabled } from './bleDebug';
 import { requestBlePermissions } from './permissions';
 import { getSharedBleManager } from './singleton';
 import type {
@@ -491,6 +493,13 @@ export class BleDeviceManager {
   }
 
   private processReceivedData(bytes: number[]): void {
+    if (isDeviceWatchDebugEnabled()) {
+      bleLog.info(
+        `Notify ${bytes.length} bytes`,
+        this.isBinaryMode() ? '(binary mode)' : '(text mode)',
+      );
+    }
+
     if (this.isBinaryMode()) {
       this.processBinaryData(bytes);
       return;
@@ -576,6 +585,10 @@ export class BleDeviceManager {
         continue;
       }
 
+      if (!isDeviceWatchDebugEnabled()) {
+        continue;
+      }
+
       bleLog.warn(
         '无法解析为 deviceWatch JSON',
         packet.length > 120 ? `${packet.slice(0, 120)}...` : packet,
@@ -609,7 +622,17 @@ export class BleDeviceManager {
 
   private emitDeviceWatch(payload: DeviceWatchPayload): void {
     const distinguished = distinguishDevice(payload);
-    bleLog.debug('deviceWatch', distinguished.deviceList.length, 'ports');
+    if (isDeviceWatchDebugEnabled()) {
+      bleLog.info(
+        'deviceWatch WillAiState:',
+        readHostWillAiState(distinguished) ?? '(undefined)',
+      );
+      try {
+        bleLog.info('deviceWatch data', JSON.stringify(distinguished));
+      } catch {
+        bleLog.info('deviceWatch data', distinguished);
+      }
+    }
     this.onDeviceStatusCallback?.(distinguished);
   }
 

@@ -6,7 +6,7 @@
  * 2. 蓝牙已连接 Spark_AI 主机
  *
  * 上传协议对齐 EST-link：FILE_NAME(0xda) 传文件名 → 分包 FILE_DATA(0xaa) 停等 ACK
- * → 末包 LAST_DATA(0xbb)。当前不在上传后自动运行（runAfterUpload: false）。
+ * → 末包 LAST_DATA(0xbb) 或 LAST_DATA_RUN(0xbc，上传后运行)。
  */
 import { FUNCTION_CODES } from '../../constants/bleCommand';
 import { readBytecodeFile } from '../pika/pikaService';
@@ -16,6 +16,12 @@ import { bleDeviceManager } from './manager';
 export const HOST_PROGRAM_SLOT_MIN = 0;
 export const HOST_PROGRAM_SLOT_MAX = 10;
 export const HOST_PROGRAM_SLOT_DEFAULT = 0;
+
+/** UI 可选槽位列表 0-10 */
+export const HOST_PROGRAM_SLOTS = Array.from(
+  { length: HOST_PROGRAM_SLOT_MAX - HOST_PROGRAM_SLOT_MIN + 1 },
+  (_, index) => HOST_PROGRAM_SLOT_MIN + index,
+);
 
 /** 根据槽位生成主机侧文件名，如 slot=0 → `0.o` */
 export function buildHostBytecodeFileName(
@@ -65,6 +71,8 @@ export type UploadBytecodeToHostOptions = {
   bytecodePath: string;
   /** 主机程序槽 0-10，对应上传文件名 `{slot}.o` */
   programSlot?: number;
+  /** 末包使用 0xbc，上传完成后主机自动运行程序 */
+  runAfterUpload?: boolean;
   onProgress?: (progress: number) => void;
 };
 
@@ -89,11 +97,20 @@ export async function uploadBytecodeToHost(
     fileName,
     fileData,
     functionCode: FUNCTION_CODES.FILE_NAME,
-    runAfterUpload: false,
+    runAfterUpload: options.runAfterUpload ?? false,
     onProgress: ({ progress }) => {
       options.onProgress?.(progress);
     },
   });
 
   return fileName;
+}
+
+/** 发送 app_stop，暂停主机上正在运行的程序 */
+export async function stopHostApp(): Promise<void> {
+  if (!bleDeviceManager.isConnected()) {
+    throw new Error('未连接主机，请先在蓝牙设备页连接 Spark_AI');
+  }
+
+  await bleDeviceManager.runApp(false);
 }

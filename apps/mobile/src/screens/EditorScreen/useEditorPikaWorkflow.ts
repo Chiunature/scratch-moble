@@ -3,17 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   buildHostBytecodeFileName,
   HOST_PROGRAM_SLOT_DEFAULT,
-  HOST_PROGRAM_SLOT_MAX,
-  HOST_PROGRAM_SLOT_MIN,
   mapBleUploadErrorMessage,
+  stopHostApp,
   uploadBytecodeToHost,
 } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
-import {
-  compileGeneratedCode,
-  runCompiledBytecode,
-  runGeneratedCode,
-} from '../../services/pika';
+import { compileGeneratedCode } from '../../services/pika';
+import type { PikaWorkflowModalState } from './PikaWorkflowModal';
 
 /**
  * 编辑器 PikaScript 工作流（轨道 A 编译 + 轨道 B BLE 上传）。
@@ -25,208 +21,221 @@ import {
  *     → 本地 pika-main.py.o（固定路径，每次覆盖）
  *     → uploadBytecodeToHost
  *     → BLE 分包停等 ACK
- *     → 主机文件 {slot}.o（默认 0.o）
+ *     → 主机文件 {slot}.o（默认 0.o，可选 0-10）
  *
- * 代码变更后会自动作废本地编译结果，需重新点「编译」再上传。
+ * 代码变更后会自动作废本地编译缓存，下次运行/下载时会重新编译。
  */
 
 export type PikaActionState = 'idle' | 'compiling' | 'running' | 'uploading';
 
-export type PikaStatusKind = 'idle' | 'success' | 'error';
+export type { PikaWorkflowModalState } from './PikaWorkflowModal';
 
-type PikaFeedback = 'compile' | 'run' | 'idle';
+type HostToolbarAction = 'run' | 'download' | 'pause';
 
-function formatPikaStatus(
-  action: PikaActionState,
-  feedback: PikaFeedback,
-  message: string,
-  bytecodeSize: number | null,
+const CLOSED_WORKFLOW_MODAL: PikaWorkflowModalState = {
+  visible: false,
+  kind: 'progress',
+  title: '',
+  message: '',
+  progress: null,
+};
+
+function formatCompileSuccessMessage(
+  bytecodeSize: number,
   hexPreview: string,
 ): string {
-  if (action === 'compiling') {
-    return '正在编译…';
-  }
-  if (action === 'running') {
-    return '正在运行…';
-  }
-  if (action === 'uploading') {
-    return message || '正在上传到主机…';
-  }
-  // 运行结果或错误优先展示 message
-  if (feedback === 'run' || feedback === 'idle') {
-    return message || '等待编译';
-  }
-  // 编译成功后展示字节码摘要（magic 前缀用于快速确认格式）
-  if (bytecodeSize != null && bytecodeSize > 0) {
-    const preview = hexPreview ? `，前缀 ${hexPreview}` : '';
-    return `编译成功：${bytecodeSize} 字节${preview}`;
-  }
-  return message || '等待编译';
+  const preview = hexPreview ? `\n前缀 ${hexPreview}` : '';
+  return `编译成功：${bytecodeSize} 字节${preview}`;
 }
 
 export function useEditorPikaWorkflow(generatedCode: string) {
   const connectionStatus = useBleStore(state => state.connectionStatus);
   const isBleConnected = connectionStatus === 'connected';
 
-  const [pikaAction, setPikaAction] = useState<PikaActionState>('idle');
-  const [pikaStatusMessage, setPikaStatusMessage] = useState('等待编译');
-  const [pikaStatusKind, setPikaStatusKind] = useState<PikaStatusKind>('idle');
+  const [pikaAction, setPikaAction] = useState<PikaActionState>('idle'); //默认空闲
+  const [workflowModal, setWorkflowModal] = useState<PikaWorkflowModalState>(
+    CLOSED_WORKFLOW_MODAL,
+  );
   const [bytecodePath, setBytecodePath] = useState<string | null>(null);
   const [bytecodeSize, setBytecodeSize] = useState<number | null>(null);
   const [bytecodeHexPreview, setBytecodeHexPreview] = useState('');
-  const [pikaFeedback, setPikaFeedback] = useState<PikaFeedback>('idle');
   const [programSlot, setProgramSlot] = useState(HOST_PROGRAM_SLOT_DEFAULT);
+  const [activeHostAction, setActiveHostAction] =
+    useState<HostToolbarAction | null>(null);
+
+  const closeWorkflowModal = useCallback(() => {
+    setWorkflowModal(CLOSED_WORKFLOW_MODAL);
+  }, []);
+
+  const showProgressModal = useCallback(
+    (title: string, message: string, progress: number | null = null) => {
+      setWorkflowModal({
+        visible: true,
+        kind: 'progress',
+        title,
+        message,
+        progress,
+      });
+    },
+    [],
+  );
+
+  const showSuccessModal = useCallback((title: string, message: string) => {
+    setWorkflowModal({
+      visible: true,
+      kind: 'success',
+      title,
+      message,
+      progress: null,
+    });
+  }, []);
+
+  const showErrorModal = useCallback((title: string, message: string) => {
+    setWorkflowModal({
+      visible: true,
+      kind: 'error',
+      title,
+      message,
+      progress: null,
+    });
+  }, []);
 
   // 源码变化时作废已编译字节码，避免上传过期程序
   useEffect(() => {
     setBytecodePath(null);
     setBytecodeSize(null);
     setBytecodeHexPreview('');
-    setPikaStatusKind('idle');
-    setPikaStatusMessage('代码已更新，请重新编译');
-    setPikaFeedback('idle');
+    setWorkflowModal(CLOSED_WORKFLOW_MODAL);
   }, [generatedCode]);
 
-  const handleCompile = useCallback(async () => {
-    setPikaAction('compiling');
-    setPikaStatusKind('idle');
-    setPikaStatusMessage('正在编译…');
-    try {
-      const outcome = await compileGeneratedCode(generatedCode);
-      setPikaStatusKind(outcome.ok ? 'success' : 'error');
-      setPikaStatusMessage(outcome.message);
-      setBytecodePath(outcome.bytecodePath);
-      setBytecodeSize(outcome.ok ? outcome.bytecodeSize : null);
-      setBytecodeHexPreview(outcome.ok ? outcome.hexPreview : '');
-      setPikaFeedback(outcome.ok ? 'compile' : 'idle');
-    } catch (error) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage(
-        error instanceof Error ? error.message : '编译失败',
-      );
-      setBytecodePath(null);
-      setBytecodeSize(null);
-      setBytecodeHexPreview('');
-      setPikaFeedback('idle');
-    } finally {
-      setPikaAction('idle');
-    }
-  }, [generatedCode]);
+  /** 编译 → 上传到主机指定槽位（可选上传后运行） */
+  const handleCompileAndUploadToHost = useCallback(
+    async (runAfterUpload: boolean) => {
+      if (!isBleConnected) {
+        showErrorModal('无法操作', '未连接主机，请先在蓝牙设备页连接 Spark_AI');
+        return;
+      }
 
-  const handleRunSource = useCallback(async () => {
-    setPikaAction('running');
-    setPikaStatusKind('idle');
-    setPikaStatusMessage('正在运行源码…');
-    setPikaFeedback('run');
-    try {
-      const outcome = await runGeneratedCode(generatedCode);
-      setPikaStatusKind(outcome.ok ? 'success' : 'error');
-      setPikaStatusMessage(
-        outcome.ok
-          ? '源码运行完成（print 输出见终端 logcat）'
-          : outcome.message,
-      );
-    } catch (error) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage(
-        error instanceof Error ? error.message : '运行失败',
-      );
-    } finally {
-      setPikaAction('idle');
-    }
-  }, [generatedCode]);
+      const hostFileName = buildHostBytecodeFileName(programSlot);
+      const actionLabel = runAfterUpload ? '运行' : '下载';
+      setActiveHostAction(runAfterUpload ? 'run' : 'download');
 
-  const handleRunBytecode = useCallback(async () => {
-    if (!bytecodePath) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage('请先编译生成字节码');
-      return;
-    }
+      setPikaAction('compiling');
+      showProgressModal('正在编译', '正在将积木代码编译为字节码…');
 
-    setPikaAction('running');
-    setPikaStatusKind('idle');
-    setPikaStatusMessage('正在运行字节码…');
-    setPikaFeedback('run');
-    try {
-      const outcome = await runCompiledBytecode(bytecodePath);
-      setPikaStatusKind(outcome.ok ? 'success' : 'error');
-      setPikaStatusMessage(
-        outcome.ok
-          ? '字节码运行完成（print 输出见终端 logcat）'
-          : outcome.message,
-      );
-    } catch (error) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage(
-        error instanceof Error ? error.message : '运行失败',
-      );
-    } finally {
-      setPikaAction('idle');
-    }
-  }, [bytecodePath]);
+      try {
+        const outcome = await compileGeneratedCode(generatedCode);
+        if (!outcome.ok || !outcome.bytecodePath) {
+          showErrorModal('编译失败', outcome.message || '编译失败');
+          return;
+        }
 
-  const handleUploadToHost = useCallback(async () => {
-    if (!bytecodePath) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage('请先编译生成字节码');
-      return;
-    }
+        setBytecodePath(outcome.bytecodePath);
+        setBytecodeSize(outcome.bytecodeSize);
+        setBytecodeHexPreview(outcome.hexPreview);
 
+        setPikaAction('uploading');
+        showProgressModal(
+          '正在传输',
+          `${formatCompileSuccessMessage(
+            outcome.bytecodeSize,
+            outcome.hexPreview,
+          )}\n\n正在${actionLabel}到主机 ${hostFileName}…`,
+          0,
+        );
+
+        const uploadedFileName = await uploadBytecodeToHost({
+          bytecodePath: outcome.bytecodePath,
+          programSlot,
+          runAfterUpload,
+          onProgress: progress => {
+            showProgressModal(
+              '正在传输',
+              `${formatCompileSuccessMessage(
+                outcome.bytecodeSize,
+                outcome.hexPreview,
+              )}\n\n正在${actionLabel}到主机 ${hostFileName}…`,
+              progress,
+            );
+          },
+        });
+
+        showSuccessModal(
+          runAfterUpload ? '运行成功' : '下载成功',
+          runAfterUpload
+            ? `编译并上传完成，已在主机运行（${uploadedFileName}）`
+            : `编译并上传完成（${uploadedFileName}）`,
+        );
+      } catch (error) {
+        showErrorModal(
+          runAfterUpload ? '运行失败' : '下载失败',
+          mapBleUploadErrorMessage(error),
+        );
+      } finally {
+        setPikaAction('idle');
+        setActiveHostAction(null);
+      }
+    },
+    [
+      generatedCode,
+      isBleConnected,
+      programSlot,
+      showErrorModal,
+      showProgressModal,
+      showSuccessModal,
+    ],
+  );
+
+  /** 编译并上传到主机并运行 */
+  const handleRunOnHost = useCallback(
+    () => handleCompileAndUploadToHost(true),
+    [handleCompileAndUploadToHost],
+  );
+
+  /** 下载到主机 */
+  const handleDownloadToHost = useCallback(
+    () => handleCompileAndUploadToHost(false),
+    [handleCompileAndUploadToHost],
+  );
+
+  /** 暂停主机程序 */
+  const handlePauseHost = useCallback(async () => {
     if (!isBleConnected) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage('未连接主机，请先在蓝牙设备页连接 Spark_AI');
+      showErrorModal('无法暂停', '未连接主机，请先在蓝牙设备页连接 Spark_AI');
       return;
     }
-
-    const hostFileName = buildHostBytecodeFileName(programSlot);
-    setPikaAction('uploading');
-    setPikaStatusKind('idle');
-    setPikaStatusMessage(`正在上传到主机 ${hostFileName}…`);
-    setPikaFeedback('idle');
+    setPikaAction('running');
+    setActiveHostAction('pause');
+    //设置上面两个状态让菊花图标显示正在暂停主机程序
+    showProgressModal('正在暂停', '正在暂停主机程序…');
 
     try {
-      const uploadedFileName = await uploadBytecodeToHost({
-        bytecodePath,
-        programSlot,
-        onProgress: progress => {
-          setPikaStatusMessage(`正在上传到主机 ${hostFileName}… ${progress}%`);
-        },
-      });
-      setPikaStatusKind('success');
-      setPikaStatusMessage(`已上传到主机（${uploadedFileName}）`);
+      await stopHostApp();
+      showSuccessModal('已暂停', '主机程序已暂停');
     } catch (error) {
-      setPikaStatusKind('error');
-      setPikaStatusMessage(mapBleUploadErrorMessage(error));
+      showErrorModal(
+        '暂停失败',
+        error instanceof Error ? error.message : '暂停失败',
+      );
     } finally {
       setPikaAction('idle');
+      setActiveHostAction(null);
     }
-  }, [bytecodePath, isBleConnected, programSlot]);
+  }, [isBleConnected, showErrorModal, showProgressModal, showSuccessModal]);
 
   const isPikaBusy = pikaAction !== 'idle';
-  const canUploadToHost = Boolean(bytecodePath) && isBleConnected && !isPikaBusy;
-  const statusText = formatPikaStatus(
-    pikaAction,
-    pikaFeedback,
-    pikaStatusMessage,
-    bytecodeSize,
-    bytecodeHexPreview,
-  );
+  const canHostAction = isBleConnected && !isPikaBusy;
 
   return {
     pikaAction,
-    pikaStatusKind,
-    statusText,
-    bytecodePath,
+    activeHostAction,
+    workflowModal,
+    closeWorkflowModal,
     programSlot,
     setProgramSlot,
-    isBleConnected,
-    isPikaBusy,
-    canUploadToHost,
-    handleCompile,
-    handleRunSource,
-    handleRunBytecode,
-    handleUploadToHost,
-    hostProgramSlotMin: HOST_PROGRAM_SLOT_MIN,
-    hostProgramSlotMax: HOST_PROGRAM_SLOT_MAX,
+    canHostAction,
+    handleRunOnHost,
+    handlePauseHost,
+    handleDownloadToHost,
   };
 }

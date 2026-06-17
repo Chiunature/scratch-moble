@@ -7,12 +7,14 @@ export {
 } from './manager';
 
 export {
+  HOST_PROGRAM_SLOTS,
   buildHostBytecodeFileName,
   clampHostProgramSlot,
   HOST_PROGRAM_SLOT_DEFAULT,
   HOST_PROGRAM_SLOT_MAX,
   HOST_PROGRAM_SLOT_MIN,
   mapBleUploadErrorMessage,
+  stopHostApp,
   uploadBytecodeToHost,
   type UploadBytecodeToHostOptions,
 } from './bleUploadService';
@@ -30,6 +32,7 @@ export type {
 
 export { BLE_SIGN } from '../../constants/bleSign';
 export { bleLog } from './logger';
+export { BLE_DEVICE_WATCH_DEBUG } from './bleDebug';
 
 export {
   BLE_UPLOAD_CHUNK_SIZE,
@@ -57,6 +60,7 @@ export {
   createEmptyWatchDeviceList,
   distinguishDevice,
   parseDeviceData,
+  readHostWillAiState,
 } from '../../utils/bleDeviceParser';
 
 export {

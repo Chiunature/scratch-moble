@@ -85,6 +85,8 @@ export function RemoteControlScreen() {
           <Text style={styles.emptyHint}>
             暂无主机数据。请先在「蓝牙设备」页连接 Spark_AI，连接成功后会自动开启
             sensing_update 监控；数据经 Notify 推送到此处（测试用）。
+            {'\n\n'}
+            注意：主机运行用户程序期间不会推送 Notify，程序暂停或结束后才会恢复。
           </Text>
         ) : (
           <>
