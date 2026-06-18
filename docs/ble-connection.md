@@ -23,19 +23,44 @@
 
 ## 调试主机数据
 
-在 `apps/mobile/src/services/ble/bleDebug.ts` 将 `BLE_DEVICE_WATCH_DEBUG` 设为 `true`，Metro 过滤 `[BLE]` 即可看到 Notify 字节数、`deviceWatch` 完整 JSON 及 `WillAiState`。默认 `false`，避免刷屏。
+在 `apps/mobile/src/services/ble/core/debug.ts` 将 `BLE_DEVICE_WATCH_DEBUG` 设为 `true`，Metro 过滤 `[BLE]` 即可看到 Notify 字节数、`deviceWatch` 完整 JSON 及 `WillAiState`。默认 `false`，避免刷屏。
 
 ## 已知坑 · 务必读
 
 > **狠狠吐槽**：主机收到 App `writeWithResponse` 发下去的蓝牙命令后，**往往根本没有对应的 GATT Write Response 语义上的「命令回执」**——它不跟你握手确认，转头就自顾自 Notify 推数据；App 侧就算打出 `[TX OK]`，也只是手机蓝牙栈说「我写出去了」，**完全不能代表主机说命令对了**。命令到底执行成功还是 silently fail、还是压根没理会，只能靠后续 Notify 内容瞎猜，调试体验极差。
 
-排查收发问题时，在 Metro 里过滤 `[BLE]`，关注 `[TX]`、`[RX]`、`warn` / `error` 即可（见 `services/ble/logger.ts`）。
+排查收发问题时，在 Metro 里过滤 `[BLE]`，关注 `[TX]`、`[RX]`、`warn` / `error` 即可（见 `services/ble/core/logger.ts`）。
+
+## 目录结构
+
+```
+services/ble/
+├── index.ts              # 对外统一导出
+├── types.ts              # 共享类型
+├── core/                 # 连接与协议收发
+│   ├── manager.ts
+│   ├── singleton.ts
+│   ├── permissions.ts
+│   ├── logger.ts
+│   └── debug.ts
+├── device-watch/         # 主机传感器数据
+│   ├── model.ts
+│   └── useDeviceWatch.ts
+├── upload/               # 字节码上传
+│   └── service.ts
+├── storage/              # 已配对设备持久化
+│   └── pairedDevices.ts
+└── bootstrap/            # Store 订阅初始化
+    └── BleStoreBootstrap.tsx
+```
 
 ## 相关文件
 
 | 路径 | 职责 |
 |------|------|
-| `apps/mobile/src/services/ble/manager.ts` | 连接、扫描、收发、上传 |
+| `apps/mobile/src/services/ble/core/manager.ts` | 连接、扫描、收发 |
+| `apps/mobile/src/services/ble/upload/service.ts` | 字节码上传 |
+| `apps/mobile/src/services/ble/device-watch/` | 传感器数据拆解与 Hook |
 | `apps/mobile/src/store/useBleStore.ts` | 跨页面 BLE 状态 |
 | `apps/mobile/src/screens/BleDevicesScreen/` | 设备扫描 / 配对 UI |
 | `apps/mobile/src/constants/bleCommand.ts` | 命令常量、UUID |

@@ -3,7 +3,7 @@
  *
  * 与 BLE 上传的分工：
  * - 本模块：Python 源码 → 本地 `pika-main.py.o`（手机私有目录，每次编译覆盖）
- * - bleUploadService：读取本地字节码 → 以 `{slot}.o` 文件名经 BLE 下发到主机
+ * - upload/service：读取本地字节码 → 以 `{slot}.o` 文件名经 BLE 下发到主机
  */
 import {
   compile,

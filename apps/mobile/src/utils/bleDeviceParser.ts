@@ -16,10 +16,6 @@ export type WatchDeviceItem = Record<string, unknown> & {
   small_motor?: Record<string, unknown>;
   ultrasion?: unknown;
   touch?: unknown;
-  gray_v2?: Record<string, unknown>;
-  camer?: Record<string, unknown>;
-  camera?: Record<string, unknown>;
-  nfc?: unknown;
 };
 
 /** 主机程序运行状态（deviceWatch JSON 根字段 WillAiState） */
@@ -139,15 +135,31 @@ function setDevicePortAbnormal(item: WatchDeviceItem): void {
 
 function processColorSensor(item: WatchDeviceItem): void {
   setDeviceInfo(item, 2);
-  if (item.color && !('Not_Run' in item.color)) {
-    const { r, g, b } = item.color as { r: number; g: number; b: number };
-    item.color = {
-      ...item.color,
-      rgb: `rgb(${r >= 255 ? '255' : r}, ${g >= 255 ? '255' : g}, ${
-        b >= 255 ? '255' : b
-      })`,
-    };
+  if (!item.color || 'Not_Run' in item.color) {
+    return;
   }
+
+  const color = item.color as Record<string, unknown>;
+  const r = color.r;
+  const g = color.g;
+  const b = color.b;
+  if (
+    typeof r !== 'number' ||
+    typeof g !== 'number' ||
+    typeof b !== 'number' ||
+    Number.isNaN(r) ||
+    Number.isNaN(g) ||
+    Number.isNaN(b)
+  ) {
+    return;
+  }
+
+  item.color = {
+    ...item.color,
+    rgb: `rgb(${r >= 255 ? '255' : r}, ${g >= 255 ? '255' : g}, ${
+      b >= 255 ? '255' : b
+    })`,
+  };
 }
 
 function processMotor(item: WatchDeviceItem): void {
@@ -156,18 +168,10 @@ function processMotor(item: WatchDeviceItem): void {
   setDeviceInfo(item, deviceIdIndex);
 }
 
-function processGraySensor(
-  item: WatchDeviceItem,
-  sourceKey: 'gray' | 'gray_v2',
-): void {
-  const idKey: DeviceIdKey = sourceKey === 'gray_v2' ? 'b0' : 'a7';
-  let idIndex = DEVICE_ID_KEYS.indexOf(idKey);
-  if (idIndex < 0) {
-    idIndex = sourceKey === 'gray_v2' ? 10 : 7;
-  }
-  setDeviceInfo(item, idIndex);
+function processGraySensor(item: WatchDeviceItem): void {
+  setDeviceInfo(item, 7);
 
-  const raw = item[sourceKey];
+  const raw = item.gray;
   if (!raw || typeof raw !== 'object') {
     return;
   }
@@ -199,17 +203,6 @@ function processGraySensor(
   }
 
   item.gray = { ...obj };
-  if (sourceKey === 'gray_v2') {
-    delete item.gray_v2;
-  }
-}
-
-function processCamera(item: WatchDeviceItem): void {
-  setDeviceInfo(item, 8);
-}
-
-function processNfc(item: WatchDeviceItem): void {
-  setDeviceInfo(item, 9);
 }
 
 /** 对应电脑端 common.parseDeviceData */
@@ -246,14 +239,8 @@ export const distinguishDevice = (
       setDeviceInfo(item, 3);
     } else if (item.touch) {
       setDeviceInfo(item, 4);
-    } else if (item.gray_v2) {
-      processGraySensor(item, 'gray_v2');
     } else if (item.gray) {
-      processGraySensor(item, 'gray');
-    } else if (item.camer || item.camera) {
-      processCamera(item);
-    } else if (item.nfc) {
-      processNfc(item);
+      processGraySensor(item);
     } else if (hasDevNullMarker(item)) {
       setDevicePortAbnormal(item);
     } else {

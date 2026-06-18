@@ -1,7 +1,7 @@
 import React, { type PropsWithChildren } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { BleStoreBootstrap } from '../services/ble/BleStoreBootstrap';
+import { BleStoreBootstrap } from '../services/ble';
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (

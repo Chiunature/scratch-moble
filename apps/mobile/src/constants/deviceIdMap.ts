@@ -2,15 +2,12 @@
 export const DEVICE_ID_MAP = {
   '0': 'noDevice',
   a1: 'motor',
-  a2: 'color',
+  a2: 'color', // 主机遗留命名，实为灰度传感器（lux），见 codegen gray_sensor → _color
   a3: 'superSound',
   a4: 'touch',
   a5: 'big_motor',
   a6: 'small_motor',
   a7: 'gray',
-  a8: 'camer',
-  a9: 'nfc',
-  b0: 'gray_v2',
   dev_null: 'deviceAbnormal',
 } as const;
 

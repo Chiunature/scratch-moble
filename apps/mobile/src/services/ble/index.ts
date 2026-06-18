@@ -4,7 +4,7 @@ export {
   startScan,
   stopScan,
   subscribeBluetoothState,
-} from './manager';
+} from './core/manager';
 
 export {
   HOST_PROGRAM_SLOTS,
@@ -17,7 +17,7 @@ export {
   stopHostApp,
   uploadBytecodeToHost,
   type UploadBytecodeToHostOptions,
-} from './bleUploadService';
+} from './upload/service';
 
 export type {
   BleDevice,
@@ -28,11 +28,13 @@ export type {
   UploadFileOptions,
   UploadProgress,
   WatchDeviceItem,
-} from './manager';
+} from './core/manager';
+
+export { BleStoreBootstrap } from './bootstrap/BleStoreBootstrap';
 
 export { BLE_SIGN } from '../../constants/bleSign';
-export { bleLog } from './logger';
-export { BLE_DEVICE_WATCH_DEBUG } from './bleDebug';
+export { bleLog } from './core/logger';
+export { BLE_DEVICE_WATCH_DEBUG } from './core/debug';
 
 export {
   BLE_UPLOAD_CHUNK_SIZE,
@@ -64,10 +66,32 @@ export {
 } from '../../utils/bleDeviceParser';
 
 export {
+  getWatchPort,
+  getWatchGrayscalePorts,
+  getWatchPortsByKind,
+  isGrayscaleSensorKind,
+  isWatchPortConnected,
+  isWatchPortEmpty,
+  parseDeviceWatch,
+  parseWatchPort,
+  GRAYSCALE_SENSOR_KINDS,
+  type ColorSensorSnapshot,
+  type GraySensorSnapshot,
+  type GrayscaleLuxSnapshot,
+  type GrayscaleSensorKind,
+  type TouchSensorSnapshot,
+  type UltrasonicSensorSnapshot,
+  type ParsedDeviceWatch,
+  type ParsedWatchPort,
+} from './device-watch/model';
+
+export { useDeviceWatch, type DeviceWatchHookState } from './device-watch/useDeviceWatch';
+
+export {
   isDeviceInScanList,
   loadPairedDevices,
   removePairedDevice,
   savePairedDevice,
-} from './pairedDevicesStorage';
+} from './storage/pairedDevices';
 
-export type { PairedBleDevice } from './pairedDevicesStorage';
+export type { PairedBleDevice } from './storage/pairedDevices';

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
-import { useBleStore } from '../../store/useBleStore';
-import { bleDeviceManager, subscribeBluetoothState } from './index';
+import { useBleStore } from '../../../store/useBleStore';
+import { bleDeviceManager, subscribeBluetoothState } from '../core/manager';
 
 export function BleStoreBootstrap() {
   useEffect(() => {

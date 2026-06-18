@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { BleDevice } from './types';
-import { bleLog } from './logger';
+import type { BleDevice } from '../types';
+import { bleLog } from '../core/logger';
 
 const STORAGE_KEY = '@scratch-mobile/paired-ble-devices';
 

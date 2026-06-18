@@ -10,21 +10,21 @@ import {
   FUNCTION_CODES,
   SERVICE_UUID,
   TARGET_DEVICE_NAME,
-} from '../../constants/bleCommand';
-import { BLE_SIGN, type BleSign } from '../../constants/bleSign';
+} from '../../../constants/bleCommand';
+import { BLE_SIGN, type BleSign } from '../../../constants/bleSign';
 import {
   distinguishDevice,
   drainDeviceWatchJsonBuffer,
   parseDeviceData,
   readHostWillAiState,
   type DeviceWatchPayload,
-} from '../../utils/bleDeviceParser';
+} from '../../../utils/bleDeviceParser';
 import {
   buildMatrixCommand,
   buildMotorCommand,
   type MatrixControlPayload,
   type MotorControlPayload,
-} from '../../utils/bleRemoteControl';
+} from '../../../utils/bleRemoteControl';
 import {
   base64ToBytes,
   buildCommand,
@@ -39,9 +39,9 @@ import {
   stringToHex,
   verifyBootFrame,
   type ParsedFrame,
-} from '../../utils/bleProtocol';
+} from '../../../utils/bleProtocol';
 import { bleLog, isBleDisconnectError } from './logger';
-import { isDeviceWatchDebugEnabled } from './bleDebug';
+import { isDeviceWatchDebugEnabled } from './debug';
 import { requestBlePermissions } from './permissions';
 import { getSharedBleManager } from './singleton';
 import type {
@@ -49,7 +49,7 @@ import type {
   DeleteFileOptions,
   UploadFileOptions,
   UploadProgress,
-} from './types';
+} from '../types';
 
 const DEVICE_WATCH_THROTTLE_MS = 100;
 
@@ -793,8 +793,8 @@ export type {
   UploadFileOptions,
   UploadProgress,
   WatchDeviceItem,
-} from './types';
+} from '../types';
 
-export type { DeviceWatchPayload } from '../../utils/bleDeviceParser';
+export type { DeviceWatchPayload } from '../../../utils/bleDeviceParser';
 
-export { BLE_SIGN } from '../../constants/bleSign';
+export { BLE_SIGN } from '../../../constants/bleSign';

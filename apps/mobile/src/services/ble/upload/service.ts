@@ -8,9 +8,9 @@
  * 上传协议对齐 EST-link：FILE_NAME(0xda) 传文件名 → 分包 FILE_DATA(0xaa) 停等 ACK
  * → 末包 LAST_DATA(0xbb) 或 LAST_DATA_RUN(0xbc，上传后运行)。
  */
-import { FUNCTION_CODES } from '../../constants/bleCommand';
-import { readBytecodeFile } from '../pika/pikaService';
-import { bleDeviceManager } from './manager';
+import { FUNCTION_CODES } from '../../../constants/bleCommand';
+import { readBytecodeFile } from '../../pika/pikaService';
+import { bleDeviceManager } from '../core/manager';
 
 /** 主机程序槽位范围；上传文件名为 `{slot}.o`（如 0.o） */
 export const HOST_PROGRAM_SLOT_MIN = 0;

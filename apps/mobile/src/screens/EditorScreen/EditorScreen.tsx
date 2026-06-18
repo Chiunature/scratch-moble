@@ -1,11 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  Image,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Image, View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -407,14 +401,11 @@ export function EditorScreen() {
         {isCodePanelOpen && (
           <View style={styles.codePanel}>
             <ScrollablePanel style={styles.codePanelBody}>
-              <Text style={styles.codeTitle}>生成代码</Text>
-              <Text style={styles.meta}>积木数量：{blockCount}</Text>
-              <Text style={styles.codeSectionLabel}>Python 源码</Text>
-            <View style={styles.codeBlock}>
-              <Text style={styles.code} selectable>
-                {generatedCode}
-              </Text>
-            </View>
+              <View style={styles.codeBlock}>
+                <Text style={styles.code} selectable>
+                  {generatedCode}
+                </Text>
+              </View>
             </ScrollablePanel>
           </View>
         )}

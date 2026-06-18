@@ -84,23 +84,8 @@ export const styles = StyleSheet.create({
   codePanelBody: {
     flex: 1,
   },
-  codeSectionLabel: {
-    color: colors.primarySoft,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    marginTop: spacing.xs,
-  },
   codeBlock: {
     marginTop: spacing.xs,
-  },
-  codeTitle: {
-    color: colors.surface,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.extraBold,
-  },
-  meta: {
-    color: colors.primarySoft,
-    fontSize: fontSize.xs,
   },
   code: {
     color: colors.codeText,
