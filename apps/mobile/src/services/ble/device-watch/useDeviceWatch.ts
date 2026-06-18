@@ -22,6 +22,9 @@ export type DeviceWatchHookState = {
   ports: ParsedWatchPort[];
   connectedPorts: ParsedWatchPort[];
   emptyPorts: ParsedWatchPort[];
+  sensorPorts: ParsedWatchPort[];
+  sensorConnectedPorts: ParsedWatchPort[];
+  sensorPortCount: number;
 
   getPort: (port: number) => ParsedWatchPort | undefined;
   isPortConnected: (port: number) => boolean;
@@ -45,6 +48,9 @@ export function useDeviceWatch(): DeviceWatchHookState {
       ports: watch?.ports ?? [],
       connectedPorts: watch?.connectedPorts ?? [],
       emptyPorts: watch?.emptyPorts ?? [],
+      sensorPorts: watch?.sensorPorts ?? [],
+      sensorConnectedPorts: watch?.sensorConnectedPorts ?? [],
+      sensorPortCount: watch?.sensorPortCount ?? 4,
       getPort: (port: number) => getWatchPort(watch, port),
       isPortConnected: (port: number) => isWatchPortConnected(watch, port),
       isPortEmpty: (port: number) => isWatchPortEmpty(watch, port),

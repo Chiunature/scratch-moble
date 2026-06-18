@@ -23,9 +23,10 @@ import {
   type RnPortPickerOpenMessage,
 } from '@scratch-mobile/shared';
 
+import type { ParsedWatchPort } from '../../../services/ble';
 import { fontSize, fontWeight, spacing } from '../../../theme';
 import {
-  PORT_DEFINITIONS,
+  buildPortDefinitions,
   PORT_STATUS_LEGEND,
   getPortDefinition,
   portPickerTheme,
@@ -35,6 +36,8 @@ import {
 
 type Props = {
   session: RnPortPickerOpenMessage | null;
+  /** 传感器接口 A–D 的实时数据 */
+  sensorPorts?: ParsedWatchPort[];
   onValueChange: (sessionId: string, value: string) => void;
   onClose: (sessionId: string) => void;
 };
@@ -71,9 +74,12 @@ function PortGridButton({
   size: number;
   onPress: () => void;
 }) {
+  const isMotor = port.interfaceKind === 'motor';
   const borderColor = selected
     ? portPickerTheme.accent
-    : statusColor(port.connectionStatus);
+    : isMotor
+      ? portPickerTheme.textMuted
+      : statusColor(port.connectionStatus);
 
   return (
     <Pressable
@@ -85,26 +91,72 @@ function PortGridButton({
         !selected && {
           borderWidth: 1.5,
           borderColor,
-          backgroundColor:
-            port.connectionStatus === 'disconnected'
+          backgroundColor: isMotor
+            ? 'rgba(30, 41, 59, 0.45)'
+            : port.connectionStatus === 'disconnected'
               ? 'rgba(30, 41, 59, 0.6)'
               : 'rgba(15, 23, 42, 0.9)',
         },
       ]}
     >
-      <PortStatusDot color={borderColor} />
+      {!isMotor ? <PortStatusDot color={borderColor} /> : null}
       <Text
         style={[
           styles.portLabel,
           selected && styles.portLabelSelected,
-          port.connectionStatus === 'disconnected' &&
-            !selected &&
+          !selected &&
+            (isMotor || port.connectionStatus === 'disconnected') &&
             styles.portLabelDim,
         ]}
       >
         {port.label}
       </Text>
     </Pressable>
+  );
+}
+
+function PortSection({
+  title,
+  ports,
+  portCellSize,
+  isSelected,
+  onToggle,
+  onGridLayout,
+}: {
+  title: string;
+  ports: PortDefinition[];
+  portCellSize: number;
+  isSelected: (value: string) => boolean;
+  onToggle: (value: string) => void;
+  onGridLayout?: (width: number) => void;
+}) {
+  return (
+    <View style={styles.portSection}>
+      <Text style={styles.portSectionTitle}>{title}</Text>
+      <View
+        style={styles.grid}
+        onLayout={
+          onGridLayout
+            ? event => {
+                const width = event.nativeEvent.layout.width;
+                if (width > 0) {
+                  onGridLayout(width);
+                }
+              }
+            : undefined
+        }
+      >
+        {ports.map(port => (
+          <PortGridButton
+            key={port.value}
+            port={port}
+            selected={isSelected(port.value)}
+            size={portCellSize}
+            onPress={() => onToggle(port.value)}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -158,6 +210,12 @@ function PortDetailPanel({
       )}
 
       <View style={styles.detailRow}>
+        <Text style={styles.detailKey}>接口类型</Text>
+        <Text style={styles.detailValue}>
+          {primary.interfaceKind === 'motor' ? '电机接口' : '传感器接口'}
+        </Text>
+      </View>
+      <View style={styles.detailRow}>
         <Text style={styles.detailKey}>设备名称</Text>
         <Text style={styles.detailValue}>{primary.deviceName}</Text>
       </View>
@@ -167,14 +225,16 @@ function PortDetailPanel({
       </View>
 
       <View style={styles.detailRow}>
-        <Text style={styles.detailKey}>连接状态</Text>
+        <Text style={styles.detailKey}>状态</Text>
         <View style={styles.statusBadge}>
-          <View
-            style={[
-              styles.statusBadgeDot,
-              { backgroundColor: statusColor(primary.connectionStatus) },
-            ]}
-          />
+          {primary.interfaceKind === 'sensor' ? (
+            <View
+              style={[
+                styles.statusBadgeDot,
+                { backgroundColor: statusColor(primary.connectionStatus) },
+              ]}
+            />
+          ) : null}
           <Text style={styles.statusBadgeText}>{primary.runtimeLabel}</Text>
         </View>
       </View>
@@ -182,9 +242,19 @@ function PortDetailPanel({
   );
 }
 
-export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
+export function PortPickerOverlay({
+  session,
+  sensorPorts,
+  onValueChange,
+  onClose,
+}: Props) {
   const { height: screenHeight } = useWindowDimensions();
   const sheetHeight = screenHeight * SHEET_HEIGHT_RATIO;
+
+  const portDefinitions = useMemo(
+    () => buildPortDefinitions(sensorPorts),
+    [sensorPorts],
+  );
 
   const maxSelections = session?.maxSelections ?? 1;
   const isMulti = maxSelections > 1;
@@ -208,8 +278,8 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
   }, [gridWidth]);
 
   const detailPorts = useMemo(
-    () => pendingPorts.map(v => getPortDefinition(v)),
-    [pendingPorts],
+    () => pendingPorts.map(v => getPortDefinition(v, portDefinitions)),
+    [pendingPorts, portDefinitions],
   );
 
   const selectionHint = isMulti
@@ -314,25 +384,25 @@ export function PortPickerOverlay({ session, onValueChange, onClose }: Props) {
           >
             <View style={styles.body}>
               <View style={styles.leftColumn}>
-                <View
-                  style={styles.grid}
-                  onLayout={event => {
-                    const w = event.nativeEvent.layout.width;
-                    if (w > 0 && w !== gridWidth) {
-                      setGridWidth(w);
+                <PortSection
+                  title="传感器 A–D"
+                  ports={portDefinitions.slice(0, 4)}
+                  portCellSize={portCellSize}
+                  isSelected={isSelected}
+                  onToggle={togglePort}
+                  onGridLayout={width => {
+                    if (width > 0 && width !== gridWidth) {
+                      setGridWidth(width);
                     }
                   }}
-                >
-                  {PORT_DEFINITIONS.map(port => (
-                    <PortGridButton
-                      key={port.value}
-                      port={port}
-                      selected={isSelected(port.value)}
-                      size={portCellSize}
-                      onPress={() => togglePort(port.value)}
-                    />
-                  ))}
-                </View>
+                />
+                <PortSection
+                  title="电机 E–H"
+                  ports={portDefinitions.slice(4)}
+                  portCellSize={portCellSize}
+                  isSelected={isSelected}
+                  onToggle={togglePort}
+                />
                 <PortLegend />
 
                 <Pressable
@@ -403,7 +473,16 @@ const styles = StyleSheet.create({
     flex: 0.92,
     minWidth: 0,
     justifyContent: 'flex-start',
-    gap: spacing.sm,
+    gap: spacing.xs,
+  },
+  portSection: {
+    gap: 4,
+  },
+  portSectionTitle: {
+    color: portPickerTheme.textMuted,
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.3,
   },
   rightColumn: {
     flex: 1,

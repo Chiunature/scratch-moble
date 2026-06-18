@@ -32,6 +32,28 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  deviceButton: {
+    minWidth: 28,
+    height: 28,
+    padding: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deviceIconGrid: {
+    width: 16,
+    height: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 3,
+    justifyContent: 'center',
+    alignContent: 'center',
+  },
+  deviceIconDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
   slotBadgeButton: {
     minWidth: 32,
     height: 28,
@@ -70,16 +92,19 @@ export const styles = StyleSheet.create({
     minHeight: 0,
     position: 'relative',
   },
-  codePanel: {
+  sidePanel: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     right: 0,
-    width: 280,
     borderRadius: spacing.xl,
     padding: spacing.md,
     backgroundColor: colors.codeBackground,
     overflow: 'hidden',
+  },
+  sidePanelActiveButton: {
+    backgroundColor: colors.background,
+    borderRadius: spacing.sm,
   },
   codePanelBody: {
     flex: 1,

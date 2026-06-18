@@ -1,4 +1,5 @@
 import type { DeviceIdKey, SensingDeviceType } from '../../../constants/deviceIdMap';
+import { isSensorPort, SENSOR_PORT_COUNT } from '../../../constants/ports';
 import type {
   DeviceWatchPayload,
   HostWillAiState,
@@ -16,8 +17,6 @@ export type TouchSensorSnapshot = {
 /** 超声波传感器快照（主机字段名为 ultrasion） */
 export type UltrasonicSensorSnapshot = {
   cm: number | null;
-  /** 255 通常表示超出量程 */
-  isOutOfRange: boolean;
 };
 
 /** 主机 a2 / sensing_device:"color" 实为灰度传感器，JSON 字段名仍为 color */
@@ -93,6 +92,10 @@ export type ParsedDeviceWatch = {
   ports: ParsedWatchPort[];
   connectedPorts: ParsedWatchPort[];
   emptyPorts: ParsedWatchPort[];
+  /** 传感器接口 A–D（0–3） */
+  sensorPorts: ParsedWatchPort[];
+  sensorConnectedPorts: ParsedWatchPort[];
+  sensorPortCount: number;
 };
 
 function parseNumericValue(value: unknown): number | null {
@@ -165,10 +168,7 @@ function parseUltrasonicSensor(
   }
 
   const cm = parseNumericValue((ultrasion as Record<string, unknown>).cm);
-  return {
-    cm,
-    isOutOfRange: cm === 255,
-  };
+  return { cm };
 }
 
 /** 拆解单个端口条目 */
@@ -243,6 +243,7 @@ export function parseWatchPort(item: WatchDeviceItem, index: number): ParsedWatc
 export function parseDeviceWatch(payload: DeviceWatchPayload): ParsedDeviceWatch {
   const ports = payload.deviceList.map((item, index) => parseWatchPort(item, index));
   const willAiState = readHostWillAiState(payload);
+  const sensorPorts = ports.filter(port => isSensorPort(port.port));
 
   return {
     raw: payload,
@@ -261,6 +262,9 @@ export function parseDeviceWatch(payload: DeviceWatchPayload): ParsedDeviceWatch
     ports,
     connectedPorts: ports.filter(port => port.isConnected),
     emptyPorts: ports.filter(port => port.isEmpty),
+    sensorPorts,
+    sensorConnectedPorts: sensorPorts.filter(port => port.isConnected),
+    sensorPortCount: SENSOR_PORT_COUNT,
   };
 }
 

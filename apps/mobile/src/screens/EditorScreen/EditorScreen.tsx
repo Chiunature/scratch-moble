@@ -1,5 +1,12 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Image, View, Text } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  Image,
+  View,
+  Text,
+  useWindowDimensions,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -25,11 +32,15 @@ import {
   VariablePromptOverlay,
 } from '../../features/editor';
 import { ScrollablePanel } from '../../components/ScrollablePanel';
+import { useDeviceWatch } from '../../services/ble';
+import { useBleStore } from '../../store/useBleStore';
 import { styles } from './EditorScreen.styles';
 import { colors } from '../../theme';
 import { useEditorPikaWorkflow } from './useEditorPikaWorkflow';
 import { PikaWorkflowModal } from './PikaWorkflowModal';
 import { ProgramSlotPickerModal } from './ProgramSlotPickerModal';
+import { BatteryStatusLight } from './BatteryStatusLight';
+import { DeviceDetailsPanel } from './DeviceDetailsPanel';
 import HomeIcon from '../../../assets/editorScreen/home.png';
 import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
 import RunIcon from '../../../assets/editorScreen/run.png';
@@ -47,6 +58,8 @@ function parseEditorOutMessage(raw: string): EditorOutMessage | null {
 export function EditorScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
   const webViewRef = useRef<WebView>(null);
   const lastCodeRef = useRef({ code: '', blockCount: 0 });
   //存储当前激活的数字滑块会话
@@ -69,6 +82,30 @@ export function EditorScreen() {
   //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
   const [isSlotPickerVisible, setIsSlotPickerVisible] = useState(false);
+  const [isSensorPanelOpen, setIsSensorPanelOpen] = useState(false);
+
+  const toggleCodePanel = useCallback(() => {
+    setIsCodePanelOpen(open => {
+      if (!open) {
+        setIsSensorPanelOpen(false);
+      }
+      return !open;
+    });
+  }, []);
+
+  const toggleSensorPanel = useCallback(() => {
+    setIsSensorPanelOpen(open => {
+      if (!open) {
+        setIsCodePanelOpen(false);
+      }
+      return !open;
+    });
+  }, []);
+
+  const connectionStatus = useBleStore(state => state.connectionStatus);
+  const isBleConnected = connectionStatus === 'connected';
+  const { watch, isAvailable, sensorPorts, sensorConnectedPorts, sensorPortCount } =
+    useDeviceWatch();
 
   const {
     pikaAction,
@@ -197,6 +234,11 @@ export function EditorScreen() {
         >
           <Image source={HomeIcon} style={styles.headerIcon} />
         </Pressable>
+        <BatteryStatusLight
+          battery={watch?.battery ?? null}
+          isConnected={isBleConnected}
+          hasData={isAvailable}
+        />
         <View style={styles.headerHostActions}>
           <Pressable
             style={[
@@ -257,10 +299,30 @@ export function EditorScreen() {
             <Text style={styles.slotBadgeText}>{programSlot}</Text>
           </Pressable>
           <Pressable
-            style={styles.headerPressable}
-            onPress={() => setIsCodePanelOpen(open => !open)}
+            style={[
+              styles.deviceButton,
+              isSensorPanelOpen && styles.sidePanelActiveButton,
+            ]}
+            onPress={toggleSensorPanel}
+            accessibilityRole="button"
+            accessibilityLabel="传感器状态"
+            accessibilityState={{ expanded: isSensorPanelOpen }}
+          >
+            <View style={styles.deviceIconGrid}>
+              {[0, 1, 2, 3].map(index => (
+                <View key={index} style={styles.deviceIconDot} />
+              ))}
+            </View>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.headerPressable,
+              isCodePanelOpen && styles.sidePanelActiveButton,
+            ]}
+            onPress={toggleCodePanel}
             accessibilityRole="button"
             accessibilityLabel="代码示例"
+            accessibilityState={{ expanded: isCodePanelOpen }}
           >
             <Image source={CodeViewIcon} style={styles.headerIcon} />
           </Pressable>
@@ -302,6 +364,7 @@ export function EditorScreen() {
         />
         <PortPickerOverlay
           session={rnPortPickerSession}
+          sensorPorts={sensorPorts}
           onValueChange={(sessionId, value) => {
             injectEditorMessage(webViewRef.current, {
               type: 'editor.portPicker.value',
@@ -398,8 +461,30 @@ export function EditorScreen() {
             });
           }}
         />
-        {isCodePanelOpen && (
-          <View style={styles.codePanel}>
+        {isSensorPanelOpen ? (
+          <View
+            style={[styles.sidePanel, { width: sidePanelWidth }]}
+          >
+            <DeviceDetailsPanel
+              isConnected={isBleConnected}
+              isAvailable={isAvailable}
+              battery={watch?.battery ?? null}
+              isProgramRunning={watch?.isProgramRunning ?? false}
+              connectedCount={sensorConnectedPorts.length}
+              portCount={sensorPortCount}
+              ports={sensorPorts}
+              flashFree={watch?.flash?.free ?? null}
+              flashTotal={watch?.flash?.total ?? null}
+              version={watch?.version ?? null}
+              heap={watch?.heap ?? null}
+              onClose={() => setIsSensorPanelOpen(false)}
+            />
+          </View>
+        ) : null}
+        {isCodePanelOpen ? (
+          <View
+            style={[styles.sidePanel, { width: sidePanelWidth }]}
+          >
             <ScrollablePanel style={styles.codePanelBody}>
               <View style={styles.codeBlock}>
                 <Text style={styles.code} selectable>
@@ -408,7 +493,7 @@ export function EditorScreen() {
               </View>
             </ScrollablePanel>
           </View>
-        )}
+        ) : null}
       </View>
     </View>
   );
