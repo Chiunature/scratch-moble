@@ -31,6 +31,8 @@ import {
   installProcedureDragDebug,
   patchDataVariableReporterOutput,
   setupStartHatBlock,
+  initScratchLocale,
+  patchContextMenuMissingTextGuard,
 } from './workspace-custom';
 
 /** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
@@ -40,8 +42,9 @@ function refreshToolboxDomAfterLayout(workspace: Workspace): void {
 }
 
 function bootstrap(): void {
-  // 内置 operator_* / control_* 等积木的 message0 来自 Blockly.Msg，须先加载语言包
-  ScratchBlocks.ScratchMsgs.setLocale('zh-cn');
+  // Blockly ESM 默认不加载核心 Msg；须先合并 zh-hans 再应用 Scratch 文案包
+  initScratchLocale('zh-cn');
+  patchContextMenuMissingTextGuard();
 
   registerNativeInboundBridge(); //挂载WebView与React Native的桥接
   registerEditorBlocks(); //— 注册 shadow 积木

@@ -38,3 +38,5 @@ export {
   openProcedureEditorModal,
   closeProcedureEditorModal,
 } from './procedureEditor';
+export { initScratchLocale } from './initScratchLocale';
+export { patchContextMenuMissingTextGuard } from './patchContextMenuMissingTextGuard';
