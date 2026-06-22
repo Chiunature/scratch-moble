@@ -1,5 +1,6 @@
 export {
   injectEditorMessage,
+  forceInjectEditorMessage,
   resetInjectEditorMessageDedup,
 } from './bridge/injectEditorMessage';
 export { BubbleSlider } from './components/BubbleSlider';

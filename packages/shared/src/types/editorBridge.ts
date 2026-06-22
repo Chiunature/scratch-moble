@@ -75,6 +75,20 @@ export type EditorOutMessage =
   | {
       type: 'editor.variablePrompt.close';
       sessionId: string;
+    }
+  | {
+      type: 'editor.workspace.ready';
+    }
+  | {
+      type: 'editor.workspace.loaded';
+      projectId: string;
+    }
+  | {
+      type: 'editor.workspace.changed';
+      projectId: string;
+      workspace: unknown;
+      blockCount: number;
+      revision: number;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -136,7 +150,32 @@ export type EditorInMessage =
   | {
       type: 'editor.variablePrompt.cancel';
       sessionId: string;
+    }
+  | {
+      type: 'editor.workspace.load';
+      projectId: string;
+      workspace: unknown | null;
+      revision: number;
+    }
+  | {
+      type: 'editor.workspace.flush';
+      projectId: string;
     };
+
+export type RnWorkspaceReadyMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.workspace.ready' }
+>;
+
+export type RnWorkspaceChangedMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.workspace.changed' }
+>;
+
+export type RnWorkspaceLoadedMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.workspace.loaded' }
+>;
 
 export type RnNumberSliderOpenMessage = Extract<
   EditorOutMessage,

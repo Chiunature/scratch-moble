@@ -14,7 +14,7 @@ const homeCards = [
   {
     title: '编程模式',
     subtitle: '进入积木编辑器',
-    route: 'Editor',
+    route: 'Projects',
   },
   {
     title: '搭建说明',

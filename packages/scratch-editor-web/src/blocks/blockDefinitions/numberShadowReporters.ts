@@ -23,8 +23,7 @@ function sliderShadowReporter(
         precision,
       },
     ],
-    style: 'math_blocks',
-    extensions: ['output_number'],
+    extensions: ['output_number', 'colours_from_parent'],
   };
 }
 
@@ -41,7 +40,6 @@ export const numberShadowReporterDefinitions = [
         value: 0,
       },
     ],
-    style: 'math_blocks',
-    extensions: ['output_number'],
+    extensions: ['output_number', 'colours_from_parent'],
   },
 ] as const;

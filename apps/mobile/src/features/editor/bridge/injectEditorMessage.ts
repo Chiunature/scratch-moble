@@ -25,3 +25,18 @@ export function injectEditorMessage(
 export function resetInjectEditorMessageDedup(): void {
   lastInjectedPayload = null;
 }
+
+/** workspace.load 等同一会话可能重复注入，需跳过去重 */
+export function forceInjectEditorMessage(
+  webView: WebView | null,
+  message: EditorInMessage,
+): void {
+  if (!webView) {
+    return;
+  }
+  const payload = JSON.stringify(message);
+  lastInjectedPayload = payload;
+  webView.injectJavaScript(
+    `window.__scratchEditorReceiveFromNative?.(${payload});true;`,
+  );
+}

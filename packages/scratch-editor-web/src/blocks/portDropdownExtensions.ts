@@ -7,14 +7,28 @@
  * RN 端口弹窗使用自有主题（portPickerOptions），不从 Web 取色。
  */
 import * as ScratchBlocks from 'scratch-blocks';
-import { Events } from 'scratch-blocks';
+import { Events, renderManagement } from 'scratch-blocks';
 
 import { BLOCK_TYPES } from './blockTypes';
+import type { Workspace } from '../codegen/types';
 
 const PORT_DROPDOWN_TYPE = BLOCK_TYPES.common.portDropdown;
 
+/** 使用 colours_from_parent 扩展的 reporter / shadow 块 */
+export const COLOURS_FROM_PARENT_BLOCK_TYPES = new Set<string>([
+  BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.integerSlider,
+  BLOCK_TYPES.common.decimalSlider,
+  BLOCK_TYPES.common.positiveKeyboard,
+  BLOCK_TYPES.common.basicDropdownNumCol,
+  BLOCK_TYPES.common.basicDropdownNumRow,
+  BLOCK_TYPES.common.notePicker,
+  BLOCK_TYPES.common.handleShankPicker,
+]);
+
 type ColouredBlock = ScratchBlocks.Block & {
   setOnChange(handler: (event: Events.Abstract) => void): void;
+  queueRender?: () => void;
 };
 
 function getHostParent(block: ColouredBlock): ColouredBlock | null {
@@ -28,7 +42,7 @@ function getHostParent(block: ColouredBlock): ColouredBlock | null {
   return parent;
 }
 
-function syncColourFromParent(block: ColouredBlock): void {
+export function syncColourFromParent(block: ColouredBlock): void {
   const parent = getHostParent(block);
   if (parent) {
     const styleName = parent.getStyleName();
@@ -39,8 +53,19 @@ function syncColourFromParent(block: ColouredBlock): void {
     }
     return;
   }
-  // 飞出栏内单独展示时用中性文本域色（与 theme textField / text_blocks 一致）
   block.setStyle('textField');
+}
+
+/** workspace.load 在 Events.disable 下不会触发 BLOCK_MOVE，须在加载后手动刷新配色。 */
+export function refreshColoursFromParentInWorkspace(workspace: Workspace): void {
+  for (const block of workspace.getAllBlocks(false)) {
+    if (!COLOURS_FROM_PARENT_BLOCK_TYPES.has(block.type)) {
+      continue;
+    }
+    syncColourFromParent(block as ColouredBlock);
+    (block as ColouredBlock).queueRender?.();
+  }
+  renderManagement.triggerQueuedRenders();
 }
 
 let extensionsRegistered = false;

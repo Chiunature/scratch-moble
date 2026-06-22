@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,7 +7,8 @@ import {
   Text,
   useWindowDimensions,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
@@ -32,10 +33,12 @@ import {
   VariablePromptOverlay,
 } from '../../features/editor';
 import { ScrollablePanel } from '../../components/ScrollablePanel';
+import { type RootStackParamList } from '../../app/navigation';
 import { useDeviceWatch } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
 import { styles } from './EditorScreen.styles';
 import { colors } from '../../theme';
+import { useEditorProjectPersistence } from './useEditorProjectPersistence';
 import { useEditorPikaWorkflow } from './useEditorPikaWorkflow';
 import { PikaWorkflowModal } from './PikaWorkflowModal';
 import { ProgramSlotPickerModal } from './ProgramSlotPickerModal';
@@ -56,6 +59,33 @@ function parseEditorOutMessage(raw: string): EditorOutMessage | null {
 }
 
 export function EditorScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Editor'>>();
+  const projectId = route.params?.projectId;
+
+  useEffect(() => {
+    if (!projectId) {
+      navigation.replace('Projects');
+    }
+  }, [navigation, projectId]);
+
+  if (!projectId) {
+    return (
+      <View style={[styles.root, styles.projectLoadingContainer]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  return <EditorScreenContent projectId={projectId} />;
+}
+
+type EditorScreenContentProps = {
+  projectId: string;
+};
+
+function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
@@ -120,9 +150,39 @@ export function EditorScreen() {
     handleDownloadToHost,
   } = useEditorPikaWorkflow(generatedCode);
 
+  const {
+    projectName,
+    loadError,
+    saveError,
+    isProjectLoading,
+    handleWorkspaceReady,
+    handleWorkspaceLoaded,
+    handleWorkspaceChanged,
+    handleBackPress,
+  } = useEditorProjectPersistence({
+    webViewRef,
+    projectId,
+  });
+
+  const projectError = loadError ?? saveError;
+
+  const handleNavigateBack = useCallback(async () => {
+    await handleBackPress();
+    navigation.goBack();
+  }, [handleBackPress, navigation]);
+
   //处理WebView发送的消息
   const handleEditorMessage = useCallback((message: EditorOutMessage) => {
     switch (message.type) {
+      case 'editor.workspace.ready':
+        void handleWorkspaceReady();
+        return;
+      case 'editor.workspace.loaded':
+        handleWorkspaceLoaded(message.projectId);
+        return;
+      case 'editor.workspace.changed':
+        void handleWorkspaceChanged(message);
+        return;
       case 'editor.code.generated': {
         const { code: nextCode, blockCount: nextBlockCount } = message;
         if (
@@ -206,7 +266,7 @@ export function EditorScreen() {
         );
         return;
     }
-  }, []);
+  }, [handleWorkspaceChanged, handleWorkspaceLoaded, handleWorkspaceReady]);
 
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
@@ -228,12 +288,24 @@ export function EditorScreen() {
       <View style={[styles.editorHeader, { paddingTop: insets.top }]}>
         <Pressable
           style={styles.headerPressable}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            void handleNavigateBack();
+          }}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
           <Image source={HomeIcon} style={styles.headerIcon} />
         </Pressable>
+        <View style={styles.headerProjectTitleWrap}>
+          <Text style={styles.headerProjectTitle} numberOfLines={1}>
+            {projectName}
+          </Text>
+          {projectError ? (
+            <Text style={styles.headerProjectError} numberOfLines={1}>
+              {projectError}
+            </Text>
+          ) : null}
+        </View>
         <BatteryStatusLight
           battery={watch?.battery ?? null}
           isConnected={isBleConnected}
@@ -344,6 +416,12 @@ export function EditorScreen() {
           javaScriptEnabled
           domStorageEnabled
         />
+        {isProjectLoading ? (
+          <View style={styles.projectLoadingOverlay} pointerEvents="auto">
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.projectLoadingText}>加载作品中…</Text>
+          </View>
+        ) : null}
         <NumberSliderOverlay
           session={rnSliderSession}
           onValueChange={(sessionId, value) => {

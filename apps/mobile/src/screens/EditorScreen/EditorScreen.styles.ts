@@ -23,6 +23,22 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerProjectTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: spacing.sm,
+  },
+  headerProjectTitle: {
+    color: colors.ink,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extraBold,
+  },
+  headerProjectError: {
+    marginTop: 2,
+    color: '#dc2626',
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+  },
   headerIcon: {
     width: 24,
     height: 24,
@@ -91,6 +107,28 @@ export const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
     position: 'relative',
+  },
+  projectLoadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  projectLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    gap: spacing.sm,
+  },
+  projectLoadingText: {
+    color: colors.textSubtle,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
   },
   sidePanel: {
     position: 'absolute',

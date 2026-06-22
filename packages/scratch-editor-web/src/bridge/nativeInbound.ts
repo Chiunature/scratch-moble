@@ -5,8 +5,13 @@ import { handleMatrixLightInbound } from '../workspace-custom/fields/matrixLight
 import { handleNotePickerInbound } from '../workspace-custom/fields/notePickerEditor';
 import { handleHandleShankInbound } from '../workspace-custom/fields/handleShankPickerEditor';
 import { handleVariablePromptInbound } from '../workspace-custom/variablePromptBridge';
+import { handleWorkspacePersistenceInbound } from './workspacePersistence';
 
 export function handleMessageFromNative(message: EditorInMessage): void {
+  if (handleWorkspacePersistenceInbound(message)) {
+    return;
+  }
+
   switch (message.type) {
     case 'editor.numberSlider.value':
     case 'editor.numberSlider.close':

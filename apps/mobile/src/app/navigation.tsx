@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { RemoteControlScreen } from '../screens/RemoteControlScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
@@ -12,7 +13,8 @@ import { colors, fontWeight } from '../theme';
 
 export type RootStackParamList = {
   Home: undefined;
-  Editor: undefined;
+  Projects: undefined;
+  Editor: { projectId: string };
   BuildGuide: undefined;
   RemoteControl: undefined;
   AiChat: undefined;
@@ -35,6 +37,11 @@ export function RootNavigator() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Projects"
+          component={ProjectsScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

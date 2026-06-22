@@ -10,6 +10,7 @@ import { BLOCK_TYPES } from './blocks/blockTypes';
 import { toolboxJson } from './blocks/toolbox';
 import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
 import { registerCodeGenerationFlush } from './bridge/codeGenNotify';
+import { setupWorkspacePersistence } from './bridge/workspacePersistence';
 import { registerNativeInboundBridge } from './bridge/index';
 import type { Workspace } from './codegen/types';
 import { editorTheme } from './theme';
@@ -30,7 +31,6 @@ import {
   patchProcedureWorkspaceBehavior,
   installProcedureDragDebug,
   patchDataVariableReporterOutput,
-  setupStartHatBlock,
   initScratchLocale,
   patchContextMenuMissingTextGuard,
 } from './workspace-custom';
@@ -98,7 +98,6 @@ function bootstrap(): void {
   });
 
   setupDynamicToolboxCategoriesAndRefreshFlyout(workspace);
-  setupStartHatBlock(workspace);
   installProcedureDragDebug(workspace);
 
   // 确保缩放控件存在
@@ -118,6 +117,7 @@ function bootstrap(): void {
     createCodeGenerationPublisher(workspace);
 
   registerCodeGenerationFlush(flushCodePublish);
+  setupWorkspacePersistence(workspace);
   workspace.addChangeListener(() => scheduleCodePublish());
   flushCodePublish();
 }

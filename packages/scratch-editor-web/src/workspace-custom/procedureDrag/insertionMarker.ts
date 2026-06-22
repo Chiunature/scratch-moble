@@ -2,6 +2,7 @@ import * as ScratchBlocks from 'scratch-blocks';
 import type * as Blockly from 'blockly/core';
 
 import { ARGUMENT_REPORTER_TYPE_SET } from './constants';
+import { demoteMatchingBlocksToShadows } from '../normalizeWorkspaceShadows';
 import { logProcedureDrag } from './debug';
 
 type SerializedInput = {
@@ -18,29 +19,7 @@ type SerializedBlockState = {
 function demoteReporterBlocksToShadows(
   state: SerializedBlockState | undefined,
 ): void {
-  if (!state?.inputs) {
-    return;
-  }
-  for (const input of Object.values(state.inputs)) {
-    if (!input) {
-      continue;
-    }
-    const block = input.block;
-    if (block?.type && ARGUMENT_REPORTER_TYPE_SET.has(block.type)) {
-      input.shadow = {
-        type: block.type,
-        ...(block.fields ? { fields: { ...block.fields } } : {}),
-      };
-      delete input.block;
-      continue;
-    }
-    if (block) {
-      demoteReporterBlocksToShadows(block);
-    }
-    if (input.shadow) {
-      demoteReporterBlocksToShadows(input.shadow);
-    }
-  }
+  demoteMatchingBlocksToShadows(state, ARGUMENT_REPORTER_TYPE_SET);
 }
 
 function isDefinitionStackBlock(block: Blockly.BlockSvg): boolean {
