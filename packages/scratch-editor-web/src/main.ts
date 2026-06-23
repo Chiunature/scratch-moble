@@ -24,6 +24,8 @@ import {
   patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
+  patchScratchDraggerToolboxDelete,
+  patchToolboxDeleteWhenFlyoutHidden,
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
   setupDynamicToolboxCategoriesAndRefreshFlyout,
@@ -56,6 +58,7 @@ function bootstrap(): void {
   patchFieldMatrixLight();
   patchFieldNotePicker();
   patchFieldHandleShankPicker();
+  patchScratchDraggerToolboxDelete();
 
   const host = document.getElementById('workspace');
 
@@ -104,6 +107,7 @@ function bootstrap(): void {
   ensureScratchZoomControlsIfMissing(workspace);
   // 确保飞出栏宽度正确
   patchFlyoutGetWidthWhenHidden(workspace);
+  patchToolboxDeleteWhenFlyoutHidden(workspace);
   workspace.resize?.(); // 确保工作区大小正确
   refreshToolboxDomAfterLayout(workspace);
   setupToolboxDoubleClickHideFlyout(workspace); // 确保工具箱点击隐藏

@@ -12,6 +12,8 @@ export { patchFieldNumberEditor, patchFieldPortPicker, patchFieldMatrixLight, pa
 export { patchFlyoutGetWidthWhenHidden, setupFlyoutWidthClamp } from './flyout';
 export {
   patchToolboxCategoryIcons,
+  patchScratchDraggerToolboxDelete,
+  patchToolboxDeleteWhenFlyoutHidden,
   setupToolboxDoubleClickHideFlyout,
 } from './toolbox';
 export {

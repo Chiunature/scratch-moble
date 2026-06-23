@@ -81,6 +81,19 @@ body {
   width: 24px;
 }
 
+/* 拖到删除区：积木半透明（scratch-blocks 默认 blocklyDraggingDelete 仅改光标） */
+.blocklyDraggingDelete {
+  opacity: 0.45;
+}
+.blocklyDraggingDelete > .blocklyPath,
+.blocklyDraggingDelete > .blocklyPathLight {
+  fill-opacity: 0.45 !important;
+  stroke-opacity: 0.45 !important;
+}
+.blocklyBlockDragSurface .blocklyDraggingDelete {
+  opacity: 0.45;
+}
+
 /* 变量/自制积木飞栏按钮：保证中文标签在浅色背景上可见 */
 .blocklyFlyoutButton .blocklyText {
   fill: #fff !important;
