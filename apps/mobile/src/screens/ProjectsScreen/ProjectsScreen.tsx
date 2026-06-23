@@ -17,11 +17,10 @@ import { colors } from '../../theme';
 import { useProjectStore } from '../../store/useProjectStore';
 import {
   ProjectActionModal,
-  ProjectActionToast,
-  type ProjectActionToastState,
   type ProjectDeletePayload,
   type ProjectRenamePayload,
 } from './ProjectActionModal';
+import { Toast, type ToastState } from '../../components/Toast';
 import { styles } from './ProjectsScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
@@ -62,7 +61,7 @@ export function ProjectsScreen({ navigation }: Props) {
   const [actionTarget, setActionTarget] =
     useState<ScratchProjectSummary | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<ProjectActionToastState>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const deleteAnim = useRef(new Animated.Value(1)).current;
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -291,7 +290,7 @@ export function ProjectsScreen({ navigation }: Props) {
         onDelete={handleDeleteProject}
       />
 
-      <ProjectActionToast
+      <Toast
         toast={toast}
         topInset={insets.top}
         onHidden={() => setToast(null)}
