@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
+  Easing,
   FlatList,
-  Modal,
   Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -16,9 +15,18 @@ import type { ScratchProjectSummary } from '@scratch-mobile/shared';
 import { type RootStackParamList } from '../../app/navigation';
 import { colors } from '../../theme';
 import { useProjectStore } from '../../store/useProjectStore';
+import {
+  ProjectActionModal,
+  ProjectActionToast,
+  type ProjectActionToastState,
+  type ProjectDeletePayload,
+  type ProjectRenamePayload,
+} from './ProjectActionModal';
 import { styles } from './ProjectsScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
+
+const DELETE_ANIMATION_MS = 400;
 
 function formatUpdatedAt(value: string): string {
   const date = new Date(value);
@@ -26,6 +34,20 @@ function formatUpdatedAt(value: string): string {
     return value;
   }
   return date.toLocaleString();
+}
+
+function ProjectCardContent({ item }: { item: ScratchProjectSummary }) {
+  return (
+    <>
+      <Text style={styles.cardTitle} numberOfLines={1}>
+        {item.name}
+      </Text>
+      <Text style={styles.cardMeta}>
+        更新于 {formatUpdatedAt(item.updatedAt)}
+      </Text>
+      <Text style={styles.cardMeta}>积木数量 {item.blockCount ?? 0}</Text>
+    </>
+  );
 }
 
 export function ProjectsScreen({ navigation }: Props) {
@@ -37,14 +59,39 @@ export function ProjectsScreen({ navigation }: Props) {
   const rename = useProjectStore(state => state.rename);
   const remove = useProjectStore(state => state.remove);
   const [isCreating, setIsCreating] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<ScratchProjectSummary | null>(
-    null,
-  );
-  const [renameValue, setRenameValue] = useState('');
+  const [actionTarget, setActionTarget] =
+    useState<ScratchProjectSummary | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ProjectActionToastState>(null);
+  const deleteAnim = useRef(new Animated.Value(1)).current;
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void loadProjects();
   }, [loadProjects]);
+
+  useEffect(() => {
+    return () => {
+      if (deleteTimerRef.current) {
+        clearTimeout(deleteTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!deletingId) {
+      deleteAnim.setValue(1);
+      return;
+    }
+
+    deleteAnim.setValue(1);
+    Animated.timing(deleteAnim, {
+      toValue: 0,
+      duration: DELETE_ANIMATION_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [deleteAnim, deletingId]);
 
   const handleCreateProject = useCallback(async () => {
     if (isCreating) {
@@ -66,59 +113,116 @@ export function ProjectsScreen({ navigation }: Props) {
     [navigation],
   );
 
-  const handleLongPressProject = useCallback(
-    (project: ScratchProjectSummary) => {
-      Alert.alert(project.name, '选择操作', [
-        {
-          text: '重命名',
-          onPress: () => {
-            setRenameTarget(project);
-            setRenameValue(project.name);
-          },
-        },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('删除作品', `确定删除「${project.name}」吗？`, [
-              { text: '取消', style: 'cancel' },
-              {
-                text: '删除',
-                style: 'destructive',
-                onPress: () => {
-                  void remove(project.id);
-                },
-              },
-            ]);
-          },
-        },
-        { text: '取消', style: 'cancel' },
-      ]);
+  const handleLongPressProject = useCallback((project: ScratchProjectSummary) => {
+    setActionTarget(project);
+  }, []);
+
+  const handleRenameProject = useCallback(
+    async ({ projectId, oldName, newName }: ProjectRenamePayload) => {
+      try {
+        await rename(projectId, newName);
+        setToast({
+          kind: 'success',
+          title: '重命名成功',
+          message: `「${oldName}」已重命名为「${newName}」`,
+        });
+      } catch {
+        setToast({
+          kind: 'error',
+          title: '重命名失败',
+          message: `「${oldName}」未能重命名，请重试`,
+        });
+        throw new Error('rename failed');
+      }
     },
-    [remove],
+    [rename],
+  );
+
+  const handleDeleteProject = useCallback(
+    async ({ projectId, projectName }: ProjectDeletePayload) => {
+      setDeletingId(projectId);
+
+      await new Promise<void>(resolve => {
+        if (deleteTimerRef.current) {
+          clearTimeout(deleteTimerRef.current);
+        }
+        deleteTimerRef.current = setTimeout(() => {
+          deleteTimerRef.current = null;
+          resolve();
+        }, DELETE_ANIMATION_MS);
+      });
+
+      try {
+        await remove(projectId);
+        setToast({
+          kind: 'delete',
+          title: '已删除',
+          message: `「${projectName}」已被删除`,
+        });
+      } catch {
+        deleteAnim.setValue(1);
+        setToast({
+          kind: 'error',
+          title: '删除失败',
+          message: `「${projectName}」未能删除，请重试`,
+        });
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [deleteAnim, remove],
   );
 
   const renderProject = useCallback(
-    ({ item }: { item: ScratchProjectSummary }) => (
-      <Pressable
-        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-        onPress={() => handleOpenProject(item.id)}
-        onLongPress={() => handleLongPressProject(item)}
-        accessibilityRole="button"
-        accessibilityLabel={`打开作品 ${item.name}`}
-      >
-        <Text style={styles.cardTitle} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <Text style={styles.cardMeta}>
-          更新于 {formatUpdatedAt(item.updatedAt)}
-        </Text>
-        <Text style={styles.cardMeta}>
-          积木数量 {item.blockCount ?? 0}
-        </Text>
-      </Pressable>
-    ),
-    [handleLongPressProject, handleOpenProject],
+    ({ item }: { item: ScratchProjectSummary }) => {
+      const isDeleting = item.id === deletingId;
+
+      if (!isDeleting) {
+        return (
+          <Pressable
+            style={({ pressed }) => [
+              styles.card,
+              styles.cardShadow,
+              pressed && styles.cardPressed,
+            ]}
+            onPress={() => handleOpenProject(item.id)}
+            onLongPress={() => handleLongPressProject(item)}
+            accessibilityRole="button"
+            accessibilityLabel={`打开作品 ${item.name}`}
+          >
+            <ProjectCardContent item={item} />
+          </Pressable>
+        );
+      }
+
+      return (
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              opacity: deleteAnim,
+              transform: [
+                {
+                  scale: deleteAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.82, 1],
+                  }),
+                },
+                {
+                  translateY: deleteAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <ProjectCardContent item={item} />
+        </Animated.View>
+      );
+    },
+    [deleteAnim, deletingId, handleLongPressProject, handleOpenProject],
   );
 
   if (isLoading && projects.length === 0) {
@@ -153,6 +257,7 @@ export function ProjectsScreen({ navigation }: Props) {
           <Pressable
             style={({ pressed }) => [
               styles.card,
+              styles.cardShadow,
               styles.newCard,
               pressed && styles.cardPressed,
             ]}
@@ -178,49 +283,19 @@ export function ProjectsScreen({ navigation }: Props) {
         }
       />
 
-      <Modal
-        visible={renameTarget != null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRenameTarget(null)}
-      >
-        <Pressable
-          style={styles.renameBackdrop}
-          onPress={() => setRenameTarget(null)}
-        >
-          <Pressable
-            style={styles.renameSheet}
-            onPress={event => event.stopPropagation()}
-          >
-            <Text style={styles.cardTitle}>重命名作品</Text>
-            <TextInput
-              value={renameValue}
-              onChangeText={setRenameValue}
-              placeholder="作品名称"
-              autoFocus
-              style={styles.renameInput}
-            />
-            <View style={styles.renameActions}>
-              <Pressable onPress={() => setRenameTarget(null)}>
-                <Text style={styles.cardMeta}>取消</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  const trimmed = renameValue.trim();
-                  if (renameTarget && trimmed) {
-                    rename(renameTarget.id, trimmed).catch(() => undefined);
-                  }
-                  setRenameTarget(null);
-                }}
-              >
-                <Text style={[styles.cardTitle, styles.renameSaveText]}>
-                  保存
-                </Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <ProjectActionModal
+        visible={actionTarget != null}
+        project={actionTarget}
+        onClose={() => setActionTarget(null)}
+        onRename={handleRenameProject}
+        onDelete={handleDeleteProject}
+      />
+
+      <ProjectActionToast
+        toast={toast}
+        topInset={insets.top}
+        onHidden={() => setToast(null)}
+      />
     </View>
   );
 }

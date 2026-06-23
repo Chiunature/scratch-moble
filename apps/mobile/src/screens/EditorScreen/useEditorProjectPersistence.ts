@@ -158,4 +158,4 @@ export function useEditorProjectPersistence({
     handleWorkspaceChanged,
     handleBackPress,
   };
-};
+}

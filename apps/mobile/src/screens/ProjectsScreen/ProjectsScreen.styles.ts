@@ -40,6 +40,8 @@ export const styles = StyleSheet.create({
     borderRadius: 24,
     padding: spacing.xl,
     backgroundColor: colors.surface,
+  },
+  cardShadow: {
     ...shadows.primaryMd,
   },
   cardPressed: {
@@ -74,34 +76,6 @@ export const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 64,
-  },
-  renameBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    padding: spacing['2xl'],
-  },
-  renameSheet: {
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  renameInput: {
-    borderWidth: 1,
-    borderColor: colors.primarySoft,
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.ink,
-  },
-  renameActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.md,
-  },
-  renameSaveText: {
-    color: colors.primary,
   },
   loadingContainer: {
     flex: 1,

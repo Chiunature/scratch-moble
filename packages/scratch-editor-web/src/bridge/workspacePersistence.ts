@@ -10,6 +10,10 @@ import { notifyCodeGenerationNeeded } from './codeGenNotify';
 
 const WORKSPACE_SAVE_DEBOUNCE_MS = 1500;
 
+type SerializedWorkspaceState = ReturnType<
+  typeof ScratchBlocks.serialization.workspaces.save
+>;
+
 let activeProjectId: string | null = null;
 let workspaceRevision = 0;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -58,8 +62,10 @@ function loadWorkspaceState(workspace: Workspace, state: unknown | null): void {
     if (state != null) {
       const normalized = normalizeDefaultShadowReportersInWorkspaceState(
         cloneWorkspaceState(state),
-      );
-      ScratchBlocks.serialization.workspaces.load(normalized, workspace, false);
+      ) as SerializedWorkspaceState;
+      ScratchBlocks.serialization.workspaces.load(normalized, workspace, {
+        recordUndo: false,
+      });
     }
   } finally {
     ScratchBlocks.Events.enable();
