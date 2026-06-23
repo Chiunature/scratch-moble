@@ -47,7 +47,8 @@ export const sensorBlockDefinitions = [
         alt: '',
       },
       { type: 'input_value', name: 'PORTS', check: 'Number' },
-      {type: 'field_dropdown',
+      {
+        type: 'field_dropdown',
         name: 'CMP',
         options: [
           ['>', '>'],
@@ -110,10 +111,11 @@ export const sensorBlockDefinitions = [
     extensions: ['shape_statement'],
   },
   {
-    type:BLOCK_TYPES.sensor.gray_sensor.luxState,
+    type: BLOCK_TYPES.sensor.gray_sensor.luxState,
     message0: '%1 %2 灰度传感器 %3 是否触发',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: distanceIcon,
         width: 24,
         height: 24,
@@ -135,7 +137,8 @@ export const sensorBlockDefinitions = [
     type: BLOCK_TYPES.sensor.gray_sensor.oneCalibrate,
     message0: '%1 %2 校准 %3 灰度传感器 %4 秒',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: distanceIcon,
         width: 24,
         height: 24,
@@ -157,10 +160,11 @@ export const sensorBlockDefinitions = [
     extensions: ['shape_statement'],
   },
   {
-    type:BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
+    type: BLOCK_TYPES.sensor.gray_sensor.twoCalibrate,
     message0: '%1 %2 %3 灰度传感器 %4 秒',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: distanceIcon,
         width: 24,
         height: 24,
@@ -182,10 +186,11 @@ export const sensorBlockDefinitions = [
     extensions: ['shape_statement'],
   },
   {
-    type:BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
+    type: BLOCK_TYPES.sensor.ultrasonic_sensor.cmpValue,
     message0: '%1 %2 超声波传感器 %3 的距离是否 %4 %5 cm',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: ultrasonicIcon,
         width: 24,
         height: 24,
@@ -199,7 +204,8 @@ export const sensorBlockDefinitions = [
         alt: '',
       },
       { type: 'input_value', name: 'PORTS', check: 'Number' },
-      { type: 'field_dropdown',
+      {
+        type: 'field_dropdown',
         name: 'CMP',
         options: [
           ['>', '>'],
@@ -213,10 +219,11 @@ export const sensorBlockDefinitions = [
     extensions: ['output_boolean'],
   },
   {
-    type:BLOCK_TYPES.sensor.ultrasonic_sensor.value,
+    type: BLOCK_TYPES.sensor.ultrasonic_sensor.value,
     message0: '%1 %2 超声波传感器 %3 的数值',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: ultrasonicIcon,
         width: 24,
         height: 24,
@@ -235,10 +242,11 @@ export const sensorBlockDefinitions = [
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.keyRemote,
+    type: BLOCK_TYPES.sensor.remote_control_sensor.keyRemote,
     message0: '%1 %2 手柄 %3 是否 %4',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: handleShankIcon,
         width: 24,
         height: 24,
@@ -252,7 +260,8 @@ export const sensorBlockDefinitions = [
         alt: '',
       },
       { type: 'input_value', name: 'HANDLESHANK', check: 'String' },
-      { type: 'field_dropdown',
+      {
+        type: 'field_dropdown',
         name: 'STATE',
         options: [
           ['被按下', 'press'],
@@ -264,35 +273,11 @@ export const sensorBlockDefinitions = [
     extensions: ['output_boolean'],
   },
   {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset,
+    type: BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset,
     message0: '%1 %2 设置手柄前进偏移量为左 %3 右 %4',
     args0: [
-      {type: 'field_image',
-        src: handleShankIcon,
-        width: 24,
-        height: 24,
-        alt: '*',
-      },
       {
         type: 'field_image',
-        src: separatorVertical,
-        width: 2,
-        height: 30,
-        alt: '',
-      },
-      { type: 'input_value', name: 'LEFT_OFFSET', check: 'Number' },
-      { type: 'input_value', name: 'RIGHT_OFFSET', check: 'Number' },
-    ],
-    style: 'sensors_blocks',
-    previousStatement: null, 
-    nextStatement: null,
-    extensions: ['shape_statement'],
-  },
-  {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset,
-    message0: '%1 %2 设置手柄后退偏移量为左 %3 右 %4',
-    args0: [
-      {type: 'field_image',
         src: handleShankIcon,
         width: 24,
         height: 24,
@@ -314,10 +299,37 @@ export const sensorBlockDefinitions = [
     extensions: ['shape_statement'],
   },
   {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.readAdcanceLeftOffset,
+    type: BLOCK_TYPES.sensor.remote_control_sensor.movSetRetreatOffset,
+    message0: '%1 %2 设置手柄后退偏移量为左 %3 右 %4',
+    args0: [
+      {
+        type: 'field_image',
+        src: handleShankIcon,
+        width: 24,
+        height: 24,
+        alt: '*',
+      },
+      {
+        type: 'field_image',
+        src: separatorVertical,
+        width: 2,
+        height: 30,
+        alt: '',
+      },
+      { type: 'input_value', name: 'LEFT_OFFSET', check: 'Number' },
+      { type: 'input_value', name: 'RIGHT_OFFSET', check: 'Number' },
+    ],
+    style: 'sensors_blocks',
+    previousStatement: null,
+    nextStatement: null,
+    extensions: ['shape_statement'],
+  },
+  {
+    type: BLOCK_TYPES.sensor.remote_control_sensor.readAdcanceLeftOffset,
     message0: '%1 %2 读取前进左偏移量',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: handleShankIcon,
         width: 24,
         height: 24,
@@ -335,10 +347,11 @@ export const sensorBlockDefinitions = [
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.readAdvanceRightOffset,
+    type: BLOCK_TYPES.sensor.remote_control_sensor.readAdvanceRightOffset,
     message0: '%1 %2 读取前进右偏移量',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: handleShankIcon,
         width: 24,
         height: 24,
@@ -356,10 +369,11 @@ export const sensorBlockDefinitions = [
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.readRetreatLeftOffset,
+    type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatLeftOffset,
     message0: '%1 %2 读取后退左偏移量',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: handleShankIcon,
         width: 24,
         height: 24,
@@ -377,10 +391,11 @@ export const sensorBlockDefinitions = [
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
+    type: BLOCK_TYPES.sensor.remote_control_sensor.readRetreatRightOffset,
     message0: '%1 %2 读取后退右偏移量',
     args0: [
-      {type: 'field_image',
+      {
+        type: 'field_image',
         src: handleShankIcon,
         width: 24,
         height: 24,
@@ -398,17 +413,17 @@ export const sensorBlockDefinitions = [
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.other.keyMast,
+    type: BLOCK_TYPES.sensor.other.keyMast,
     message0: '主机 %1 按钮是否 %2',
     args0: [
       {
-        type:'field_dropdown',
+        type: 'field_dropdown',
         name: 'KEY',
         options: [
           ['左', 'left'],
-          ['有', 'right'],
+          ['右', 'right'],
         ],
-      },  
+      },
       {
         type: 'field_dropdown',
         name: 'STATE',
@@ -422,17 +437,17 @@ export const sensorBlockDefinitions = [
     extensions: ['output_boolean'],
   },
   {
-    type:BLOCK_TYPES.sensor.other.timer,
+    type: BLOCK_TYPES.sensor.other.timer,
     message0: '计时器',
     style: 'sensors_blocks',
     extensions: ['output_number'],
   },
   {
-    type:BLOCK_TYPES.sensor.other.resetTimer,
+    type: BLOCK_TYPES.sensor.other.resetTimer,
     message0: '重置计时器',
     style: 'sensors_blocks',
     previousStatement: null,
     nextStatement: null,
     extensions: ['shape_statement'],
-  }
+  },
 ] as const;
