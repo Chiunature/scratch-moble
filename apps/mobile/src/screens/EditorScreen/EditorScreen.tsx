@@ -32,7 +32,7 @@ import {
   resetInjectEditorMessageDedup,
   VariablePromptOverlay,
 } from '../../features/editor';
-import { ScrollablePanel } from '../../components/ScrollablePanel';
+import { GeneratedCodePanel } from './GeneratedCodePanel';
 import { type RootStackParamList } from '../../app/navigation';
 import { useDeviceWatch } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
@@ -563,13 +563,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
           <View
             style={[styles.sidePanel, { width: sidePanelWidth }]}
           >
-            <ScrollablePanel style={styles.codePanelBody}>
-              <View style={styles.codeBlock}>
-                <Text style={styles.code} selectable>
-                  {generatedCode}
-                </Text>
-              </View>
-            </ScrollablePanel>
+            <GeneratedCodePanel code={generatedCode} />
           </View>
         ) : null}
       </View>

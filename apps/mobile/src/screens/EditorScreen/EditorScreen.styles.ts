@@ -144,16 +144,4 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderRadius: spacing.sm,
   },
-  codePanelBody: {
-    flex: 1,
-  },
-  codeBlock: {
-    marginTop: spacing.xs,
-  },
-  code: {
-    color: colors.codeText,
-    fontFamily: 'monospace',
-    fontSize: fontSize.xs,
-    lineHeight: 20,
-  },
 });
