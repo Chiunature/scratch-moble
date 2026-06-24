@@ -258,6 +258,28 @@ export function valueToPython(
   return targetBlock ? expressionBlockToPython(targetBlock) : fallback;
 }
 
+/** 标量变量赋值：文本 shadow 填纯数字时输出数字字面量，否则走常规表达式 */
+// 针对那个data_setvariableto 的value 输入槽，当value 输入槽的shadow 是text 时，如果text 的值是纯数字，则输出数字字面量，否则走常规表达式
+export function scalarValueToPython(
+  block: ScratchBlock,
+  inputName: string,
+  fallback: string,
+): string {
+  const targetBlock = getInputTargetBlock(block, inputName);
+  if (!targetBlock) {
+    return fallback;
+  }
+  if (targetBlock.type === 'text') {
+    const trimmed = (getFieldValue(targetBlock, 'TEXT') ?? '').trim();
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      return trimmed.includes('.')
+        ? trimmed
+        : String(Number.parseInt(trimmed, 10));
+    }
+  }
+  return expressionBlockToPython(targetBlock);
+}
+
 /** field_dropdown / field_number 等直接挂在积木上的字段（非 input_value 槽） */
 export function fieldToPython(
   block: ScratchBlock,
@@ -314,7 +336,6 @@ function sensorBooleanReporterToPython(block: ScratchBlock): string | null {
       ]);
 
     case BLOCK_TYPES.sensor.other.keyMast:
-      console.log('1', typeof fieldToPython(block, 'STATE', '1'));
       return moduleExpression(PYTHON_MODULES.sensor.other, 'key_mast', [
         fieldStringToPython(block, 'KEY', 'left'),
         fieldToPython(block, 'STATE', '1'),

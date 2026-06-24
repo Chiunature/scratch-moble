@@ -1,11 +1,11 @@
-import { valueToPython, variableFieldToPython } from '../expressions';
+import { scalarValueToPython, valueToPython, variableFieldToPython } from '../expressions';
 import { line } from '../helpers';
 import type { StatementGenerator } from '../types';
 
 export const dataStatementGenerators: Record<string, StatementGenerator> = {
   data_setvariableto(block, context) {
     const name = variableFieldToPython(block, 'VARIABLE');
-    const value = valueToPython(block, 'VALUE', '0');
+    const value = scalarValueToPython(block, 'VALUE', '0');
     return line(context, `${name} = ${value}`);
   },
   data_changevariableby(block, context) {

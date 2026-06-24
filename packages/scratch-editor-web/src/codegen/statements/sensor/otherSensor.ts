@@ -4,6 +4,6 @@ import type { StatementGenerator } from '../../types';
 import { valueToPython, multiPortsInputToPythonArgs } from '../../expressions';
 export const otherSensor: Record<string, StatementGenerator> = {
   [BLOCK_TYPES.sensor.other.resetTimer](block, context) {
-    return moduleCall(context, PYTHON_MODULES.control, 'reset_timer');
+    return moduleCall(context, PYTHON_MODULES.control, 'resetTimer');
   },
 };

@@ -53,7 +53,7 @@ function applyDeleteStyleToStack(
   wouldDelete: boolean,
 ): void {
   forEachBlockInStack(root, block => {
-    if (ScratchBlocks.isDeletable(block)) {
+    if (ScratchBlocks.isDeletable(block)) {   
       block.setDeleteStyle(wouldDelete);
     }
   });

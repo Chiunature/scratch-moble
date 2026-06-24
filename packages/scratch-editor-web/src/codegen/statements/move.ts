@@ -16,7 +16,7 @@ export const moveStatementGenerators: Record<string, StatementGenerator> = {
     ]);
   },
   [BLOCK_TYPES.move.moveSetStopModule](block, context) {
-    return moduleCall(context, PYTHON_MODULES.move, 'move_set_stop_module', [
+    return moduleCall(context, PYTHON_MODULES.move, 'mov_set_stop_module', [
       fieldToPython(block, 'MODE', '1'),
     ]);
   },

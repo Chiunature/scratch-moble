@@ -5,7 +5,7 @@ import type { StatementGenerator } from '../types';
 
 export const soundStatementGenerators: Record<string, StatementGenerator> = {
   [BLOCK_TYPES.sound.playMusic](block, context) {
-    return moduleCall(context, PYTHON_MODULES.sound, 'play_music', [
+    return moduleCall(context, PYTHON_MODULES.sound, 'play_muic', [
       noteValueToPython(block, 'NOTE', 12),
       valueToPython(block, 'DURATION', '1'),
     ]);

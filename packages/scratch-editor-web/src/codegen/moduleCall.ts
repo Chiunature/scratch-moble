@@ -10,7 +10,7 @@ export const PYTHON_MODULES = {
   motor: '_motor',
   move: '_motor',
   matrix: '_matrix',
-  sound: '_sound',
+  sound: '_beep',
   control: '_os',
   sensor: {
     touch_sensor: '_touch',
