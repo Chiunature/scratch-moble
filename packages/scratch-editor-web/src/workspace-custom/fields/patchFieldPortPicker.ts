@@ -4,6 +4,7 @@ import {
   coercePortFieldValue,
   formatPortFieldDisplay,
   parsePortFieldValue,
+  PORT_LABELS,
   type PortSelectionMode,
 } from '@scratch-mobile/shared';
 
@@ -11,12 +12,8 @@ import { openPortPickerEditor, type ScratchPortField } from './portPickerEditor'
 
 let fieldsRegistered = false;
 
-const BLOCKLY_PORT_OPTIONS: [string, string][] = Array.from(
-  { length: 8 },
-  (_, i) => {
-    const s = String(i);
-    return [s, s];
-  },
+const BLOCKLY_PORT_OPTIONS: [string, string][] = PORT_LABELS.map(
+  (label, i) => [label, String(i)],
 );
 
 function readSelectionMode(options: Record<string, unknown>): PortSelectionMode {
@@ -49,9 +46,14 @@ function fieldCoerceOpts(field: {
   return { mode, maxSelections: field.maxSelections_ ?? (mode === 'multi' ? 2 : 1) };
 }
 
+type PortPickerFieldState = {
+  selectionMode_: PortSelectionMode;
+  maxSelections_: number;
+};
+
 /** 逗号初值（如 portShadowMulti）须在 coerce 前升级为多选，否则会被截成单个端口。 */
 function applyMultiFromRawValue(
-  field: FieldPortPicker,
+  field: PortPickerFieldState,
   raw: string,
 ): void {
   const trimmed = raw.trim();

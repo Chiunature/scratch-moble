@@ -1,4 +1,6 @@
-/** 端口字段存盘/桥接：单选 "3"，多选 "1,2"（逗号分隔、升序）；显示 "1+2"。 */
+import { formatPortLabel } from '../constants/ports';
+
+/** 端口字段存盘/桥接：单选 "3"，多选 "1,2"（逗号分隔、升序）；显示 "B" / "B+C"。 */
 
 export type PortSelectionMode = 'single' | 'multi';
 
@@ -80,11 +82,12 @@ export function portModeFromMaxSelections(maxSelections: number): PortSelectionM
   return maxSelections > 1 ? 'multi' : 'single';
 }
 
-/** 积木上显示的端口文案（多选为 1+2，存盘仍为 1,2）。 */
+/** 积木上显示的端口文案（多选为 B+C，存盘仍为 1,2）。 */
 export function formatPortFieldDisplay(raw: string): string {
   const ports = parsePortFieldValue(raw);
-  if (ports.length === 1) {
-    return ports[0]!;
+  const labels = ports.map(formatPortLabel);
+  if (labels.length === 1) {
+    return labels[0]!;
   }
-  return ports.join('+');
+  return labels.join('+');
 }

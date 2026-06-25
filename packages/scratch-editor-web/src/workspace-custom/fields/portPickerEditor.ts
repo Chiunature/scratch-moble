@@ -26,11 +26,13 @@ export type ScratchPortField = {
   setValue(value: string, fireChangeEvent?: boolean): void;
   selectionMode_?: PortSelectionMode;
   maxSelections_?: number;
-  getSourceBlock(): {
-    getColour?: () => string;
-    getColourSecondary?: () => string;
-    getColourTertiary?: () => string;
-  } & RenderableBlock | null;
+  getSourceBlock():
+    | ({
+        getColour?: () => string;
+        getColourSecondary?: () => string;
+        getColourTertiary?: () => string;
+      } & RenderableBlock)
+    | null;
 };
 
 type PortPickerSession = {
@@ -65,7 +67,9 @@ function getFieldPortConfig(field: ScratchPortField): {
 
 function createSessionId(field: ScratchPortField): string {
   const id = (field as unknown as { id_?: string }).id_;
-  return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return id
+    ? `field-${id}`
+    : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function refreshPortFieldDisplay(field: ScratchPortField): void {
@@ -150,10 +154,7 @@ export function handlePortPickerInbound(message: EditorInMessage): void {
   closeSession(message.sessionId, false);
 }
 
-export function openPortPickerEditor(
-  field: ScratchPortField,
-  e?: Event,
-): void {
+export function openPortPickerEditor(field: ScratchPortField, e?: Event): void {
   if (!isReactNativeHost()) {
     fieldDropdownShowEditor.call(field, e);
     return;

@@ -103,7 +103,11 @@ function buildSensorPortDefinition(
     deviceName: formatDeviceKindLabel(live.kind),
     deviceType: '传感器接口',
     runtimeLabel:
-      status === 'connected' ? formatPortReading(live) : live.isAbnormal ? '连接异常' : '未连接',
+      status === 'connected'
+        ? formatPortReading(live)
+        : live.isAbnormal
+        ? '连接异常'
+        : '未连接',
   };
 }
 
@@ -115,8 +119,9 @@ export function buildPortDefinitions(
     (sensorPorts ?? []).map(port => [port.port, port]),
   );
 
-  const sensorDefinitions = Array.from({ length: SENSOR_PORT_COUNT }, (_, index) =>
-    buildSensorPortDefinition(index, liveByPort.get(index)),
+  const sensorDefinitions = Array.from(
+    { length: SENSOR_PORT_COUNT },
+    (_, index) => buildSensorPortDefinition(index, liveByPort.get(index)),
   );
 
   return [...sensorDefinitions, ...STATIC_MOTOR_PORT_DEFINITIONS];
@@ -125,7 +130,10 @@ export function buildPortDefinitions(
 /** 无实时数据时的默认端口列表 */
 export const PORT_DEFINITIONS = buildPortDefinitions(null);
 
-export const SENSOR_PORT_DEFINITIONS = PORT_DEFINITIONS.slice(0, SENSOR_PORT_COUNT);
+export const SENSOR_PORT_DEFINITIONS = PORT_DEFINITIONS.slice(
+  0,
+  SENSOR_PORT_COUNT,
+);
 export const MOTOR_PORT_DEFINITIONS = PORT_DEFINITIONS.slice(SENSOR_PORT_COUNT);
 
 export function getPortDefinition(
@@ -141,5 +149,7 @@ export function getPortDefinition(
 
 export function isMotorPortValue(value: string): boolean {
   const port = Number(value);
-  return !Number.isNaN(port) && port >= SENSOR_PORT_COUNT && port < TOTAL_PORT_COUNT;
+  return (
+    !Number.isNaN(port) && port >= SENSOR_PORT_COUNT && port < TOTAL_PORT_COUNT
+  );
 }

@@ -78,8 +78,8 @@ function PortGridButton({
   const borderColor = selected
     ? portPickerTheme.accent
     : isMotor
-      ? portPickerTheme.textMuted
-      : statusColor(port.connectionStatus);
+    ? portPickerTheme.textMuted
+    : statusColor(port.connectionStatus);
 
   return (
     <Pressable
@@ -94,8 +94,8 @@ function PortGridButton({
           backgroundColor: isMotor
             ? 'rgba(30, 41, 59, 0.45)'
             : port.connectionStatus === 'disconnected'
-              ? 'rgba(30, 41, 59, 0.6)'
-              : 'rgba(15, 23, 42, 0.9)',
+            ? 'rgba(30, 41, 59, 0.6)'
+            : 'rgba(15, 23, 42, 0.9)',
         },
       ]}
     >
@@ -315,10 +315,7 @@ export function PortPickerOverlay({
     }
 
     const max = session.maxSelections ?? 1;
-    const ports = normalizePortValues(
-      parsePortFieldValue(session.value),
-      max,
-    );
+    const ports = normalizePortValues(parsePortFieldValue(session.value), max);
     setPendingPorts(ports);
 
     slideAnim.setValue(sheetHeight);
@@ -350,12 +347,14 @@ export function PortPickerOverlay({
     if (!canConfirm) {
       return;
     }
-    const value = coercePortFieldValue(
-      pendingPorts.join(','),
-      { mode: selectionMode, maxSelections },
-    );
-    onValueChange(session.sessionId, value);
-    onClose(session.sessionId);
+    console.log('pendingPorts', pendingPorts);
+    return;
+    // const value = coercePortFieldValue(pendingPorts.join(','), {
+    //   mode: selectionMode,
+    //   maxSelections,
+    // });
+    // onValueChange(session.sessionId, value);
+    // onClose(session.sessionId);
   };
 
   const isSelected = (portValue: string) => pendingPorts.includes(portValue);
