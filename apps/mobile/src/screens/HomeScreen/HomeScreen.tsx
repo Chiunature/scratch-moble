@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from '@scratch-mobile/i18n';
 import { APP_DISPLAY_NAME } from '@scratch-mobile/shared';
 import BleIcon from '../../../assets/homeScreen/bleIcon.png';
 import LogoIcon from '../../../assets/branding/AppLogo.png';
@@ -11,29 +12,15 @@ import { styles } from './HomeScreen.styles';
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 const homeCards = [
-  {
-    title: '编程模式',
-    subtitle: '进入积木编辑器',
-    route: 'Projects',
-  },
-  {
-    title: '搭建说明',
-    subtitle: '查看结构步骤',
-    route: 'BuildGuide',
-  },
-  {
-    title: '遥控模式',
-    subtitle: '控制硬件设备',
-    route: 'RemoteControl',
-  },
-  {
-    title: 'AI 对话',
-    subtitle: '智能问答助手',
-    route: 'AiChat',
-  },
+  { cardKey: 'projects', route: 'Projects' },
+  { cardKey: 'buildGuide', route: 'BuildGuide' },
+  { cardKey: 'remoteControl', route: 'RemoteControl' },
+  { cardKey: 'aiChat', route: 'AiChat' },
 ] as const;
 
 export function HomeScreen({ navigation }: Props) {
+  const { t: tHome } = useTranslation('home');
+  const { t: tNav } = useTranslation('navigation');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -53,7 +40,7 @@ export function HomeScreen({ navigation }: Props) {
           resizeMode="contain"
         />
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>正在进入创作空间...</Text>
+        <Text style={styles.loadingText}>{tHome('loading')}</Text>
       </View>
     );
   }
@@ -68,6 +55,8 @@ export function HomeScreen({ navigation }: Props) {
             onPress={() => {
               navigation.navigate('BleDevices');
             }}
+            accessibilityRole="button"
+            accessibilityLabel={tHome('bleAccessibilityLabel')}
           >
             <Image
               source={BleIcon}
@@ -75,8 +64,11 @@ export function HomeScreen({ navigation }: Props) {
               resizeMode="contain"
             />
           </Pressable>
-          <Pressable style={styles.settingsButton}>
-            <Text style={styles.settingsText}>设置</Text>
+          <Pressable
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.settingsText}>{tNav('settings')}</Text>
           </Pressable>
         </View>
       </View>
@@ -91,8 +83,12 @@ export function HomeScreen({ navigation }: Props) {
             ]}
             onPress={() => navigation.navigate(card.route)}
           >
-            <Text style={styles.cardTitle}>{card.title}</Text>
-            <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
+            <Text style={styles.cardTitle}>
+              {tHome(`cards.${card.cardKey}.title`)}
+            </Text>
+            <Text style={styles.cardSubtitle}>
+              {tHome(`cards.${card.cardKey}.subtitle`)}
+            </Text>
           </Pressable>
         ))}
       </View>

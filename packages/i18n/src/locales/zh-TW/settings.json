@@ -1,0 +1,13 @@
+{
+  "title": "設定",
+  "languageSection": "語言選擇",
+  "languageOptions": {
+    "simplifiedChinese": "简体中文",
+    "traditionalChinese": "繁體中文",
+    "english": "English"
+  },
+  "versionSection": "軟體版本",
+  "versionLabel": "版本號：V{{version}}",
+  "infoSection": "軟體資訊",
+  "infoBody": "Scratch Mobile 是一款面向青少年與創客的圖形化程式設計應用，支援積木編輯、藍牙裝置連線與程式執行。更多資訊請關注官方渠道。"
+}

@@ -1,0 +1,22 @@
+{
+  "loading": "正在进入创作空间...",
+  "cards": {
+    "projects": {
+      "title": "编程模式",
+      "subtitle": "进入积木编辑器"
+    },
+    "buildGuide": {
+      "title": "搭建说明",
+      "subtitle": "查看结构步骤"
+    },
+    "remoteControl": {
+      "title": "遥控模式",
+      "subtitle": "控制硬件设备"
+    },
+    "aiChat": {
+      "title": "AI 对话",
+      "subtitle": "智能问答助手"
+    }
+  },
+  "bleAccessibilityLabel": "蓝牙设备"
+}

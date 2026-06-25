@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '@scratch-mobile/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -9,6 +10,7 @@ import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { RemoteControlScreen } from '../screens/RemoteControlScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
 import { BleDevicesScreen } from '../screens/BleDevicesScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { colors, fontWeight } from '../theme';
 
 export type RootStackParamList = {
@@ -20,11 +22,14 @@ export type RootStackParamList = {
   AiChat: undefined;
   Runtime: undefined;
   BleDevices: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
+  const { t } = useTranslation('navigation');
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -52,26 +57,31 @@ export function RootNavigator() {
         <Stack.Screen
           name="BuildGuide"
           component={PlaceholderScreen}
-          options={{ title: '搭建说明' }}
+          options={{ title: t('buildGuide') }}
         />
         <Stack.Screen
           name="RemoteControl"
           component={RemoteControlScreen}
-          options={{ title: '遥控模式' }}
+          options={{ title: t('remoteControl') }}
         />
         <Stack.Screen
           name="AiChat"
           component={PlaceholderScreen}
-          options={{ title: 'AI 对话' }}
+          options={{ title: t('aiChat') }}
         />
         <Stack.Screen
           name="Runtime"
           component={RuntimeScreen}
-          options={{ title: 'Runtime Demo' }}
+          options={{ title: t('runtimeDemo') }}
         />
         <Stack.Screen
           name="BleDevices"
           component={BleDevicesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

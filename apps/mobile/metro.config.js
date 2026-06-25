@@ -21,6 +21,10 @@ const config = {
   },
   resolver: {
     ...resolver,
+    extraNodeModules: {
+      i18next: path.resolve(workspaceRoot, 'node_modules/i18next'),
+      'react-i18next': path.resolve(workspaceRoot, 'node_modules/react-i18next'),
+    },
     nodeModulesPaths: [
       path.resolve(__dirname, 'node_modules'),
       path.resolve(workspaceRoot, 'node_modules'),

@@ -1,0 +1,22 @@
+{
+  "loading": "Entering workspace...",
+  "cards": {
+    "projects": {
+      "title": "Programming",
+      "subtitle": "Open block editor"
+    },
+    "buildGuide": {
+      "title": "Build Guide",
+      "subtitle": "View assembly steps"
+    },
+    "remoteControl": {
+      "title": "Remote Control",
+      "subtitle": "Control your device"
+    },
+    "aiChat": {
+      "title": "AI Chat",
+      "subtitle": "Smart assistant"
+    }
+  },
+  "bleAccessibilityLabel": "Bluetooth devices"
+}

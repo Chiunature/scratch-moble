@@ -1,0 +1,22 @@
+{
+  "loading": "正在進入創作空間...",
+  "cards": {
+    "projects": {
+      "title": "程式設計模式",
+      "subtitle": "進入積木編輯器"
+    },
+    "buildGuide": {
+      "title": "搭建說明",
+      "subtitle": "查看結構步驟"
+    },
+    "remoteControl": {
+      "title": "遙控模式",
+      "subtitle": "控制硬體裝置"
+    },
+    "aiChat": {
+      "title": "AI 對話",
+      "subtitle": "智能問答助手"
+    }
+  },
+  "bleAccessibilityLabel": "藍牙裝置"
+}

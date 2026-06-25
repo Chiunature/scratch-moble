@@ -1,0 +1,13 @@
+{
+  "title": "Settings",
+  "languageSection": "Language",
+  "languageOptions": {
+    "simplifiedChinese": "简体中文",
+    "traditionalChinese": "繁體中文",
+    "english": "English"
+  },
+  "versionSection": "Version",
+  "versionLabel": "Version: V{{version}}",
+  "infoSection": "About",
+  "infoBody": "Scratch Mobile is a block-based programming app for young makers. It supports visual editing, Bluetooth device connection, and on-device program execution. Follow our official channels for updates."
+}
