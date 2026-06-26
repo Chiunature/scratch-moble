@@ -85,11 +85,16 @@ export {
   type ParsedWatchPort,
 } from './device-watch/model';
 
-export { useDeviceWatch, type DeviceWatchHookState } from './device-watch/useDeviceWatch';
+export {
+  useDeviceWatch,
+  type DeviceWatchHookState,
+} from './device-watch/useDeviceWatch';
 
 export {
   isDeviceInScanList,
   loadPairedDevices,
+  normalizeBleDevice,
+  normalizeBleDeviceId,
   removePairedDevice,
   savePairedDevice,
 } from './storage/pairedDevices';

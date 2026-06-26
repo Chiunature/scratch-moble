@@ -1,1 +1,52 @@
-{}
+{
+  "title": "藍牙裝置",
+  "startScan": "開始掃描",
+  "stopScan": "停止掃描",
+  "bluetoothUnavailable": "藍牙不可用",
+  "scanning": "正在掃描...",
+  "scanningPaused": "掃描已暫停",
+  "discoveredDevices": "發現 {{count}} 個裝置",
+  "connectedWithName": "已連線 · {{deviceName}}",
+  "connecting": "連線中...",
+  "notConnected": "未連線",
+  "availableDevices": "可用裝置",
+  "pairedDevices": "已配對",
+  "enableBluetoothToScan": "請先打開系統藍牙後再掃描裝置",
+  "searchingTarget": "正在搜尋 {{deviceName}} 裝置...",
+  "tapToStartScan": "點擊右上角開始掃描",
+  "longPressToRemove": "長按裝置可移除配對",
+  "online": "在線",
+  "offline": "離線",
+  "pairedEmpty": "連線成功的主機會自動出現在這裡",
+  "openSettings": "打開設定",
+  "detecting": "偵測中...",
+  "bluetoothState": {
+    "PoweredOn": "藍牙已開啟",
+    "PoweredOff": "藍牙已關閉",
+    "Unauthorized": "未授權",
+    "Unsupported": "不支援藍牙",
+    "Resetting": "重置中",
+    "Unknown": "未知"
+  },
+  "errors": {
+    "bluetoothOff": "藍牙已關閉，請打開系統藍牙",
+    "bluetoothUnavailableWithState": "藍牙不可用（{{state}}）",
+    "enableBluetoothFirst": "請先打開系統藍牙",
+    "scanFailed": "掃描失敗",
+    "connectFailed": "連線失敗",
+    "disconnectFailed": "斷開失敗",
+    "openSettingsFailed": "打開設定失敗",
+    "connectedWatchFailed": "已連線，但監控開啟失敗",
+    "connectedWatchFailedWithMessage": "已連線，但監控開啟失敗：{{message}}",
+    "removePairedFailed": "移除配對失敗"
+  },
+  "alerts": {
+    "removePairedTitle": "移除已配對裝置",
+    "removePairedMessage": "確定移除 {{name}} 嗎？",
+    "disconnectTitle": "斷開連線",
+    "disconnectMessage": "確定斷開連線嗎？",
+    "cancel": "取消",
+    "remove": "移除",
+    "disconnect": "斷開"
+  }
+}

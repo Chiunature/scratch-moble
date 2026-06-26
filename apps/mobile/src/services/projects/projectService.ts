@@ -2,8 +2,8 @@ import {
   buildProjectDocument,
   createEmptyProjectDocument,
 } from '@scratch-mobile/core';
+import { getDefaultProjectName } from '@scratch-mobile/i18n';
 import {
-  DEFAULT_PROJECT_NAME,
   type ScratchProjectDocument,
   type ScratchProjectSummary,
   type WorkspaceSnapshot,
@@ -111,7 +111,7 @@ export async function listProjects(): Promise<ScratchProjectSummary[]> {
 }
 
 export async function createProject(name?: string): Promise<ScratchProjectSummary> {
-  const document = createEmptyProjectDocument(name);
+  const document = createEmptyProjectDocument(name ?? getDefaultProjectName());
   await writeProjectDocument(document);
   const summary = summaryFromDocument(document, 0);
   const index = await loadProjectIndex();
@@ -154,7 +154,7 @@ export async function saveProjectWorkspace(
       document = buildProjectDocument({
         summary: existing ?? {
           id: input.projectId,
-          name: DEFAULT_PROJECT_NAME,
+          name: getDefaultProjectName(),
           createdAt: now,
           updatedAt: now,
           blockCount: 0,

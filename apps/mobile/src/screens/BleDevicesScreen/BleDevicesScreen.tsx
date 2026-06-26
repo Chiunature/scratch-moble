@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -8,17 +8,20 @@ import {
   View,
   Linking,
   Platform,
+  type ListRenderItemInfo,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 import backIcon from '../../../assets/bleDevicesScreen/back.png';
 import {
   bleDeviceManager,
   type BleDevice,
   bleLog,
-  isDeviceInScanList,
   loadPairedDevices,
+  normalizeBleDevice,
+  normalizeBleDeviceId,
   type PairedBleDevice,
   removePairedDevice,
   savePairedDevice,
@@ -30,105 +33,143 @@ import { useBleStore } from '../../store/useBleStore';
 import { styles } from './BleDevicesScreen.styles';
 import bleLogo from '../../../assets/homeScreen/bleIcon.png';
 import { RippleEffect } from './components/RippleRing';
-import { DeviceListItem } from './components/DeviceListItem';
 import { BreathingDot } from './components/breathingDot';
+import { DeviceListItem } from './components/DeviceListItem';
+const BLUETOOTH_STATES = [
+  'PoweredOn',
+  'PoweredOff',
+  'Unauthorized',
+  'Unsupported',
+  'Resetting',
+  'Unknown',
+] as const;
 
-// ==================== 常量定义 ====================
-const bluetoothStateLabel: Record<string, string> = {
-  PoweredOn: '蓝牙已开启',
-  PoweredOff: '蓝牙已关闭',
-  Unauthorized: '未授权',
-  Unsupported: '不支持蓝牙',
-  Resetting: '重置中',
-  Unknown: '未知',
-};
+type BluetoothStateKey = (typeof BLUETOOTH_STATES)[number];
 
-// ==================== 工具函数（移到组件外部）====================
-function getScannedDevice(
-  deviceId: string,
-  scannedDevices: BleDevice[],
-): BleDevice | undefined {
-  const normalizedId = deviceId.toUpperCase();
-  return scannedDevices.find(
-    device => device.id.toUpperCase() === normalizedId,
-  );
+function isBluetoothStateKey(value: string): value is BluetoothStateKey {
+  return BLUETOOTH_STATES.includes(value as BluetoothStateKey);
 }
 
-function normalizeBleDevice(device: BleDevice): BleDevice {
-  return {
-    ...device,
-    id: device.id.toUpperCase(),
-  };
+function getConnectedDeviceLabel(device: BleDevice): string {
+  const name = device.name?.trim();
+  return name || device.id;
 }
 
-// ==================== 主组件 ====================
+function buildScannedDeviceMap(devices: BleDevice[]): Map<string, BleDevice> {
+  const map = new Map<string, BleDevice>();
+  for (const device of devices) {
+    const normalized = normalizeBleDevice(device);
+    map.set(normalized.id, normalized);
+  }
+  return map;
+}
+
+function confirmDestructive(
+  title: string,
+  message: string,
+  labels: { cancel: string; confirm: string },
+  onConfirm: () => void,
+) {
+  Alert.alert(title, message, [
+    { text: labels.cancel, style: 'cancel' },
+    { text: labels.confirm, style: 'destructive', onPress: onConfirm },
+  ]);
+}
+
 export function BleDevicesScreen() {
-  // 1. 所有 Hooks 必须按固定顺序调用
+  const { t } = useTranslation('ble');
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
+  const getBluetoothStateLabel = useCallback(
+    (state: string) =>
+      isBluetoothStateKey(state) ? t(`bluetoothState.${state}`) : state,
+    [t],
+  );
   const bluetoothState = useBleStore(state => state.bluetoothState);
+  const connectionStatus = useBleStore(state => state.connectionStatus);
   const connectedDevice = useBleStore(state => state.connectedDevice);
   const connectedDeviceId = connectedDevice?.id ?? null;
+  const isConnecting = connectionStatus === 'connecting';
 
-  // 2. State 声明
   const [isScanning, setIsScanning] = useState(false);
   const [devices, setDevices] = useState<BleDevice[]>([]);
   const [pairedDevices, setPairedDevices] = useState<PairedBleDevice[]>([]);
   const [isPaired, setIsPaired] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // 3. 稳定的函数（不依赖 props/state 或依赖为空）
+  const scannedDeviceMap = useMemo(
+    () => buildScannedDeviceMap(devices),
+    [devices],
+  );
+
+  const handleError = useCallback(
+    (error: unknown, errorKey: string) => {
+      const message = error instanceof Error ? error.message : t(errorKey);
+      setErrorMessage(message);
+      return message;
+    },
+    [t],
+  );
+
+  const resetConnection = useCallback(() => {
+    useBleStore.getState().resetConnection();
+  }, []);
+
+  const isConnectedToDevice = useCallback(
+    (deviceId: string) =>
+      connectedDeviceId != null &&
+      normalizeBleDeviceId(connectedDeviceId) ===
+        normalizeBleDeviceId(deviceId),
+    [connectedDeviceId],
+  );
+
   const upsertDevice = useCallback((device: BleDevice) => {
+    const normalizedDevice = normalizeBleDevice(device);
     setDevices(prev => {
-      const index = prev.findIndex(item => item.id === device.id);
+      const index = prev.findIndex(item => item.id === normalizedDevice.id);
       if (index === -1) {
-        return [...prev, device];
+        return [...prev, normalizedDevice];
       }
       const next = [...prev];
-      next[index] = device;
+      next[index] = normalizedDevice;
       return next;
     });
-  }, []); // ✅ 空依赖，setDevices 稳定
+  }, []);
 
   const refreshPairedDevices = useCallback(async () => {
     const list = await loadPairedDevices();
     setPairedDevices(list);
-  }, []); // ✅ 空依赖
+  }, []);
 
-  // 4. 依赖其他回调/状态的函数
   const handleDisconnect = useCallback(async () => {
     setErrorMessage(null);
-    const { resetConnection } = useBleStore.getState();
 
     try {
-      console.log('handleDisconnect');
-      console.log(
-        'bleDeviceManager.isConnected()',
-        bleDeviceManager.isConnected(),
-      );
-
       if (bleDeviceManager.isConnected()) {
         try {
           await bleDeviceManager.stopDeviceWatch();
-          console.log('停止设备监控');
         } catch {
           // 监控可能未开启或连接已不稳定，继续尝试断开
         }
-        console.log('准备断开连接');
         await bleDeviceManager.disconnect();
       }
       resetConnection();
       bleLog.info('已主动断开连接');
     } catch (error) {
       resetConnection();
-      setErrorMessage(error instanceof Error ? error.message : '断开失败');
+      handleError(error, 'errors.disconnectFailed');
     }
-  }, []); // ✅ 空依赖，使用的都是外部稳定函数
+  }, [handleError, resetConnection]);
 
   const handleConnect = useCallback(
     async (device: BleDevice) => {
+      if (useBleStore.getState().connectionStatus === 'connecting') {
+        return;
+      }
+
       setErrorMessage(null);
-      const { setConnectionStatus, setConnectedDevice, resetConnection } =
+      const { setConnectionStatus, setConnectedDevice } =
         useBleStore.getState();
       const normalizedDevice = normalizeBleDevice(device);
 
@@ -142,7 +183,7 @@ export function BleDevicesScreen() {
 
         if (
           bleDeviceManager.isConnected() &&
-          connectedDeviceId?.toUpperCase() !== normalizedDevice.id
+          !isConnectedToDevice(normalizedDevice.id)
         ) {
           await bleDeviceManager.disconnect().catch(() => undefined);
           resetConnection();
@@ -150,7 +191,7 @@ export function BleDevicesScreen() {
 
         await bleDeviceManager.connect(normalizedDevice.id, () => {
           bleLog.info('设备已断开', normalizedDevice.id);
-          useBleStore.getState().resetConnection();
+          resetConnection();
         });
 
         const pairedList = await savePairedDevice(normalizedDevice);
@@ -168,45 +209,79 @@ export function BleDevicesScreen() {
           );
           setErrorMessage(
             watchError instanceof Error
-              ? `已连接，但监控开启失败：${watchError.message}`
-              : '已连接，但监控开启失败',
+              ? t('errors.connectedWatchFailedWithMessage', {
+                  message: watchError.message,
+                })
+              : t('errors.connectedWatchFailed'),
           );
         }
       } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : '连接失败');
+        handleError(error, 'errors.connectFailed');
         resetConnection();
       }
     },
-    [isScanning, connectedDeviceId], // ✅ 添加缺失的依赖
+    [handleError, isConnectedToDevice, isScanning, resetConnection, t],
+  );
+
+  const handleDevicePress = useCallback(
+    (device: BleDevice) => {
+      if (isConnecting) {
+        return;
+      }
+
+      const scanned = scannedDeviceMap.get(normalizeBleDeviceId(device.id));
+
+      if (isConnectedToDevice(device.id)) {
+        confirmDestructive(
+          t('alerts.disconnectTitle'),
+          t('alerts.disconnectMessage'),
+          { cancel: t('alerts.cancel'), confirm: t('alerts.disconnect') },
+          () => {
+            void handleDisconnect();
+          },
+        );
+        return;
+      }
+
+      void handleConnect(scanned ?? device);
+    },
+    [
+      handleConnect,
+      handleDisconnect,
+      isConnectedToDevice,
+      isConnecting,
+      scannedDeviceMap,
+      t,
+    ],
   );
 
   const handleRemovePaired = useCallback(
     (device: PairedBleDevice) => {
-      Alert.alert('移除已配对设备', `确定移除 ${device.name} 吗？`, [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '移除',
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              if (
-                connectedDeviceId?.toUpperCase() === device.id.toUpperCase()
-              ) {
+      confirmDestructive(
+        t('alerts.removePairedTitle'),
+        t('alerts.removePairedMessage', { name: device.name }),
+        { cancel: t('alerts.cancel'), confirm: t('alerts.remove') },
+        () => {
+          void (async () => {
+            try {
+              if (isConnectedToDevice(device.id)) {
                 await handleDisconnect();
               }
               const next = await removePairedDevice(device.id);
               setPairedDevices(next);
-            })();
-          },
+            } catch (error) {
+              handleError(error, 'errors.removePairedFailed');
+            }
+          })();
         },
-      ]);
+      );
     },
-    [connectedDeviceId, handleDisconnect], // ✅ 添加依赖
+    [handleDisconnect, handleError, isConnectedToDevice, t],
   );
 
   const handleScan = useCallback(async () => {
     if (bluetoothState !== 'PoweredOn') {
-      setErrorMessage('请先打开系统蓝牙');
+      setErrorMessage(t('errors.enableBluetoothFirst'));
       return;
     }
 
@@ -225,14 +300,14 @@ export function BleDevicesScreen() {
       await startScan(upsertDevice);
       setIsScanning(true);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '扫描失败');
+      handleError(error, 'errors.scanFailed');
       setIsScanning(false);
     }
-  }, [bluetoothState, isScanning, isPaired, upsertDevice]); // ✅ 添加依赖
+  }, [bluetoothState, handleError, isPaired, isScanning, t, upsertDevice]);
 
   const handleSwitchTab = useCallback((pairedTab: boolean) => {
     setIsPaired(pairedTab);
-  }, []); // ✅ 空依赖
+  }, []);
 
   const openSettings = useCallback(async () => {
     try {
@@ -246,57 +321,50 @@ export function BleDevicesScreen() {
       }
     } catch (error) {
       Alert.alert(
-        '打开设置失败',
-        error instanceof Error ? error.message : '打开设置失败',
+        t('errors.openSettingsFailed'),
+        error instanceof Error ? error.message : t('errors.openSettingsFailed'),
       );
     }
-  }, []); // ✅ 空依赖
+  }, [t]);
 
-  // 5. 渲染相关的函数（不需要 useCallback）
-  const renderDeviceItem = (item: BleDevice, onLongPress?: () => void) => {
-    const isConnected =
-      connectedDeviceId?.toUpperCase() === item.id.toUpperCase();
-    const isOnline = isDeviceInScanList(item.id, devices);
-    const scanned = getScannedDevice(item.id, devices);
-
-    return (
+  const renderAvailableItem = useCallback(
+    ({ item }: ListRenderItemInfo<BleDevice>) => (
       <DeviceListItem
         item={item}
-        isConnected={isConnected}
-        isPairedTab={isPaired}
-        isOnline={isOnline}
-        scanned={scanned}
-        onPress={() => {
-          console.log('isConnected', isConnected);
-          console.log('scanned', scanned);
-          console.log('isOnline', isOnline);
-          if (isConnected) {
-            Alert.alert('断开连接', '确定断开连接吗？', [
-              { text: '取消', style: 'cancel' },
-              {
-                text: '断开',
-                style: 'destructive',
-                onPress: () => {
-                  void handleDisconnect();
-                },
-              },
-            ]);
-            return;
-          }
-          void handleConnect(scanned ?? item);
-        }}
-        onLongPress={onLongPress}
+        isConnected={isConnectedToDevice(item.id)}
+        isPairedTab={false}
+        isOnline
+        scanned={scannedDeviceMap.get(item.id)}
+        disabled={isConnecting && !isConnectedToDevice(item.id)}
+        onPress={() => handleDevicePress(item)}
       />
-    );
-  };
+    ),
+    [handleDevicePress, isConnectedToDevice, isConnecting, scannedDeviceMap],
+  );
 
-  // 6. Effects
-  useEffect(() => {
-    void refreshPairedDevices();
-    return () => {
-      stopScan();
-    };
-  }, [refreshPairedDevices]);
+  const renderPairedItem = useCallback(
+    ({ item }: ListRenderItemInfo<PairedBleDevice>) => (
+      <DeviceListItem
+        item={item}
+        isConnected={isConnectedToDevice(item.id)}
+        isPairedTab
+        isOnline={scannedDeviceMap.has(item.id)}
+        scanned={scannedDeviceMap.get(item.id)}
+        disabled={isConnecting && !isConnectedToDevice(item.id)}
+        onPress={() => handleDevicePress(item)}
+        onLongPress={() => handleRemovePaired(item)}
+      />
+    ),
+    [
+      handleDevicePress,
+      handleRemovePaired,
+      isConnectedToDevice,
+      isConnecting,
+      scannedDeviceMap,
+    ],
+  );
+
+  useEffect(() => () => stopScan(), []);
 
   useFocusEffect(
     useCallback(() => {
@@ -315,37 +383,39 @@ export function BleDevicesScreen() {
 
     setErrorMessage(
       bluetoothState === 'PoweredOff'
-        ? '蓝牙已关闭，请打开系统蓝牙'
-        : `蓝牙不可用（${bluetoothStateLabel[bluetoothState] ?? bluetoothState}）`,
+        ? t('errors.bluetoothOff')
+        : t('errors.bluetoothUnavailableWithState', {
+            state: getBluetoothStateLabel(bluetoothState),
+          }),
     );
-  }, [bluetoothState]);
+  }, [bluetoothState, getBluetoothStateLabel, t]);
 
-  // 7. 计算值（非响应式，但基于 state）
   const isBluetoothReady = bluetoothState === 'PoweredOn';
   const showScanning = isScanning && isBluetoothReady;
   const stateLabel =
     bluetoothState != null
-      ? bluetoothStateLabel[bluetoothState] ?? bluetoothState
-      : '检测中...';
+      ? getBluetoothStateLabel(bluetoothState)
+      : t('detecting');
+  const connectionLabel = isConnecting
+    ? t('connecting')
+    : connectedDevice
+    ? t('connectedWithName', {
+        deviceName: getConnectedDeviceLabel(connectedDevice),
+      })
+    : t('notConnected');
 
-  // 8. 渲染
   return (
     <View style={styles.root}>
-      {/* 你的 JSX 内容保持不变 */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => navigation.goBack()}>
           <Image source={backIcon} style={styles.backIcon} />
         </Pressable>
-        <Text style={styles.headerTitle}>蓝牙设备</Text>
+        <Text style={styles.headerTitle}>{t('title')}</Text>
         <Pressable
           style={[
             styles.scanButton,
-            {
-              backgroundColor: showScanning ? '#007aff' : 'transparent',
-              borderWidth: 1,
-              borderColor: showScanning ? '#007aff' : '#e0e0e0',
-              opacity: isBluetoothReady ? 1 : 0.45,
-            },
+            showScanning ? styles.scanButtonActive : styles.scanButtonIdle,
+            !isBluetoothReady && !showScanning && styles.scanButtonDisabled,
           ]}
           onPress={handleScan}
           disabled={!isBluetoothReady && !showScanning}
@@ -353,10 +423,12 @@ export function BleDevicesScreen() {
           <Text
             style={[
               styles.scanButtonText,
-              { color: showScanning ? '#ffffff' : '#007aff' },
+              showScanning
+                ? styles.scanButtonTextActive
+                : styles.scanButtonTextIdle,
             ]}
           >
-            {showScanning ? '停止扫描' : '开始扫描'}
+            {showScanning ? t('stopScan') : t('startScan')}
           </Text>
         </Pressable>
       </View>
@@ -368,26 +440,22 @@ export function BleDevicesScreen() {
               <Image source={bleLogo} style={styles.bleLogo} />
             </View>
             <View style={styles.scanningStatusContainer}>
-              <Text style={{ color: '#a7aeb9', fontSize: 12 }}>
+              <Text style={styles.scanningStatusLabel}>
                 {!isBluetoothReady
-                  ? '蓝牙不可用'
+                  ? t('bluetoothUnavailable')
                   : showScanning
-                    ? '正在扫描...'
-                    : '扫描已暂停'}
+                  ? t('scanning')
+                  : t('scanningPaused')}
               </Text>
               {showScanning && (
-                <Text
-                  style={{ color: '#333', fontWeight: '900', fontSize: 16 }}
-                >
-                  发现{devices.length}个设备
+                <Text style={styles.discoveredCountText}>
+                  {t('discoveredDevices', { count: devices.length })}
                 </Text>
               )}
             </View>
           </View>
           <View style={styles.connectStatusContainer}>
-            <Text style={styles.statusText}>
-              {connectedDevice ? `已连接 · ${connectedDevice.name}` : '未连接'}
-            </Text>
+            <Text style={styles.statusText}>{connectionLabel}</Text>
           </View>
         </View>
         <View style={styles.listContentContainer}>
@@ -396,75 +464,75 @@ export function BleDevicesScreen() {
               style={[
                 styles.listHeaderButton,
                 !isPaired
-                  ? { borderBottomWidth: 1, borderBottomColor: '#007aff' }
-                  : {},
+                  ? styles.listHeaderButtonActive
+                  : styles.listHeaderButtonInactive,
               ]}
               onPress={() => handleSwitchTab(false)}
             >
               <Text
                 style={[
                   styles.listHeaderButtonText,
-                  !isPaired ? { color: '#007aff' } : {},
+                  !isPaired && styles.listHeaderButtonTextActive,
                 ]}
               >
-                可用设备
+                {t('availableDevices')}
               </Text>
             </Pressable>
             <Pressable
               style={[
                 styles.listHeaderButton,
                 isPaired
-                  ? { borderBottomWidth: 1, borderBottomColor: '#007aff' }
-                  : {},
+                  ? styles.listHeaderButtonActive
+                  : styles.listHeaderButtonInactive,
               ]}
               onPress={() => handleSwitchTab(true)}
             >
               <Text
                 style={[
                   styles.listHeaderButtonText,
-                  isPaired ? { color: '#007aff' } : {},
+                  isPaired && styles.listHeaderButtonTextActive,
                 ]}
               >
-                已配对
+                {t('pairedDevices')}
               </Text>
             </Pressable>
           </View>
           {!isPaired ? (
             !isBluetoothReady ? (
-              <Text style={styles.emptyText}>请先打开系统蓝牙后再扫描设备</Text>
+              <Text style={styles.emptyText}>{t('enableBluetoothToScan')}</Text>
             ) : showScanning ? (
               <FlatList
                 data={devices}
                 keyExtractor={item => item.id}
+                extraData={{ connectedDeviceId, isConnecting }}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                   <Text style={styles.emptyText}>
-                    正在搜索 {TARGET_DEVICE_NAME} 设备...
+                    {t('searchingTarget', { deviceName: TARGET_DEVICE_NAME })}
                   </Text>
                 }
-                renderItem={({ item }) => renderDeviceItem(item)}
+                renderItem={renderAvailableItem}
               />
             ) : (
-              <Text style={styles.emptyText}>点击右上角开始扫描</Text>
+              <Text style={styles.emptyText}>{t('tapToStartScan')}</Text>
             )
           ) : (
             <FlatList
               data={pairedDevices}
               keyExtractor={item => item.id}
+              extraData={{ connectedDeviceId, isConnecting, scannedDeviceMap }}
               contentContainerStyle={styles.listContent}
               ListHeaderComponent={
                 pairedDevices.length > 0 ? (
-                  <Text style={styles.deviceHint}>长按设备可移除配对</Text>
+                  <Text style={styles.deviceHint}>
+                    {t('longPressToRemove')}
+                  </Text>
                 ) : null
               }
               ListEmptyComponent={
-                <Text style={styles.emptyText}>
-                  连接成功的主机会自动出现在这里
-                </Text>
+                <Text style={styles.emptyText}>{t('pairedEmpty')}</Text>
               }
-              renderItem={({ item }) =>
-                renderDeviceItem(item, () => handleRemovePaired(item))
-              }
+              renderItem={renderPairedItem}
             />
           )}
         </View>
@@ -482,7 +550,7 @@ export function BleDevicesScreen() {
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
         <Pressable onPress={openSettings} style={styles.openSettingsButton}>
-          <Text style={styles.openSettingsText}>打开设置</Text>
+          <Text style={styles.openSettingsText}>{t('openSettings')}</Text>
         </Pressable>
       </View>
     </View>

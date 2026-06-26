@@ -9,4 +9,9 @@ export {
   LOCALE_LABEL_KEY,
   type AppLocale,
 } from './initI18n';
+export {
+  getDefaultProjectName,
+  isDefaultProjectName,
+  resolveProjectDisplayName,
+} from './projectDefaults';
 export { I18nextProvider, useTranslation, Trans } from 'react-i18next';

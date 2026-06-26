@@ -1,7 +1,8 @@
 import { StyleSheet } from 'react-native';
 
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
-import { memo } from 'react';
+
+export const BLE_ACCENT = '#007aff';
 
 export const styles = StyleSheet.create({
   root: {
@@ -30,6 +31,24 @@ export const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+    borderWidth: 1,
+  },
+  scanButtonActive: {
+    backgroundColor: BLE_ACCENT,
+    borderColor: BLE_ACCENT,
+  },
+  scanButtonIdle: {
+    backgroundColor: 'transparent',
+    borderColor: '#e0e0e0',
+  },
+  scanButtonDisabled: {
+    opacity: 0.45,
+  },
+  scanButtonTextActive: {
+    color: '#ffffff',
+  },
+  scanButtonTextIdle: {
+    color: BLE_ACCENT,
   },
   scanButtonText: {
     fontSize: 12,
@@ -60,6 +79,15 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   bleLogo: { width: 32, height: 32 },
+  scanningStatusLabel: {
+    color: '#a7aeb9',
+    fontSize: 12,
+  },
+  discoveredCountText: {
+    color: '#333',
+    fontWeight: fontWeight.black,
+    fontSize: 16,
+  },
   scanningStatusContainer: {
     position: 'absolute',
     bottom: 0,
@@ -158,6 +186,20 @@ export const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.xs,
     boxShadow: '0 0 3px 0 rgba(0, 0, 0, 0.1)',
+  },
+  listHeaderButtonTextActive: {
+    color: BLE_ACCENT,
+  },
+  listHeaderButtonActive: {
+    borderBottomWidth: 1,
+    borderBottomColor: BLE_ACCENT,
+  },
+  listHeaderButtonInactive: {
+    borderBottomWidth: 0,
+    borderBottomColor: 'transparent',
+  },
+  deviceItemDisabled: {
+    opacity: 0.55,
   },
   deviceItemConnected: {
     backgroundColor: '#007aff',

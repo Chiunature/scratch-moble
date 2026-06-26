@@ -1,1 +1,52 @@
-{}
+{
+  "title": "Bluetooth Devices",
+  "startScan": "Start Scan",
+  "stopScan": "Stop Scan",
+  "bluetoothUnavailable": "Bluetooth unavailable",
+  "scanning": "Scanning...",
+  "scanningPaused": "Scan paused",
+  "discoveredDevices": "{{count}} device(s) found",
+  "connectedWithName": "Connected · {{deviceName}}",
+  "connecting": "Connecting...",
+  "notConnected": "Not connected",
+  "availableDevices": "Available",
+  "pairedDevices": "Paired",
+  "enableBluetoothToScan": "Turn on Bluetooth to scan for devices",
+  "searchingTarget": "Searching for {{deviceName}} devices...",
+  "tapToStartScan": "Tap the button above to start scanning",
+  "longPressToRemove": "Long press a device to remove pairing",
+  "online": "Online",
+  "offline": "Offline",
+  "pairedEmpty": "Successfully connected hosts appear here",
+  "openSettings": "Open Settings",
+  "detecting": "Detecting...",
+  "bluetoothState": {
+    "PoweredOn": "Bluetooth on",
+    "PoweredOff": "Bluetooth off",
+    "Unauthorized": "Unauthorized",
+    "Unsupported": "Bluetooth unsupported",
+    "Resetting": "Resetting",
+    "Unknown": "Unknown"
+  },
+  "errors": {
+    "bluetoothOff": "Bluetooth is off. Please turn it on in system settings.",
+    "bluetoothUnavailableWithState": "Bluetooth unavailable ({{state}})",
+    "enableBluetoothFirst": "Please turn on Bluetooth first",
+    "scanFailed": "Scan failed",
+    "connectFailed": "Connection failed",
+    "disconnectFailed": "Disconnect failed",
+    "openSettingsFailed": "Could not open settings",
+    "connectedWatchFailed": "Connected, but device watch failed to start",
+    "connectedWatchFailedWithMessage": "Connected, but device watch failed: {{message}}",
+    "removePairedFailed": "Failed to remove paired device"
+  },
+  "alerts": {
+    "removePairedTitle": "Remove paired device",
+    "removePairedMessage": "Remove {{name}}?",
+    "disconnectTitle": "Disconnect",
+    "disconnectMessage": "Disconnect from this device?",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "disconnect": "Disconnect"
+  }
+}

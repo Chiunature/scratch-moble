@@ -111,10 +111,7 @@ export class BleDeviceManager {
   /**
    * 普通命令写入。上传帧请用 writeUploadFrame（业务 ACK 靠 Notify，不绑 GATT Write Response）。
    */
-  private async writeFrame(
-    command: number[],
-    sign: BleSign,
-  ): Promise<void> {
+  private async writeFrame(command: number[], sign: BleSign): Promise<void> {
     if (!this.characteristic) {
       throw new Error('设备未连接');
     }

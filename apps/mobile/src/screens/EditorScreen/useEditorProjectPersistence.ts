@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import type { WebView } from 'react-native-webview';
 
-import { DEFAULT_PROJECT_NAME } from '@scratch-mobile/shared';
+import { getDefaultProjectName } from '@scratch-mobile/i18n';
 import type { RnWorkspaceChangedMessage } from '@scratch-mobile/shared';
 
 import { forceInjectEditorMessage } from '../../features/editor';
@@ -29,7 +29,7 @@ export function useEditorProjectPersistence({
   const pendingFlushRef = useRef<(() => void) | null>(null);
   const lastSaveSucceededRef = useRef(true);
   const upsertSummary = useProjectStore(state => state.upsertSummary);
-  const [projectName, setProjectName] = useState(DEFAULT_PROJECT_NAME);
+  const [projectName, setProjectName] = useState(getDefaultProjectName);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isProjectLoading, setIsProjectLoading] = useState(true);

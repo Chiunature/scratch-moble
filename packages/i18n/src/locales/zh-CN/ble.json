@@ -1,1 +1,52 @@
-{}
+{
+  "title": "蓝牙设备",
+  "startScan": "开始扫描",
+  "stopScan": "停止扫描",
+  "bluetoothUnavailable": "蓝牙不可用",
+  "scanning": "正在扫描...",
+  "scanningPaused": "扫描已暂停",
+  "discoveredDevices": "发现{{count}}个设备",
+  "connectedWithName": "已连接 · {{deviceName}}",
+  "connecting": "连接中...",
+  "notConnected": "未连接",
+  "availableDevices": "可用设备",
+  "pairedDevices": "已配对",
+  "enableBluetoothToScan": "请先打开系统蓝牙后再扫描设备",
+  "searchingTarget": "正在搜索 {{deviceName}} 设备...",
+  "tapToStartScan": "点击右上角开始扫描",
+  "longPressToRemove": "长按设备可移除配对",
+  "online": "在线",
+  "offline": "离线",
+  "pairedEmpty": "连接成功的主机会自动出现在这里",
+  "openSettings": "打开设置",
+  "detecting": "检测中...",
+  "bluetoothState": {
+    "PoweredOn": "蓝牙已开启",
+    "PoweredOff": "蓝牙已关闭",
+    "Unauthorized": "未授权",
+    "Unsupported": "不支持蓝牙",
+    "Resetting": "重置中",
+    "Unknown": "未知"
+  },
+  "errors": {
+    "bluetoothOff": "蓝牙已关闭，请打开系统蓝牙",
+    "bluetoothUnavailableWithState": "蓝牙不可用（{{state}}）",
+    "enableBluetoothFirst": "请先打开系统蓝牙",
+    "scanFailed": "扫描失败",
+    "connectFailed": "连接失败",
+    "disconnectFailed": "断开失败",
+    "openSettingsFailed": "打开设置失败",
+    "connectedWatchFailed": "已连接，但监控开启失败",
+    "connectedWatchFailedWithMessage": "已连接，但监控开启失败：{{message}}",
+    "removePairedFailed": "移除配对失败"
+  },
+  "alerts": {
+    "removePairedTitle": "移除已配对设备",
+    "removePairedMessage": "确定移除 {{name}} 吗？",
+    "disconnectTitle": "断开连接",
+    "disconnectMessage": "确定断开连接吗？",
+    "cancel": "取消",
+    "remove": "移除",
+    "disconnect": "断开"
+  }
+}

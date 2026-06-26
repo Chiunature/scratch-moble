@@ -1,6 +1,5 @@
 import {
   CURRENT_PROJECT_SCHEMA_VERSION,
-  DEFAULT_PROJECT_NAME,
   SCRATCH_BLOCKS_VERSION,
   type ScratchProjectDocument,
   type ScratchProjectSummary,
@@ -28,7 +27,7 @@ export function createProjectId(): string {
 }
 
 export function createProjectSummary(
-  name = DEFAULT_PROJECT_NAME,
+  name: string,
   options?: CreateProjectSummaryOptions,
 ): ScratchProjectSummary {
   const now = options?.now ?? new Date().toISOString();
@@ -64,7 +63,7 @@ export function buildProjectDocument(
 }
 
 export function createEmptyProjectDocument(
-  name = DEFAULT_PROJECT_NAME,
+  name: string,
   options?: CreateProjectSummaryOptions,
 ): ScratchProjectDocument {
   const summary = createProjectSummary(name, options);

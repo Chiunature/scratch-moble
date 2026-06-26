@@ -10,6 +10,11 @@ import {
 } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  getDefaultProjectName,
+  resolveProjectDisplayName,
+  useTranslation,
+} from '@scratch-mobile/i18n';
 
 import type { ScratchProjectSummary } from '@scratch-mobile/shared';
 import { type RootStackParamList } from '../../app/navigation';
@@ -36,21 +41,28 @@ function formatUpdatedAt(value: string): string {
 }
 
 function ProjectCardContent({ item }: { item: ScratchProjectSummary }) {
+  const { t } = useTranslation('projects');
+  const displayName = resolveProjectDisplayName(item.name);
+
   return (
     <>
       <Text style={styles.cardTitle} numberOfLines={1}>
-        {item.name}
+        {displayName}
       </Text>
       <Text style={styles.cardMeta}>
-        更新于 {formatUpdatedAt(item.updatedAt)}
+        {t('updatedOn')} {formatUpdatedAt(item.updatedAt)}
       </Text>
-      <Text style={styles.cardMeta}>积木数量 {item.blockCount ?? 0}</Text>
+      <Text style={styles.cardMeta}>
+        {t('blockCount')} {item.blockCount ?? 0}
+      </Text>
     </>
   );
 }
 
 export function ProjectsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('projects');
+  const { t: tCommon } = useTranslation('common');
   const projects = useProjectStore(state => state.projects);
   const isLoading = useProjectStore(state => state.isLoading);
   const loadProjects = useProjectStore(state => state.loadProjects);
@@ -98,7 +110,7 @@ export function ProjectsScreen({ navigation }: Props) {
     }
     setIsCreating(true);
     try {
-      const summary = await createAndTrack();
+      const summary = await createAndTrack(getDefaultProjectName());
       navigation.navigate('Editor', { projectId: summary.id });
     } finally {
       setIsCreating(false);
@@ -112,9 +124,12 @@ export function ProjectsScreen({ navigation }: Props) {
     [navigation],
   );
 
-  const handleLongPressProject = useCallback((project: ScratchProjectSummary) => {
-    setActionTarget(project);
-  }, []);
+  const handleLongPressProject = useCallback(
+    (project: ScratchProjectSummary) => {
+      setActionTarget(project);
+    },
+    [],
+  );
 
   const handleRenameProject = useCallback(
     async ({ projectId, oldName, newName }: ProjectRenamePayload) => {
@@ -122,19 +137,24 @@ export function ProjectsScreen({ navigation }: Props) {
         await rename(projectId, newName);
         setToast({
           kind: 'success',
-          title: '重命名成功',
-          message: `「${oldName}」已重命名为「${newName}」`,
+          title: t('renameSuccessTitle'),
+          message: t('renameSuccessMessage', {
+            oldName: resolveProjectDisplayName(oldName),
+            newName: resolveProjectDisplayName(newName),
+          }),
         });
       } catch {
         setToast({
           kind: 'error',
-          title: '重命名失败',
-          message: `「${oldName}」未能重命名，请重试`,
+          title: t('renameFailedTitle'),
+          message: t('renameFailedMessage', {
+            oldName: resolveProjectDisplayName(oldName),
+          }),
         });
         throw new Error('rename failed');
       }
     },
-    [rename],
+    [rename, t],
   );
 
   const handleDeleteProject = useCallback(
@@ -155,26 +175,31 @@ export function ProjectsScreen({ navigation }: Props) {
         await remove(projectId);
         setToast({
           kind: 'delete',
-          title: '已删除',
-          message: `「${projectName}」已被删除`,
+          title: t('deleteSuccessTitle'),
+          message: t('deleteSuccessMessage', {
+            projectName: resolveProjectDisplayName(projectName),
+          }),
         });
       } catch {
         deleteAnim.setValue(1);
         setToast({
           kind: 'error',
-          title: '删除失败',
-          message: `「${projectName}」未能删除，请重试`,
+          title: t('deleteFailedTitle'),
+          message: t('deleteFailedMessage', {
+            projectName: resolveProjectDisplayName(projectName),
+          }),
         });
       } finally {
         setDeletingId(null);
       }
     },
-    [deleteAnim, remove],
+    [deleteAnim, remove, t],
   );
 
   const renderProject = useCallback(
     ({ item }: { item: ScratchProjectSummary }) => {
       const isDeleting = item.id === deletingId;
+      const displayName = resolveProjectDisplayName(item.name);
 
       if (!isDeleting) {
         return (
@@ -187,7 +212,9 @@ export function ProjectsScreen({ navigation }: Props) {
             onPress={() => handleOpenProject(item.id)}
             onLongPress={() => handleLongPressProject(item)}
             accessibilityRole="button"
-            accessibilityLabel={`打开作品 ${item.name}`}
+            accessibilityLabel={t('openProjectAccessibility', {
+              name: displayName,
+            })}
           >
             <ProjectCardContent item={item} />
           </Pressable>
@@ -221,7 +248,7 @@ export function ProjectsScreen({ navigation }: Props) {
         </Animated.View>
       );
     },
-    [deleteAnim, deletingId, handleLongPressProject, handleOpenProject],
+    [deleteAnim, deletingId, handleLongPressProject, handleOpenProject, t],
   );
 
   if (isLoading && projects.length === 0) {
@@ -239,11 +266,11 @@ export function ProjectsScreen({ navigation }: Props) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel="返回首页"
+          accessibilityLabel={t('backToHome')}
         >
-          <Text style={styles.backButtonText}>返回</Text>
+          <Text style={styles.backButtonText}>{tCommon('back')}</Text>
         </Pressable>
-        <Text style={styles.title}>我的作品</Text>
+        <Text style={styles.title}>{t('title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -265,20 +292,20 @@ export function ProjectsScreen({ navigation }: Props) {
             }}
             disabled={isCreating}
             accessibilityRole="button"
-            accessibilityLabel="新建作品"
+            accessibilityLabel={t('newProject')}
           >
             {isCreating ? (
               <ActivityIndicator color={colors.primary} />
             ) : (
               <>
-                <Text style={styles.cardTitle}>+ 新建作品</Text>
-                <Text style={styles.cardMeta}>创建空白积木工作区</Text>
+                <Text style={styles.cardTitle}>+ {t('newProject')}</Text>
+                <Text style={styles.cardMeta}>{t('blankWorkspace')}</Text>
               </>
             )}
           </Pressable>
         }
         ListEmptyComponent={
-          <Text style={styles.emptyHint}>还没有作品，点击上方卡片开始创作</Text>
+          <Text style={styles.emptyHint}>{t('noProjects')}</Text>
         }
       />
 

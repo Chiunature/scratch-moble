@@ -7,7 +7,11 @@ import {
   Text,
   useWindowDimensions,
 } from 'react-native';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -21,6 +25,10 @@ import type {
   RnPortPickerOpenMessage,
   RnVariablePromptOpenMessage,
 } from '@scratch-mobile/shared';
+import {
+  resolveProjectDisplayName,
+  useTranslation,
+} from '@scratch-mobile/i18n';
 import {
   EDITOR_BUNDLE_HTML,
   HandleShankPickerOverlay,
@@ -87,6 +95,7 @@ type EditorScreenContentProps = {
 
 function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const navigation = useNavigation();
+  useTranslation('projects');
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
@@ -134,8 +143,13 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
 
   const connectionStatus = useBleStore(state => state.connectionStatus);
   const isBleConnected = connectionStatus === 'connected';
-  const { watch, isAvailable, sensorPorts, sensorConnectedPorts, sensorPortCount } =
-    useDeviceWatch();
+  const {
+    watch,
+    isAvailable,
+    sensorPorts,
+    sensorConnectedPorts,
+    sensorPortCount,
+  } = useDeviceWatch();
 
   const {
     pikaAction,
@@ -165,6 +179,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   });
 
   const projectError = loadError ?? saveError;
+  const displayProjectName = resolveProjectDisplayName(projectName);
 
   const handleNavigateBack = useCallback(async () => {
     await handleBackPress();
@@ -172,101 +187,104 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   }, [handleBackPress, navigation]);
 
   //处理WebView发送的消息
-  const handleEditorMessage = useCallback((message: EditorOutMessage) => {
-    switch (message.type) {
-      case 'editor.workspace.ready':
-        void handleWorkspaceReady();
-        return;
-      case 'editor.workspace.loaded':
-        handleWorkspaceLoaded(message.projectId);
-        return;
-      case 'editor.workspace.changed':
-        void handleWorkspaceChanged(message);
-        return;
-      case 'editor.code.generated': {
-        const { code: nextCode, blockCount: nextBlockCount } = message;
-        if (
-          lastCodeRef.current.code === nextCode &&
-          lastCodeRef.current.blockCount === nextBlockCount
-        ) {
+  const handleEditorMessage = useCallback(
+    (message: EditorOutMessage) => {
+      switch (message.type) {
+        case 'editor.workspace.ready':
+          void handleWorkspaceReady();
+          return;
+        case 'editor.workspace.loaded':
+          handleWorkspaceLoaded(message.projectId);
+          return;
+        case 'editor.workspace.changed':
+          void handleWorkspaceChanged(message);
+          return;
+        case 'editor.code.generated': {
+          const { code: nextCode, blockCount: nextBlockCount } = message;
+          if (
+            lastCodeRef.current.code === nextCode &&
+            lastCodeRef.current.blockCount === nextBlockCount
+          ) {
+            return;
+          }
+          lastCodeRef.current = { code: nextCode, blockCount: nextBlockCount };
+          setGeneratedCode(nextCode);
+          setBlockCount(nextBlockCount);
           return;
         }
-        lastCodeRef.current = { code: nextCode, blockCount: nextBlockCount };
-        setGeneratedCode(nextCode);
-        setBlockCount(nextBlockCount);
-        return;
-      }
-      case 'editor.numberSlider.open':
-        setRnSliderSession(current =>
-          current?.sessionId === message.sessionId ? current : message,
-        );
-        return;
-      case 'editor.numberSlider.close':
-        setRnSliderSession(current =>
-          current?.sessionId === message.sessionId ? null : current,
-        );
-        return;
-      case 'editor.portPicker.open':
-        setRnPortPickerSession(current =>
-          current?.sessionId === message.sessionId ? current : message,
-        );
-        return;
-      case 'editor.portPicker.close':
-        setRnPortPickerSession(current =>
-          current?.sessionId === message.sessionId ? null : current,
-        );
-        return;
-      case 'editor.matrixLight.open':
-        setRnMatrixLightSession(current => {
-          if (
+        case 'editor.numberSlider.open':
+          setRnSliderSession(current =>
+            current?.sessionId === message.sessionId ? current : message,
+          );
+          return;
+        case 'editor.numberSlider.close':
+          setRnSliderSession(current =>
+            current?.sessionId === message.sessionId ? null : current,
+          );
+          return;
+        case 'editor.portPicker.open':
+          setRnPortPickerSession(current =>
+            current?.sessionId === message.sessionId ? current : message,
+          );
+          return;
+        case 'editor.portPicker.close':
+          setRnPortPickerSession(current =>
+            current?.sessionId === message.sessionId ? null : current,
+          );
+          return;
+        case 'editor.matrixLight.open':
+          setRnMatrixLightSession(current => {
+            if (
+              current?.sessionId === message.sessionId &&
+              current.rows === message.rows
+            ) {
+              return current;
+            }
+            return message;
+          });
+          return;
+        case 'editor.matrixLight.close':
+          setRnMatrixLightSession(current =>
+            current?.sessionId === message.sessionId ? null : current,
+          );
+          return;
+        case 'editor.notePicker.open':
+          setRnNotePickerSession(current =>
             current?.sessionId === message.sessionId &&
-            current.rows === message.rows
-          ) {
-            return current;
-          }
-          return message;
-        });
-        return;
-      case 'editor.matrixLight.close':
-        setRnMatrixLightSession(current =>
-          current?.sessionId === message.sessionId ? null : current,
-        );
-        return;
-      case 'editor.notePicker.open':
-        setRnNotePickerSession(current =>
-          current?.sessionId === message.sessionId &&
-          current.value === message.value
-            ? current
-            : message,
-        );
-        return;
-      case 'editor.notePicker.close':
-        setRnNotePickerSession(current =>
-          current?.sessionId === message.sessionId ? null : current,
-        );
-        return;
-      case 'editor.handleShank.open':
-        setRnHandleShankSession(current =>
-          current?.sessionId === message.sessionId ? current : message,
-        );
-        return;
-      case 'editor.handleShank.close':
-        setRnHandleShankSession(current =>
-          current?.sessionId === message.sessionId ? null : current,
-        );
-        return;
-      case 'editor.variablePrompt.open':
-        setRnVariablePromptSession(current =>
-          current?.sessionId === message.sessionId ? current : message,
-        );
-        return;
-      case 'editor.variablePrompt.close':
-        setRnVariablePromptSession(current =>
-          current?.sessionId === message.sessionId ? null : current,
-        );
-        return;
-    }
-  }, [handleWorkspaceChanged, handleWorkspaceLoaded, handleWorkspaceReady]);
+            current.value === message.value
+              ? current
+              : message,
+          );
+          return;
+        case 'editor.notePicker.close':
+          setRnNotePickerSession(current =>
+            current?.sessionId === message.sessionId ? null : current,
+          );
+          return;
+        case 'editor.handleShank.open':
+          setRnHandleShankSession(current =>
+            current?.sessionId === message.sessionId ? current : message,
+          );
+          return;
+        case 'editor.handleShank.close':
+          setRnHandleShankSession(current =>
+            current?.sessionId === message.sessionId ? null : current,
+          );
+          return;
+        case 'editor.variablePrompt.open':
+          setRnVariablePromptSession(current =>
+            current?.sessionId === message.sessionId ? current : message,
+          );
+          return;
+        case 'editor.variablePrompt.close':
+          setRnVariablePromptSession(current =>
+            current?.sessionId === message.sessionId ? null : current,
+          );
+          return;
+      }
+    },
+    [handleWorkspaceChanged, handleWorkspaceLoaded, handleWorkspaceReady],
+  );
 
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
@@ -298,7 +316,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
         </Pressable>
         <View style={styles.headerProjectTitleWrap}>
           <Text style={styles.headerProjectTitle} numberOfLines={1}>
-            {projectName}
+            {displayProjectName}
           </Text>
           {projectError ? (
             <Text style={styles.headerProjectError} numberOfLines={1}>
@@ -540,9 +558,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
           }}
         />
         {isSensorPanelOpen ? (
-          <View
-            style={[styles.sidePanel, { width: sidePanelWidth }]}
-          >
+          <View style={[styles.sidePanel, { width: sidePanelWidth }]}>
             <DeviceDetailsPanel
               isConnected={isBleConnected}
               isAvailable={isAvailable}
@@ -560,9 +576,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
           </View>
         ) : null}
         {isCodePanelOpen ? (
-          <View
-            style={[styles.sidePanel, { width: sidePanelWidth }]}
-          >
+          <View style={[styles.sidePanel, { width: sidePanelWidth }]}>
             <GeneratedCodePanel code={generatedCode} />
           </View>
         ) : null}

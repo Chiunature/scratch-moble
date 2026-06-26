@@ -9,22 +9,28 @@ export type PairedBleDevice = BleDevice & {
   pairedAt: number;
 };
 
-function normalizeDeviceId(id: string): string {
-  //统一转成大写
+export function normalizeBleDeviceId(id: string): string {
   return id.toUpperCase();
+}
+
+export function normalizeBleDevice(device: BleDevice): BleDevice {
+  return {
+    ...device,
+    id: normalizeBleDeviceId(device.id),
+  };
 }
 
 function upsertPairedList(
   list: PairedBleDevice[],
   device: BleDevice,
 ): PairedBleDevice[] {
-  const id = normalizeDeviceId(device.id);
+  const id = normalizeBleDeviceId(device.id);
   const next: PairedBleDevice = {
     ...device,
     id,
     pairedAt: Date.now(),
   };
-  const index = list.findIndex(item => normalizeDeviceId(item.id) === id);
+  const index = list.findIndex(item => normalizeBleDeviceId(item.id) === id);
 
   if (index === -1) {
     return [next, ...list];
@@ -49,7 +55,7 @@ export async function loadPairedDevices(): Promise<PairedBleDevice[]> {
 
     return parsed.map(item => ({
       ...item,
-      id: normalizeDeviceId(item.id),
+      id: normalizeBleDeviceId(item.id),
     }));
   } catch {
     return [];
@@ -69,10 +75,10 @@ export async function savePairedDevice(
 export async function removePairedDevice(
   deviceId: string,
 ): Promise<PairedBleDevice[]> {
-  const normalizedId = normalizeDeviceId(deviceId);
+  const normalizedId = normalizeBleDeviceId(deviceId);
   const current = await loadPairedDevices();
   const next = current.filter(
-    item => normalizeDeviceId(item.id) !== normalizedId,
+    item => normalizeBleDeviceId(item.id) !== normalizedId,
   );
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   bleLog.info('已移除配对设备', normalizedId);
@@ -83,9 +89,8 @@ export function isDeviceInScanList(
   pairedId: string,
   scannedDevices: BleDevice[],
 ): boolean {
-  const normalizedId = normalizeDeviceId(pairedId);
-  // 检查到是否有一个包含的就马上返回true，不然就是false
+  const normalizedId = normalizeBleDeviceId(pairedId);
   return scannedDevices.some(
-    device => normalizeDeviceId(device.id) === normalizedId,
+    device => normalizeBleDeviceId(device.id) === normalizedId,
   );
 }

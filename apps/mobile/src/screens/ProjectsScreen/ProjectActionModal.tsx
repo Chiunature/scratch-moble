@@ -9,6 +9,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {
+  resolveProjectDisplayName,
+  useTranslation,
+} from '@scratch-mobile/i18n';
 
 import type { ScratchProjectSummary } from '@scratch-mobile/shared';
 
@@ -42,6 +46,7 @@ export function ProjectActionModal({
   onRename,
   onDelete,
 }: Props) {
+  const { t } = useTranslation('projects');
   const [mode, setMode] = useState<ActionMode>('select');
   const [renameValue, setRenameValue] = useState('');
   const [inputError, setInputError] = useState(false);
@@ -159,19 +164,21 @@ export function ProjectActionModal({
     return null;
   }
 
+  const displayName = resolveProjectDisplayName(project.name);
+
   const title =
     mode === 'rename'
-      ? '重命名'
+      ? t('modal.renameTitle')
       : mode === 'delete'
-        ? '删除确认'
-        : `管理「${project.name}」`;
+      ? t('modal.deleteTitle')
+      : t('modal.manageTitle', { name: displayName });
 
   const description =
     mode === 'rename'
-      ? `为「${project.name}」输入新名称`
+      ? t('modal.renameDescription', { name: displayName })
       : mode === 'delete'
-        ? '此操作不可撤销'
-        : '请选择要执行的操作';
+      ? t('modal.deleteDescription')
+      : t('modal.selectDescription');
 
   return (
     <Modal
@@ -212,7 +219,7 @@ export function ProjectActionModal({
                 disabled={isSubmitting}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="关闭"
+                accessibilityLabel={t('modal.close')}
               >
                 <Text style={styles.closeButtonText}>×</Text>
               </Pressable>
@@ -227,36 +234,42 @@ export function ProjectActionModal({
             <View style={styles.body}>
               {mode === 'select' ? (
                 <View style={styles.actionRow}>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        styles.renameActionButton,
-                        pressed && styles.actionButtonPressed,
-                      ]}
-                      onPress={handleSelectRename}
-                      accessibilityRole="button"
-                      accessibilityLabel="重命名作品"
-                    >
-                      <Text style={styles.renameActionText}>重命名</Text>
-                    </Pressable>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        styles.deleteActionButton,
-                        pressed && styles.actionButtonPressed,
-                      ]}
-                      onPress={handleSelectDelete}
-                      accessibilityRole="button"
-                      accessibilityLabel="删除作品"
-                    >
-                      <Text style={styles.deleteActionText}>删除</Text>
-                    </Pressable>
-                  </View>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      styles.renameActionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                    onPress={handleSelectRename}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('modal.renameProjectAccessibility')}
+                  >
+                    <Text style={styles.renameActionText}>
+                      {t('modal.renameAction')}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      styles.deleteActionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                    onPress={handleSelectDelete}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('modal.deleteProjectAccessibility')}
+                  >
+                    <Text style={styles.deleteActionText}>
+                      {t('modal.deleteAction')}
+                    </Text>
+                  </Pressable>
+                </View>
               ) : null}
 
               {mode === 'rename' ? (
                 <View style={styles.renameSection}>
-                  <Text style={styles.inputLabel}>新名称</Text>
+                  <Text style={styles.inputLabel}>
+                    {t('modal.newNameLabel')}
+                  </Text>
                   <TextInput
                     value={renameValue}
                     onChangeText={value => {
@@ -268,7 +281,7 @@ export function ProjectActionModal({
                     onSubmitEditing={() => {
                       void handleRenameSubmit();
                     }}
-                    placeholder="输入新名称..."
+                    placeholder={t('modal.newNamePlaceholder')}
                     placeholderTextColor={colors.textFaint}
                     returnKeyType="done"
                     editable={!isSubmitting}
@@ -286,9 +299,11 @@ export function ProjectActionModal({
                   <View style={styles.deleteWarning}>
                     <Text style={styles.deleteWarningIcon}>⚠</Text>
                     <View style={styles.deleteWarningTextBlock}>
-                      <Text style={styles.deleteWarningTitle}>确认删除</Text>
+                      <Text style={styles.deleteWarningTitle}>
+                        {t('modal.deleteWarningTitle')}
+                      </Text>
                       <Text style={styles.deleteWarningDesc}>
-                        此操作不可撤销，「{project.name}」将被永久删除。
+                        {t('modal.deleteWarningMessage', { name: displayName })}
                       </Text>
                     </View>
                   </View>
@@ -303,9 +318,11 @@ export function ProjectActionModal({
                     }}
                     disabled={isSubmitting}
                     accessibilityRole="button"
-                    accessibilityLabel="确认删除"
+                    accessibilityLabel={t('modal.confirmDeleteAccessibility')}
                   >
-                    <Text style={styles.deleteConfirmButtonText}>确认删除</Text>
+                    <Text style={styles.deleteConfirmButtonText}>
+                      {t('modal.confirmDelete')}
+                    </Text>
                   </Pressable>
                 </View>
               ) : null}
