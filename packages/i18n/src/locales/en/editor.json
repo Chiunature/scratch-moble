@@ -18,6 +18,13 @@
       "ultrasonic": "Ultrasonic Sensor",
       "remote": "Remote Control",
       "other": "Other"
+    },
+    "operation": {
+      "number": "Numbers",
+      "compare": "Comparison",
+      "logic": "Logic",
+      "string": "Strings",
+      "advanced": "Advanced"
     }
   },
   "procedureModal": {
@@ -29,5 +36,100 @@
     "addBoolean": "Add boolean input",
     "cancel": "Cancel",
     "confirm": "OK"
+  },
+  "blocks": {
+    "motor": {
+      "runForPowerSeconds": "%1 %2 motor %3 run at power %4 for %5 seconds",
+      "runPower": "%1 %2 motor %3 run at power %4",
+      "stop": "%1 %2 motor %3 turn off motor",
+      "stopModule": "%1 %2 motor %3 set motor to stop with %4"
+    },
+    "move": {
+      "pair": "%1 %2 set combined motors %3 direction to %4",
+      "moveSetStopModule": "%1 %2 set combined motors stop mode to %3",
+      "movDirPowerSeconds": "%1 %2 %3 run at power %4 for %5 seconds",
+      "movDirPower": "%1 %2 %3 move at power %4",
+      "movStop": "%1 %2 stop moving",
+      "movForPowerSeconds": "%1 %2 move with left power %3 and right power %4 for %5 seconds",
+      "movPower": "%1 %2 move with left power %3 and right power %4",
+      "movFindLineInit": "%1 %2 initialize line following",
+      "movFindLineRun": "%1 %2 dual line follow left sensor %3 right sensor %4 left power %5 right power %6 KP %7 KD %8"
+    },
+    "matrixLight": {
+      "show": "%1 %2 show matrix %3",
+      "clear": "%1 %2 clear display",
+      "setBrightness": "%1 %2 set matrix brightness to %3",
+      "showRoll": "%1 %2 show text %3",
+      "setPixelBrightness": "%1 %2 set x %3 y %4 %5"
+    },
+    "sound": {
+      "playMusic": "%1 %2 play note %3 for %4 beats"
+    },
+    "event": {
+      "whenFlagClicked": "%1 %2 when program starts"
+    },
+    "control": {
+      "sleepS": "wait %1 seconds",
+      "wait": "wait until %1",
+      "break": "break out of loop",
+      "whileTimes": "repeat %1 times",
+      "while": "repeat",
+      "if": "if %1 then",
+      "ifElse": "if %1 then",
+      "ifElseElse": "else",
+      "whileDo": "repeat until %1",
+      "stopExit": "stop and exit program"
+    },
+    "sensor": {
+      "touchState": "%1 %2 touch sensor %3 pressed?",
+      "grayCmpLux": "%1 %2 grayscale sensor %3 reflected light %4 %5",
+      "grayLux": "%1 %2 grayscale sensor %3 value",
+      "graySetThreshold": "%1 %2 grayscale sensor %3 threshold set to %4",
+      "grayLuxState": "%1 %2 grayscale sensor %3 triggered?",
+      "grayOneCalibrate": "%1 %2 calibrate %3 grayscale sensor for %4 seconds",
+      "grayTwoCalibrate": "%1 %2 %3 grayscale sensors for %4 seconds",
+      "ultrasonicCmpValue": "%1 %2 ultrasonic sensor %3 distance %4 %5 cm",
+      "ultrasonicValue": "%1 %2 ultrasonic sensor %3 value",
+      "remoteKey": "%1 %2 controller %3 %4",
+      "remoteSetAdvanceOffset": "%1 %2 set controller forward offset left %3 right %4",
+      "remoteSetRetreatOffset": "%1 %2 set controller backward offset left %3 right %4",
+      "remoteReadAdvanceLeft": "%1 %2 read forward left offset",
+      "remoteReadAdvanceRight": "%1 %2 read forward right offset",
+      "remoteReadRetreatLeft": "%1 %2 read backward left offset",
+      "remoteReadRetreatRight": "%1 %2 read backward right offset",
+      "hostKey": "host %1 button %2",
+      "timer": "timer",
+      "resetTimer": "reset timer"
+    }
+  },
+  "blockOptions": {
+    "motorStopMode": {
+      "coast": "coast",
+      "brake": "brake"
+    },
+    "pairDirection": {
+      "leftReverse": "left motor reverse",
+      "rightReverse": "right motor reverse",
+      "allReverse": "all reverse",
+      "allForward": "all forward"
+    },
+    "moveDirection": {
+      "advance": "forward",
+      "retreat": "backward",
+      "left": "turn left",
+      "right": "turn right"
+    },
+    "buttonState": {
+      "pressed": "pressed",
+      "notPressed": "not pressed"
+    },
+    "hostButton": {
+      "left": "left",
+      "right": "right"
+    },
+    "pixelState": {
+      "on": "on",
+      "off": "off"
+    }
   }
 }

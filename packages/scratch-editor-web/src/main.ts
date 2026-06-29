@@ -5,7 +5,6 @@
  */
 import * as ScratchBlocks from 'scratch-blocks';
 
-import { registerEditorBlocks } from './blocks/registerBlocks';
 import { BLOCK_TYPES } from './blocks/blockTypes';
 import { getToolboxJson } from './blocks/toolbox';
 import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
@@ -52,7 +51,6 @@ async function bootstrap(): Promise<void> {
   patchContextMenuMissingTextGuard();
 
   registerNativeInboundBridge();
-  registerEditorBlocks();
   patchProcedureWorkspaceBehavior();
   patchDataVariableReporterOutput();
   ensureProcedureEditorModalDom();

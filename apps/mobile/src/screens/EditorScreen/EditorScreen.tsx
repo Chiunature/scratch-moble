@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -26,9 +26,11 @@ import type {
   RnVariablePromptOpenMessage,
 } from '@scratch-mobile/shared';
 import {
+  getCurrentAppLocale,
   resolveProjectDisplayName,
   useTranslation,
 } from '@scratch-mobile/i18n';
+import { EDITOR_EMBEDDED_LOCALE_GLOBAL } from '@scratch-mobile/shared';
 import {
   EDITOR_BUNDLE_HTML,
   HandleShankPickerOverlay,
@@ -182,6 +184,13 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const projectError = loadError ?? saveError;
   const displayProjectName = resolveProjectDisplayName(projectName);
 
+  // bootstrap 首帧前写入 App 语言，避免 WebView 用 navigator 语言渲染飞栏后再闪一下。
+  const editorEmbeddedLocaleScript = useMemo(
+    () =>
+      `window.${EDITOR_EMBEDDED_LOCALE_GLOBAL}=${JSON.stringify(getCurrentAppLocale())};true;`,
+    [i18n.language],
+  );
+
   useEffect(() => {
     const syncEditorLocale = () => {
       injectEditorLocale(webViewRef.current);
@@ -202,6 +211,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     (message: EditorOutMessage) => {
       switch (message.type) {
         case 'editor.workspace.ready':
+          // 兜底：embedded 未生效时（如预览）仍同步 App 语言；同语言时 Web 端会 no-op。
           injectEditorLocale(webViewRef.current);
           void handleWorkspaceReady();
           return;
@@ -442,6 +452,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
           ref={webViewRef}
           originWhitelist={['*']}
           source={{ html: EDITOR_BUNDLE_HTML }} //加载编辑器网页
+          injectedJavaScriptBeforeContentLoaded={editorEmbeddedLocaleScript}
           onMessage={handleMessage} //处理WebView发送的消息
           javaScriptEnabled
           domStorageEnabled

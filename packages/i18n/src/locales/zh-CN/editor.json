@@ -18,6 +18,13 @@
       "ultrasonic": "超声波传感器",
       "remote": "遥控器",
       "other": "其他"
+    },
+    "operation": {
+      "number": "数字",
+      "compare": "比较",
+      "logic": "逻辑",
+      "string": "字符串",
+      "advanced": "高级"
     }
   },
   "procedureModal": {
@@ -29,5 +36,100 @@
     "addBoolean": "添加布尔输入项",
     "cancel": "取消",
     "confirm": "确定"
+  },
+  "blocks": {
+    "motor": {
+      "runForPowerSeconds": "%1 %2 电机 %3 以 %4 功率转动 %5 秒",
+      "runPower": "%1 %2 电机 %3 以 %4 功率转动",
+      "stop": "%1 %2 电机 %3 关闭电机",
+      "stopModule": "%1 %2 电机 %3 将电机设置为停止时 %4"
+    },
+    "move": {
+      "pair": "%1 %2 将组合电机设置为 %3 转动方向为 %4",
+      "moveSetStopModule": "%1 %2 将组合电机设置为停止使 %3",
+      "movDirPowerSeconds": "%1 %2 %3 以功率 %4 转动 %5 秒",
+      "movDirPower": "%1 %2 %3 以功率 %4 移动",
+      "movStop": "%1 %2 停止运动",
+      "movForPowerSeconds": "%1 %2 以左功率 %3 和右功率 %4 移动 %5 秒",
+      "movPower": "%1 %2 以左功率 %3 和右功率 %4 移动",
+      "movFindLineInit": "%1 %2 巡线参数初始化",
+      "movFindLineRun": "%1 %2 双巡线 左传感器 %3 右传感器 %4 左功率 %5 右功率 %6 KP %7 KD %8"
+    },
+    "matrixLight": {
+      "show": "%1 %2 显示矩阵灯 %3",
+      "clear": "%1 %2 清除显示内容",
+      "setBrightness": "%1 %2 将矩阵灯的亮度设置为 %3",
+      "showRoll": "%1 %2 显示文字 %3",
+      "setPixelBrightness": "%1 %2 将x %3 y %4 %5"
+    },
+    "sound": {
+      "playMusic": "%1 %2 演奏音符 %3 %4 拍"
+    },
+    "event": {
+      "whenFlagClicked": "%1 %2 当程序启动时"
+    },
+    "control": {
+      "sleepS": "等待 %1 秒",
+      "wait": "等待 %1",
+      "break": "跳出循环",
+      "whileTimes": "重复执行 %1 次",
+      "while": "重复执行",
+      "if": "如果 %1 那么",
+      "ifElse": "如果 %1 那么",
+      "ifElseElse": "否则",
+      "whileDo": "重复执行直到 %1",
+      "stopExit": "停止并且退出程序"
+    },
+    "sensor": {
+      "touchState": "%1 %2触碰传感器 %3 被按下?",
+      "grayCmpLux": "%1 %2 灰度传感器 %3 的反射光 %4 %5",
+      "grayLux": "%1 %2 灰度传感器 %3 的数值",
+      "graySetThreshold": "%1 %2 灰度传感器 %3 阈值设为 %4",
+      "grayLuxState": "%1 %2 灰度传感器 %3 是否触发",
+      "grayOneCalibrate": "%1 %2 校准 %3 灰度传感器 %4 秒",
+      "grayTwoCalibrate": "%1 %2 %3 灰度传感器 %4 秒",
+      "ultrasonicCmpValue": "%1 %2 超声波传感器 %3 的距离是否 %4 %5 cm",
+      "ultrasonicValue": "%1 %2 超声波传感器 %3 的数值",
+      "remoteKey": "%1 %2 手柄 %3 是否 %4",
+      "remoteSetAdvanceOffset": "%1 %2 设置手柄前进偏移量为左 %3 右 %4",
+      "remoteSetRetreatOffset": "%1 %2 设置手柄后退偏移量为左 %3 右 %4",
+      "remoteReadAdvanceLeft": "%1 %2 读取前进左偏移量",
+      "remoteReadAdvanceRight": "%1 %2 读取前进右偏移量",
+      "remoteReadRetreatLeft": "%1 %2 读取后退左偏移量",
+      "remoteReadRetreatRight": "%1 %2 读取后退右偏移量",
+      "hostKey": "主机 %1 按钮是否 %2",
+      "timer": "计时器",
+      "resetTimer": "重置计时器"
+    }
+  },
+  "blockOptions": {
+    "motorStopMode": {
+      "coast": "惯性滑行",
+      "brake": "制动"
+    },
+    "pairDirection": {
+      "leftReverse": "左电机反向",
+      "rightReverse": "右电机反向",
+      "allReverse": "全部反向",
+      "allForward": "全部正向"
+    },
+    "moveDirection": {
+      "advance": "前进",
+      "retreat": "后退",
+      "left": "向左转",
+      "right": "向右转"
+    },
+    "buttonState": {
+      "pressed": "被按下",
+      "notPressed": "未按下"
+    },
+    "hostButton": {
+      "left": "左",
+      "right": "右"
+    },
+    "pixelState": {
+      "on": "打开",
+      "off": "关闭"
+    }
   }
 }

@@ -7,12 +7,42 @@ import type { Workspace } from '../codegen/types';
 import { openProcedureEditorModal } from './procedureEditor';
 import { openVariablePrompt } from './variablePromptBridge';
 
+type FlyoutLike = {
+  show: (contents: unknown) => void;
+  setRecyclingEnabled?: (enabled: boolean) => void;
+  getRecyclableInflater?: () => { emptyRecycledBlocks: () => void };
+};
+
 type ContinuousToolboxLike = {
   /** ScratchContinuousToolbox：须用 forceRerender，勿直接 getInitialFlyoutContents + show */
   forceRerender?: () => void;
   getInitialFlyoutContents?: () => unknown;
-  getFlyout?: () => { show: (contents: unknown) => void } | null;
+  getInitialFlyoutContents_?: () => unknown;
+  getFlyout?: () => FlyoutLike | null;
 };
+
+/**
+ * Continuous Flyout 的 block 回收（RecyclableBlockFlyoutInflater）按 type 复用 BlockSvg。
+ * 切语言后 message0 已变，但复用实例不会重跑 init，飞栏仍显示旧文案。
+ * 仅在 applyEditorLocale 路径传入 invalidateFlyoutBlocks 时临时关闭回收。
+ */
+function prepareFlyoutBlockRecycling(workspace: Workspace): void {
+  const flyout = (workspace.getToolbox() as ContinuousToolboxLike | null)?.getFlyout?.();
+  if (!flyout) {
+    return;
+  }
+  flyout.setRecyclingEnabled?.(false);
+  try {
+    flyout.getRecyclableInflater?.()?.emptyRecycledBlocks();
+  } catch {
+    // 非 ContinuousFlyout 时忽略。
+  }
+}
+
+function restoreFlyoutBlockRecycling(workspace: Workspace): void {
+  const flyout = (workspace.getToolbox() as ContinuousToolboxLike | null)?.getFlyout?.();
+  flyout?.setRecyclingEnabled?.(true);
+}
 
 /**
  * Scratch ContinuousFlyout 在 inject 时会先 show 一整条飞栏；
@@ -22,7 +52,72 @@ type ContinuousToolboxLike = {
 let flyoutRebuildFrame: number | null = null;
 let flyoutRebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
-export function rebuildContinuousFlyout(workspace: Workspace): void {
+type RebuildContinuousFlyoutOptions = {
+  /**
+   * 切语言时为 true：show 前关回收并清空缓存，show 后恢复。
+   * 变量/自制积木等日常刷新保持 false，继续走 Scratch 默认复用以减少 DOM 重建。
+   */
+  invalidateFlyoutBlocks?: boolean;
+  /** 切语言时为 true：跳过 debounce，避免飞栏短暂显示旧文案。 */
+  immediate?: boolean;
+};
+
+function runContinuousFlyoutRebuild(
+  workspace: Workspace,
+  invalidateFlyoutBlocks: boolean,
+): void {
+  const toolbox = workspace.getToolbox() as ContinuousToolboxLike | null;
+  if (!toolbox) {
+    return;
+  }
+  if (invalidateFlyoutBlocks) {
+    prepareFlyoutBlockRecycling(workspace);
+  }
+  try {
+    // ScratchContinuousToolbox.refreshSelection 是空操作；forceRerender 使用
+    // getInitialFlyoutContents_（正确绑定 this），并恢复当前选中的分类。
+    if (toolbox.forceRerender) {
+      toolbox.forceRerender();
+      return;
+    }
+    const getContents =
+      toolbox.getInitialFlyoutContents_ ?? toolbox.getInitialFlyoutContents;
+    if (!getContents || !toolbox.getFlyout) {
+      return;
+    }
+    const contents = getContents.call(toolbox);
+    toolbox.getFlyout()?.show(contents);
+  } finally {
+    if (invalidateFlyoutBlocks) {
+      restoreFlyoutBlockRecycling(workspace);
+    }
+  }
+}
+
+/**
+ * 重建 Continuous 飞栏内容。变量/自制积木变更等默认调用即可；
+ * 切语言时由 applyEditorLocale 传入 invalidateFlyoutBlocks。
+ */
+export function rebuildContinuousFlyout(
+  workspace: Workspace,
+  options?: RebuildContinuousFlyoutOptions,
+): void {
+  const invalidateFlyoutBlocks = options?.invalidateFlyoutBlocks ?? false;
+  const immediate = options?.immediate ?? false;
+
+  if (immediate) {
+    if (flyoutRebuildFrame !== null) {
+      cancelAnimationFrame(flyoutRebuildFrame);
+      flyoutRebuildFrame = null;
+    }
+    if (flyoutRebuildTimer !== null) {
+      clearTimeout(flyoutRebuildTimer);
+      flyoutRebuildTimer = null;
+    }
+    runContinuousFlyoutRebuild(workspace, invalidateFlyoutBlocks);
+    return;
+  }
+
   if (flyoutRebuildFrame !== null) {
     cancelAnimationFrame(flyoutRebuildFrame);
   }
@@ -33,21 +128,7 @@ export function rebuildContinuousFlyout(workspace: Workspace): void {
     flyoutRebuildTimer = null;
     flyoutRebuildFrame = requestAnimationFrame(() => {
       flyoutRebuildFrame = null;
-      const toolbox = workspace.getToolbox() as ContinuousToolboxLike | null;
-      if (!toolbox) {
-        return;
-      }
-      // ScratchContinuousToolbox.refreshSelection 是空操作；forceRerender 使用
-      // getInitialFlyoutContents_（正确绑定 this），并恢复当前选中的分类。
-      if (toolbox.forceRerender) {
-        toolbox.forceRerender();
-        return;
-      }
-      if (!toolbox.getInitialFlyoutContents || !toolbox.getFlyout) {
-        return;
-      }
-      const contents = toolbox.getInitialFlyoutContents();
-      toolbox.getFlyout()?.show(contents);
+      runContinuousFlyoutRebuild(workspace, invalidateFlyoutBlocks);
     });
   }, 150);
 }

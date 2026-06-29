@@ -12,6 +12,8 @@ export function handleEditorLocaleInbound(message: EditorInMessage): boolean {
     return true;
   }
 
-  void applyEditorLocale(message.locale);
+  void applyEditorLocale(message.locale).catch(error => {
+    console.error('[editor] applyEditorLocale failed', error);
+  });
   return true;
 }

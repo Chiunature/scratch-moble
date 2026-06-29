@@ -1,3 +1,5 @@
+import { tEditor } from '@scratch-mobile/i18n';
+
 import { buildToolboxCategory } from './buildCategory';
 import { numberKeyboardShadow, stringShadow } from './shadowPresets';
 
@@ -10,7 +12,7 @@ export function operationToolboxCategory() {
     id: 'operation',
     categorystyle: 'operation_category',
     contents: [
-    { kind: 'label', text: '数字' },
+    { kind: 'label', text: tEditor('toolboxLabels.operation.number') },
     {
       kind: 'block',
       type: 'operator_add',
@@ -36,7 +38,7 @@ export function operationToolboxCategory() {
       type: 'operator_random',
       inputs: { FROM: numShadow(1), TO: numShadow(10) },
     },
-    { kind: 'label', text: '比较' },
+    { kind: 'label', text: tEditor('toolboxLabels.operation.compare') },
     {
       kind: 'block',
       type: 'operator_gt',
@@ -52,11 +54,11 @@ export function operationToolboxCategory() {
       type: 'operator_equals',
       inputs: { OPERAND1: numShadow(0), OPERAND2: numShadow(0) },
     },
-    { kind: 'label', text: '逻辑' },
+    { kind: 'label', text: tEditor('toolboxLabels.operation.logic') },
     { kind: 'block', type: 'operator_and' },
     { kind: 'block', type: 'operator_or' },
     { kind: 'block', type: 'operator_not' },
-    { kind: 'label', text: '字符串' },
+    { kind: 'label', text: tEditor('toolboxLabels.operation.string') },
     {
       kind: 'block',
       type: 'operator_join',
@@ -77,7 +79,7 @@ export function operationToolboxCategory() {
       type: 'operator_contains',
       inputs: { STRING1: strShadow('hello'), STRING2: strShadow('e') },
     },
-    { kind: 'label', text: '高级' },
+    { kind: 'label', text: tEditor('toolboxLabels.operation.advanced') },
     {
       kind: 'block',
       type: 'operator_mod',
