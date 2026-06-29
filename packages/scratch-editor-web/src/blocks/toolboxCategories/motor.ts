@@ -4,18 +4,14 @@ import {
   portShadow,
   numberKeyboardShadow,
 } from './shadowPresets';
-import { toolboxCategoryIconClasses } from './shared';
+import { buildToolboxCategory } from './buildCategory';
 
 /** inputs 名称与 blockDefinitions/motor.ts 中 input_value 一致；阴影见 shadowPresets.ts */
-export const motorToolboxCategory = {
-  kind: 'category',
-  id: 'motor',
-  name: '电机',
-  categorystyle: 'motor_category',
-  cssconfig: {
-    icon: toolboxCategoryIconClasses('motor'),
-  },
-  contents: [
+export function motorToolboxCategory() {
+  return buildToolboxCategory({
+    id: 'motor',
+    categorystyle: 'motor_category',
+    contents: [
     {
       kind: 'block',
       type: BLOCK_TYPES.motor.runForPowerSeconds,
@@ -49,4 +45,5 @@ export const motorToolboxCategory = {
       fields: { MODE: '0' },
     },
   ],
-} as const;
+  });
+}

@@ -1,3 +1,4 @@
+import { tEditor } from '@scratch-mobile/i18n';
 import * as ScratchBlocks from 'scratch-blocks';
 
 import { loadProcedureMutation } from './loadMutation';
@@ -36,9 +37,49 @@ function getRequiredElement<T extends Element>(
   return element;
 }
 
+export function applyProcedureModalI18n(modal: HTMLElement): void {
+  getRequiredElement(modal, '.scratch-procedure-panel', HTMLElement).setAttribute(
+    'aria-label',
+    tEditor('procedureModal.ariaLabel'),
+  );
+  getRequiredElement(modal, '.scratch-procedure-title', HTMLElement).textContent =
+    tEditor('procedureModal.title');
+  getRequiredElement(
+    modal,
+    '.scratch-procedure-close',
+    HTMLButtonElement,
+  ).setAttribute('aria-label', tEditor('procedureModal.close'));
+  getRequiredElement(
+    modal,
+    '[data-action="add-label"]',
+    HTMLButtonElement,
+  ).textContent = tEditor('procedureModal.addLabel');
+  getRequiredElement(
+    modal,
+    '[data-action="add-string-number"]',
+    HTMLButtonElement,
+  ).textContent = tEditor('procedureModal.addStringNumber');
+  getRequiredElement(
+    modal,
+    '[data-action="add-boolean"]',
+    HTMLButtonElement,
+  ).textContent = tEditor('procedureModal.addBoolean');
+  getRequiredElement(
+    modal,
+    '.scratch-procedure-cancel',
+    HTMLButtonElement,
+  ).textContent = tEditor('procedureModal.cancel');
+  getRequiredElement(
+    modal,
+    '.scratch-procedure-confirm',
+    HTMLButtonElement,
+  ).textContent = tEditor('procedureModal.confirm');
+}
+
 export function ensureProcedureEditorModalDom(): HTMLElement {
   const existing = document.getElementById('scratch-procedure-modal');
   if (existing) {
+    applyProcedureModalI18n(existing);
     return existing;
   }
 
@@ -97,6 +138,7 @@ export function ensureProcedureEditorModalDom(): HTMLElement {
   });
 
   document.body.append(modal);
+  applyProcedureModalI18n(modal);
   return modal;
 }
 

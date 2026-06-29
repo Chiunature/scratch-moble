@@ -1,1 +1,33 @@
-{}
+{
+  "toolbox": {
+    "motor": "Motors",
+    "move": "Movement",
+    "matrixLight": "Matrix",
+    "sound": "Sound",
+    "event": "Events",
+    "control": "Control",
+    "sensor": "Sensors",
+    "operation": "Operators",
+    "variable": "Variables",
+    "customBlock": "My Blocks"
+  },
+  "toolboxLabels": {
+    "sensor": {
+      "touch": "Touch Sensor",
+      "grayscale": "Grayscale Sensor",
+      "ultrasonic": "Ultrasonic Sensor",
+      "remote": "Remote Control",
+      "other": "Other"
+    }
+  },
+  "procedureModal": {
+    "title": "Make a Block",
+    "ariaLabel": "Make a Block",
+    "close": "Close",
+    "addLabel": "Add label",
+    "addStringNumber": "Add number or text input",
+    "addBoolean": "Add boolean input",
+    "cancel": "Cancel",
+    "confirm": "OK"
+  }
+}

@@ -9,17 +9,20 @@ import { sensorToolboxCategory } from './sensor';
 import { soundToolboxCategory } from './sound';
 import { variableToolboxCategory } from './variable';
 
-export { TOOLBOX_CATEGORIES } from './shared';
+export { getToolboxCategories, TOOLBOX_CATEGORY_DEFS } from './shared';
+export type { ToolboxCategoryId } from './shared';
 
-export const toolboxCategoryContents = [
-  motorToolboxCategory,
-  moveToolboxCategory,
-  matrixLightToolboxCategory,
-  soundToolboxCategory,
-  eventToolboxCategory,
-  controlToolboxCategory,
-  sensorToolboxCategory,
-  operationToolboxCategory,
-  variableToolboxCategory,
-  customBlockToolboxCategory,
-] as const;
+export function getToolboxCategoryContents() {
+  return [
+    motorToolboxCategory(),
+    moveToolboxCategory(),
+    matrixLightToolboxCategory(),
+    soundToolboxCategory(),
+    eventToolboxCategory(),
+    controlToolboxCategory(),
+    sensorToolboxCategory(),
+    operationToolboxCategory(),
+    variableToolboxCategory(),
+    customBlockToolboxCategory(),
+  ];
+}

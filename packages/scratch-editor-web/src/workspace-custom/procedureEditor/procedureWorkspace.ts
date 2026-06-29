@@ -1,6 +1,7 @@
 import * as ScratchBlocks from 'scratch-blocks';
 
 import type { Workspace } from '../../codegen/types';
+import { getCurrentScratchBlocksLocale } from '../../locale/applyEditorLocale';
 import { editorTheme } from '../../theme';
 
 export type ProcedureEditorWorkspace = ReturnType<typeof ScratchBlocks.inject>;
@@ -29,7 +30,7 @@ export function setupProcedureDeclarationSync(
 export function createProcedureEditorWorkspace(
   host: HTMLElement,
 ): ProcedureEditorWorkspace {
-  ScratchBlocks.ScratchMsgs.setLocale('zh-cn');
+  ScratchBlocks.ScratchMsgs.setLocale(getCurrentScratchBlocksLocale());
 
   return ScratchBlocks.inject(host, {
     move: {

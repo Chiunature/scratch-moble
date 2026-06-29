@@ -3,6 +3,7 @@ export {
   forceInjectEditorMessage,
   resetInjectEditorMessageDedup,
 } from './bridge/injectEditorMessage';
+export { injectEditorLocale } from './injectEditorLocale';
 export { BubbleSlider } from './components/BubbleSlider';
 export { MatrixLightOverlay } from './components/MatrixLightOverlay';
 export { NotePickerOverlay } from './components/NotePickerOverlay';

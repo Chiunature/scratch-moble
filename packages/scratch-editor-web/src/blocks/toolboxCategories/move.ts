@@ -4,16 +4,13 @@ import {
   integerSliderShadow,
   numberKeyboardShadow,
 } from './shadowPresets';
-import { toolboxCategoryIconClasses } from './shared';
-export const moveToolboxCategory = {
-  kind: 'category',
-  id: 'move',
-  name: '移动',
-  categorystyle: 'move_category',
-  cssconfig: {
-    icon: toolboxCategoryIconClasses('move'),
-  },
-  contents: [
+import { buildToolboxCategory } from './buildCategory';
+
+export function moveToolboxCategory() {
+  return buildToolboxCategory({
+    id: 'move',
+    categorystyle: 'move_category',
+    contents: [
     {
       kind: 'block',
       type: BLOCK_TYPES.move.pair,
@@ -90,4 +87,5 @@ export const moveToolboxCategory = {
       },
     },
   ],
-} as const;
+  });
+}

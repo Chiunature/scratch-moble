@@ -1,1 +1,33 @@
-{}
+{
+  "toolbox": {
+    "motor": "電機",
+    "move": "移動",
+    "matrixLight": "矩陣燈",
+    "sound": "聲音",
+    "event": "事件",
+    "control": "控制",
+    "sensor": "感測器",
+    "operation": "運算",
+    "variable": "變數",
+    "customBlock": "自製積木"
+  },
+  "toolboxLabels": {
+    "sensor": {
+      "touch": "觸碰感測器",
+      "grayscale": "灰度感測器",
+      "ultrasonic": "超聲波感測器",
+      "remote": "遙控器",
+      "other": "其他"
+    }
+  },
+  "procedureModal": {
+    "title": "製作積木",
+    "ariaLabel": "製作積木",
+    "close": "關閉",
+    "addLabel": "新增標籤",
+    "addStringNumber": "新增數字或文字輸入項",
+    "addBoolean": "新增布林輸入項",
+    "cancel": "取消",
+    "confirm": "確定"
+  }
+}

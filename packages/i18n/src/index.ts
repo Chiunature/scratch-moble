@@ -14,4 +14,10 @@ export {
   isDefaultProjectName,
   resolveProjectDisplayName,
 } from './projectDefaults';
+export {
+  initEditorWebI18n,
+  mapAppLocaleToScratchBlocksLocale,
+  resolveEditorWebLocale,
+  tEditor,
+} from './initEditorWebI18n';
 export { I18nextProvider, useTranslation, Trans } from 'react-i18next';

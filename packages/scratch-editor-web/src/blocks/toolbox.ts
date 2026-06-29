@@ -4,12 +4,9 @@
  */
 import { inject } from 'scratch-blocks';
 
-import {
-  toolboxCategoryContents,
-  TOOLBOX_CATEGORIES,
-} from './toolboxCategories';
+import { getToolboxCategoryContents } from './toolboxCategories';
 
-export { TOOLBOX_CATEGORIES };
+export { getToolboxCategories } from './toolboxCategories';
 
 /** 与 `inject` 的 JSON toolbox 形态一致（不直接引用 blockly 子路径，以便在仅依赖 scratch-blocks 时解析类型）。 */
 type InjectableToolboxJson = Extract<
@@ -18,7 +15,9 @@ type InjectableToolboxJson = Extract<
 >;
 
 /** Blockly 将 `contents` 标为可变数组；分类 JSON 使用 `as const` 推断为 readonly，注入前断言（运行时未修改该对象）。 */
-export const toolboxJson = {
-  kind: 'categoryToolbox',
-  contents: toolboxCategoryContents,
-} as unknown as InjectableToolboxJson;
+export function getToolboxJson(): InjectableToolboxJson {
+  return {
+    kind: 'categoryToolbox',
+    contents: getToolboxCategoryContents(),
+  } as unknown as InjectableToolboxJson;
+}

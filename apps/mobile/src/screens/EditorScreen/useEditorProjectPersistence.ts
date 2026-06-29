@@ -5,7 +5,7 @@ import type { WebView } from 'react-native-webview';
 import { getDefaultProjectName } from '@scratch-mobile/i18n';
 import type { RnWorkspaceChangedMessage } from '@scratch-mobile/shared';
 
-import { forceInjectEditorMessage } from '../../features/editor';
+import { forceInjectEditorMessage, injectEditorLocale } from '../../features/editor';
 import {
   loadProject,
   ProjectDocumentParseError,
@@ -37,6 +37,7 @@ export function useEditorProjectPersistence({
   const injectLoad = useCallback(
     (workspace: unknown | null) => {
       loadRevisionRef.current += 1;
+      injectEditorLocale(webViewRef.current);
       forceInjectEditorMessage(webViewRef.current, {
         type: 'editor.workspace.load',
         projectId,

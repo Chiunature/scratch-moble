@@ -20,10 +20,10 @@
 import type { Toolbox } from 'blockly/core';
 
 import type { Workspace } from '../../codegen/types';
-import { TOOLBOX_CATEGORIES } from '../../blocks/toolbox';
+import { getToolboxCategories } from '../../blocks/toolboxCategories';
 import { TOOLBOX_CATEGORY_ICON_SVG_BY_ID } from '../../blocks/toolboxCategoryIconUrls';
 
-/** 从 TOOLBOX_CATEGORIES 一次遍历得到图标 / 颜色 / 文案反查，避免三份 map 各自 fromEntries */
+/** 从当前 locale 下的分类文案构建反查表 */
 function buildToolboxCategoryLookups(): {
   iconById: Record<string, string>;
   colourById: Record<string, string>;
@@ -32,19 +32,13 @@ function buildToolboxCategoryLookups(): {
   const iconById: Record<string, string> = {};
   const colourById: Record<string, string> = {};
   const idByText: Record<string, string> = {};
-  for (const c of TOOLBOX_CATEGORIES) {
-    iconById[c.id] = TOOLBOX_CATEGORY_ICON_SVG_BY_ID[c.id] ?? '';
-    colourById[c.id] = c.colour;
-    idByText[c.displayText] = c.id;
+  for (const category of getToolboxCategories()) {
+    iconById[category.id] = TOOLBOX_CATEGORY_ICON_SVG_BY_ID[category.id] ?? '';
+    colourById[category.id] = category.colour;
+    idByText[category.displayText] = category.id;
   }
   return { iconById, colourById, idByText };
 }
-
-const {
-  iconById: ICON_BY_ID,
-  colourById: COLOUR_BY_ID,
-  idByText: ID_BY_TEXT,
-} = buildToolboxCategoryLookups();
 
 // ─── Blockly DOM 节点选择器（与 scratch-blocks 2.x 的 DOM 结构对应）─────────
 
@@ -73,21 +67,23 @@ function resolveCategoryId(
   generatedId: string,
   itemDiv: HTMLElement | null,
 ): string | null {
+  const { iconById, idByText } = buildToolboxCategoryLookups();
+
   if (itemDiv) {
     const patchedId = itemDiv.dataset.toolboxCategoryId;
-    if (patchedId && ICON_BY_ID[patchedId]) {
+    if (patchedId && iconById[patchedId]) {
       return patchedId;
     }
   }
 
-  if (ICON_BY_ID[generatedId]) {
+  if (iconById[generatedId]) {
     return generatedId;
   }
 
   if (itemDiv) {
     const labelText = itemDiv.querySelector(SEL_LABEL)?.textContent?.trim();
-    if (labelText && ID_BY_TEXT[labelText]) {
-      return ID_BY_TEXT[labelText];
+    if (labelText && idByText[labelText]) {
+      return idByText[labelText];
     }
   }
 
@@ -249,9 +245,10 @@ function patchRowContent(
   categoryId: string,
   svgMarkup: string,
 ): void {
+  const { colourById } = buildToolboxCategoryLookups();
   itemDiv.dataset.toolboxCategoryId = categoryId;
 
-  const colour = COLOUR_BY_ID[categoryId];
+  const colour = colourById[categoryId];
   if (colour) {
     itemDiv.style.setProperty('--scratch-toolbox-selected-bg', colour);
   }
@@ -291,6 +288,7 @@ function patchRowContent(
  * 可在 Blockly inject、窗口 resize 等之后重复调用以修复被重绘的 DOM
  */
 export function patchToolboxCategoryIcons(workspace: Workspace): void {
+  const { iconById } = buildToolboxCategoryLookups();
   const toolbox = workspace.getToolbox?.() as Toolbox | null;
   if (!toolbox) {
     return;
@@ -301,7 +299,7 @@ export function patchToolboxCategoryIcons(workspace: Workspace): void {
     const itemDiv = item.getDiv() as HTMLElement | null;
     const categoryId = resolveCategoryId(generatedId, itemDiv);
     if (categoryId && itemDiv) {
-      patchRowContent(itemDiv, categoryId, ICON_BY_ID[categoryId]);
+      patchRowContent(itemDiv, categoryId, iconById[categoryId]);
     }
   }
 }

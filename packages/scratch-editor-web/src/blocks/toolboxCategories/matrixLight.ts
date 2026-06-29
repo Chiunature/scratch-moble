@@ -1,5 +1,5 @@
 import { BLOCK_TYPES } from '../blockTypes';
-import { toolboxCategoryIconClasses } from './shared';
+import { buildToolboxCategory } from './buildCategory';
 import {
   serializeMatrixLightRows,
   DEFAULT_MATRIX_LIGHT_ROWS,
@@ -9,15 +9,12 @@ import {
   basicDropdownNumRowShadow,
   stringShadow,
 } from './shadowPresets';
-export const matrixLightToolboxCategory = {
-  kind: 'category',
-  id: 'matrixLight',
-  name: '矩阵灯',
-  categorystyle: 'matrixLight_category',
-  cssconfig: {
-    icon: toolboxCategoryIconClasses('matrixLight'),
-  },
-  contents: [
+
+export function matrixLightToolboxCategory() {
+  return buildToolboxCategory({
+    id: 'matrixLight',
+    categorystyle: 'matrixLight_category',
+    contents: [
     {
       kind: 'block',
       type: BLOCK_TYPES.matrixLight.show,
@@ -57,4 +54,5 @@ export const matrixLightToolboxCategory = {
       },
     },
   ],
-} as const;
+  });
+}

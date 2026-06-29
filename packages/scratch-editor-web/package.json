@@ -10,7 +10,9 @@
     "preview": "node ./scripts/preview.mjs"
   },
   "dependencies": {
+    "@scratch-mobile/i18n": "0.0.1",
     "@scratch-mobile/shared": "0.0.1",
+    "i18next": "^26.3.2",
     "pinyin-pro": "^3.26.0",
     "scratch-blocks": "2.1.19"
   },

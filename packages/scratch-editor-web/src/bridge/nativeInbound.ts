@@ -1,4 +1,5 @@
 import type { EditorInMessage } from '@scratch-mobile/shared';
+import { handleEditorLocaleInbound } from './editorLocaleInbound';
 import { handleNumberSliderInbound } from '../workspace-custom/fields/numberSliderEditor';
 import { handlePortPickerInbound } from '../workspace-custom/fields/portPickerEditor';
 import { handleMatrixLightInbound } from '../workspace-custom/fields/matrixLightEditor';
@@ -8,6 +9,10 @@ import { handleVariablePromptInbound } from '../workspace-custom/variablePromptB
 import { handleWorkspacePersistenceInbound } from './workspacePersistence';
 
 export function handleMessageFromNative(message: EditorInMessage): void {
+  if (handleEditorLocaleInbound(message)) {
+    return;
+  }
+
   if (handleWorkspacePersistenceInbound(message)) {
     return;
   }

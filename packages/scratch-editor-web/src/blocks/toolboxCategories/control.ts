@@ -1,16 +1,12 @@
 import { BLOCK_TYPES } from '../blockTypes';
-import { toolboxCategoryIconClasses } from './shared';
+import { buildToolboxCategory } from './buildCategory';
 import { numberKeyboardShadow } from './shadowPresets';
 
-export const controlToolboxCategory = {
-  kind: 'category',
-  id: 'control',
-  name: '控制',
-  categorystyle: 'control_category',
-  cssconfig: {
-    icon: toolboxCategoryIconClasses('control'),
-  },
-  contents: [
+export function controlToolboxCategory() {
+  return buildToolboxCategory({
+    id: 'control',
+    categorystyle: 'control_category',
+    contents: [
     {
       kind: 'block',
       type: BLOCK_TYPES.control.sleepS,
@@ -49,4 +45,5 @@ export const controlToolboxCategory = {
       type: BLOCK_TYPES.control.stopExit,
     },
   ],
-} as const;
+  });
+}

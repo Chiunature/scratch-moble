@@ -3,6 +3,7 @@
  * mobile 与 scratch-editor-web 均从此模块导入，勿再维护副本。
  */
 import type { HandleShankKey } from '../constants/handleShank';
+import type { EditorAppLocale } from './editorLocale';
 
 /** WebView → React Native */
 export type EditorOutMessage =
@@ -160,6 +161,10 @@ export type EditorInMessage =
   | {
       type: 'editor.workspace.flush';
       projectId: string;
+    }
+  | {
+      type: 'editor.locale.set';
+      locale: EditorAppLocale;
     };
 
 export type RnWorkspaceReadyMessage = Extract<

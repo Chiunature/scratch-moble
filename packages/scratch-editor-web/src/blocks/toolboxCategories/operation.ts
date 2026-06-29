@@ -1,19 +1,15 @@
-import { toolboxCategoryIconClasses } from './shared';
+import { buildToolboxCategory } from './buildCategory';
 import { numberKeyboardShadow, stringShadow } from './shadowPresets';
 
 const numShadow = (n: number) => ({ shadow: numberKeyboardShadow(n) });
 const strShadow = (text: string) => ({ shadow: stringShadow(text) });
 
 /** scratch-blocks 内置 operator_* 积木（见 node_modules/scratch-blocks/src/blocks/operators.ts） */
-export const operationToolboxCategory = {
-  kind: 'category',
-  id: 'operation',
-  name: '运算',
-  categorystyle: 'operation_category',
-  cssconfig: {
-    icon: toolboxCategoryIconClasses('operation'),
-  },
-  contents: [
+export function operationToolboxCategory() {
+  return buildToolboxCategory({
+    id: 'operation',
+    categorystyle: 'operation_category',
+    contents: [
     { kind: 'label', text: '数字' },
     {
       kind: 'block',
@@ -99,4 +95,5 @@ export const operationToolboxCategory = {
       inputs: { NUM: numShadow(0) },
     },
   ],
-} as const;
+  });
+}

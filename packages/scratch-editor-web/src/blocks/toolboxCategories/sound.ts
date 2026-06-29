@@ -1,16 +1,12 @@
 import { BLOCK_TYPES } from '../blockTypes';
-import { toolboxCategoryIconClasses } from './shared';
+import { buildToolboxCategory } from './buildCategory';
 import { noteShadow, numberKeyboardShadow } from './shadowPresets';
 
-export const soundToolboxCategory = {
-  kind: 'category',
-  id: 'sound',
-  name: '声音',
-  categorystyle: 'sound_category',
-  cssconfig: {
-    icon: toolboxCategoryIconClasses('sound'),
-  },
-  contents: [
+export function soundToolboxCategory() {
+  return buildToolboxCategory({
+    id: 'sound',
+    categorystyle: 'sound_category',
+    contents: [
     {
       kind: 'block',
       type: BLOCK_TYPES.sound.playMusic,
@@ -20,4 +16,5 @@ export const soundToolboxCategory = {
       },
     },
   ],
-} as const;
+  });
+}

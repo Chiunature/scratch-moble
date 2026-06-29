@@ -1,25 +1,36 @@
 /**
  * Toolbox 分类元数据与公共工具。
- * 新增已实现分类时：补 IMPLEMENTED_TOOLBOX_CATEGORIES、创建对应分类文件、再在 index.ts 汇总。
- * 规划中分类见 PLANNED_TOOLBOX_CATEGORIES（仅主题/图标，尚未加入 toolboxJson）。
+ * 文案来自 packages/i18n editor.json 的 toolbox.* 键。
  */
 
-/** 已挂载到 toolboxJson 的分类 */
-export const IMPLEMENTED_TOOLBOX_CATEGORIES = [
-  { id: 'motor', displayText: '电机', colour: '#4c97ff' },
-  { id: 'move', displayText: '移动', colour: '#ff4ccd' },
-  { id: 'matrixLight', displayText: '矩阵灯', colour: '#9966ff' },
-  { id: 'sound', displayText: '声音', colour: '#cf63cf' },
-  { id: 'event', displayText: '事件', colour: '#ffbf00' },
-  { id: 'control', displayText: '控制', colour: '#ffab19' }, 
-  { id: 'sensor', displayText: '传感器', colour: '#34ccf1' },
-  { id: 'operation', displayText: '运算', colour: '#59c059' },
-  { id: 'variable', displayText: '变量', colour: '#ff8c1a' },
-  { id: 'customBlock', displayText: '自制积木', colour: '#ff6680' },
+import { tEditor } from '@scratch-mobile/i18n';
+
+export const TOOLBOX_CATEGORY_DEFS = [
+  { id: 'motor', colour: '#4c97ff' },
+  { id: 'move', colour: '#ff4ccd' },
+  { id: 'matrixLight', colour: '#9966ff' },
+  { id: 'sound', colour: '#cf63cf' },
+  { id: 'event', colour: '#ffbf00' },
+  { id: 'control', colour: '#ffab19' },
+  { id: 'sensor', colour: '#34ccf1' },
+  { id: 'operation', colour: '#59c059' },
+  { id: 'variable', colour: '#ff8c1a' },
+  { id: 'customBlock', colour: '#ff6680' },
 ] as const;
 
-/** 全部分类，供主题与图标补丁使用 */
-export const TOOLBOX_CATEGORIES = IMPLEMENTED_TOOLBOX_CATEGORIES;
+export type ToolboxCategoryId = (typeof TOOLBOX_CATEGORY_DEFS)[number]['id'];
+
+export function getToolboxCategories(): Array<{
+  id: ToolboxCategoryId;
+  colour: string;
+  displayText: string;
+}> {
+  return TOOLBOX_CATEGORY_DEFS.map(category => ({
+    id: category.id,
+    colour: category.colour,
+    displayText: tEditor(`toolbox.${category.id}`),
+  }));
+}
 
 /**
  * Blockly 会把返回值写进分类项的 class；后缀与分类 id 一致，

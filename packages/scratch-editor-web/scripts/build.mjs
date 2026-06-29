@@ -308,6 +308,13 @@ await build({
   loader: { '.svg': 'dataurl', '.png': 'dataurl' },
   alias: {
     '@scratch-mobile/shared': sharedEntry,
+    '@scratch-mobile/i18n': path.join(
+      repoRoot,
+      'packages',
+      'i18n',
+      'src',
+      'index.ts',
+    ),
   },
 });
 

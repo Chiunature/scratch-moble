@@ -1,1 +1,33 @@
-{}
+{
+  "toolbox": {
+    "motor": "电机",
+    "move": "移动",
+    "matrixLight": "矩阵灯",
+    "sound": "声音",
+    "event": "事件",
+    "control": "控制",
+    "sensor": "传感器",
+    "operation": "运算",
+    "variable": "变量",
+    "customBlock": "自制积木"
+  },
+  "toolboxLabels": {
+    "sensor": {
+      "touch": "触碰传感器",
+      "grayscale": "灰度传感器",
+      "ultrasonic": "超声波传感器",
+      "remote": "遥控器",
+      "other": "其他"
+    }
+  },
+  "procedureModal": {
+    "title": "制作积木",
+    "ariaLabel": "制作积木",
+    "close": "关闭",
+    "addLabel": "添加标签",
+    "addStringNumber": "添加数字或文本输入项",
+    "addBoolean": "添加布尔输入项",
+    "cancel": "取消",
+    "confirm": "确定"
+  }
+}

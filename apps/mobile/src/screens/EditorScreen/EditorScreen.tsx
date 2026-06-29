@@ -32,6 +32,7 @@ import {
 import {
   EDITOR_BUNDLE_HTML,
   HandleShankPickerOverlay,
+  injectEditorLocale,
   injectEditorMessage,
   MatrixLightOverlay,
   NotePickerOverlay,
@@ -95,7 +96,7 @@ type EditorScreenContentProps = {
 
 function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const navigation = useNavigation();
-  useTranslation('projects');
+  const { i18n } = useTranslation('editor');
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
@@ -181,6 +182,16 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const projectError = loadError ?? saveError;
   const displayProjectName = resolveProjectDisplayName(projectName);
 
+  useEffect(() => {
+    const syncEditorLocale = () => {
+      injectEditorLocale(webViewRef.current);
+    };
+    i18n.on('languageChanged', syncEditorLocale);
+    return () => {
+      i18n.off('languageChanged', syncEditorLocale);
+    };
+  }, [i18n]);
+
   const handleNavigateBack = useCallback(async () => {
     await handleBackPress();
     navigation.goBack();
@@ -191,6 +202,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     (message: EditorOutMessage) => {
       switch (message.type) {
         case 'editor.workspace.ready':
+          injectEditorLocale(webViewRef.current);
           void handleWorkspaceReady();
           return;
         case 'editor.workspace.loaded':
