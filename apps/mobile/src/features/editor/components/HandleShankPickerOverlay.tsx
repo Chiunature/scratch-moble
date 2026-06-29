@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { HandleShankKey, RnHandleShankOpenMessage } from '@scratch-mobile/shared';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 import { GameControllerSvg } from './GameControllerSvg';
 
@@ -29,6 +30,7 @@ const SHEET_BG = '#1a1a2e';
 const ACCENT = '#64b5f6';
 
 export function HandleShankPickerOverlay({ session, onCommit, onClose }: Props) {
+  const { t } = useTranslation('overlays');
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [pressing, setPressing] = useState<HandleShankKey | null>(null);
@@ -99,7 +101,7 @@ export function HandleShankPickerOverlay({ session, onCommit, onClose }: Props) 
           },
         ]}
       >
-        <Text style={styles.subtitle}>按下并松手即可选择</Text>
+        <Text style={styles.subtitle}>{t('handleShank.subtitle')}</Text>
 
         <View style={styles.controllerWrapper}>
           <GameControllerSvg

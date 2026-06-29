@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   BLACK_KEY_WHITE_INDEX,
-  OCTAVE_SWITCHER_LABELS,
+  OCTAVE_SWITCHER_RANGES,
   buildOctaveKeys,
   clampNotePitch,
   octaveIndexForPitch,
@@ -31,6 +31,7 @@ import {
 } from '@scratch-mobile/shared';
 
 import { fontWeight, spacing } from '../../../theme';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 type Props = {
   session: RnNotePickerOpenMessage | null;
@@ -328,17 +329,19 @@ function SwitchablePianoKeyboard({
 function OctaveSwitcher({
   activeOctave,
   onSwitch,
+  octaveTitles,
 }: {
   activeOctave: number;
   onSwitch: (octave: number) => void;
+  octaveTitles: string[];
 }) {
   return (
     <View style={styles.octaveBtns}>
-      {OCTAVE_SWITCHER_LABELS.map((item, idx) => {
+      {OCTAVE_SWITCHER_RANGES.map((range, idx) => {
         const active = activeOctave === idx;
         return (
           <Pressable
-            key={item.title}
+            key={range}
             onPress={() => onSwitch(idx)}
             style={[styles.octaveBtn, active && styles.octaveBtnActive]}
           >
@@ -348,7 +351,7 @@ function OctaveSwitcher({
                 active && styles.octaveBtnTitleActive,
               ]}
             >
-              {item.title}
+              {octaveTitles[idx]}
             </Text>
             <Text
               style={[
@@ -356,7 +359,7 @@ function OctaveSwitcher({
                 active && styles.octaveBtnRangeActive,
               ]}
             >
-              {item.range}
+              {range}
             </Text>
           </Pressable>
         );
@@ -366,8 +369,15 @@ function OctaveSwitcher({
 }
 
 export function NotePickerOverlay({ session, onCommit, onClose }: Props) {
+  const { t } = useTranslation('overlays');
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+
+  const octaveTitles = [
+    t('notePicker.octave1Title'),
+    t('notePicker.octave2Title'),
+    t('notePicker.octave3Title'),
+  ];
 
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -460,6 +470,7 @@ export function NotePickerOverlay({ session, onCommit, onClose }: Props) {
               <OctaveSwitcher
                 activeOctave={activeOctave}
                 onSwitch={handleSwitchOctave}
+                octaveTitles={octaveTitles}
               />
             </View>
 

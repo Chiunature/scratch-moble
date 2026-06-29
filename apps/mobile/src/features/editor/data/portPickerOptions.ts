@@ -6,6 +6,8 @@
  * - 电机接口 E–H（4–7）：仅用于积木选口，主机无监控数据
  */
 
+import { getCurrentAppLocale, type AppLocale } from '@scratch-mobile/i18n';
+
 import type { ParsedWatchPort } from '../../../services/ble';
 import {
   MOTOR_PORT_LABELS,
@@ -18,7 +20,8 @@ import { portPickerTheme } from '../../../theme';
 import {
   formatDeviceKindLabel,
   formatPortReading,
-} from '../../../screens/EditorScreen/deviceWatchDisplay';
+} from './deviceWatchDisplay';
+import { tEditorOverlay } from '../i18n/editorOverlayI18n';
 
 export type { PortInterfaceKind };
 
@@ -36,32 +39,56 @@ export type PortDefinition = {
 
 export { portPickerTheme };
 
-export const PORT_STATUS_LEGEND: {
+export function getPortStatusLegend(): {
   key: PortConnectionStatus | 'selected' | 'motor';
   label: string;
   color: string;
-}[] = [
-  { key: 'selected', label: '已选中', color: portPickerTheme.accent },
-  { key: 'connected', label: '已连接', color: portPickerTheme.connected },
-  { key: 'warning', label: '异常', color: portPickerTheme.warning },
-  { key: 'disconnected', label: '未连接', color: portPickerTheme.disconnected },
-  { key: 'motor', label: '电机口', color: portPickerTheme.textMuted },
-];
+}[] {
+  return [
+    {
+      key: 'selected',
+      label: tEditorOverlay('portPicker.legend.selected'),
+      color: portPickerTheme.accent,
+    },
+    {
+      key: 'connected',
+      label: tEditorOverlay('portPicker.legend.connected'),
+      color: portPickerTheme.connected,
+    },
+    {
+      key: 'warning',
+      label: tEditorOverlay('portPicker.legend.warning'),
+      color: portPickerTheme.warning,
+    },
+    {
+      key: 'disconnected',
+      label: tEditorOverlay('portPicker.legend.disconnected'),
+      color: portPickerTheme.disconnected,
+    },
+    {
+      key: 'motor',
+      label: tEditorOverlay('portPicker.legend.motor'),
+      color: portPickerTheme.textMuted,
+    },
+  ];
+}
 
-const STATIC_MOTOR_PORT_DEFINITIONS: PortDefinition[] = MOTOR_PORT_LABELS.map(
-  (label, index) => {
+function buildMotorPortDefinitions(): PortDefinition[] {
+  return MOTOR_PORT_LABELS.map((label, index) => {
     const value = String(SENSOR_PORT_COUNT + index);
     return {
       value,
       label,
       interfaceKind: 'motor' as const,
       connectionStatus: 'disconnected' as const,
-      deviceName: `电机 ${label}`,
-      deviceType: '电机接口',
-      runtimeLabel: '无监控数据',
+      deviceName: tEditorOverlay('portPicker.motorDeviceName', {
+        label,
+      }),
+      deviceType: tEditorOverlay('portPicker.motorInterface'),
+      runtimeLabel: tEditorOverlay('portPicker.runtime.noMonitor'),
     };
-  },
-);
+  });
+}
 
 function sensorStatusFromPort(
   port: ParsedWatchPort | undefined,
@@ -82,6 +109,11 @@ function buildSensorPortDefinition(
   const label = SENSOR_PORT_LABELS[portIndex] ?? String(portIndex);
   const value = String(portIndex);
   const status = sensorStatusFromPort(live);
+  const disconnected = tEditorOverlay('portPicker.runtime.disconnected');
+  const connectionError = tEditorOverlay(
+    'portPicker.runtime.connectionError',
+  );
+  const sensorInterface = tEditorOverlay('portPicker.sensorInterface');
 
   if (!live || live.isEmpty) {
     return {
@@ -90,8 +122,8 @@ function buildSensorPortDefinition(
       interfaceKind: 'sensor',
       connectionStatus: 'disconnected',
       deviceName: '—',
-      deviceType: '未连接',
-      runtimeLabel: '未连接',
+      deviceType: disconnected,
+      runtimeLabel: disconnected,
     };
   }
 
@@ -101,13 +133,13 @@ function buildSensorPortDefinition(
     interfaceKind: 'sensor',
     connectionStatus: status,
     deviceName: formatDeviceKindLabel(live.kind),
-    deviceType: '传感器接口',
+    deviceType: sensorInterface,
     runtimeLabel:
       status === 'connected'
         ? formatPortReading(live)
         : live.isAbnormal
-        ? '连接异常'
-        : '未连接',
+          ? connectionError
+          : disconnected,
   };
 }
 
@@ -124,27 +156,29 @@ export function buildPortDefinitions(
     (_, index) => buildSensorPortDefinition(index, liveByPort.get(index)),
   );
 
-  return [...sensorDefinitions, ...STATIC_MOTOR_PORT_DEFINITIONS];
+  return [...sensorDefinitions, ...buildMotorPortDefinitions()];
 }
 
-/** 无实时数据时的默认端口列表 */
-export const PORT_DEFINITIONS = buildPortDefinitions(null);
+let cachedDefaultLocale: AppLocale | null = null;
+let cachedDefaultPortDefinitions: PortDefinition[] | null = null;
 
-export const SENSOR_PORT_DEFINITIONS = PORT_DEFINITIONS.slice(
-  0,
-  SENSOR_PORT_COUNT,
-);
-export const MOTOR_PORT_DEFINITIONS = PORT_DEFINITIONS.slice(SENSOR_PORT_COUNT);
+/** 无传感器实时数据时的默认端口列表（按当前语言缓存） */
+export function getDefaultPortDefinitions(): PortDefinition[] {
+  const locale = getCurrentAppLocale();
+  if (cachedDefaultPortDefinitions && cachedDefaultLocale === locale) {
+    return cachedDefaultPortDefinitions;
+  }
+  cachedDefaultLocale = locale;
+  cachedDefaultPortDefinitions = buildPortDefinitions(null);
+  return cachedDefaultPortDefinitions;
+}
 
 export function getPortDefinition(
   value: string,
-  definitions: PortDefinition[] = PORT_DEFINITIONS,
+  definitions: PortDefinition[] = getDefaultPortDefinitions(),
 ): PortDefinition {
-  return (
-    definitions.find(port => port.value === value) ??
-    definitions[0] ??
-    PORT_DEFINITIONS[0]!
-  );
+  const fallback = definitions[0] ?? getDefaultPortDefinitions()[0]!;
+  return definitions.find(port => port.value === value) ?? fallback;
 }
 
 export function isMotorPortValue(value: string): boolean {

@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "OK"
+  },
+  "variable": {
+    "createVariable": "Create variable",
+    "createList": "Create list",
+    "variableName": "Variable name",
+    "listName": "List name"
+  },
+  "portPicker": {
+    "sensorSection": "Sensors A–D",
+    "motorSection": "Motors E–H",
+    "currentSelection": "Current selection",
+    "selectedCount": "Selected {{count}}/{{max}}",
+    "confirmSelect": "Confirm selection",
+    "portLabel": "Port {{label}}",
+    "selectedPorts": "Selected ports",
+    "interfaceType": "Interface type",
+    "deviceName": "Device name",
+    "deviceTypeLabel": "Device type",
+    "status": "Status",
+    "motorInterface": "Motor port",
+    "sensorInterface": "Sensor port",
+    "motorDeviceName": "Motor {{label}}",
+    "listSeparator": ", ",
+    "legend": {
+      "selected": "Selected",
+      "connected": "Connected",
+      "warning": "Warning",
+      "disconnected": "Disconnected",
+      "motor": "Motor port"
+    },
+    "runtime": {
+      "noMonitor": "No monitor data",
+      "disconnected": "Disconnected",
+      "connectionError": "Connection error"
+    }
+  },
+  "matrixLight": {
+    "title": "Edit matrix (7×5)",
+    "hint": "Tap to toggle, hold and drag to paint",
+    "hintCompact": "Tap to toggle, drag to paint (compact)",
+    "lit": "Lit",
+    "unlit": "Unlit",
+    "allOn": "All on",
+    "clear": "Clear",
+    "toastAllOn": "All lit",
+    "toastCleared": "Cleared"
+  },
+  "handleShank": {
+    "subtitle": "Press and release to select"
+  },
+  "bubbleSlider": {
+    "accessibilityLabel": "Slider control",
+    "accessibilityHint": "Current value {{value}}, drag left or right to adjust"
+  },
+  "notePicker": {
+    "octave1Title": "Octave 1",
+    "octave2Title": "Octave 2",
+    "octave3Title": "Octave 3"
+  }
+}

@@ -33,6 +33,8 @@ import {
   type RnMatrixLightOpenMessage,
 } from '@scratch-mobile/shared';
 
+import { useTranslation } from '@scratch-mobile/i18n';
+
 import { fontSize, fontWeight, spacing } from '../../../theme';
 
 type Props = {
@@ -377,6 +379,7 @@ function MatrixLightOverlayContent({
   onCommit,
   onClose,
 }: ActiveProps) {
+  const { t } = useTranslation('overlays');
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isCompact = screenWidth <= COMPACT_BREAKPOINT;
@@ -607,9 +610,9 @@ function MatrixLightOverlayContent({
     (on: boolean) => {
       setPending(createGrid(on));
       resetBrush();
-      showToast(on ? '已全部点亮' : '已清空');
+      showToast(on ? t('matrixLight.toastAllOn') : t('matrixLight.toastCleared'));
     },
-    [resetBrush, showToast],
+    [resetBrush, showToast, t],
   );
 
   const handleConfirm = () => {
@@ -648,11 +651,11 @@ function MatrixLightOverlayContent({
             onPress={e => e.stopPropagation()}
           >
             <View style={styles.header}>
-              <Text style={styles.title}>编辑矩阵灯 (7×5)</Text>
+              <Text style={styles.title}>{t('matrixLight.title')}</Text>
               <Text style={styles.hint}>
                 {isCompact
-                  ? '点击切换，滑动连续绘制 (小屏模式)'
-                  : '点击切换，按住滑动连续绘制'}
+                  ? t('matrixLight.hintCompact')
+                  : t('matrixLight.hint')}
               </Text>
             </View>
 
@@ -693,23 +696,23 @@ function MatrixLightOverlayContent({
                 <View style={styles.counterRow}>
                   <View style={styles.counterCard}>
                     <AnimatedCounter value={onCount} />
-                    <Text style={styles.counterLabel}>已点亮</Text>
+                    <Text style={styles.counterLabel}>{t('matrixLight.lit')}</Text>
                   </View>
                   <View style={styles.counterCard}>
                     <AnimatedCounter value={offCount} dim />
-                    <Text style={styles.counterLabel}>未点亮</Text>
+                    <Text style={styles.counterLabel}>{t('matrixLight.unlit')}</Text>
                   </View>
                 </View>
 
                 <View style={styles.actionGroup}>
                   <ActionButton
-                    label="全亮"
+                    label={t('matrixLight.allOn')}
                     icon="✓"
                     variant="allOn"
                     onPress={() => setAll(true)}
                   />
                   <ActionButton
-                    label="清空"
+                    label={t('matrixLight.clear')}
                     icon="✕"
                     onPress={() => setAll(false)}
                   />
@@ -723,7 +726,7 @@ function MatrixLightOverlayContent({
                     ]}
                     onPress={handleConfirm}
                   >
-                    <Text style={styles.confirmText}>确认</Text>
+                    <Text style={styles.confirmText}>{t('common.confirm')}</Text>
                   </Pressable>
                   <Pressable
                     style={({ pressed }) => [
@@ -732,7 +735,7 @@ function MatrixLightOverlayContent({
                     ]}
                     onPress={() => onClose(session.sessionId)}
                   >
-                    <Text style={styles.cancelText}>取消</Text>
+                    <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                   </Pressable>
                 </View>
               </View>

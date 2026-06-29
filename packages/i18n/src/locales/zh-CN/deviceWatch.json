@@ -1,0 +1,18 @@
+{
+  "devices": {
+    "noDevice": "未连接",
+    "motor": "电机",
+    "color": "灰度传感器",
+    "superSound": "超声波",
+    "touch": "触摸传感器",
+    "big_motor": "大电机",
+    "small_motor": "小电机",
+    "gray": "灰度传感器",
+    "deviceAbnormal": "设备异常"
+  },
+  "portReading": {
+    "connectionError": "连接异常",
+    "pressed": "按下",
+    "notPressed": "未按下"
+  }
+}

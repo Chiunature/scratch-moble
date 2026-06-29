@@ -56,10 +56,11 @@ export type OctaveKey = {
   octave: number;
 };
 
-export const OCTAVE_SWITCHER_LABELS = [
-  { title: '第 1 八度', range: 'C – C (0–12)' },
-  { title: '第 2 八度', range: 'C1 – C1 (12–24)' },
-  { title: '第 3 八度', range: 'C2 – C2 (24–36)' },
+/** 八度切换器 pitch 范围文案（音名国际通用，不含 UI 标题） */
+export const OCTAVE_SWITCHER_RANGES = [
+  'C – C (0–12)',
+  'C1 – C1 (12–24)',
+  'C2 – C2 (24–36)',
 ] as const;
 
 /** 将任意数值截断到合法 pitch 范围（0–36）并取整。 */

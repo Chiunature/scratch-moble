@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "取消",
+    "confirm": "确定"
+  },
+  "variable": {
+    "createVariable": "建立变量",
+    "createList": "建立列表",
+    "variableName": "变量名称",
+    "listName": "列表名称"
+  },
+  "portPicker": {
+    "sensorSection": "传感器 A–D",
+    "motorSection": "电机 E–H",
+    "currentSelection": "当前选择",
+    "selectedCount": "已选 {{count}}/{{max}}",
+    "confirmSelect": "确认选择",
+    "portLabel": "端口 {{label}}",
+    "selectedPorts": "已选端口",
+    "interfaceType": "接口类型",
+    "deviceName": "设备名称",
+    "deviceTypeLabel": "设备类型",
+    "status": "状态",
+    "motorInterface": "电机接口",
+    "sensorInterface": "传感器接口",
+    "motorDeviceName": "电机 {{label}}",
+    "listSeparator": "、",
+    "legend": {
+      "selected": "已选中",
+      "connected": "已连接",
+      "warning": "异常",
+      "disconnected": "未连接",
+      "motor": "电机口"
+    },
+    "runtime": {
+      "noMonitor": "无监控数据",
+      "disconnected": "未连接",
+      "connectionError": "连接异常"
+    }
+  },
+  "matrixLight": {
+    "title": "编辑矩阵灯 (7×5)",
+    "hint": "点击切换，按住滑动连续绘制",
+    "hintCompact": "点击切换，滑动连续绘制 (小屏模式)",
+    "lit": "已点亮",
+    "unlit": "未点亮",
+    "allOn": "全亮",
+    "clear": "清空",
+    "toastAllOn": "已全部点亮",
+    "toastCleared": "已清空"
+  },
+  "handleShank": {
+    "subtitle": "按下并松手即可选择"
+  },
+  "bubbleSlider": {
+    "accessibilityLabel": "滑块控件",
+    "accessibilityHint": "当前值 {{value}}，左右拖动调整数值"
+  },
+  "notePicker": {
+    "octave1Title": "第 1 八度",
+    "octave2Title": "第 2 八度",
+    "octave3Title": "第 3 八度"
+  }
+}

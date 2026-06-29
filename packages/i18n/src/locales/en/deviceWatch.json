@@ -1,0 +1,18 @@
+{
+  "devices": {
+    "noDevice": "Not connected",
+    "motor": "Motor",
+    "color": "Grayscale sensor",
+    "superSound": "Ultrasonic",
+    "touch": "Touch sensor",
+    "big_motor": "Large motor",
+    "small_motor": "Small motor",
+    "gray": "Grayscale sensor",
+    "deviceAbnormal": "Device error"
+  },
+  "portReading": {
+    "connectionError": "Connection error",
+    "pressed": "Pressed",
+    "notPressed": "Not pressed"
+  }
+}

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import type { RnVariablePromptOpenMessage } from '@scratch-mobile/shared';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 import { colors, fontSize, fontWeight, spacing } from '../../../theme';
 
@@ -24,6 +25,7 @@ export function VariablePromptOverlay({
   onCommit,
   onCancel,
 }: Props) {
+  const { t } = useTranslation('overlays');
   const [name, setName] = useState('');
   const inputRef = useRef<TextInput>(null);
 
@@ -40,8 +42,15 @@ export function VariablePromptOverlay({
     return null;
   }
 
-  const title = session.title || (session.varType === 'list' ? '建立列表' : '建立变量');
-  const placeholder = session.varType === 'list' ? '列表名称' : '变量名称';
+  const title =
+    session.title ||
+    (session.varType === 'list'
+      ? t('variable.createList')
+      : t('variable.createVariable'));
+  const placeholder =
+    session.varType === 'list'
+      ? t('variable.listName')
+      : t('variable.variableName');
   const trimmedName = name.trim();
 
   return (
@@ -77,7 +86,7 @@ export function VariablePromptOverlay({
                 onPress={() => onCancel(session.sessionId)}
               >
                 <Text style={[styles.buttonText, styles.secondaryButtonText]}>
-                  取消
+                  {t('common.cancel')}
                 </Text>
               </Pressable>
               <Pressable
@@ -90,7 +99,7 @@ export function VariablePromptOverlay({
                 onPress={() => onCommit(session.sessionId, trimmedName)}
               >
                 <Text style={[styles.buttonText, styles.primaryButtonText]}>
-                  确定
+                  {t('common.confirm')}
                 </Text>
               </Pressable>
             </View>

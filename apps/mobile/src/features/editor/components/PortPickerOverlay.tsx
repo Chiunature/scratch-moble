@@ -25,9 +25,10 @@ import {
 
 import type { ParsedWatchPort } from '../../../services/ble';
 import { fontSize, fontWeight, spacing } from '../../../theme';
+import { useTranslation } from '@scratch-mobile/i18n';
 import {
   buildPortDefinitions,
-  PORT_STATUS_LEGEND,
+  getPortStatusLegend,
   getPortDefinition,
   portPickerTheme,
   type PortConnectionStatus,
@@ -161,9 +162,10 @@ function PortSection({
 }
 
 function PortLegend() {
+  const legend = getPortStatusLegend();
   return (
     <View style={styles.legend}>
-      {PORT_STATUS_LEGEND.map(item => (
+      {legend.map(item => (
         <View key={item.key} style={styles.legendItem}>
           <View
             style={[
@@ -182,12 +184,26 @@ function PortLegend() {
 
 function PortDetailPanel({
   ports,
+  fallbackPort,
   selectionHint,
+  labels,
 }: {
   ports: PortDefinition[];
+  fallbackPort: PortDefinition;
   selectionHint: string;
+  labels: {
+    selectedPorts: string;
+    interfaceType: string;
+    deviceName: string;
+    deviceType: string;
+    status: string;
+    motorInterface: string;
+    sensorInterface: string;
+    portLabel: (label: string) => string;
+    listSeparator: string;
+  };
 }) {
-  const primary = ports[0] ?? getPortDefinition('0');
+  const primary = ports[0] ?? fallbackPort;
 
   return (
     <View style={styles.detailPanel}>
@@ -195,37 +211,39 @@ function PortDetailPanel({
         <Text style={styles.detailHeaderLabel}>{selectionHint}</Text>
         <Text style={styles.detailHeaderPort}>
           {ports.length > 1
-            ? ports.map(p => p.label).join(', ')
-            : `端口 ${primary.label}`}
+            ? ports.map(p => p.label).join(labels.listSeparator)
+            : labels.portLabel(primary.label)}
         </Text>
       </View>
 
       {ports.length > 1 && (
         <View style={styles.detailRow}>
-          <Text style={styles.detailKey}>已选端口</Text>
+          <Text style={styles.detailKey}>{labels.selectedPorts}</Text>
           <Text style={styles.detailValue}>
-            {ports.map(p => p.label).join('、')}
+            {ports.map(p => p.label).join(labels.listSeparator)}
           </Text>
         </View>
       )}
 
       <View style={styles.detailRow}>
-        <Text style={styles.detailKey}>接口类型</Text>
+        <Text style={styles.detailKey}>{labels.interfaceType}</Text>
         <Text style={styles.detailValue}>
-          {primary.interfaceKind === 'motor' ? '电机接口' : '传感器接口'}
+          {primary.interfaceKind === 'motor'
+            ? labels.motorInterface
+            : labels.sensorInterface}
         </Text>
       </View>
       <View style={styles.detailRow}>
-        <Text style={styles.detailKey}>设备名称</Text>
+        <Text style={styles.detailKey}>{labels.deviceName}</Text>
         <Text style={styles.detailValue}>{primary.deviceName}</Text>
       </View>
       <View style={styles.detailRow}>
-        <Text style={styles.detailKey}>设备类型</Text>
+        <Text style={styles.detailKey}>{labels.deviceType}</Text>
         <Text style={styles.detailValue}>{primary.deviceType}</Text>
       </View>
 
       <View style={styles.detailRow}>
-        <Text style={styles.detailKey}>状态</Text>
+        <Text style={styles.detailKey}>{labels.status}</Text>
         <View style={styles.statusBadge}>
           {primary.interfaceKind === 'sensor' ? (
             <View
@@ -248,12 +266,13 @@ export function PortPickerOverlay({
   onValueChange,
   onClose,
 }: Props) {
+  const { t, i18n } = useTranslation('overlays');
   const { height: screenHeight } = useWindowDimensions();
   const sheetHeight = screenHeight * SHEET_HEIGHT_RATIO;
 
   const portDefinitions = useMemo(
     () => buildPortDefinitions(sensorPorts),
-    [sensorPorts],
+    [sensorPorts, i18n.language],
   );
 
   const maxSelections = session?.maxSelections ?? 1;
@@ -283,8 +302,23 @@ export function PortPickerOverlay({
   );
 
   const selectionHint = isMulti
-    ? `已选 ${pendingPorts.length}/${maxSelections}`
-    : '当前选择';
+    ? t('portPicker.selectedCount', {
+        count: pendingPorts.length,
+        max: maxSelections,
+      })
+    : t('portPicker.currentSelection');
+
+  const detailLabels = {
+    selectedPorts: t('portPicker.selectedPorts'),
+    interfaceType: t('portPicker.interfaceType'),
+    deviceName: t('portPicker.deviceName'),
+    deviceType: t('portPicker.deviceTypeLabel'),
+    status: t('portPicker.status'),
+    motorInterface: t('portPicker.motorInterface'),
+    sensorInterface: t('portPicker.sensorInterface'),
+    portLabel: (label: string) => t('portPicker.portLabel', { label }),
+    listSeparator: t('portPicker.listSeparator'),
+  };
 
   const togglePort = useCallback(
     (portValue: string) => {
@@ -347,14 +381,12 @@ export function PortPickerOverlay({
     if (!canConfirm) {
       return;
     }
-    console.log('pendingPorts', pendingPorts);
-    return;
-    // const value = coercePortFieldValue(pendingPorts.join(','), {
-    //   mode: selectionMode,
-    //   maxSelections,
-    // });
-    // onValueChange(session.sessionId, value);
-    // onClose(session.sessionId);
+    const value = coercePortFieldValue(pendingPorts.join(','), {
+      mode: selectionMode,
+      maxSelections,
+    });
+    onValueChange(session.sessionId, value);
+    onClose(session.sessionId);
   };
 
   const isSelected = (portValue: string) => pendingPorts.includes(portValue);
@@ -384,7 +416,7 @@ export function PortPickerOverlay({
             <View style={styles.body}>
               <View style={styles.leftColumn}>
                 <PortSection
-                  title="传感器 A–D"
+                  title={t('portPicker.sensorSection')}
                   ports={portDefinitions.slice(0, 4)}
                   portCellSize={portCellSize}
                   isSelected={isSelected}
@@ -396,7 +428,7 @@ export function PortPickerOverlay({
                   }}
                 />
                 <PortSection
-                  title="电机 E–H"
+                  title={t('portPicker.motorSection')}
                   ports={portDefinitions.slice(4)}
                   portCellSize={portCellSize}
                   isSelected={isSelected}
@@ -413,21 +445,25 @@ export function PortPickerOverlay({
                   disabled={!canConfirm}
                 >
                   <Text style={styles.confirmIcon}>✓</Text>
-                  <Text style={styles.confirmText}>确认选择</Text>
+                  <Text style={styles.confirmText}>
+                    {t('portPicker.confirmSelect')}
+                  </Text>
                 </Pressable>
 
                 <Pressable
                   style={styles.cancelButton}
                   onPress={() => onClose(session.sessionId)}
                 >
-                  <Text style={styles.cancelText}>取消</Text>
+                  <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                 </Pressable>
               </View>
 
               <View style={styles.rightColumn}>
                 <PortDetailPanel
                   ports={detailPorts}
+                  fallbackPort={portDefinitions[0]!}
                   selectionHint={selectionHint}
+                  labels={detailLabels}
                 />
               </View>
             </View>

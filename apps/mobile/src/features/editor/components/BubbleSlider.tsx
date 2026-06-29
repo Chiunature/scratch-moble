@@ -13,6 +13,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 // ==================== 类型定义 ====================
 
@@ -261,6 +262,8 @@ export function BubbleSlider({
   thumbTintColor = DEFAULT_CONFIG.thumbTintColor,
   style,
 }: SliderProps) {
+  const { t } = useTranslation('overlays');
+
   // ----- 布局 -----
   const {
     trackRef,
@@ -375,15 +378,17 @@ export function BubbleSlider({
     () => ({
       accessible: !disabled,
       accessibilityRole: 'adjustable' as const,
-      accessibilityLabel: '滑块控件',
+      accessibilityLabel: t('bubbleSlider.accessibilityLabel'),
       accessibilityValue: {
         min: minimumValue,
         max: maximumValue,
         now: renderValue,
       },
-      accessibilityHint: `当前值 ${renderValue}，左右拖动调整数值`,
+      accessibilityHint: t('bubbleSlider.accessibilityHint', {
+        value: renderValue,
+      }),
     }),
-    [disabled, minimumValue, maximumValue, renderValue],
+    [disabled, minimumValue, maximumValue, renderValue, t],
   );
 
   // ==================== 渲染 ====================
