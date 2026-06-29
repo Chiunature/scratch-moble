@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 import {
   buildHostBytecodeFileName,
@@ -19,6 +20,8 @@ export function ProgramSlotPickerModal({
   onSelect,
   onClose,
 }: Props) {
+  const { t } = useTranslation('editorShell');
+
   return (
     <Modal
       visible={visible}
@@ -34,8 +37,8 @@ export function ProgramSlotPickerModal({
           style={styles.sheet}
           onPress={event => event.stopPropagation()}
         >
-          <Text style={styles.title}>选择程序槽</Text>
-          <Text style={styles.subtitle}>上传时将保存为对应 .o 文件</Text>
+          <Text style={styles.title}>{t('programSlot.title')}</Text>
+          <Text style={styles.subtitle}>{t('programSlot.subtitle')}</Text>
           <View style={styles.grid}>
             {HOST_PROGRAM_SLOTS.map(slot => {
               const selected = slot === selectedSlot;
@@ -48,7 +51,7 @@ export function ProgramSlotPickerModal({
                     onClose();
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel={`程序槽 ${slot}`}
+                  accessibilityLabel={t('programSlot.slotLabel', { slot })}
                   accessibilityState={{ selected }}
                 >
                   <Text

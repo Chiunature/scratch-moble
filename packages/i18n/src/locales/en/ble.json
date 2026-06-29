@@ -38,7 +38,12 @@
     "openSettingsFailed": "Could not open settings",
     "connectedWatchFailed": "Connected, but device watch failed to start",
     "connectedWatchFailedWithMessage": "Connected, but device watch failed: {{message}}",
-    "removePairedFailed": "Failed to remove paired device"
+    "removePairedFailed": "Failed to remove paired device",
+    "uploadFailed": "Upload failed",
+    "uploadTimeout": "Upload timed out (no host confirmation within 5s). Please try again.",
+    "uploadFrameRejected": "Upload failed; host did not acknowledge the frame",
+    "uploadInterruptedDisconnect": "Bluetooth disconnected; upload interrupted",
+    "uploadInProgress": "An upload is already in progress"
   },
   "alerts": {
     "removePairedTitle": "Remove paired device",

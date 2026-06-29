@@ -98,7 +98,7 @@ type EditorScreenContentProps = {
 
 function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const navigation = useNavigation();
-  const { i18n } = useTranslation('editor');
+  const { t, i18n } = useTranslation('editorShell');
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
@@ -117,14 +117,24 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     useState<RnHandleShankOpenMessage | null>(null);
   const [rnVariablePromptSession, setRnVariablePromptSession] =
     useState<RnVariablePromptOpenMessage | null>(null);
-  //存储生成的代码
-  const [generatedCode, setGeneratedCode] = useState('// 等待编辑器生成代码');
+  const codePlaceholderRef = useRef(t('loading.codePlaceholder'));
+  const [generatedCode, setGeneratedCode] = useState(() =>
+    t('loading.codePlaceholder'),
+  );
   //存储积木数量
   const [blockCount, setBlockCount] = useState(0);
   //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
   const [isSlotPickerVisible, setIsSlotPickerVisible] = useState(false);
   const [isSensorPanelOpen, setIsSensorPanelOpen] = useState(false);
+
+  useEffect(() => {
+    const nextPlaceholder = t('loading.codePlaceholder');
+    setGeneratedCode(prev =>
+      prev === codePlaceholderRef.current ? nextPlaceholder : prev,
+    );
+    codePlaceholderRef.current = nextPlaceholder;
+  }, [i18n.language, t]);
 
   const toggleCodePanel = useCallback(() => {
     setIsCodePanelOpen(open => {
@@ -181,7 +191,10 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     projectId,
   });
 
-  const projectError = loadError ?? saveError;
+  const projectErrorKey = loadError ?? saveError;
+  const projectError = projectErrorKey
+    ? t(`persistence.${projectErrorKey}`)
+    : null;
   const displayProjectName = resolveProjectDisplayName(projectName);
 
   // bootstrap 首帧前写入 App 语言，避免 WebView 用 navigator 语言渲染飞栏后再闪一下。
@@ -332,7 +345,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             void handleNavigateBack();
           }}
           accessibilityRole="button"
-          accessibilityLabel="返回"
+          accessibilityLabel={t('toolbar.back')}
         >
           <Image source={HomeIcon} style={styles.headerIcon} />
         </Pressable>
@@ -360,7 +373,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             disabled={!canHostAction}
             onPress={handleRunOnHost}
             accessibilityRole="button"
-            accessibilityLabel="编译并在主机运行"
+            accessibilityLabel={t('toolbar.runOnHost')}
           >
             {activeHostAction === 'run' && pikaAction !== 'idle' ? (
               <ActivityIndicator color={colors.primary} size="small" />
@@ -376,7 +389,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             disabled={!canHostAction}
             onPress={handlePauseHost}
             accessibilityRole="button"
-            accessibilityLabel="暂停主机程序"
+            accessibilityLabel={t('toolbar.pauseHost')}
           >
             {activeHostAction === 'pause' && pikaAction !== 'idle' ? (
               <ActivityIndicator color={colors.primary} size="small" />
@@ -392,7 +405,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             disabled={!canHostAction}
             onPress={handleDownloadToHost}
             accessibilityRole="button"
-            accessibilityLabel="编译并上传到主机"
+            accessibilityLabel={t('toolbar.downloadToHost')}
           >
             {activeHostAction === 'download' && pikaAction !== 'idle' ? (
               <ActivityIndicator color={colors.primary} size="small" />
@@ -406,7 +419,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             style={styles.slotBadgeButton}
             onPress={() => setIsSlotPickerVisible(true)}
             accessibilityRole="button"
-            accessibilityLabel={`当前程序槽 ${programSlot}，点击选择`}
+            accessibilityLabel={t('toolbar.programSlot', { slot: programSlot })}
           >
             <Text style={styles.slotBadgeText}>{programSlot}</Text>
           </Pressable>
@@ -417,7 +430,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             ]}
             onPress={toggleSensorPanel}
             accessibilityRole="button"
-            accessibilityLabel="传感器状态"
+            accessibilityLabel={t('toolbar.sensorStatus')}
             accessibilityState={{ expanded: isSensorPanelOpen }}
           >
             <View style={styles.deviceIconGrid}>
@@ -433,7 +446,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             ]}
             onPress={toggleCodePanel}
             accessibilityRole="button"
-            accessibilityLabel="代码示例"
+            accessibilityLabel={t('toolbar.codePreview')}
             accessibilityState={{ expanded: isCodePanelOpen }}
           >
             <Image source={CodeViewIcon} style={styles.headerIcon} />
@@ -460,7 +473,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
         {isProjectLoading ? (
           <View style={styles.projectLoadingOverlay} pointerEvents="auto">
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.projectLoadingText}>加载作品中…</Text>
+            <Text style={styles.projectLoadingText}>{t('loading.project')}</Text>
           </View>
         ) : null}
         <NumberSliderOverlay

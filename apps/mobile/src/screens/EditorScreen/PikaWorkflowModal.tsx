@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -6,7 +7,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useTranslation } from '@scratch-mobile/i18n';
 
+import { mapBleUploadErrorMessage } from '../../services/ble';
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
 
 export type PikaWorkflowModalKind = 'progress' | 'success' | 'error';
@@ -14,8 +17,14 @@ export type PikaWorkflowModalKind = 'progress' | 'success' | 'error';
 export type PikaWorkflowModalState = {
   visible: boolean;
   kind: PikaWorkflowModalKind;
-  title: string;
-  message: string;
+  titleKey: string;
+  titleOptions?: Record<string, unknown>;
+  messageKey?: string;
+  messageOptions?: Record<string, unknown>;
+  /** 编译器/原生层等无法 i18n 的动态文案 */
+  messageText?: string;
+  /** BLE 上传错误码，展示时按当前语言映射 */
+  bleErrorCode?: string;
   progress: number | null;
 };
 
@@ -23,16 +32,63 @@ type Props = PikaWorkflowModalState & {
   onClose: () => void;
 };
 
+function resolveTransferMessage(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  options: Record<string, unknown>,
+): string {
+  const bytecodeSize = options.bytecodeSize as number;
+  const hexPreview = (options.hexPreview as string) ?? '';
+  const runAfterUpload = options.runAfterUpload as boolean;
+  const fileName = options.fileName as string;
+  const preview = hexPreview
+    ? t('pika.hexPreviewPrefix', { hex: hexPreview })
+    : '';
+  const compileSummary = t('pika.compileSuccess', {
+    size: bytecodeSize,
+    preview,
+  });
+  const action = runAfterUpload
+    ? t('pika.actionRun')
+    : t('pika.actionDownload');
+  return t('pika.transferringMessage', {
+    compileSummary,
+    action,
+    fileName,
+  });
+}
+
 export function PikaWorkflowModal({
   visible,
   kind,
-  title,
-  message,
+  titleKey,
+  titleOptions,
+  messageKey,
+  messageOptions,
+  messageText,
+  bleErrorCode,
   progress,
   onClose,
 }: Props) {
+  const { t, i18n } = useTranslation('editorShell');
   const isProgress = kind === 'progress';
   const canDismiss = !isProgress;
+
+  const title = titleKey ? t(titleKey, titleOptions) : '';
+  const message = useMemo(() => {
+    if (messageText) {
+      return messageText;
+    }
+    if (bleErrorCode) {
+      return mapBleUploadErrorMessage(new Error(bleErrorCode));
+    }
+    if (!messageKey) {
+      return '';
+    }
+    if (messageKey === 'pika.transferringMessage' && messageOptions) {
+      return resolveTransferMessage(t, messageOptions);
+    }
+    return t(messageKey, messageOptions);
+  }, [bleErrorCode, i18n.language, messageKey, messageOptions, messageText, t]);
 
   return (
     <Modal
@@ -90,9 +146,9 @@ export function PikaWorkflowModal({
               ]}
               onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="确定"
+              accessibilityLabel={t('common.confirm')}
             >
-              <Text style={styles.buttonText}>确定</Text>
+              <Text style={styles.buttonText}>{t('common.confirm')}</Text>
             </Pressable>
           ) : null}
         </Pressable>

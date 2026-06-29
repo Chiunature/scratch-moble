@@ -9,6 +9,7 @@
  * → 末包 LAST_DATA(0xbb) 或 LAST_DATA_RUN(0xbc，上传后运行)。
  */
 import { FUNCTION_CODES } from '../../../constants/bleCommand';
+import { i18n } from '@scratch-mobile/i18n';
 import { readBytecodeFile } from '../../pika/pikaService';
 import { bleDeviceManager } from '../core/manager';
 
@@ -48,21 +49,22 @@ export function clampHostProgramSlot(slot: number): number {
 
 /** 将 BLE 层错误码映射为用户可读文案 */
 export function mapBleUploadErrorMessage(error: unknown): string {
+  const t = i18n.getFixedT(null, 'ble');
   if (!(error instanceof Error)) {
-    return '上传失败';
+    return t('errors.uploadFailed');
   }
 
   switch (error.message) {
     case 'uploadTimeout':
-      return '上传超时（5s 内未收到主机确认），请重试';
+      return t('errors.uploadTimeout');
     case 'uploadError':
-      return '上传失败，主机未确认该帧';
+      return t('errors.uploadFrameRejected');
     case 'deviceDisconnected':
-      return '蓝牙已断开，上传中断';
-    case '已有进行中的上传任务':
-      return '已有进行中的上传任务';
+      return t('errors.uploadInterruptedDisconnect');
+    case 'uploadInProgress':
+      return t('errors.uploadInProgress');
     default:
-      return error.message || '上传失败';
+      return error.message || t('errors.uploadFailed');
   }
 }
 

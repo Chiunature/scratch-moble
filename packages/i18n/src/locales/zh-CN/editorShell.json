@@ -1,0 +1,72 @@
+{
+  "common": {
+    "confirm": "确定"
+  },
+  "toolbar": {
+    "back": "返回",
+    "runOnHost": "编译并在主机运行",
+    "pauseHost": "暂停主机程序",
+    "downloadToHost": "编译并上传到主机",
+    "programSlot": "当前程序槽 {{slot}}，点击选择",
+    "sensorStatus": "传感器状态",
+    "codePreview": "代码示例"
+  },
+  "loading": {
+    "project": "加载作品中…",
+    "codePlaceholder": "// 等待编辑器生成代码"
+  },
+  "persistence": {
+    "loadCorrupt": "作品数据损坏",
+    "loadFailed": "无法加载作品",
+    "saveFailed": "保存失败，请重试"
+  },
+  "sensorPanel": {
+    "title": "传感器",
+    "close": "关闭传感器面板",
+    "portDisconnected": "未连接",
+    "notConnectedHost": "未连接主机\n请先在「蓝牙设备」页连接 Spark_AI",
+    "waitingData": "已连接，等待主机推送传感器数据…",
+    "running": "运行",
+    "stopped": "停止",
+    "portCount": "{{connected}}/{{total}} 口",
+    "summarySeparator": " · ",
+    "system": "系统",
+    "storage": "存储 {{free}} / {{total}}",
+    "versionHeap": "v{{version}} · 堆 {{heap}} kb"
+  },
+  "battery": {
+    "notConnected": "未连接主机",
+    "percent": "电量 {{percent}}%",
+    "waitingData": "等待电量数据"
+  },
+  "pika": {
+    "cannotOperate": "无法操作",
+    "notConnectedHost": "未连接主机，请先在蓝牙设备页连接 Spark_AI",
+    "actionRun": "运行",
+    "actionDownload": "下载",
+    "compilingTitle": "正在编译",
+    "compilingMessage": "正在将积木代码编译为字节码…",
+    "compileFailed": "编译失败",
+    "compileSuccess": "编译成功：{{size}} 字节{{preview}}",
+    "hexPreviewPrefix": "\n前缀 {{hex}}",
+    "transferringTitle": "正在传输",
+    "transferringMessage": "{{compileSummary}}\n\n正在{{action}}到主机 {{fileName}}…",
+    "runSuccess": "运行成功",
+    "downloadSuccess": "下载成功",
+    "runSuccessMessage": "编译并上传完成，已在主机运行（{{fileName}}）",
+    "downloadSuccessMessage": "编译并上传完成（{{fileName}}）",
+    "runFailed": "运行失败",
+    "downloadFailed": "下载失败",
+    "cannotPause": "无法暂停",
+    "pausingTitle": "正在暂停",
+    "pausingMessage": "正在暂停主机程序…",
+    "pausedTitle": "已暂停",
+    "pausedMessage": "主机程序已暂停",
+    "pauseFailed": "暂停失败"
+  },
+  "programSlot": {
+    "title": "选择程序槽",
+    "subtitle": "上传时将保存为对应 .o 文件",
+    "slotLabel": "程序槽 {{slot}}"
+  }
+}

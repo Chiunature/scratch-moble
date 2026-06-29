@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 import { colors, fontSize, fontWeight } from '../../theme';
 import {
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function BatteryStatusLight({ battery, isConnected, hasData }: Props) {
+  const { t } = useTranslation('editorShell');
   const percent = parseBatteryPercent(battery);
   const dotColor = getBatteryStatusColor(percent, isConnected, hasData);
   const label = !isConnected
@@ -29,10 +31,10 @@ export function BatteryStatusLight({ battery, isConnected, hasData }: Props) {
       accessibilityRole="text"
       accessibilityLabel={
         !isConnected
-          ? '未连接主机'
+          ? t('battery.notConnected')
           : percent !== null
-            ? `电量 ${percent}%`
-            : '等待电量数据'
+            ? t('battery.percent', { percent })
+            : t('battery.waitingData')
       }
     >
       <View style={[styles.dot, { backgroundColor: dotColor }]} />

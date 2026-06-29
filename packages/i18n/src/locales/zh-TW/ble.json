@@ -38,7 +38,12 @@
     "openSettingsFailed": "打開設定失敗",
     "connectedWatchFailed": "已連線，但監控開啟失敗",
     "connectedWatchFailedWithMessage": "已連線，但監控開啟失敗：{{message}}",
-    "removePairedFailed": "移除配對失敗"
+    "removePairedFailed": "移除配對失敗",
+    "uploadFailed": "上傳失敗",
+    "uploadTimeout": "上傳逾時（5 秒內未收到主機確認），請重試",
+    "uploadFrameRejected": "上傳失敗，主機未確認該幀",
+    "uploadInterruptedDisconnect": "藍牙已斷開，上傳中斷",
+    "uploadInProgress": "已有進行中的上傳任務"
   },
   "alerts": {
     "removePairedTitle": "移除已配對裝置",

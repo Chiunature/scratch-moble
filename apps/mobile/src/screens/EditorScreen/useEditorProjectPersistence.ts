@@ -16,6 +16,8 @@ import { useProjectStore } from '../../store/useProjectStore';
 
 const FLUSH_TIMEOUT_MS = 2500;
 
+type ProjectPersistenceErrorKey = 'loadCorrupt' | 'loadFailed' | 'saveFailed';
+
 type Options = {
   webViewRef: React.RefObject<WebView | null>;
   projectId: string;
@@ -30,8 +32,12 @@ export function useEditorProjectPersistence({
   const lastSaveSucceededRef = useRef(true);
   const upsertSummary = useProjectStore(state => state.upsertSummary);
   const [projectName, setProjectName] = useState(getDefaultProjectName);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<ProjectPersistenceErrorKey | null>(
+    null,
+  );
+  const [saveError, setSaveError] = useState<ProjectPersistenceErrorKey | null>(
+    null,
+  );
   const [isProjectLoading, setIsProjectLoading] = useState(true);
 
   const injectLoad = useCallback(
@@ -58,8 +64,8 @@ export function useEditorProjectPersistence({
     } catch (error) {
       setLoadError(
         error instanceof ProjectDocumentParseError
-          ? '作品数据损坏'
-          : '无法加载作品',
+          ? 'loadCorrupt'
+          : 'loadFailed',
       );
       injectLoad(null);
     }
@@ -94,7 +100,7 @@ export function useEditorProjectPersistence({
         pendingFlushRef.current?.();
       } catch {
         lastSaveSucceededRef.current = false;
-        setSaveError('保存失败，请重试');
+        setSaveError('saveFailed');
       } finally {
         pendingFlushRef.current = null;
       }
@@ -128,7 +134,7 @@ export function useEditorProjectPersistence({
     await waitForPendingProjectSaves(projectId);
 
     if (!lastSaveSucceededRef.current) {
-      setSaveError('保存失败，请重试');
+      setSaveError('saveFailed');
     }
   }, [projectId, webViewRef]);
 

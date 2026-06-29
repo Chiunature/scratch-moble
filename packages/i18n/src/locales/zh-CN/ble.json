@@ -38,7 +38,12 @@
     "openSettingsFailed": "打开设置失败",
     "connectedWatchFailed": "已连接，但监控开启失败",
     "connectedWatchFailedWithMessage": "已连接，但监控开启失败：{{message}}",
-    "removePairedFailed": "移除配对失败"
+    "removePairedFailed": "移除配对失败",
+    "uploadFailed": "上传失败",
+    "uploadTimeout": "上传超时（5s 内未收到主机确认），请重试",
+    "uploadFrameRejected": "上传失败，主机未确认该帧",
+    "uploadInterruptedDisconnect": "蓝牙已断开，上传中断",
+    "uploadInProgress": "已有进行中的上传任务"
   },
   "alerts": {
     "removePairedTitle": "移除已配对设备",

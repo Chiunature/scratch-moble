@@ -266,7 +266,7 @@ export class BleDeviceManager {
 
   async uploadFile(options: UploadFileOptions): Promise<void> {
     if (this.uploadResolve) {
-      throw new Error('已有进行中的上传任务');
+      throw new Error('uploadInProgress');
     }
 
     const {

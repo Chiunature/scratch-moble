@@ -1,0 +1,72 @@
+{
+  "common": {
+    "confirm": "OK"
+  },
+  "toolbar": {
+    "back": "Back",
+    "runOnHost": "Compile and run on host",
+    "pauseHost": "Pause host program",
+    "downloadToHost": "Compile and upload to host",
+    "programSlot": "Program slot {{slot}}, tap to select",
+    "sensorStatus": "Sensor status",
+    "codePreview": "Code preview"
+  },
+  "loading": {
+    "project": "Loading project…",
+    "codePlaceholder": "// Waiting for editor to generate code"
+  },
+  "persistence": {
+    "loadCorrupt": "Project data is corrupted",
+    "loadFailed": "Unable to load project",
+    "saveFailed": "Save failed, please try again"
+  },
+  "sensorPanel": {
+    "title": "Sensors",
+    "close": "Close sensor panel",
+    "portDisconnected": "Not connected",
+    "notConnectedHost": "Host not connected\nConnect Spark_AI on the Bluetooth Devices page first",
+    "waitingData": "Connected, waiting for sensor data from host…",
+    "running": "Running",
+    "stopped": "Stopped",
+    "portCount": "{{connected}}/{{total}} ports",
+    "summarySeparator": " · ",
+    "system": "System",
+    "storage": "Storage {{free}} / {{total}}",
+    "versionHeap": "v{{version}} · heap {{heap}} kb"
+  },
+  "battery": {
+    "notConnected": "Host not connected",
+    "percent": "Battery {{percent}}%",
+    "waitingData": "Waiting for battery data"
+  },
+  "pika": {
+    "cannotOperate": "Cannot operate",
+    "notConnectedHost": "Host not connected. Connect Spark_AI on the Bluetooth Devices page first.",
+    "actionRun": "Run",
+    "actionDownload": "Download",
+    "compilingTitle": "Compiling",
+    "compilingMessage": "Compiling blocks to bytecode…",
+    "compileFailed": "Compile failed",
+    "compileSuccess": "Compile succeeded: {{size}} bytes{{preview}}",
+    "hexPreviewPrefix": "\nPrefix {{hex}}",
+    "transferringTitle": "Transferring",
+    "transferringMessage": "{{compileSummary}}\n\n{{action}} to host {{fileName}}…",
+    "runSuccess": "Run succeeded",
+    "downloadSuccess": "Download succeeded",
+    "runSuccessMessage": "Compile and upload complete; running on host ({{fileName}})",
+    "downloadSuccessMessage": "Compile and upload complete ({{fileName}})",
+    "runFailed": "Run failed",
+    "downloadFailed": "Download failed",
+    "cannotPause": "Cannot pause",
+    "pausingTitle": "Pausing",
+    "pausingMessage": "Pausing host program…",
+    "pausedTitle": "Paused",
+    "pausedMessage": "Host program paused",
+    "pauseFailed": "Pause failed"
+  },
+  "programSlot": {
+    "title": "Select program slot",
+    "subtitle": "Upload saves to the corresponding .o file",
+    "slotLabel": "Program slot {{slot}}"
+  }
+}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from '@scratch-mobile/i18n';
 
 import { ScrollablePanel } from '../../components/ScrollablePanel';
 import type { ParsedWatchPort } from '../../services/ble';
@@ -28,6 +29,7 @@ type Props = {
 };
 
 function PortCard({ port }: { port: ParsedWatchPort }) {
+  const { t } = useTranslation('editorShell');
   const isInactive = port.isEmpty;
 
   return (
@@ -43,7 +45,7 @@ function PortCard({ port }: { port: ParsedWatchPort }) {
       {!isInactive ? (
         <Text style={styles.portReading}>{formatPortReading(port)}</Text>
       ) : (
-        <Text style={styles.portTextMuted}>未连接</Text>
+        <Text style={styles.portTextMuted}>{t('sensorPanel.portDisconnected')}</Text>
       )}
     </View>
   );
@@ -63,29 +65,30 @@ export function DeviceDetailsPanel({
   heap,
   onClose,
 }: Props) {
+  const { t } = useTranslation('editorShell');
   const [systemExpanded, setSystemExpanded] = useState(false);
   const percent = parseBatteryPercent(battery);
   const dotColor = getBatteryStatusColor(percent, isConnected, isAvailable);
 
   const statusMessage = useMemo(() => {
     if (!isConnected) {
-      return '未连接主机\n请先在「蓝牙设备」页连接 Spark_AI';
+      return t('sensorPanel.notConnectedHost');
     }
     if (!isAvailable) {
-      return '已连接，等待主机推送传感器数据…';
+      return t('sensorPanel.waitingData');
     }
     return null;
-  }, [isAvailable, isConnected]);
+  }, [isAvailable, isConnected, t]);
 
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>传感器</Text>
+        <Text style={styles.title}>{t('sensorPanel.title')}</Text>
         <Pressable
           onPress={onClose}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="关闭传感器面板"
+          accessibilityLabel={t('sensorPanel.close')}
         >
           <Text style={styles.closeButton}>×</Text>
         </Pressable>
@@ -99,9 +102,16 @@ export function DeviceDetailsPanel({
           </Text>
         </View>
         <Text style={styles.summaryMeta}>
-          {isProgramRunning ? '运行' : '停止'}
-          {' · '}
-          {isAvailable ? `${connectedCount}/${portCount}` : '—'} 口
+          {isProgramRunning
+            ? t('sensorPanel.running')
+            : t('sensorPanel.stopped')}
+          {t('sensorPanel.summarySeparator')}
+          {isAvailable
+            ? t('sensorPanel.portCount', {
+                connected: connectedCount,
+                total: portCount,
+              })
+            : '—'}
         </Text>
       </View>
 
@@ -119,17 +129,23 @@ export function DeviceDetailsPanel({
             accessibilityRole="button"
             accessibilityState={{ expanded: systemExpanded }}
           >
-            <Text style={styles.systemToggleText}>系统</Text>
+            <Text style={styles.systemToggleText}>{t('sensorPanel.system')}</Text>
             <Text style={styles.systemToggleHint}>{systemExpanded ? '▲' : '▼'}</Text>
           </Pressable>
 
           {systemExpanded ? (
             <View style={styles.systemBlock}>
               <Text style={styles.systemLine}>
-                存储 {flashFree ?? '—'} / {flashTotal ?? '—'}
+                {t('sensorPanel.storage', {
+                  free: flashFree ?? '—',
+                  total: flashTotal ?? '—',
+                })}
               </Text>
               <Text style={styles.systemLine}>
-                v{version ?? '—'} · 堆 {heap ?? '—'} kb
+                {t('sensorPanel.versionHeap', {
+                  version: version ?? '—',
+                  heap: heap ?? '—',
+                })}
               </Text>
             </View>
           ) : null}

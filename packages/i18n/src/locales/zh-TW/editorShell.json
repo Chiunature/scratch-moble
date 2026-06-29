@@ -1,0 +1,72 @@
+{
+  "common": {
+    "confirm": "確定"
+  },
+  "toolbar": {
+    "back": "返回",
+    "runOnHost": "編譯並在主機運行",
+    "pauseHost": "暫停主機程序",
+    "downloadToHost": "編譯並上傳到主機",
+    "programSlot": "目前程序槽 {{slot}}，點擊選擇",
+    "sensorStatus": "感測器狀態",
+    "codePreview": "程式碼示例"
+  },
+  "loading": {
+    "project": "載入作品中…",
+    "codePlaceholder": "// 等待編輯器生成程式碼"
+  },
+  "persistence": {
+    "loadCorrupt": "作品資料損壞",
+    "loadFailed": "無法載入作品",
+    "saveFailed": "儲存失敗，請重試"
+  },
+  "sensorPanel": {
+    "title": "感測器",
+    "close": "關閉感測器面板",
+    "portDisconnected": "未連接",
+    "notConnectedHost": "未連接主機\n請先在「藍牙裝置」頁連接 Spark_AI",
+    "waitingData": "已連接，等待主機推送感測器資料…",
+    "running": "運行",
+    "stopped": "停止",
+    "portCount": "{{connected}}/{{total}} 口",
+    "summarySeparator": " · ",
+    "system": "系統",
+    "storage": "儲存 {{free}} / {{total}}",
+    "versionHeap": "v{{version}} · 堆疊 {{heap}} kb"
+  },
+  "battery": {
+    "notConnected": "未連接主機",
+    "percent": "電量 {{percent}}%",
+    "waitingData": "等待電量資料"
+  },
+  "pika": {
+    "cannotOperate": "無法操作",
+    "notConnectedHost": "未連接主機，請先在藍牙裝置頁連接 Spark_AI",
+    "actionRun": "運行",
+    "actionDownload": "下載",
+    "compilingTitle": "正在編譯",
+    "compilingMessage": "正在將積木程式碼編譯為位元組碼…",
+    "compileFailed": "編譯失敗",
+    "compileSuccess": "編譯成功：{{size}} 位元組{{preview}}",
+    "hexPreviewPrefix": "\n前綴 {{hex}}",
+    "transferringTitle": "正在傳輸",
+    "transferringMessage": "{{compileSummary}}\n\n正在{{action}}到主機 {{fileName}}…",
+    "runSuccess": "運行成功",
+    "downloadSuccess": "下載成功",
+    "runSuccessMessage": "編譯並上傳完成，已在主機運行（{{fileName}}）",
+    "downloadSuccessMessage": "編譯並上傳完成（{{fileName}}）",
+    "runFailed": "運行失敗",
+    "downloadFailed": "下載失敗",
+    "cannotPause": "無法暫停",
+    "pausingTitle": "正在暫停",
+    "pausingMessage": "正在暫停主機程序…",
+    "pausedTitle": "已暫停",
+    "pausedMessage": "主機程序已暫停",
+    "pauseFailed": "暫停失敗"
+  },
+  "programSlot": {
+    "title": "選擇程序槽",
+    "subtitle": "上傳時將儲存為對應 .o 檔案",
+    "slotLabel": "程序槽 {{slot}}"
+  }
+}

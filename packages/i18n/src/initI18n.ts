@@ -5,6 +5,7 @@ import enBle from './locales/en/ble.json';
 import enCommon from './locales/en/common.json';
 import enDeviceWatch from './locales/en/deviceWatch.json';
 import enEditor from './locales/en/editor.json';
+import enEditorShell from './locales/en/editorShell.json';
 import enHome from './locales/en/home.json';
 import enNavigation from './locales/en/navigation.json';
 import enOverlays from './locales/en/overlays.json';
@@ -14,6 +15,7 @@ import zhCNBle from './locales/zh-CN/ble.json';
 import zhCNCommon from './locales/zh-CN/common.json';
 import zhCNDeviceWatch from './locales/zh-CN/deviceWatch.json';
 import zhCNEditor from './locales/zh-CN/editor.json';
+import zhCNEditorShell from './locales/zh-CN/editorShell.json';
 import zhCNHome from './locales/zh-CN/home.json';
 import zhCNNavigation from './locales/zh-CN/navigation.json';
 import zhCNOverlays from './locales/zh-CN/overlays.json';
@@ -23,6 +25,7 @@ import zhTWBle from './locales/zh-TW/ble.json';
 import zhTWCommon from './locales/zh-TW/common.json';
 import zhTWDeviceWatch from './locales/zh-TW/deviceWatch.json';
 import zhTWEditor from './locales/zh-TW/editor.json';
+import zhTWEditorShell from './locales/zh-TW/editorShell.json';
 import zhTWHome from './locales/zh-TW/home.json';
 import zhTWNavigation from './locales/zh-TW/navigation.json';
 import zhTWOverlays from './locales/zh-TW/overlays.json';
@@ -37,6 +40,7 @@ export const I18N_NAMESPACES = [
   'editor',
   'overlays',
   'deviceWatch',
+  'editorShell',
   'ble',
   'settings',
 ] as const;
@@ -60,6 +64,7 @@ const resources = {
     editor: zhCNEditor,
     overlays: zhCNOverlays,
     deviceWatch: zhCNDeviceWatch,
+    editorShell: zhCNEditorShell,
     ble: zhCNBle,
     settings: zhCNSettings,
   },
@@ -71,6 +76,7 @@ const resources = {
     editor: zhTWEditor,
     overlays: zhTWOverlays,
     deviceWatch: zhTWDeviceWatch,
+    editorShell: zhTWEditorShell,
     ble: zhTWBle,
     settings: zhTWSettings,
   },
@@ -82,6 +88,7 @@ const resources = {
     editor: enEditor,
     overlays: enOverlays,
     deviceWatch: enDeviceWatch,
+    editorShell: enEditorShell,
     ble: enBle,
     settings: enSettings,
   },
