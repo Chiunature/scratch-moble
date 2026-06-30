@@ -361,18 +361,20 @@ function Toast({
 }
 
 /** 无 Hooks，避免 HMR 时因增删 ref 导致 Hooks 顺序错乱 */
-export function MatrixLightOverlay({ session, onCommit, onClose }: Props) {
-  if (!session) {
-    return null;
-  }
-  return (
-    <MatrixLightOverlayContent
-      session={session}
-      onCommit={onCommit}
-      onClose={onClose}
-    />
-  );
-}
+export const MatrixLightOverlay = React.memo(
+  ({ session, onCommit, onClose }: Props) => {
+    if (!session) {
+      return null;
+    }
+    return (
+      <MatrixLightOverlayContent
+        session={session}
+        onCommit={onCommit}
+        onClose={onClose}
+      />
+    );
+  },
+);
 
 function MatrixLightOverlayContent({
   session,
@@ -418,7 +420,9 @@ function MatrixLightOverlayContent({
   const showToast = useCallback((msg: string) => {
     setToast({ msg, key: Date.now() });
   }, []);
-
+  const hideToast = useCallback(() => {
+    setToast(null);
+  }, []);
   const resetBrush = useCallback(() => {
     paintOnRef.current = null;
     lastCellRef.current = null;
@@ -610,15 +614,17 @@ function MatrixLightOverlayContent({
     (on: boolean) => {
       setPending(createGrid(on));
       resetBrush();
-      showToast(on ? t('matrixLight.toastAllOn') : t('matrixLight.toastCleared'));
+      showToast(
+        on ? t('matrixLight.toastAllOn') : t('matrixLight.toastCleared'),
+      );
     },
     [resetBrush, showToast, t],
   );
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     const rows = serializeMatrixLightRows(matrixLightRowsFromGrid(pending));
     onCommit(session.sessionId, rows);
-  };
+  }, [onCommit, session.sessionId, pending]);
 
   return (
     <Animated.View
@@ -696,11 +702,15 @@ function MatrixLightOverlayContent({
                 <View style={styles.counterRow}>
                   <View style={styles.counterCard}>
                     <AnimatedCounter value={onCount} />
-                    <Text style={styles.counterLabel}>{t('matrixLight.lit')}</Text>
+                    <Text style={styles.counterLabel}>
+                      {t('matrixLight.lit')}
+                    </Text>
                   </View>
                   <View style={styles.counterCard}>
                     <AnimatedCounter value={offCount} dim />
-                    <Text style={styles.counterLabel}>{t('matrixLight.unlit')}</Text>
+                    <Text style={styles.counterLabel}>
+                      {t('matrixLight.unlit')}
+                    </Text>
                   </View>
                 </View>
 
@@ -726,7 +736,9 @@ function MatrixLightOverlayContent({
                     ]}
                     onPress={handleConfirm}
                   >
-                    <Text style={styles.confirmText}>{t('common.confirm')}</Text>
+                    <Text style={styles.confirmText}>
+                      {t('common.confirm')}
+                    </Text>
                   </Pressable>
                   <Pressable
                     style={({ pressed }) => [
@@ -748,7 +760,7 @@ function MatrixLightOverlayContent({
         message={toast?.msg ?? ''}
         visible={toast !== null}
         key={toast?.key}
-        onHidden={() => setToast(null)}
+        onHidden={hideToast}
       />
     </Animated.View>
   );

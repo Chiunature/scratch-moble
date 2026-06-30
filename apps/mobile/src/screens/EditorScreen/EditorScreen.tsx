@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -136,6 +142,26 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     codePlaceholderRef.current = nextPlaceholder;
   }, [i18n.language, t]);
 
+  const handleMatrixLightCommit = useCallback(
+    (sessionId: string, rows: string) => {
+      setRnMatrixLightSession(null);
+      resetInjectEditorMessageDedup();
+      injectEditorMessage(webViewRef.current, {
+        type: 'editor.matrixLight.commit',
+        sessionId,
+        rows,
+      });
+    },
+    [], // webViewRef 是 ref，不需要放进 deps
+  );
+  const handleMatrixLightClose = useCallback((sessionId: string) => {
+    setRnMatrixLightSession(null);
+    resetInjectEditorMessageDedup();
+    injectEditorMessage(webViewRef.current, {
+      type: 'editor.matrixLight.close',
+      sessionId,
+    });
+  }, []);
   const toggleCodePanel = useCallback(() => {
     setIsCodePanelOpen(open => {
       if (!open) {
@@ -200,7 +226,9 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   // bootstrap 首帧前写入 App 语言，避免 WebView 用 navigator 语言渲染飞栏后再闪一下。
   const editorEmbeddedLocaleScript = useMemo(
     () =>
-      `window.${EDITOR_EMBEDDED_LOCALE_GLOBAL}=${JSON.stringify(getCurrentAppLocale())};true;`,
+      `window.${EDITOR_EMBEDDED_LOCALE_GLOBAL}=${JSON.stringify(
+        getCurrentAppLocale(),
+      )};true;`,
     [i18n.language],
   );
 
@@ -473,7 +501,9 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
         {isProjectLoading ? (
           <View style={styles.projectLoadingOverlay} pointerEvents="auto">
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.projectLoadingText}>{t('loading.project')}</Text>
+            <Text style={styles.projectLoadingText}>
+              {t('loading.project')}
+            </Text>
           </View>
         ) : null}
         <NumberSliderOverlay
@@ -515,23 +545,8 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
         />
         <MatrixLightOverlay
           session={rnMatrixLightSession}
-          onCommit={(sessionId, rows) => {
-            setRnMatrixLightSession(null);
-            resetInjectEditorMessageDedup();
-            injectEditorMessage(webViewRef.current, {
-              type: 'editor.matrixLight.commit',
-              sessionId,
-              rows,
-            });
-          }}
-          onClose={sessionId => {
-            setRnMatrixLightSession(null);
-            resetInjectEditorMessageDedup();
-            injectEditorMessage(webViewRef.current, {
-              type: 'editor.matrixLight.close',
-              sessionId,
-            });
-          }}
+          onCommit={handleMatrixLightCommit}
+          onClose={handleMatrixLightClose}
         />
         <NotePickerOverlay
           session={rnNotePickerSession}

@@ -84,3 +84,6 @@ apps/mobile/src/features/editor/generated/*
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Cursor
+.cursor/
