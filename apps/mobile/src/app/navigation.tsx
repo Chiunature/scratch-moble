@@ -62,7 +62,7 @@ export function RootNavigator() {
         <Stack.Screen
           name="RemoteControl"
           component={RemoteControlScreen}
-          options={{ title: t('remoteControl') }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="AiChat"

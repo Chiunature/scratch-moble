@@ -1,83 +1,419 @@
 import { StyleSheet } from 'react-native';
+import { redux } from 'zustand/middleware';
 
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+/** 摇杆尺寸（与样式保持一致） */
+export const JOYSTICK = {
+  aroundSize: 200, // 外圈直径
+  baseSize: 150, // 底座直径
+  headSize: 100, // 摇杆直径
+  centerSize: 70, // 中心圆直径
+  dotSize: 5, // 防滑圆点直径
+  dotInset: 8, // 防滑圆点内边距
+  directionIconSize: 50, // 方向图标尺寸
+  rightRemoteTextContainerSize: 50, // 右远程文本容器尺寸
+  remoteBottomButtonSize: 60, // 远程底部按钮尺寸
+  get maxTravel() {
+    return (this.baseSize - this.headSize) / 2; //获取可移动最大半径
+  },
+  /** 圆点在 center 内沿边居中时的 left/top */
+  get dotCenterOffset() {
+    return (this.centerSize - this.dotSize) / 2;
+  },
+  get directionIconOffset() {
+    return (this.aroundSize - this.directionIconSize) / 2;
+  },
+  get directionIconoutSize() {
+    return -this.directionIconSize;
+  },
+  get rightRemoteTextContainerOffset() {
+    return (this.aroundSize - this.rightRemoteTextContainerSize) / 2;
+  },
+  get rightRemoteTextContainerOutSize() {
+    return this.rightRemoteTextContainerSize / 3;
+  },
+} as const;
 
 export const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
-    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    flexDirection: 'row',
+    experimental_backgroundImage: 'linear-gradient(145deg, #e6e8ec, #caccd4)',
   },
-  statusBar: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#cbd5e1',
-    backgroundColor: colors.surface,
+
+  /** 外圈凹槽：内阴影在「容器」上，模拟陷进去 */
+  around: {
+    width: JOYSTICK.aroundSize,
+    height: JOYSTICK.aroundSize,
+    borderRadius: JOYSTICK.aroundSize / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    experimental_backgroundImage: `linear-gradient(to top, #f5f8fa, #9da4a8)`,
   },
-  statusLine: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
+
+  /** 中间深色环：实心渐变 + 轻微外投影，不要 inset */
+  base: {
+    width: JOYSTICK.baseSize,
+    height: JOYSTICK.baseSize,
+    borderRadius: JOYSTICK.baseSize / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ccd7de',
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: 0,
+        blurRadius: 10,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.5)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 10,
+        blurRadius: 10,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.2)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 0,
+        blurRadius: 16,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.85)',
+        inset: true,
+      },
+      {
+        offsetX: 0,
+        offsetY: 0,
+        blurRadius: 24,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.75)',
+        inset: true,
+      },
+      {
+        offsetX: 0,
+        offsetY: 0,
+        blurRadius: 48,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.2)',
+        inset: true,
+      },
+    ],
   },
-  statusLineStrong: {
-    color: colors.ink,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
+  head: {
+    width: JOYSTICK.headSize,
+    height: JOYSTICK.headSize,
+    borderRadius: JOYSTICK.headSize / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    experimental_backgroundImage: `linear-gradient(to top, #adb9bf, #d4dbdd)`,
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: -6,
+        blurRadius: 10,
+        spreadDistance: 0,
+        color: 'rgba(255, 255, 255, 0.5)',
+      },
+      // 多层外阴影
+      {
+        offsetX: 0,
+        offsetY: 4,
+        blurRadius: 14,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.5)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 9,
+        blurRadius: 8,
+        spreadDistance: -2,
+        color: 'rgba(0, 0, 0, 0.2)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 16,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.4)',
+      },
+      // 上下两层内阴影
+      {
+        offsetX: 0,
+        offsetY: 3,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(255, 255, 255, 0.6)',
+        inset: true,
+      },
+      {
+        offsetX: 0,
+        offsetY: -3,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(89, 91, 92, 0.6)',
+        inset: true,
+      },
+    ],
   },
-  statusConnected: {
-    color: '#2ecc71',
+
+  /** 防滑圆点容器（随 head 一起移动；手势绑在 head 上） */
+  center: {
+    width: JOYSTICK.centerSize,
+    height: JOYSTICK.centerSize,
+    borderRadius: JOYSTICK.centerSize / 2,
+    position: 'relative',
+    experimental_backgroundImage: `linear-gradient(to bottom, #adb9bf, #d4dbdd)`,
+    boxShadow: [
+      // {
+      //   offsetX: 0,
+      //   offsetY: 0,
+      //   blurRadius: 2,
+      //   spreadDistance: 0,
+      //   color: 'rgba(0, 0, 0, 0.3)',
+      // },
+      {
+        offsetX: 0,
+        offsetY: 0,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.3)',
+        inset: true,
+      },
+    ],
   },
-  statusDisconnected: {
-    color: '#e74c3c',
+
+  dot: {
+    width: JOYSTICK.dotSize,
+    height: JOYSTICK.dotSize,
+    borderRadius: JOYSTICK.dotSize / 2,
+    position: 'absolute',
+    backgroundColor: '#8a9399',
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: 1,
+        blurRadius: 1,
+        spreadDistance: 0,
+        color: 'rgba(0, 0, 0, 0.25)',
+      },
+    ],
   },
-  scrollBody: {
-    flex: 1,
-    padding: spacing.md,
+  dotTop: {
+    top: JOYSTICK.dotInset,
+    left: JOYSTICK.dotCenterOffset,
   },
-  sectionTitle: {
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
+  dotBottom: {
+    bottom: JOYSTICK.dotInset,
+    left: JOYSTICK.dotCenterOffset,
   },
-  emptyHint: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginTop: spacing['3xl'],
-    paddingHorizontal: spacing.lg,
+  dotLeft: {
+    left: JOYSTICK.dotInset,
+    top: JOYSTICK.dotCenterOffset,
   },
-  portCard: {
-    marginBottom: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: spacing.sm,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#cbd5e1',
+  dotRight: {
+    right: JOYSTICK.dotInset,
+    top: JOYSTICK.dotCenterOffset,
   },
-  portCardTitle: {
-    color: colors.ink,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
+  directionIcon: {
+    position: 'absolute',
+    width: JOYSTICK.directionIconSize,
+    height: JOYSTICK.directionIconSize,
   },
-  portCardBody: {
-    color: colors.textMuted,
-    fontFamily: 'monospace',
-    fontSize: fontSize.xs,
-    lineHeight: 18,
+  directionIconTop: {
+    top: JOYSTICK.directionIconoutSize,
+    left: JOYSTICK.directionIconOffset,
   },
-  jsonBlock: {
-    padding: spacing.sm,
-    borderRadius: spacing.sm,
-    backgroundColor: colors.codeBackground,
-    marginBottom: spacing.md,
+  directionIconLeft: {
+    left: JOYSTICK.directionIconoutSize,
+    top: JOYSTICK.directionIconOffset,
   },
-  jsonText: {
-    color: colors.codeText,
-    fontFamily: 'monospace',
-    fontSize: fontSize.xs,
-    lineHeight: 18,
+  directionIconRight: {
+    right: JOYSTICK.directionIconoutSize,
+    top: JOYSTICK.directionIconOffset,
+  },
+  directionIconBottom: {
+    bottom: JOYSTICK.directionIconoutSize,
+    right: JOYSTICK.directionIconOffset,
+  },
+  rightRemote: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'relative',
+    width: JOYSTICK.aroundSize,
+    height: JOYSTICK.aroundSize,
+    experimental_backgroundImage: `linear-gradient(to top, #f5f8fa, #9da4a8)`,
+    borderRadius: JOYSTICK.aroundSize / 2,
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: 0,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.5)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 3,
+        blurRadius: 2,
+        spreadDistance: 0.5,
+        color: 'rgba(255,255,255,0.85)',
+        inset: true,
+      },
+      {
+        offsetX: 0,
+        offsetY: -3,
+        blurRadius: 2,
+        spreadDistance: 0.5,
+        color: 'rgba(0,0,0,0.5)',
+        inset: true,
+      },
+    ],
+  },
+  rightRemoteTextContainer: {
+    position: 'absolute',
+    width: JOYSTICK.rightRemoteTextContainerSize,
+    height: JOYSTICK.rightRemoteTextContainerSize,
+    borderRadius: JOYSTICK.rightRemoteTextContainerSize / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f1f1f1',
+    boxShadow: [
+      {
+        offsetX: -2,
+        offsetY: 3,
+        blurRadius: 10,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.5)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 3,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255)',
+        inset: true,
+      },
+      {
+        offsetX: 0,
+        offsetY: -3,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.3)',
+        inset: true,
+      },
+    ],
+  },
+  rightRemoteTextContainerTop: {
+    top: JOYSTICK.rightRemoteTextContainerOutSize,
+    left: JOYSTICK.rightRemoteTextContainerOffset,
+  },
+  rightRemoteTextContainerLeft: {
+    left: JOYSTICK.rightRemoteTextContainerOutSize,
+    top: JOYSTICK.rightRemoteTextContainerOffset,
+  },
+  rightRemoteTextContainerRight: {
+    right: JOYSTICK.rightRemoteTextContainerOutSize,
+    top: JOYSTICK.rightRemoteTextContainerOffset,
+  },
+  rightRemoteTextContainerBottom: {
+    bottom: JOYSTICK.rightRemoteTextContainerOutSize,
+    right: JOYSTICK.rightRemoteTextContainerOffset,
+  },
+  rightRemoteText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#7a7a98',
+  },
+  remoteBottomButtonsContainer: {
+    position: 'absolute',
+    bottom: 10,
+    marginHorizontal: 'auto',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 28,
+    borderRadius: 20,
+    gap: 16,
+    experimental_backgroundImage: 'linear-gradient(145deg, #e0e2e8, #c4c6ce)',
+    boxShadow: [
+      {
+        offsetX: 6,
+        offsetY: 6,
+        blurRadius: 14,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.1)',
+      },
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 10,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.7)',
+      },
+      {
+        offsetX: 1,
+        offsetY: 1,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.5)',
+        inset: true,
+      },
+    ],
+  },
+  remoteBottomButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: JOYSTICK.remoteBottomButtonSize,
+    height: JOYSTICK.remoteBottomButtonSize,
+    borderRadius: JOYSTICK.remoteBottomButtonSize / 2,
+    experimental_backgroundImage: 'linear-gradient(145deg,#f0f1f5,#d4d6dc)',
+    boxShadow: [
+      {
+        offsetX: 4,
+        offsetY: 4,
+        blurRadius: 10,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.12)',
+      },
+      {
+        offsetX: -3,
+        offsetY: -3,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.7)',
+      },
+      {
+        offsetX: 1,
+        offsetY: 1,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.8)',
+        inset: true,
+      },
+    ],
+  },
+  pressIn: {
+    boxShadow: [
+      {
+        offsetX: 3,
+        offsetY: 3,
+        blurRadius: 8,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.1)',
+        inset: true,
+      },
+      {
+        offsetX: -2,
+        offsetY: -2,
+        blurRadius: 5,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.5)',
+        inset: true,
+      },
+    ],
   },
 });
