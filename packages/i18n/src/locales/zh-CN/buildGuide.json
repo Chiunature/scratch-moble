@@ -1,0 +1,43 @@
+{
+  "stepCounter": "第 {{current}} / {{total}} 步",
+  "prevStep": "上一步",
+  "nextStep": "下一步",
+  "complete": "已完成",
+  "partsThisStep": "本步零件",
+  "jumpToStep": "跳转步骤",
+  "stepButtonLabel": "第 {{step}} 步",
+  "gestureHint": "单指拖动旋转 · 双指捏合缩放",
+  "reviewHint": "搭建已完成，可点击步骤或「上一步」回看",
+  "demo": {
+    "modelName": "示例：小黄鸭",
+    "parts": {
+      "body": "身体",
+      "head": "头部",
+      "beak": "嘴巴",
+      "eye": "眼睛",
+      "wing": "翅膀"
+    },
+    "steps": {
+      "1": {
+        "title": "放置身体",
+        "description": "将主身体零件放在搭建区域中央，作为后续步骤的基础。"
+      },
+      "2": {
+        "title": "安装头部",
+        "description": "把头部零件连接到身体上方，确认接口对齐后再压紧。"
+      },
+      "3": {
+        "title": "装上嘴巴",
+        "description": "将橙色嘴巴零件安装到头部前方，注意朝向与图示一致。"
+      },
+      "4": {
+        "title": "贴上眼睛",
+        "description": "在头部两侧对称安装眼睛零件，保持左右高度一致。"
+      },
+      "5": {
+        "title": "完成翅膀",
+        "description": "最后安装两侧翅膀，检查整体结构是否稳固，搭建完成。"
+      }
+    }
+  }
+}

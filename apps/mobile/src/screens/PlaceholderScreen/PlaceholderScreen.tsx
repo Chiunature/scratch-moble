@@ -5,15 +5,11 @@ import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type RootStackParamList } from '../../app/navigation';
 import { styles } from './PlaceholderScreen.styles';
 
-type PlaceholderRouteName = 'BuildGuide' | 'RemoteControl' | 'AiChat';
+type PlaceholderRouteName = 'RemoteControl' | 'AiChat';
 type Props = NativeStackScreenProps<RootStackParamList, PlaceholderRouteName>;
 
-const pageCopy: Record<PlaceholderRouteName, { title: string; body: string }> =
+const pageCopy: Record<Exclude<PlaceholderRouteName, 'BuildGuide'>, { title: string; body: string }> =
   {
-    BuildGuide: {
-      title: '搭建说明',
-      body: '这里将承载结构搭建步骤、零件清单和图文引导。',
-    },
     RemoteControl: {
       title: '遥控模式',
       body: '已迁移至独立页面。',

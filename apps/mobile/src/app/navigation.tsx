@@ -3,6 +3,7 @@ import { useTranslation } from '@scratch-mobile/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { BuildGuideScreen } from '../screens/BuildGuideScreen';
 import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
@@ -56,7 +57,7 @@ export function RootNavigator() {
         />
         <Stack.Screen
           name="BuildGuide"
-          component={PlaceholderScreen}
+          component={BuildGuideScreen}
           options={{ title: t('buildGuide') }}
         />
         <Stack.Screen

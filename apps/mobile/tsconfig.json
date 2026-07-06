@@ -11,7 +11,7 @@
       "@scratch-mobile/shared": ["packages/shared/src"],
       "@scratch-mobile/i18n": ["packages/i18n/src"]
     },
-    "types": ["jest"]
+    "types": ["jest", "@webgpu/types"]
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],
   "exclude": ["**/node_modules", "**/Pods"]

@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import enBle from './locales/en/ble.json';
+import enBuildGuide from './locales/en/buildGuide.json';
 import enCommon from './locales/en/common.json';
 import enDeviceWatch from './locales/en/deviceWatch.json';
 import enEditor from './locales/en/editor.json';
@@ -12,6 +13,7 @@ import enOverlays from './locales/en/overlays.json';
 import enProjects from './locales/en/projects.json';
 import enSettings from './locales/en/settings.json';
 import zhCNBle from './locales/zh-CN/ble.json';
+import zhCNBuildGuide from './locales/zh-CN/buildGuide.json';
 import zhCNCommon from './locales/zh-CN/common.json';
 import zhCNDeviceWatch from './locales/zh-CN/deviceWatch.json';
 import zhCNEditor from './locales/zh-CN/editor.json';
@@ -22,6 +24,7 @@ import zhCNOverlays from './locales/zh-CN/overlays.json';
 import zhCNProjects from './locales/zh-CN/projects.json';
 import zhCNSettings from './locales/zh-CN/settings.json';
 import zhTWBle from './locales/zh-TW/ble.json';
+import zhTWBuildGuide from './locales/zh-TW/buildGuide.json';
 import zhTWCommon from './locales/zh-TW/common.json';
 import zhTWDeviceWatch from './locales/zh-TW/deviceWatch.json';
 import zhTWEditor from './locales/zh-TW/editor.json';
@@ -43,6 +46,7 @@ export const I18N_NAMESPACES = [
   'editorShell',
   'ble',
   'settings',
+  'buildGuide',
 ] as const;
 
 export const APP_LOCALES = ['zh-CN', 'zh-TW', 'en'] as const;
@@ -67,6 +71,7 @@ const resources = {
     editorShell: zhCNEditorShell,
     ble: zhCNBle,
     settings: zhCNSettings,
+    buildGuide: zhCNBuildGuide,
   },
   'zh-TW': {
     common: zhTWCommon,
@@ -79,6 +84,7 @@ const resources = {
     editorShell: zhTWEditorShell,
     ble: zhTWBle,
     settings: zhTWSettings,
+    buildGuide: zhTWBuildGuide,
   },
   en: {
     common: enCommon,
@@ -91,6 +97,7 @@ const resources = {
     editorShell: enEditorShell,
     ble: enBle,
     settings: enSettings,
+    buildGuide: enBuildGuide,
   },
 };
 
