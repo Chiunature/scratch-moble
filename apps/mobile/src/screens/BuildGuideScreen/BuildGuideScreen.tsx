@@ -4,14 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { warnIfNotHardwareAccelerated } from 'react-native-webgpu';
 
 import { BuildGuideSidePanel } from '../../features/buildGuide/components';
-import { demoDuckManifest } from '../../features/buildGuide/data/demoDuckManifest';
+import { duckDemoBundle } from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { BuildGuideWebGpuCanvas } from '../../features/buildGuide/webgpu/BuildGuideWebGpuCanvas';
 import { styles } from './BuildGuideScreen.styles';
 
 export function BuildGuideScreen() {
   const insets = useSafeAreaInsets();
-  const steps = useBuildGuideSteps(demoDuckManifest);
+  const steps = useBuildGuideSteps(duckDemoBundle.manifest);
 
   useEffect(() => {
     void navigator.gpu.requestAdapter().then(adapter => {
@@ -33,11 +33,14 @@ export function BuildGuideScreen() {
             },
           ]}
         >
-          <BuildGuideWebGpuCanvas stepIndex={steps.currentIndex} />
+          <BuildGuideWebGpuCanvas
+            bundle={duckDemoBundle}
+            stepIndex={steps.currentIndex}
+          />
         </View>
 
         <BuildGuideSidePanel
-          modelNameKey={demoDuckManifest.nameKey}
+          modelNameKey={duckDemoBundle.manifest.nameKey}
           currentIndex={steps.currentIndex}
           totalSteps={steps.totalSteps}
           progress={steps.progress}

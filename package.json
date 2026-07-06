@@ -21,13 +21,15 @@
     "logs:mobile:reset": "adb logcat -c && adb logcat -v time ReactNativeJS:I chromium:E *:S",
     "lint": "eslint . --ext .js,.ts,.tsx",
     "test": "jest",
-    "typecheck": "yarn typecheck:shared && yarn typecheck:i18n && yarn typecheck:core && yarn typecheck:protocol && yarn typecheck:editor-web && yarn editor:web:sync && yarn typecheck:mobile",
+    "typecheck": "yarn typecheck:shared && yarn typecheck:i18n && yarn typecheck:build-guide && yarn typecheck:core && yarn typecheck:protocol && yarn typecheck:editor-web && yarn editor:web:sync && yarn typecheck:mobile",
     "typecheck:editor-web": "tsc -p packages/scratch-editor-web/tsconfig.codegen.json --noEmit",
     "typecheck:core": "tsc -p packages/core/tsconfig.json --noEmit",
     "typecheck:mobile": "tsc -p apps/mobile/tsconfig.json --noEmit",
     "typecheck:protocol": "tsc -p packages/protocol/tsconfig.json --noEmit",
     "typecheck:shared": "tsc -p packages/shared/tsconfig.json --noEmit",
-    "typecheck:i18n": "tsc -p packages/i18n/tsconfig.json --noEmit"
+    "typecheck:i18n": "tsc -p packages/i18n/tsconfig.json --noEmit",
+    "typecheck:build-guide": "tsc -p packages/build-guide/tsconfig.json --noEmit",
+    "build-guide:bake": "yarn workspace @scratch-mobile/build-guide bake"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

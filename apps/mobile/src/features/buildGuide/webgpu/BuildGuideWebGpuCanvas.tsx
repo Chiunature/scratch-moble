@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 
-import DuckModel from '../../../../assets/models/Duck.glb';
+import { resolveStepGlbUri } from '../data/bundles';
+import type { BuildGuideBundle, BuildGuideStep } from '../types';
+import { applyStepToScene, disposeObject3D } from './applyStepToScene';
 import { FiberCanvas } from './FiberCanvas';
 import { normalizeGltfMaterials } from './normalizeGltfMaterials';
 import useOrbitControls from './useOrbitControls';
@@ -22,7 +24,7 @@ function fitObjectToView(object: THREE.Object3D, targetSize = 1.2): void {
   object.position.sub(centeredBox.getCenter(new THREE.Vector3()));
 }
 
-function DuckMesh({ uri }: { uri: string }) {
+function StepMesh({ uri, displayScale = 1 }: { uri: string; displayScale?: number }) {
   const gltf = useGltfAsset(uri);
   const model = useMemo(() => {
     if (!gltf) {
@@ -31,9 +33,17 @@ function DuckMesh({ uri }: { uri: string }) {
 
     const clone = gltf.scene.clone(true);
     normalizeGltfMaterials(clone);
-    fitObjectToView(clone);
+    fitObjectToView(clone, 1.2 * displayScale);
     return clone;
-  }, [gltf]);
+  }, [gltf, displayScale]);
+
+  useEffect(() => {
+    return () => {
+      if (model) {
+        disposeObject3D(model);
+      }
+    };
+  }, [model]);
 
   if (!model) {
     return null;
@@ -44,42 +54,54 @@ function DuckMesh({ uri }: { uri: string }) {
 
 function BuildGuideScene({
   modelUri,
+  step,
   stepIndex,
 }: {
   modelUri: string;
+  step: BuildGuideStep | undefined;
   stepIndex: number;
 }) {
   const { camera } = useThree();
 
   useEffect(() => {
-    const angle = stepIndex * 0.28;
-    const radius = 2.2;
-    camera.position.set(
-      Math.sin(angle) * radius,
-      0.35 + stepIndex * 0.03,
-      Math.cos(angle) * radius,
-    );
-    camera.lookAt(0, 0, 0);
-  }, [camera, stepIndex]);
+    applyStepToScene(camera as THREE.PerspectiveCamera, step, stepIndex);
+  }, [camera, step, stepIndex]);
 
   return (
     <>
       <ambientLight intensity={0.55} />
       <directionalLight intensity={1.1} position={[4, 6, 3]} />
-      <DuckMesh uri={modelUri} />
+      <StepMesh uri={modelUri} displayScale={step?.displayScale} />
     </>
   );
 }
 
-export function BuildGuideWebGpuCanvas({ stepIndex = 0 }: { stepIndex?: number }) {
+type BuildGuideWebGpuCanvasProps = {
+  bundle: BuildGuideBundle;
+  stepIndex: number;
+};
+
+export function BuildGuideWebGpuCanvas({
+  bundle,
+  stepIndex,
+}: BuildGuideWebGpuCanvasProps) {
   const [OrbitControls, events] = useOrbitControls();
-  const modelUri = useMemo(() => Image.resolveAssetSource(DuckModel).uri, []);
+  const step = bundle.manifest.steps[stepIndex];
+  const modelUri = useMemo(
+    () => resolveStepGlbUri(bundle, stepIndex),
+    [bundle, stepIndex],
+  );
 
   return (
     <View style={{ flex: 1 }} {...events}>
       <FiberCanvas style={{ flex: 1 }}>
         <OrbitControls enablePan={false} dampingFactor={0.08} />
-        <BuildGuideScene modelUri={modelUri} stepIndex={stepIndex} />
+        <BuildGuideScene
+          key={step?.glb ?? stepIndex}
+          modelUri={modelUri}
+          step={step}
+          stepIndex={stepIndex}
+        />
       </FiberCanvas>
     </View>
   );

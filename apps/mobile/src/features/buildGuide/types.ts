@@ -1,18 +1,15 @@
-export type BuildGuidePart = {
-  id: string;
-  nameKey: string;
-  color?: string;
-};
+import type { BuildGuidePartViewModel, BuildGuideStepViewModel } from '@scratch-mobile/build-guide';
 
-export type BuildGuideStep = {
-  id: string;
-  titleKey: string;
-  descriptionKey: string;
-  parts: BuildGuidePart[];
-};
+export type BuildGuidePart = BuildGuidePartViewModel;
+export type BuildGuideStep = BuildGuideStepViewModel;
 
 export type BuildGuideManifest = {
   id: string;
   nameKey: string;
   steps: BuildGuideStep[];
+};
+
+export type BuildGuideBundle = {
+  manifest: BuildGuideManifest;
+  glbAssets: Record<string, number>;
 };
