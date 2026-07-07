@@ -1,31 +1,36 @@
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
+import type { PartAndColor } from '@scratch-mobile/ldr-engine';
 
-import type { BuildGuidePart } from '../types';
 import { styles } from './BuildGuidePartsPanel.styles';
 
 type BuildGuidePartsPanelProps = {
-  parts: BuildGuidePart[];
+  parts: ReadonlyArray<PartAndColor>;
 };
 
 export function BuildGuidePartsPanel({ parts }: BuildGuidePartsPanelProps) {
   const { t } = useTranslation('buildGuide');
 
-  if (parts.length === 0) {
+  const sortedParts = useMemo(
+    () => [...parts].sort((a, b) => a.c - b.c || a.partID.localeCompare(b.partID)),
+    [parts],
+  );
+
+  if (sortedParts.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{t('partsThisStep')}</Text>
+      <Text style={styles.label}>{t('partsList')}</Text>
       <View style={styles.chipRow}>
-        {parts.map(part => (
-          <View key={part.id} style={styles.chip}>
-            {part.color ? (
-              <View style={[styles.colorDot, { backgroundColor: part.color }]} />
-            ) : null}
-            <Text style={styles.chipText}>{t(part.nameKey)}</Text>
+        {sortedParts.map(part => (
+          <View key={part.key} style={styles.chip}>
+            <View style={[styles.colorDot, { backgroundColor: part.colorHex }]} />
+            <Text style={styles.chipText}>
+              {part.partID} × {part.amount}
+            </Text>
           </View>
         ))}
       </View>

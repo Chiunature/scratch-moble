@@ -1,44 +1,57 @@
 import { Image } from 'react-native';
 import {
-  parseBakedManifest,
-  toStepViewModel,
-  type BakedManifest,
+  parseMpdManifest,
+  toManifestViewModel,
 } from '@scratch-mobile/build-guide';
 
-import duckDemoManifest from '../../../../assets/buildGuide/duck-demo/manifest.json';
-import step001Glb from '../../../../assets/buildGuide/duck-demo/step-001.glb';
-import step002Glb from '../../../../assets/buildGuide/duck-demo/step-002.glb';
-import step003Glb from '../../../../assets/buildGuide/duck-demo/step-003.glb';
-import type { BuildGuideBundle } from '../types';
+import containerDemoManifest from '../../../../assets/buildGuide/container-demo/manifest.json';
+import type { BuildGuideManifest } from '../types';
+import teslaModelSManifest from '../../../../assets/buildGuide/teslaModelS/mainfest.json';
 
-const duckDemoGlbAssets: Record<string, number> = {
-  'step-001.glb': step001Glb,
-  'step-002.glb': step002Glb,
-  'step-003.glb': step003Glb,
-};
+/**
+ * Metro requires static `require()` for bundled MPD assets.
+ * Add a new entry here when introducing another build-guide bundle.
+ */
+const MPD_ASSET_MODULES = {
+  'container-demo': require('../../../../assets/buildGuide/container-demo/.build/export.mpd'),
+  teslaModelS: require('../../../../assets/buildGuide/teslaModelS/.build/export.mpd'),
+} as const satisfies Record<string, number>;
 
-function loadBundle(
-  baked: BakedManifest,
-  glbAssets: Record<string, number>,
-): BuildGuideBundle {
-  const manifest = toStepViewModel(baked);
+export type BuildGuideBundleId = keyof typeof MPD_ASSET_MODULES;
 
-  for (const step of manifest.steps) {
-    if (!(step.glb in glbAssets)) {
-      throw new Error(`missing bundled glb asset: ${step.glb}`);
-    }
-  }
+export const BUILD_GUIDE_BUNDLE_IDS = Object.keys(
+  MPD_ASSET_MODULES,
+) as BuildGuideBundleId[];
 
-  return { manifest, glbAssets };
-}
-
-export const duckDemoBundle = loadBundle(
-  parseBakedManifest(duckDemoManifest),
-  duckDemoGlbAssets,
+export const containerDemoManifestParsed = toManifestViewModel(
+  parseMpdManifest(containerDemoManifest),
 );
 
-export function resolveStepGlbUri(bundle: BuildGuideBundle, stepIndex: number): string {
-  const step = bundle.manifest.steps[stepIndex];
-  const assetModule = bundle.glbAssets[step.glb];
+export const teslaModelSManifestParsed = toManifestViewModel(
+  parseMpdManifest(teslaModelSManifest),
+);
+
+export function resolveMpdUri(manifest: BuildGuideManifest): string {
+  if (
+    manifest.mpdUri.startsWith('http://') ||
+    manifest.mpdUri.startsWith('https://')
+  ) {
+    return manifest.mpdUri;
+  }
+
+  const assetModule = getMpdAssetModule(manifest.id);
   return Image.resolveAssetSource(assetModule).uri;
+}
+
+function getMpdAssetModule(bundleId: string): number {
+  const assetModule = MPD_ASSET_MODULES[bundleId as BuildGuideBundleId];
+  if (assetModule == null) {
+    throw new Error(
+      `Unknown build guide bundle "${bundleId}". Register it in MPD_ASSET_MODULES (bundles.ts). Known bundles: ${BUILD_GUIDE_BUNDLE_IDS.join(
+        ', ',
+      )}`,
+    );
+  }
+
+  return assetModule;
 }

@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+/**
+ * Sync apps/mobile/assets/ldraw -> Android/iOS native asset bundles.
+ *
+ * Source layout (official LDraw):
+ *   apps/mobile/assets/ldraw/parts/
+ *   apps/mobile/assets/ldraw/p/
+ *
+ * Legacy layout (buildinginstructions.js) is also supported:
+ *   apps/mobile/assets/ldraw/ldraw_parts/
+ *   apps/mobile/assets/ldraw/ldraw_unofficial/
+ */
+import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const mobileRoot = path.resolve(__dirname, '..');
+const sourceRoot = path.join(mobileRoot, 'assets/ldraw');
+const androidAssetsRoot = path.join(
+  mobileRoot,
+  'android/app/src/main/assets/ldraw',
+);
+const iosAssetsRoot = path.join(mobileRoot, 'ios/AwesomeProject/ldraw');
+
+const externalRoots = [
+  path.resolve(mobileRoot, '../../../buildinginstructions.js'),
+  path.resolve(mobileRoot, '../../buildinginstructions.js'),
+];
+
+function hasOfficialLayout(root) {
+  return existsSync(path.join(root, 'parts')) || existsSync(path.join(root, 'p'));
+}
+
+function hasLegacyLayout(root) {
+  return (
+    existsSync(path.join(root, 'ldraw_parts')) ||
+    existsSync(path.join(root, 'ldraw_unofficial'))
+  );
+}
+
+function copyLegacyLibrary(externalRoot, targetRoot) {
+  mkdirSync(targetRoot, { recursive: true });
+  let copied = false;
+
+  for (const folder of ['ldraw_parts', 'ldraw_unofficial']) {
+    const source = path.join(externalRoot, folder);
+    if (!existsSync(source)) {
+      continue;
+    }
+    cpSync(source, path.join(targetRoot, folder), { recursive: true });
+    copied = true;
+  }
+
+  return copied;
+}
+
+function ensureSourceLibrary() {
+  if (hasOfficialLayout(sourceRoot) || hasLegacyLayout(sourceRoot)) {
+    return sourceRoot;
+  }
+
+  mkdirSync(sourceRoot, { recursive: true });
+  const copied = externalRoots.some(root => copyLegacyLibrary(root, sourceRoot));
+  if (!copied) {
+    console.error(`Local LDraw library not found.
+
+Place an official LDraw library at:
+  apps/mobile/assets/ldraw/parts/
+  apps/mobile/assets/ldraw/p/
+
+Or a legacy library at:
+  apps/mobile/assets/ldraw/ldraw_parts/
+  apps/mobile/assets/ldraw/ldraw_unofficial/
+
+This directory is gitignored. After adding files, run:
+  yarn workspace @scratch-mobile/mobile ldraw:sync
+`);
+    process.exit(1);
+  }
+
+  return sourceRoot;
+}
+
+const libraryRoot = ensureSourceLibrary();
+
+mkdirSync(path.dirname(androidAssetsRoot), { recursive: true });
+mkdirSync(path.dirname(iosAssetsRoot), { recursive: true });
+
+if (existsSync(androidAssetsRoot)) {
+  rmSync(androidAssetsRoot, { recursive: true, force: true });
+}
+if (existsSync(iosAssetsRoot)) {
+  rmSync(iosAssetsRoot, { recursive: true, force: true });
+}
+
+cpSync(libraryRoot, androidAssetsRoot, { recursive: true });
+cpSync(libraryRoot, iosAssetsRoot, { recursive: true });
+
+console.log(`Synced LDraw library from ${libraryRoot}`);
+console.log(`  -> ${androidAssetsRoot}`);
+console.log(`  -> ${iosAssetsRoot}`);

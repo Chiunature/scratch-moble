@@ -1,20 +1,47 @@
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { warnIfNotHardwareAccelerated } from 'react-native-webgpu';
 
-import { BuildGuideSidePanel } from '../../features/buildGuide/components';
-import { duckDemoBundle } from '../../features/buildGuide/data/bundles';
+import {
+  BuildGuideRuntimeCanvas,
+  BuildGuideSidePanel,
+} from '../../features/buildGuide/components';
+import { containerDemoManifestParsed } from '../../features/buildGuide/data/bundles';
+import { teslaModelSManifestParsed } from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
-import { BuildGuideWebGpuCanvas } from '../../features/buildGuide/webgpu/BuildGuideWebGpuCanvas';
+import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
+import type { BuildGuideBundle } from '../../features/buildGuide/types';
 import { styles } from './BuildGuideScreen.styles';
 
 export function BuildGuideScreen() {
   const insets = useSafeAreaInsets();
-  const steps = useBuildGuideSteps(duckDemoBundle.manifest);
+  const ldr = useLdrModel(containerDemoManifestParsed);
+  const steps = useBuildGuideSteps(
+    containerDemoManifestParsed,
+    ldr.stepHandler,
+  );
 
-  useEffect(() => {
-    void navigator.gpu.requestAdapter().then(adapter => {
+  const bundle = useMemo<BuildGuideBundle>(
+    () => ({
+      manifest: containerDemoManifestParsed,
+      model: ldr.model,
+      stepHandler: ldr.stepHandler,
+      partsBuilder: ldr.partsBuilder,
+      loading: !ldr.ready,
+      progress: ldr.progress,
+      error: ldr.error,
+    }),
+    [ldr],
+  );
+
+  React.useEffect(() => {
+    const gpu = globalThis.navigator?.gpu;
+    if (!gpu) {
+      return;
+    }
+
+    void gpu.requestAdapter().then(adapter => {
       if (adapter) {
         warnIfNotHardwareAccelerated(adapter);
       }
@@ -33,18 +60,19 @@ export function BuildGuideScreen() {
             },
           ]}
         >
-          <BuildGuideWebGpuCanvas
-            bundle={duckDemoBundle}
+          <BuildGuideRuntimeCanvas
+            bundle={bundle}
             stepIndex={steps.currentIndex}
           />
         </View>
 
         <BuildGuideSidePanel
-          modelNameKey={duckDemoBundle.manifest.nameKey}
+          modelNameKey={bundle.manifest.nameKey}
           currentIndex={steps.currentIndex}
           totalSteps={steps.totalSteps}
           progress={steps.progress}
           step={steps.currentStep}
+          parts={ldr.partsBuilder?.parts ?? []}
           isLastStep={steps.isLastStep}
           canGoPrev={steps.canGoPrev}
           canGoNext={steps.canGoNext}

@@ -87,3 +87,8 @@ apps/mobile/src/features/editor/generated/*
 
 # Cursor
 .cursor/
+
+# Local LDraw parts library (place files here, then run: yarn workspace @scratch-mobile/mobile ldraw:sync)
+apps/mobile/assets/ldraw/
+apps/mobile/android/app/src/main/assets/ldraw/
+apps/mobile/ios/AwesomeProject/ldraw/

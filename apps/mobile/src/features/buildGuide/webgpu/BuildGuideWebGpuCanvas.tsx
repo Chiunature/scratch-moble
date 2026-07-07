@@ -1,78 +1,40 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import * as THREE from 'three';
-import { useThree } from '@react-three/fiber';
 
-import { resolveStepGlbUri } from '../data/bundles';
-import type { BuildGuideBundle, BuildGuideStep } from '../types';
-import { applyStepToScene, disposeObject3D } from './applyStepToScene';
+import { resolveStepViewModel } from '@scratch-mobile/build-guide';
+
+import type { BuildGuideBundle } from '../types';
 import { FiberCanvas } from './FiberCanvas';
-import { normalizeGltfMaterials } from './normalizeGltfMaterials';
+import { LdrModelScene } from './LdrModelScene';
 import useOrbitControls from './useOrbitControls';
-import { useGltfAsset } from './useGltfAsset';
 
-function fitObjectToView(object: THREE.Object3D, targetSize = 1.2): void {
-  const box = new THREE.Box3().setFromObject(object);
-  const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
+function BuildGuideScene({
+  bundle,
+  stepIndex,
+}: {
+  bundle: BuildGuideBundle;
+  stepIndex: number;
+}) {
+  const totalSteps = bundle.stepHandler?.getTotalSteps() ?? 0;
+  const step = useMemo(
+    () =>
+      bundle.stepHandler
+        ? resolveStepViewModel(bundle.manifest, stepIndex, totalSteps)
+        : undefined,
+    [bundle.manifest, bundle.stepHandler, stepIndex, totalSteps],
+  );
 
-  if (maxDim > 0) {
-    object.scale.multiplyScalar(targetSize / maxDim);
-  }
-
-  const centeredBox = new THREE.Box3().setFromObject(object);
-  object.position.sub(centeredBox.getCenter(new THREE.Vector3()));
-}
-
-function StepMesh({ uri, displayScale = 1 }: { uri: string; displayScale?: number }) {
-  const gltf = useGltfAsset(uri);
-  const model = useMemo(() => {
-    if (!gltf) {
-      return null;
-    }
-
-    const clone = gltf.scene.clone(true);
-    normalizeGltfMaterials(clone);
-    fitObjectToView(clone, 1.2 * displayScale);
-    return clone;
-  }, [gltf, displayScale]);
-
-  useEffect(() => {
-    return () => {
-      if (model) {
-        disposeObject3D(model);
-      }
-    };
-  }, [model]);
-
-  if (!model) {
+  if (!bundle.stepHandler || !step) {
     return null;
   }
 
-  return <primitive object={model} />;
-}
-
-function BuildGuideScene({
-  modelUri,
-  step,
-  stepIndex,
-}: {
-  modelUri: string;
-  step: BuildGuideStep | undefined;
-  stepIndex: number;
-}) {
-  const { camera } = useThree();
-
-  useEffect(() => {
-    applyStepToScene(camera as THREE.PerspectiveCamera, step, stepIndex);
-  }, [camera, step, stepIndex]);
-
   return (
-    <>
-      <ambientLight intensity={0.55} />
-      <directionalLight intensity={1.1} position={[4, 6, 3]} />
-      <StepMesh uri={modelUri} displayScale={step?.displayScale} />
-    </>
+    <LdrModelScene
+      stepHandler={bundle.stepHandler}
+      step={step}
+      stepIndex={stepIndex}
+    />
   );
 }
 
@@ -86,22 +48,18 @@ export function BuildGuideWebGpuCanvas({
   stepIndex,
 }: BuildGuideWebGpuCanvasProps) {
   const [OrbitControls, events] = useOrbitControls();
-  const step = bundle.manifest.steps[stepIndex];
-  const modelUri = useMemo(
-    () => resolveStepGlbUri(bundle, stepIndex),
-    [bundle, stepIndex],
+  const camera = useMemo(
+    () => new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 1000),
+    [],
   );
 
   return (
     <View style={{ flex: 1 }} {...events}>
-      <FiberCanvas style={{ flex: 1 }}>
+      <FiberCanvas style={{ flex: 1 }} camera={camera}>
+        <ambientLight intensity={0.65} />
+        <directionalLight intensity={1.1} position={[4, 6, 3]} />
         <OrbitControls enablePan={false} dampingFactor={0.08} />
-        <BuildGuideScene
-          key={step?.glb ?? stepIndex}
-          modelUri={modelUri}
-          step={step}
-          stepIndex={stepIndex}
-        />
+        <BuildGuideScene bundle={bundle} stepIndex={stepIndex} />
       </FiberCanvas>
     </View>
   );

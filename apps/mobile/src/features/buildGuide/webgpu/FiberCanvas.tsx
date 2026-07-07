@@ -24,7 +24,7 @@ interface WebGpuCanvasElement {
 interface FiberCanvasProps {
   children: React.ReactNode;
   style?: ViewProps['style'];
-  camera?: THREE.PerspectiveCamera;
+  camera?: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   scene?: THREE.Scene;
 }
 
@@ -56,6 +56,7 @@ export function FiberCanvas({
       }
 
       const renderer = makeWebGPURenderer(context);
+      renderer.setClearColor(0xffffff, 1);
       const canvas = context.canvas as unknown as WebGpuCanvasElement;
       canvas.width = canvas.clientWidth * PixelRatio.get();
       canvas.height = canvas.clientHeight * PixelRatio.get();
@@ -66,7 +67,10 @@ export function FiberCanvas({
       }
 
       const renderFrame = renderer.render.bind(renderer);
-      renderer.render = (sceneToRender: THREE.Scene, cameraToRender: THREE.Camera) => {
+      renderer.render = (
+        sceneToRender: THREE.Scene,
+        cameraToRender: THREE.Camera,
+      ) => {
         renderFrame(sceneToRender, cameraToRender);
         context.present();
       };

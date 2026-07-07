@@ -1,4 +1,4 @@
-import type { BakedManifest, BakedStep } from './schema';
+import type { MpdManifest, RuntimeStepOverride } from './schema';
 
 export type BuildGuidePartViewModel = {
   id: string;
@@ -8,30 +8,58 @@ export type BuildGuidePartViewModel = {
 
 export type BuildGuideStepViewModel = {
   id: string;
+  index: number;
   titleKey: string;
   descriptionKey: string;
   parts: BuildGuidePartViewModel[];
-  glb: string;
   newPartIds: string[];
   displayScale?: number;
-  camera?: BakedStep['camera'];
+  camera?: RuntimeStepOverride['camera'];
 };
 
 export type BuildGuideManifestViewModel = {
   id: string;
   nameKey: string;
-  steps: BuildGuideStepViewModel[];
+  mpdUri: string;
+  mainModelId: string;
+  partsSource?: MpdManifest['partsSource'];
+  partsBaseUrl?: string;
+  mainModelColor?: number;
+  displayScale?: number;
+  cameraDefault?: RuntimeStepOverride['camera'];
+  steps?: RuntimeStepOverride[];
 };
 
-export function toStepViewModel(manifest: BakedManifest): BuildGuideManifestViewModel {
+export function toManifestViewModel(manifest: MpdManifest): BuildGuideManifestViewModel {
   return {
     id: manifest.id,
     nameKey: manifest.nameKey,
-    steps: manifest.steps.map(toSingleStepViewModel),
+    mpdUri: manifest.mpdUri,
+    mainModelId: manifest.mainModelId,
+    partsSource: manifest.partsSource,
+    partsBaseUrl: manifest.partsBaseUrl,
+    mainModelColor: manifest.mainModelColor,
+    displayScale: manifest.displayScale,
+    cameraDefault: manifest.cameraDefault,
+    steps: manifest.steps,
   };
 }
 
-function toSingleStepViewModel(step: BakedStep): BuildGuideStepViewModel {
-  const { index: _index, ...viewModel } = step;
-  return viewModel;
+export function resolveStepViewModel(
+  manifest: BuildGuideManifestViewModel,
+  stepIndex: number,
+  totalSteps: number,
+): BuildGuideStepViewModel {
+  const override = manifest.steps?.find(step => step.index === stepIndex);
+
+  return {
+    id: override ? `step-${stepIndex + 1}` : `step-${stepIndex + 1}`,
+    index: stepIndex,
+    titleKey: override?.titleKey ?? 'stepGenericTitle',
+    descriptionKey: override?.descriptionKey ?? 'stepGenericDescription',
+    parts: [],
+    newPartIds: [],
+    displayScale: override?.displayScale ?? manifest.displayScale,
+    camera: override?.camera ?? manifest.cameraDefault,
+  };
 }

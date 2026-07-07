@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
+import type { PartAndColor } from '@scratch-mobile/ldr-engine';
 
 import type { BuildGuideStep } from '../types';
 import { BuildGuidePartsPanel } from './BuildGuidePartsPanel';
@@ -15,6 +16,7 @@ type BuildGuideSidePanelProps = {
   totalSteps: number;
   progress: number;
   step: BuildGuideStep;
+  parts: ReadonlyArray<PartAndColor>;
   isLastStep: boolean;
   canGoPrev: boolean;
   canGoNext: boolean;
@@ -30,6 +32,7 @@ export function BuildGuideSidePanel({
   totalSteps,
   progress,
   step,
+  parts,
   isLastStep,
   canGoPrev,
   canGoNext,
@@ -54,7 +57,7 @@ export function BuildGuideSidePanel({
           progress={progress}
           step={step}
         />
-        <BuildGuidePartsPanel parts={step.parts} />
+        <BuildGuidePartsPanel parts={parts} />
         <BuildGuideStepStrip
           currentIndex={currentIndex}
           totalSteps={totalSteps}

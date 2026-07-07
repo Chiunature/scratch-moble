@@ -1,16 +1,13 @@
 export {
-  BAKED_MANIFEST_VERSION,
-  type BakedCamera,
-  type BakedManifest,
-  type BakedPart,
-  type BakedStep,
-  type BakeSourceManifest,
-  type BakeSourcePart,
-  type BakeSourceStep,
+  MPD_MANIFEST_VERSION,
+  type MpdCamera,
+  type MpdManifest,
+  type RuntimeStepOverride,
 } from './schema';
-export { parseBakedManifest } from './parseManifest';
+export { parseMpdManifest } from './parseManifest';
 export {
-  toStepViewModel,
+  toManifestViewModel,
+  resolveStepViewModel,
   type BuildGuideManifestViewModel,
   type BuildGuidePartViewModel,
   type BuildGuideStepViewModel,

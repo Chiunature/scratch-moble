@@ -1,15 +1,23 @@
-import type { BuildGuidePartViewModel, BuildGuideStepViewModel } from '@scratch-mobile/build-guide';
+import type {
+  BuildGuideManifestViewModel,
+  BuildGuideStepViewModel,
+} from '@scratch-mobile/build-guide';
+import type {
+  LdrPartsBuilderFacade,
+  LdrStepHandlerFacade,
+  LoadedLdrModel,
+} from '@scratch-mobile/ldr-engine';
 
-export type BuildGuidePart = BuildGuidePartViewModel;
 export type BuildGuideStep = BuildGuideStepViewModel;
 
-export type BuildGuideManifest = {
-  id: string;
-  nameKey: string;
-  steps: BuildGuideStep[];
-};
+export type BuildGuideManifest = BuildGuideManifestViewModel;
 
 export type BuildGuideBundle = {
   manifest: BuildGuideManifest;
-  glbAssets: Record<string, number>;
+  model: LoadedLdrModel | null;
+  stepHandler: LdrStepHandlerFacade | null;
+  partsBuilder: LdrPartsBuilderFacade | null;
+  loading: boolean;
+  progress: number;
+  error: Error | null;
 };

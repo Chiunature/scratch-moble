@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "id": "container-demo",
+  "nameKey": "container.name",
+  "mpdUri": ".build/export.mpd",
+  "mainModelId": "main.ldr",
+  "partsSource": "local",
+  "displayScale": 1,
+  "cameraDefault": {
+    "position": [-1.88, 0.45, 2.59],
+    "target": [0, 0.1, 0]
+  }
+}

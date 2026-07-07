@@ -12,6 +12,15 @@ const packagesRoot = path.resolve(workspaceRoot, 'packages');
 const workspaceNodeModules = path.resolve(workspaceRoot, 'node_modules');
 const threePackagePath = path.resolve(workspaceNodeModules, 'three');
 
+const workspacePackages = {
+  '@scratch-mobile/build-guide': path.resolve(packagesRoot, 'build-guide/src'),
+  '@scratch-mobile/core': path.resolve(packagesRoot, 'core/src'),
+  '@scratch-mobile/i18n': path.resolve(packagesRoot, 'i18n/src'),
+  '@scratch-mobile/ldr-engine': path.resolve(packagesRoot, 'ldr-engine/src'),
+  '@scratch-mobile/protocol': path.resolve(packagesRoot, 'protocol/src'),
+  '@scratch-mobile/shared': path.resolve(packagesRoot, 'shared/src'),
+};
+
 const r3fPath = path.dirname(
   require.resolve('@react-three/fiber/package.json', {
     paths: [__dirname, workspaceRoot],
@@ -34,6 +43,7 @@ const config = {
   resolver: {
     ...resolver,
     extraNodeModules: {
+      ...workspacePackages,
       three: threePackagePath,
       i18next: path.resolve(workspaceNodeModules, 'i18next'),
       'react-i18next': path.resolve(workspaceNodeModules, 'react-i18next'),
@@ -45,10 +55,10 @@ const config = {
     unstable_enableSymlinks: true,
     assetExts: [
       ...resolver.assetExts.filter(ext => ext !== 'svg'),
-      'glb',
-      'gltf',
       'bin',
       'hdr',
+      'mpd',
+      'ldr',
     ],
     sourceExts: [...resolver.sourceExts, 'svg'],
     resolveRequest: (context, moduleName, platform) => {
@@ -81,6 +91,13 @@ const config = {
       if (moduleName === '@react-three/fiber') {
         return {
           filePath: path.resolve(r3fPath, 'dist/react-three-fiber.esm.js'),
+          type: 'sourceFile',
+        };
+      }
+
+      if (workspacePackages[moduleName]) {
+        return {
+          filePath: path.resolve(workspacePackages[moduleName], 'index.ts'),
           type: 'sourceFile',
         };
       }

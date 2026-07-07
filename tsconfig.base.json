@@ -13,7 +13,8 @@
       "@scratch-mobile/protocol": ["packages/protocol/src"],
       "@scratch-mobile/shared": ["packages/shared/src"],
       "@scratch-mobile/i18n": ["packages/i18n/src"],
-      "@scratch-mobile/build-guide": ["packages/build-guide/src"]
+      "@scratch-mobile/build-guide": ["packages/build-guide/src"],
+      "@scratch-mobile/ldr-engine": ["packages/ldr-engine/src"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

@@ -36,8 +36,12 @@ export function BuildGuideStepHeader({
         <View style={[styles.progressFill, { flex: progress }]} />
         <View style={{ flex: 1 - progress }} />
       </View>
-      <Text style={styles.stepTitle}>{t(step.titleKey)}</Text>
-      <Text style={styles.stepDescription}>{t(step.descriptionKey)}</Text>
+      <Text style={styles.stepTitle}>
+        {t(step.titleKey, { step: currentIndex + 1 })}
+      </Text>
+      <Text style={styles.stepDescription}>
+        {t(step.descriptionKey, { step: currentIndex + 1 })}
+      </Text>
     </View>
   );
 }

@@ -4,40 +4,14 @@
   "nextStep": "Next",
   "complete": "Complete",
   "partsThisStep": "Parts in this step",
+  "partsList": "Parts list",
+  "stepGenericTitle": "Build step {{step}}",
+  "stepGenericDescription": "Rotate the model and follow the highlighted parts for this step.",
   "jumpToStep": "Jump to step",
   "stepButtonLabel": "Step {{step}}",
   "gestureHint": "Drag to rotate · Pinch to zoom",
   "reviewHint": "Build complete — tap a step or use Previous to review",
-  "demo": {
-    "modelName": "Demo: Rubber Duck",
-    "parts": {
-      "body": "Body",
-      "head": "Head",
-      "beak": "Beak",
-      "eye": "Eye",
-      "wing": "Wing"
-    },
-    "steps": {
-      "1": {
-        "title": "Place the body",
-        "description": "Set the main body part in the center of the build area as the base for later steps."
-      },
-      "2": {
-        "title": "Attach the head",
-        "description": "Connect the head to the top of the body and align the studs before pressing down."
-      },
-      "3": {
-        "title": "Add the beak",
-        "description": "Install the orange beak on the front of the head, matching the orientation in the guide."
-      },
-      "4": {
-        "title": "Add the eyes",
-        "description": "Place the eyes symmetrically on both sides of the head at the same height."
-      },
-      "5": {
-        "title": "Finish the wings",
-        "description": "Attach both wings last, then check that the model feels stable. Build complete."
-      }
-    }
+  "container": {
+    "name": "20ft Container"
   }
 }
