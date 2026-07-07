@@ -7,9 +7,13 @@ import { styles } from './BuildGuidePartsPanel.styles';
 
 type BuildGuidePartsPanelProps = {
   parts: ReadonlyArray<PartAndColor>;
+  showLabel?: boolean;
 };
 
-export function BuildGuidePartsPanel({ parts }: BuildGuidePartsPanelProps) {
+export function BuildGuidePartsPanel({
+  parts,
+  showLabel = true,
+}: BuildGuidePartsPanelProps) {
   const { t } = useTranslation('buildGuide');
 
   const sortedParts = useMemo(
@@ -23,7 +27,7 @@ export function BuildGuidePartsPanel({ parts }: BuildGuidePartsPanelProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{t('partsList')}</Text>
+      {showLabel ? <Text style={styles.label}>{t('partsList')}</Text> : null}
       <View style={styles.chipRow}>
         {sortedParts.map(part => (
           <View key={part.key} style={styles.chip}>

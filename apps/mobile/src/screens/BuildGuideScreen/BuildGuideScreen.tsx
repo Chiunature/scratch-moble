@@ -1,28 +1,34 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { warnIfNotHardwareAccelerated } from 'react-native-webgpu';
 
 import {
+  BuildGuideBottomBar,
+  BuildGuidePartsModal,
   BuildGuideRuntimeCanvas,
-  BuildGuideSidePanel,
+  BuildGuideStepPickerModal,
+  BuildGuideTopBar,
 } from '../../features/buildGuide/components';
 import { containerDemoManifestParsed } from '../../features/buildGuide/data/bundles';
-import { teslaModelSManifestParsed } from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
 import type { BuildGuideBundle } from '../../features/buildGuide/types';
 import { styles } from './BuildGuideScreen.styles';
 
 export function BuildGuideScreen() {
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const [partsModalVisible, setPartsModalVisible] = useState(false);
+  const [stepPickerVisible, setStepPickerVisible] = useState(false);
   const ldr = useLdrModel(containerDemoManifestParsed);
   const steps = useBuildGuideSteps(
     containerDemoManifestParsed,
     ldr.stepHandler,
   );
 
-  const bundle = useMemo<BuildGuideBundle>(
+  const bundle = React.useMemo<BuildGuideBundle>(
     () => ({
       manifest: containerDemoManifestParsed,
       model: ldr.model,
@@ -50,38 +56,47 @@ export function BuildGuideScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mainRow}>
-        <View
-          style={[
-            styles.canvas,
-            {
-              paddingLeft: Math.max(insets.left, 0),
-              paddingBottom: Math.max(insets.bottom, 0),
-            },
-          ]}
-        >
-          <BuildGuideRuntimeCanvas
-            bundle={bundle}
-            stepIndex={steps.currentIndex}
-          />
-        </View>
+      <BuildGuideTopBar
+        modelNameKey={bundle.manifest.nameKey}
+        currentIndex={steps.currentIndex}
+        totalSteps={steps.totalSteps}
+        progress={steps.progress}
+        paddingTop={insets.top}
+        paddingLeft={insets.left}
+        paddingRight={insets.right}
+        onBack={() => navigation.goBack()}
+        onOpenStepPicker={() => setStepPickerVisible(true)}
+        onOpenParts={() => setPartsModalVisible(true)}
+      />
 
-        <BuildGuideSidePanel
-          modelNameKey={bundle.manifest.nameKey}
-          currentIndex={steps.currentIndex}
-          totalSteps={steps.totalSteps}
-          progress={steps.progress}
-          step={steps.currentStep}
-          parts={ldr.partsBuilder?.parts ?? []}
-          isLastStep={steps.isLastStep}
-          canGoPrev={steps.canGoPrev}
-          canGoNext={steps.canGoNext}
-          onPrev={steps.goPrev}
-          onNext={steps.goNext}
-          onSelectStep={steps.goToStep}
-          paddingRight={Math.max(insets.right, 12)}
-        />
+      <View style={styles.canvas}>
+        <BuildGuideRuntimeCanvas bundle={bundle} stepIndex={steps.currentIndex} />
       </View>
+
+      <BuildGuideBottomBar
+        canGoPrev={steps.canGoPrev}
+        canGoNext={steps.canGoNext}
+        isLastStep={steps.isLastStep}
+        paddingBottom={insets.bottom}
+        paddingLeft={insets.left}
+        paddingRight={insets.right}
+        onPrev={steps.goPrev}
+        onNext={steps.goNext}
+      />
+
+      <BuildGuidePartsModal
+        visible={partsModalVisible}
+        parts={ldr.partsBuilder?.parts ?? []}
+        onClose={() => setPartsModalVisible(false)}
+      />
+
+      <BuildGuideStepPickerModal
+        visible={stepPickerVisible}
+        currentIndex={steps.currentIndex}
+        totalSteps={steps.totalSteps}
+        onSelectStep={steps.goToStep}
+        onClose={() => setStepPickerVisible(false)}
+      />
     </View>
   );
 }

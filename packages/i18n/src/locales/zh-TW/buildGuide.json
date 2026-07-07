@@ -5,6 +5,8 @@
   "complete": "已完成",
   "partsThisStep": "本步零件",
   "partsList": "零件清單",
+  "openPartsList": "開啟零件清單",
+  "closePartsList": "關閉",
   "stepGenericTitle": "搭建步驟 {{step}}",
   "stepGenericDescription": "旋轉模型，按當前步驟放置高亮零件。",
   "jumpToStep": "跳轉步驟",
@@ -13,5 +15,8 @@
   "reviewHint": "搭建已完成，可點擊步驟或「上一步」回看",
   "container": {
     "name": "20 英尺貨櫃"
+  },
+  "teslaModelS": {
+    "name": "特斯拉 Model S"
   }
 }

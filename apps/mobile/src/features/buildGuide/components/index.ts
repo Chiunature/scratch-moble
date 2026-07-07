@@ -1,6 +1,6 @@
+export { BuildGuideBottomBar } from './BuildGuideBottomBar';
+export { BuildGuidePartsModal } from './BuildGuidePartsModal';
 export { BuildGuidePartsPanel } from './BuildGuidePartsPanel';
 export { BuildGuideRuntimeCanvas } from './BuildGuideRuntimeCanvas';
-export { BuildGuideSidePanel } from './BuildGuideSidePanel';
-export { BuildGuideStepControls } from './BuildGuideStepControls';
-export { BuildGuideStepHeader } from './BuildGuideStepHeader';
-export { BuildGuideStepStrip } from './BuildGuideStepStrip';
+export { BuildGuideStepPickerModal } from './BuildGuideStepPickerModal';
+export { BuildGuideTopBar } from './BuildGuideTopBar';

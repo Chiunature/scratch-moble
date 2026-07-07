@@ -58,7 +58,7 @@ export function RootNavigator() {
         <Stack.Screen
           name="BuildGuide"
           component={BuildGuideScreen}
-          options={{ title: t('buildGuide') }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="RemoteControl"

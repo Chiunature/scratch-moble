@@ -3,19 +3,41 @@ import { StyleSheet } from 'react-native';
 import { colors, fontSize, fontWeight, spacing } from '../../../theme';
 
 export const styles = StyleSheet.create({
-  container: {
-    gap: spacing.sm,
+  backdrop: {
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    flex: 1,
+    justifyContent: 'flex-end',
   },
-  label: {
-    color: colors.textSubtle,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.extraBold,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
-  strip: {
+  header: {
+    alignItems: 'center',
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  title: {
+    color: colors.ink,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extraBold,
+  },
+  closeButton: {
+    color: colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
+    paddingBottom: spacing.md,
   },
   stepButton: {
     alignItems: 'center',
@@ -23,9 +45,10 @@ export const styles = StyleSheet.create({
     borderColor: '#dbeafe',
     borderRadius: 10,
     borderWidth: 1,
-    flex: 1,
+    height: 40,
     justifyContent: 'center',
-    minHeight: 36,
+    minWidth: 48,
+    paddingHorizontal: spacing.sm,
   },
   stepButtonComplete: {
     backgroundColor: '#eef2ff',
