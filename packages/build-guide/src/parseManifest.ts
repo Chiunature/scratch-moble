@@ -48,6 +48,12 @@ function parseCamera(raw: unknown, path: string): MpdCamera {
   };
 }
 
+function isDisplayMode(
+  value: unknown,
+): value is Exclude<MpdManifest['mode'], undefined> {
+  return value === 'instruction' || value === 'preview';
+}
+
 function parseStepOverride(raw: unknown, index: number): RuntimeStepOverride {
   const path = `manifest.steps[${index}]`;
   if (!isRecord(raw)) {
@@ -116,6 +122,12 @@ export function parseMpdManifest(raw: unknown): MpdManifest {
 
   if (raw.mainModelColor !== undefined) {
     manifest.mainModelColor = readNumber(raw, 'mainModelColor');
+  }
+  if (raw.mode !== undefined) {
+    if (!isDisplayMode(raw.mode)) {
+      throw new Error('manifest.mode must be instruction or preview');
+    }
+    manifest.mode = raw.mode;
   }
   if (raw.displayScale !== undefined) {
     manifest.displayScale = readNumber(raw, 'displayScale');

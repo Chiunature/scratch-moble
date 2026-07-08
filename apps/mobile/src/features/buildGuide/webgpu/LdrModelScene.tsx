@@ -3,15 +3,24 @@ import { useThree } from '@react-three/fiber';
 
 import type { BuildGuideStep } from '../types';
 import { applyStepToScene, disposeObject3D } from './applyStepToScene';
-import type { LdrStepHandlerFacade } from '@scratch-mobile/ldr-engine';
+import type {
+  LdrDisplayMode,
+  LdrStepHandlerFacade,
+} from '@scratch-mobile/ldr-engine';
 
 type LdrModelSceneProps = {
   stepHandler: LdrStepHandlerFacade;
   step: BuildGuideStep | undefined;
   stepIndex: number;
+  mode: LdrDisplayMode;
 };
 
-export function LdrModelScene({ stepHandler, step, stepIndex }: LdrModelSceneProps) {
+export function LdrModelScene({
+  stepHandler,
+  step,
+  stepIndex,
+  mode,
+}: LdrModelSceneProps) {
   const { camera, size } = useThree();
   const root = useMemo(() => stepHandler.getRoot(), [stepHandler]);
 
@@ -20,8 +29,16 @@ export function LdrModelScene({ stepHandler, step, stepIndex }: LdrModelScenePro
   }, [stepHandler, stepIndex]);
 
   useEffect(() => {
-    applyStepToScene(camera, root, step, stepIndex, stepHandler, size);
-  }, [camera, root, size, step, stepHandler, stepIndex]);
+    applyStepToScene(
+      camera,
+      root,
+      step,
+      stepIndex,
+      stepHandler,
+      size,
+      mode,
+    );
+  }, [camera, mode, root, size, step, stepHandler, stepIndex]);
 
   useEffect(() => {
     return () => {

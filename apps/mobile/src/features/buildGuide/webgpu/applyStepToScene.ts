@@ -1,16 +1,137 @@
 import * as THREE from 'three';
 
-import type { LdrStepHandlerFacade } from '@scratch-mobile/ldr-engine';
+import {
+  LdrMeasurer,
+  type LdrDisplayMode,
+  type LdrStepHandlerFacade,
+} from '@scratch-mobile/ldr-engine';
 
 import type { BuildGuideStep } from '../types';
 
-type ViewportSize = {
-  width: number;
-  height: number;
-};
+type ViewportSize = { width: number; height: number };
+type StepCamera = NonNullable<BuildGuideStep['camera']>;
 
-const ORTHOGRAPHIC_CAMERA_DISTANCE = 10;
-const ORTHOGRAPHIC_FIT_PADDING = 0.82;
+const _defaultMatrix = new THREE.Matrix4();
+const _rotationMatrix = new THREE.Matrix4();
+const _bDiff = new THREE.Vector3();
+const _boxSize = new THREE.Vector3();
+const _boxCenter = new THREE.Vector3();
+
+function isProjectionCamera(
+  camera: THREE.Camera,
+): camera is THREE.PerspectiveCamera | THREE.OrthographicCamera {
+  return (
+    camera instanceof THREE.PerspectiveCamera ||
+    camera instanceof THREE.OrthographicCamera
+  );
+}
+
+function selectBounds(
+  stepHandler: LdrStepHandlerFacade,
+  viewport: ViewportSize,
+): { bounds: THREE.Box3; useAccumulated: boolean } {
+  let useAccumulated = true;
+  let bounds = stepHandler.getAccumulatedBounds().clone();
+
+  const size = bounds.min.distanceTo(bounds.max);
+  const viewPortSize = 0.75 * Math.hypot(viewport.width, viewport.height);
+
+  if (size > viewPortSize) {
+    useAccumulated = false;
+    bounds = stepHandler.getBounds().clone();
+    const stepSize = bounds.min.distanceTo(bounds.max);
+
+    if (stepSize < viewPortSize) {
+      _bDiff.subVectors(bounds.max, bounds.min);
+      _bDiff.multiplyScalar(0.1 * (viewPortSize / stepSize - 1));
+      bounds.max.add(_bDiff);
+      bounds.min.sub(_bDiff);
+    }
+  }
+
+  return { bounds, useAccumulated };
+}
+
+function updateInstructionCamera(
+  camera: THREE.OrthographicCamera,
+  stepHandler: LdrStepHandlerFacade,
+  viewport: ViewportSize,
+): void {
+  const w = viewport.width * 0.95;
+  const h = viewport.height * 0.95;
+
+  camera.left = -w;
+  camera.right = w;
+  camera.top = h;
+  camera.bottom = -h;
+
+  const accBounds = stepHandler.getAccumulatedBounds();
+  const size = accBounds.min.distanceTo(accBounds.max) || 1000;
+
+  camera.position.set(10 * size, 7 * size, 10 * size);
+  camera.far = 2 * 15.7797 * size;
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+}
+
+function updatePerspectiveCamera(
+  camera: THREE.Camera,
+  viewport?: ViewportSize,
+): void {
+  if (!(camera instanceof THREE.PerspectiveCamera) || !viewport?.height) {
+    return;
+  }
+
+  camera.aspect = viewport.width / viewport.height;
+  camera.updateProjectionMatrix();
+}
+
+function applyStepCamera(
+  camera: THREE.Camera,
+  stepCamera: StepCamera,
+  viewport?: ViewportSize,
+): void {
+  updatePerspectiveCamera(camera, viewport);
+
+  const [x, y, z] = stepCamera.position;
+  const [tx, ty, tz] = stepCamera.target;
+  camera.position.set(x, y, z);
+  camera.lookAt(tx, ty, tz);
+}
+
+function applyPreviewStepToScene(
+  camera: THREE.Camera,
+  root: THREE.Object3D,
+  viewport?: ViewportSize,
+): void {
+  updatePerspectiveCamera(camera, viewport);
+
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  box.getCenter(_boxCenter);
+  box.getSize(_boxSize);
+
+  const maxDim = Math.max(_boxSize.x, _boxSize.y, _boxSize.z) || 1;
+  const distance =
+    camera instanceof THREE.PerspectiveCamera
+      ? maxDim / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2))
+      : maxDim * 2.4;
+
+  camera.position.set(
+    _boxCenter.x + distance,
+    _boxCenter.y + distance * 0.7,
+    _boxCenter.z + distance,
+  );
+  if (isProjectionCamera(camera)) {
+    camera.near = 0.01;
+    camera.far = Math.max(1000, distance * 8);
+  }
+  camera.lookAt(_boxCenter);
+
+  if (isProjectionCamera(camera)) {
+    camera.updateProjectionMatrix();
+  }
+}
 
 export function applyStepToScene(
   camera: THREE.Camera,
@@ -19,17 +140,24 @@ export function applyStepToScene(
   stepIndex: number,
   stepHandler?: LdrStepHandlerFacade | null,
   viewport?: ViewportSize,
+  mode: LdrDisplayMode = 'instruction',
 ): void {
-  if (camera instanceof THREE.OrthographicCamera) {
+  if (
+    mode === 'instruction' &&
+    camera instanceof THREE.OrthographicCamera &&
+    stepHandler &&
+    viewport
+  ) {
     applyInstructionStepToScene(camera, root, stepHandler, viewport);
     return;
   }
-
   if (step?.camera) {
-    const [x, y, z] = step.camera.position;
-    const [tx, ty, tz] = step.camera.target;
-    camera.position.set(x, y, z);
-    camera.lookAt(tx, ty, tz);
+    applyStepCamera(camera, step.camera, viewport);
+    return;
+  }
+
+  if (mode === 'preview') {
+    applyPreviewStepToScene(camera, root, viewport);
     return;
   }
 
@@ -37,6 +165,7 @@ export function applyStepToScene(
     try {
       const defaultMatrix = new THREE.Matrix4();
       const rotationMatrix = new THREE.Matrix4();
+
       const [offset, rotation] = stepHandler.computeCameraPositionRotation(
         defaultMatrix,
         rotationMatrix,
@@ -57,7 +186,7 @@ export function applyStepToScene(
       camera.lookAt(target);
       return;
     } catch {
-      // Fall through to heuristic camera when step handler has no bounds yet.
+      // Bounds may be unavailable during early loading; fall through.
     }
   }
 
@@ -74,60 +203,34 @@ export function applyStepToScene(
 function applyInstructionStepToScene(
   camera: THREE.OrthographicCamera,
   root: THREE.Object3D,
-  stepHandler?: LdrStepHandlerFacade | null,
-  viewport?: ViewportSize,
+  stepHandler: LdrStepHandlerFacade,
+  viewport: ViewportSize,
 ): void {
-  const aspect =
-    viewport && viewport.height > 0 ? viewport.width / viewport.height : 1;
-  camera.left = -aspect;
-  camera.right = aspect;
-  camera.top = 1;
-  camera.bottom = -1;
-  camera.near = 0.01;
-  camera.far = 1000;
-  camera.position.set(
-    ORTHOGRAPHIC_CAMERA_DISTANCE,
-    ORTHOGRAPHIC_CAMERA_DISTANCE * 0.7,
-    ORTHOGRAPHIC_CAMERA_DISTANCE,
+  updateInstructionCamera(camera, stepHandler, viewport);
+
+  const { bounds, useAccumulated } = selectBounds(stepHandler, viewport);
+
+  const [position, rotation] = stepHandler.computeCameraPositionRotation(
+    _defaultMatrix,
+    _rotationMatrix,
+    useAccumulated,
   );
-  camera.lookAt(0, 0, 0);
 
-  root.position.set(0, 0, 0);
-
-  if (stepHandler) {
-    try {
-      const [, rotation] = stepHandler.computeCameraPositionRotation(
-        new THREE.Matrix4(),
-        new THREE.Matrix4(),
-        true,
-      );
-      root.setRotationFromMatrix(rotation);
-    } catch {
-      root.rotation.set(0, 0, 0);
-    }
-  }
-
+  root.setRotationFromMatrix(rotation);
   root.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(root);
 
-  if (!box.isEmpty()) {
-    const center = box.getCenter(new THREE.Vector3());
-    root.position.sub(center);
-    root.updateMatrixWorld(true);
+  const measurer = new LdrMeasurer(camera);
+  const [dx, dy] = measurer.measure(bounds, root.matrixWorld);
 
-    const fittedBox = new THREE.Box3().setFromObject(root);
-    const size = fittedBox.getSize(new THREE.Vector3());
-    const zoomX =
-      size.x > 0 ? (2 * aspect * ORTHOGRAPHIC_FIT_PADDING) / size.x : Infinity;
-    const zoomY =
-      size.y > 0 ? (2 * ORTHOGRAPHIC_FIT_PADDING) / size.y : Infinity;
-    const zoom = Math.min(zoomX, zoomY);
+  root.position.copy(position);
 
-    if (Number.isFinite(zoom) && zoom > 0) {
-      camera.zoom = zoom;
-    }
-  }
+  const scale = 1.1;
+  const defaultZoom =
+    dx * scale > dy * scale
+      ? (2 * camera.zoom) / (dx * scale)
+      : (2 * camera.zoom) / (dy * scale);
 
+  camera.zoom = defaultZoom;
   camera.updateProjectionMatrix();
 }
 

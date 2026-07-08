@@ -34,6 +34,8 @@ require('./vendor/LDRStuds.js');
 require('./vendor/LDRStepHandler.js');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('./vendor/LDRPartsBuilder.js');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('./vendor/LDRMeasurer.js');
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { applyWebGpuMaterials } = require('./support/applyWebGpuMaterials.js');

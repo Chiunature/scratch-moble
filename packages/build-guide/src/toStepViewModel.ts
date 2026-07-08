@@ -1,4 +1,4 @@
-import type { MpdManifest, RuntimeStepOverride } from './schema';
+import type { MpdDisplayMode, MpdManifest, RuntimeStepOverride } from './schema';
 
 export type BuildGuidePartViewModel = {
   id: string;
@@ -25,6 +25,7 @@ export type BuildGuideManifestViewModel = {
   partsSource?: MpdManifest['partsSource'];
   partsBaseUrl?: string;
   mainModelColor?: number;
+  mode?: MpdDisplayMode;
   displayScale?: number;
   cameraDefault?: RuntimeStepOverride['camera'];
   steps?: RuntimeStepOverride[];
@@ -39,6 +40,7 @@ export function toManifestViewModel(manifest: MpdManifest): BuildGuideManifestVi
     partsSource: manifest.partsSource,
     partsBaseUrl: manifest.partsBaseUrl,
     mainModelColor: manifest.mainModelColor,
+    mode: manifest.mode,
     displayScale: manifest.displayScale,
     cameraDefault: manifest.cameraDefault,
     steps: manifest.steps,

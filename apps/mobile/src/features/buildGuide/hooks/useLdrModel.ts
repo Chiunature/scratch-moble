@@ -57,11 +57,12 @@ export function useLdrModel(manifest: BuildGuideManifest): UseLdrModelResult {
 
     let loadedFiles = 0;
 
-    void loadMpdFromUrl(mpdUri, manifest.mainModelId, {
+    loadMpdFromUrl(mpdUri, manifest.mainModelId, {
       partsSource: manifest.partsSource ?? 'local',
       partsBaseUrl: manifest.partsBaseUrl,
       readLocalPart: readLocalLdrawPart,
       mainModelColor: manifest.mainModelColor,
+      mode: manifest.mode,
       displayScale: manifest.displayScale,
       onProgress() {
         loadedFiles += 1;
@@ -94,16 +95,7 @@ export function useLdrModel(manifest: BuildGuideManifest): UseLdrModelResult {
     return () => {
       cancelled = true;
     };
-  }, [
-    manifest.displayScale,
-    manifest.id,
-    manifest.mainModelColor,
-    manifest.mainModelId,
-    manifest.mpdUri,
-    manifest.partsBaseUrl,
-    manifest.partsSource,
-    reloadToken,
-  ]);
+  }, [manifest, reloadToken]);
 
   return useMemo(
     () => ({

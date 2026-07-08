@@ -5,6 +5,7 @@
   "mpdUri": ".build/export.mpd",
   "mainModelId": "main.ldr",
   "partsSource": "local",
+  "mode": "instruction",
   "displayScale": 1,
   "cameraDefault": {
     "position": [-1.88, 0.45, 2.59],

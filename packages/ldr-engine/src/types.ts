@@ -84,6 +84,8 @@ export type LdrLoaderInstance = {
   substituteReplacementParts: () => void;
   unloadedFiles: number;
 };
+/** instruction: 步骤说明书，保持 LDraw 原始坐标；preview: 静态预览，缩放居中 */
+export type LdrDisplayMode = 'instruction' | 'preview';
 
 export type LoadedLdrModel = {
   loader: LdrLoaderInstance;
@@ -91,6 +93,7 @@ export type LoadedLdrModel = {
   stepHandler: LdrStepHandlerFacade;
   partsBuilder: LdrPartsBuilderFacade;
   root: THREE.Group;
+  mode: LdrDisplayMode;
 };
 
 export type LdrStepHandlerFacade = {
@@ -133,6 +136,31 @@ declare global {
   var LDR: LdrGlobalNamespace;
 }
 
+export type LdrMeasuringLinePoint = {
+  x: number;
+  y: number;
+};
+
+export type LdrMeasuringLine = {
+  a: number;
+  y0: number;
+  eval: (x: number) => number;
+  toString: () => string;
+  setOrigoTo: (x: number, y: number) => LdrMeasuringLine;
+  scaleY: (scale: number) => LdrMeasuringLine;
+  clone: () => LdrMeasuringLine;
+};
+
+export type LdrMeasurerInstance = {
+  camera: THREE.Camera;
+  m: THREE.Matrix4;
+  measure: (b: THREE.Box3, matrixWorld: THREE.Matrix4) => [number, number];
+  measureConvexHull: (
+    b: THREE.Box3,
+    matrixWorld: THREE.Matrix4,
+  ) => [number, number, LdrMeasuringLine[], LdrMeasuringLine[]];
+};
+
 export type LdrGlobalNamespace = {
   Colors: Record<number, LdrColorInfo> & LdrColorInfo[];
   Generator?: {
@@ -162,6 +190,13 @@ export type LdrGlobalNamespace = {
     transObject: THREE.Group,
     manager?: LdrSceneManager,
   ) => LdrMeshCollector;
+  Measurer: new (camera: THREE.Camera) => LdrMeasurerInstance;
+  MeasuringLine: new (
+    p1?: LdrMeasuringLinePoint,
+    p2?: LdrMeasuringLinePoint,
+  ) => LdrMeasuringLine;
+  getScreenSize: () => [number, number];
+  equals: (a: number, b: number) => boolean;
   EPS: number;
   tmpSize?: THREE.Vector3;
 };

@@ -21,7 +21,7 @@ import {
   defaultFetchText,
   loadPartContent,
 } from '../storage/LdrStorage';
-import type { LdrLoaderOptions } from '../types';
+import type { LdrDisplayMode, LdrLoaderOptions } from '../types';
 import '../registerVendor';
 
 function normalizeLdrModelId(id: string): string {
@@ -143,8 +143,15 @@ function wrapPartsBuilder(
 
 export type LoadMpdOptions = LdrLoaderOptions & {
   mainModelColor?: number;
+  /** 仅 preview 模式生效 */
   displayScale?: number;
   partsSource?: 'local' | 'remote' | 'local-then-remote';
+  /**
+   * instruction: 不缩放/居中 root，由 computeCameraPositionRotation + 相机 zoom 对齐每步
+   * preview: 加载后 fitObjectToView，适合整模展示
+   * @default 'instruction'
+   */
+  mode?: LdrDisplayMode;
 };
 
 export function loadMpdFromText(
@@ -158,6 +165,7 @@ export function loadMpdFromText(
     readLocalPart,
     mainModelColor = 16,
     displayScale = 1,
+    mode = 'instruction',
     onProgress,
     onWarning,
     onError,
@@ -200,14 +208,16 @@ export function loadMpdFromText(
             resolvedMainModelId,
             mainModelColor,
           ) as unknown as LdrPartsBuilderInstance;
-          fitObjectToView(manager.baseObject, 1.2 * displayScale);
-
+          if (mode === 'preview') {
+            fitObjectToView(manager.baseObject, 1.2 * displayScale);
+          }
           resolve({
             loader,
             mainModelId: resolvedMainModelId,
             stepHandler: wrapStepHandler(handler, manager.baseObject),
             partsBuilder: wrapPartsBuilder(partsBuilder),
             root: manager.baseObject,
+            mode,
           });
         } catch (error) {
           reject(error);
