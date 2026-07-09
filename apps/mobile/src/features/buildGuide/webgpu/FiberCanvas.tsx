@@ -1,3 +1,10 @@
+/**
+ * R3F + react-native-webgpu 画布桥接。
+ *
+ * 分辨率 / 抗锯齿：通过 configure({ dpr: getRenderDpr() }) 交给 Three.js 管理，
+ * 不要在这里手动设置 canvas.width（会与 renderer 内部状态不一致）。
+ * 画质参数见 makeWebGPURenderer.ts。
+ */
 import * as THREE from 'three';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -8,11 +15,10 @@ import {
 } from '@react-three/fiber';
 import type { ReconcilerRoot, RootState } from '@react-three/fiber';
 import type { ViewProps } from 'react-native';
-import { PixelRatio } from 'react-native';
 import type { CanvasRef } from 'react-native-webgpu';
 import { Canvas } from 'react-native-webgpu';
 
-import { makeWebGPURenderer } from './makeWebGPURenderer';
+import { getRenderDpr, makeWebGPURenderer } from './makeWebGPURenderer';
 
 interface WebGpuCanvasElement {
   width: number;
@@ -65,11 +71,13 @@ export function FiberCanvas({
         return;
       }
 
-      const renderer = makeWebGPURenderer(context);
+      // MSAA 4x；超采样 dpr 在下方 configure 阶段设置
+      const renderer = makeWebGPURenderer(context, {
+        antialias: true,
+        samples: 4,
+      });
       renderer.setClearColor(0xffffff, 1);
       const canvas = context.canvas as unknown as WebGpuCanvasElement;
-      canvas.width = canvas.clientWidth * PixelRatio.get();
-      canvas.height = canvas.clientHeight * PixelRatio.get();
 
       await renderer.init();
       if (cancelled) {
@@ -130,7 +138,8 @@ export function FiberCanvas({
       camera,
       gl: rendererRef.current,
       frameloop: 'always',
-      dpr: 1,
+      // R3F 会调用 gl.setPixelRatio + gl.setSize，驱动实际渲染分辨率
+      dpr: getRenderDpr(),
     });
     root.current.render(children);
   }, [ready, camera, children, scene]);

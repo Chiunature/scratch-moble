@@ -26,9 +26,7 @@ import useOrbitControls from './useOrbitControls';
 
 type BuildGuideCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
-function createBuildGuideCamera(
-  mode: LdrDisplayMode,
-): BuildGuideCamera {
+function createBuildGuideCamera(mode: LdrDisplayMode): BuildGuideCamera {
   if (mode === 'preview') {
     return new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
   }
