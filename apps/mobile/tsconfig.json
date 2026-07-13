@@ -2,6 +2,7 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "baseUrl": "../..",
+    "ignoreDeprecations": "6.0",
     "composite": false,
     "noEmit": true,
     "resolveJsonModule": true,

@@ -11,7 +11,8 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@types/node": "*",
     "@types/three": "^0.185.0",
-    "typescript": "^5.8.3"
+    "typescript": "~6.0.3"
   }
 }

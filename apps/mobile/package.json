@@ -2,11 +2,15 @@
   "name": "@scratch-mobile/mobile",
   "version": "1.0.0",
   "private": true,
+  "main": "index.js",
   "scripts": {
-    "android": "yarn ldraw:sync && react-native run-android",
-    "ios": "yarn ldraw:sync && react-native run-ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "lint": "eslint . --ext .js,.ts,.tsx",
-    "start": "react-native start",
+    "start": "expo start --dev-client",
+    "prebuild": "expo prebuild",
+    "deps:check": "expo install --check",
+    "doctor": "expo-doctor",
     "ldraw:sync": "node scripts/sync-ldraw-native.mjs",
     "test": "jest"
   },
@@ -17,30 +21,43 @@
     "@react-navigation/native-stack": "^7.8.2",
     "@react-three/fiber": "^9.6.1",
     "@scratch-mobile/build-guide": "0.0.1",
-    "@scratch-mobile/ldr-engine": "0.0.1",
     "@scratch-mobile/core": "0.0.1",
     "@scratch-mobile/i18n": "0.0.1",
+    "@scratch-mobile/ldr-engine": "0.0.1",
     "@scratch-mobile/protocol": "0.0.1",
     "@scratch-mobile/shared": "0.0.1",
+    "expo": "~56.0.5",
+    "expo-build-properties": "~56.0.15",
+    "expo-dev-client": "~56.0.16",
+    "expo-navigation-bar": "~56.0.3",
+    "expo-status-bar": "~56.0.4",
+    "expo-system-ui": "~56.0.5",
     "fast-text-encoding": "^1.0.6",
     "react": "19.2.3",
-    "react-native": "0.85.2",
+    "react-native": "0.85.3",
     "react-native-ble-plx": "^3.5.1",
     "react-native-blob-util": "^0.24.10",
     "react-native-pika": "0.1.0",
-    "react-native-safe-area-context": "^5.5.2",
-    "react-native-screens": "^4.18.0",
-    "react-native-svg": "^15.15.4",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
     "react-native-webgpu": "^0.5.16",
-    "react-native-webview": "^13.16.1",
+    "react-native-webview": "13.16.1",
     "scratch-blocks": "^2.1.19",
     "three": "^0.185.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@babel/plugin-transform-class-static-block": "^7.25.0",
     "@types/three": "^0.185.0",
     "@webgpu/types": "^0.1.71",
+    "babel-preset-expo": "~56.0.13",
     "react-native-svg-transformer": "^1.5.3"
+  },
+  "expo": {
+    "doctor": {
+      "appConfigFieldsNotSyncedCheck": {
+        "enabled": false
+      }
+    }
   }
 }

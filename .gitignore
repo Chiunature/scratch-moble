@@ -88,6 +88,12 @@ apps/mobile/src/features/editor/generated/*
 # Cursor
 .cursor/
 
+# Local Expo state
+.expo/
+
+# Local Gradle state
+apps/mobile/android/.gradle-user-home/
+
 # Local LDraw parts library (place files here, then run: yarn workspace @scratch-mobile/mobile ldraw:sync)
 apps/mobile/assets/ldraw/
 apps/mobile/android/app/src/main/assets/ldraw/
