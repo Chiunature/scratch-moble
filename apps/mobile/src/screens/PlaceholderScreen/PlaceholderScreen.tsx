@@ -8,17 +8,19 @@ import { styles } from './PlaceholderScreen.styles';
 type PlaceholderRouteName = 'RemoteControl' | 'AiChat';
 type Props = NativeStackScreenProps<RootStackParamList, PlaceholderRouteName>;
 
-const pageCopy: Record<Exclude<PlaceholderRouteName, 'BuildGuide'>, { title: string; body: string }> =
-  {
-    RemoteControl: {
-      title: '遥控模式',
-      body: '已迁移至独立页面。',
-    },
-    AiChat: {
-      title: 'AI 对话',
-      body: '这里将接入智能问答、项目建议和代码解释。',
-    },
-  };
+const pageCopy: Record<
+  Exclude<PlaceholderRouteName, 'BuildGuide'>,
+  { title: string; body: string }
+> = {
+  RemoteControl: {
+    title: '遥控模式',
+    body: '已迁移至独立页面。',
+  },
+  AiChat: {
+    title: 'AI 对话',
+    body: '这里将接入智能问答、项目建议和代码解释。',
+  },
+};
 
 export function PlaceholderScreen({ route }: Props) {
   const copy = pageCopy[route.name];

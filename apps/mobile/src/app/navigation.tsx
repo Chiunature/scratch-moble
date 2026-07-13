@@ -8,6 +8,7 @@ import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
+import { AiChatScreen } from '../screens/AiChatScreen';
 import { RemoteControlScreen } from '../screens/RemoteControlScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
 import { BleDevicesScreen } from '../screens/BleDevicesScreen';
@@ -67,8 +68,8 @@ export function RootNavigator() {
         />
         <Stack.Screen
           name="AiChat"
-          component={PlaceholderScreen}
-          options={{ title: t('aiChat') }}
+          component={AiChatScreen}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Runtime"

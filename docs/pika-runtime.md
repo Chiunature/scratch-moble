@@ -40,7 +40,7 @@ flowchart LR
 | 2 | `packages/scratch-editor-web/src/bridge/codeGenerationPublisher.ts` | 防抖 200ms，通过 `postMessage` 发送 `editor.code.generated` |
 | 3 | `apps/mobile/src/screens/EditorScreen/EditorScreen.tsx` | 接收消息，存入 `generatedCode` state，代码面板展示 |
 | 4 | `apps/mobile/src/services/pika/pikaService.ts` | 业务封装：校验源码、统一成功/失败结构 |
-| 5 | `packages/pika-bytecode/react-native-pika/` | JS → NativeModules `PikaMobile` |
+| 5 | `packages/pika-bytecode/` | JS → NativeModules `PikaMobile` |
 | 6 | `packages/pika-bytecode/mobile/pika_mobile.c` | 调用 `pikaCompile` / `obj_run` / `pikaVM_runByteCode` |
 
 ---
@@ -48,10 +48,12 @@ flowchart LR
 ## 2. 目录与依赖
 
 ```
-packages/pika-bytecode/          # vendor，源自 ELE-byteCode
+packages/pika-bytecode/          # 可独立发布的 react-native-pika 包
   mobile/pika_mobile.{c,h}       # C API
   pikascript/                    # PikaScript v1.13.4 运行时
-  react-native-pika/             # RN 原生模块（Yarn workspace）
+  android/                       # Android Kotlin/JNI/CMake
+  ios/                           # iOS ObjC++ bridge
+  src/                           # TypeScript API
 
 apps/mobile/src/services/pika/   # 业务封装（推荐 UI / 服务层只调这里）
   pikaService.ts
@@ -59,7 +61,7 @@ apps/mobile/src/services/pika/   # 业务封装（推荐 UI / 服务层只调这
 ```
 
 - `apps/mobile/package.json` 依赖 `"react-native-pika": "0.1.0"`
-- 根 `package.json` workspaces 包含 `packages/pika-bytecode/react-native-pika`
+- 根 `package.json` 通过 `packages/*` 识别本地 `react-native-pika` 包；独立发布后应用可改为 npm 版本范围
 
 ---
 
@@ -79,7 +81,7 @@ apps/mobile/src/services/pika/   # 业务封装（推荐 UI / 服务层只调这
 
 ## 4. 原生模块 API（`react-native-pika`）
 
-路径：`packages/pika-bytecode/react-native-pika/src/index.ts`
+路径：`packages/pika-bytecode/src/index.ts`
 
 通过 `NativeModules.PikaMobile`（Legacy 桥接）调用，**非 TurboModule**。
 
@@ -293,7 +295,7 @@ Android NDK 编译 `react-native-pika` 时，`CMakeLists.txt` 使用 `REALPATH` 
 | [packages/scratch-editor-web/src/codegen/generators.ts](../packages/scratch-editor-web/src/codegen/generators.ts) | `renderPythonCode()` |
 | [packages/shared/src/types/editorBridge.ts](../packages/shared/src/types/editorBridge.ts) | `editor.code.generated` 消息类型 |
 | [apps/mobile/src/services/pika/pikaService.ts](../apps/mobile/src/services/pika/pikaService.ts) | 业务封装 |
-| [packages/pika-bytecode/react-native-pika/src/index.ts](../packages/pika-bytecode/react-native-pika/src/index.ts) | 原生 JS API |
+| [packages/pika-bytecode/src/index.ts](../packages/pika-bytecode/src/index.ts) | 原生 JS API |
 | [packages/pika-bytecode/mobile/pika_mobile.c](../packages/pika-bytecode/mobile/pika_mobile.c) | C API 实现 |
 | [packages/pika-bytecode/pikascript/pikascript-core/PikaCompiler.c](../packages/pika-bytecode/pikascript/pikascript-core/PikaCompiler.c) | 编译器核心 |
 | [docs/module-boundary.md](./module-boundary.md) | 模块边界（BLE / 原生放 `apps/mobile`） |
