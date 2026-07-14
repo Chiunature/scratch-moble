@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -6,6 +12,7 @@ import {
   FlatList,
   Pressable,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,7 +25,7 @@ import {
 
 import type { ScratchProjectSummary } from '@scratch-mobile/shared';
 import { type RootStackParamList } from '../../app/navigation';
-import { colors } from '../../theme';
+import { colors, spacing } from '../../theme';
 import { useProjectStore } from '../../store/useProjectStore';
 import {
   ProjectActionModal,
@@ -30,15 +37,13 @@ import { styles } from './ProjectsScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
 
-const DELETE_ANIMATION_MS = 400;
+type ProjectListItem =
+  | { kind: 'create' }
+  | { kind: 'project'; project: ScratchProjectSummary };
 
-function formatUpdatedAt(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString();
-}
+const DELETE_ANIMATION_MS = 400;
+const GRID_COLUMN_COUNT = 4;
+const CREATE_PROJECT_KEY = 'create-project';
 
 function ProjectCardContent({ item }: { item: ScratchProjectSummary }) {
   const { t } = useTranslation('projects');
@@ -46,13 +51,10 @@ function ProjectCardContent({ item }: { item: ScratchProjectSummary }) {
 
   return (
     <>
-      <Text style={styles.cardTitle} numberOfLines={1}>
+      <Text style={styles.cardTitle} numberOfLines={2}>
         {displayName}
       </Text>
-      <Text style={styles.cardMeta}>
-        {t('updatedOn')} {formatUpdatedAt(item.updatedAt)}
-      </Text>
-      <Text style={styles.cardMeta}>
+      <Text style={styles.cardMeta} numberOfLines={1}>
         {t('blockCount')} {item.blockCount ?? 0}
       </Text>
     </>
@@ -61,6 +63,7 @@ function ProjectCardContent({ item }: { item: ScratchProjectSummary }) {
 
 export function ProjectsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const { t } = useTranslation('projects');
   const { t: tCommon } = useTranslation('common');
   const projects = useProjectStore(state => state.projects);
@@ -69,6 +72,19 @@ export function ProjectsScreen({ navigation }: Props) {
   const createAndTrack = useProjectStore(state => state.createAndTrack);
   const rename = useProjectStore(state => state.rename);
   const remove = useProjectStore(state => state.remove);
+  const listItems = useMemo<ProjectListItem[]>(
+    () => [
+      { kind: 'create' },
+      ...projects.map(project => ({ kind: 'project' as const, project })),
+    ],
+    [projects],
+  );
+  const cardSize = Math.floor(
+    (windowWidth -
+      spacing.md * 2 -
+      spacing.sm * (GRID_COLUMN_COUNT - 1)) /
+      GRID_COLUMN_COUNT,
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [actionTarget, setActionTarget] =
     useState<ScratchProjectSummary | null>(null);
@@ -124,7 +140,7 @@ export function ProjectsScreen({ navigation }: Props) {
     [navigation],
   );
 
-  const handleLongPressProject = useCallback(
+  const handleOpenProjectActions = useCallback(
     (project: ScratchProjectSummary) => {
       setActionTarget(project);
     },
@@ -196,28 +212,88 @@ export function ProjectsScreen({ navigation }: Props) {
     [deleteAnim, remove, t],
   );
 
-  const renderProject = useCallback(
-    ({ item }: { item: ScratchProjectSummary }) => {
-      const isDeleting = item.id === deletingId;
-      const displayName = resolveProjectDisplayName(item.name);
-
-      if (!isDeleting) {
+  const renderListItem = useCallback(
+    ({ item }: { item: ProjectListItem }) => {
+      if (item.kind === 'create') {
         return (
           <Pressable
             style={({ pressed }) => [
               styles.card,
               styles.cardShadow,
+              styles.newCard,
+              { width: cardSize },
               pressed && styles.cardPressed,
             ]}
-            onPress={() => handleOpenProject(item.id)}
-            onLongPress={() => handleLongPressProject(item)}
+            onPress={() => {
+              void handleCreateProject();
+            }}
+            disabled={isCreating}
             accessibilityRole="button"
-            accessibilityLabel={t('openProjectAccessibility', {
-              name: displayName,
-            })}
+            accessibilityLabel={t('newProject')}
           >
-            <ProjectCardContent item={item} />
+            {isCreating ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <>
+                <Text style={styles.newCardIcon}>+</Text>
+                <Text
+                  style={[styles.cardTitle, { textAlign: 'center' }]}
+                  numberOfLines={2}
+                >
+                  {t('newProject')}
+                </Text>
+              </>
+            )}
           </Pressable>
+        );
+      }
+
+      const project = item.project;
+      const isDeleting = project.id === deletingId;
+      const displayName = resolveProjectDisplayName(project.name);
+
+      if (!isDeleting) {
+        return (
+          <View
+            style={[
+              styles.card,
+              styles.cardShadow,
+              { width: cardSize },
+            ]}
+          >
+            <Pressable
+              style={({ pressed }) => [
+                styles.cardContent,
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => handleOpenProject(project.id)}
+              accessibilityRole="button"
+              accessibilityLabel={t('openProjectAccessibility', {
+                name: displayName,
+              })}
+            >
+              <ProjectCardContent item={project} />
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.moreButton,
+                pressed && styles.moreButtonPressed,
+              ]}
+              onPress={() => handleOpenProjectActions(project)}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel={t('modal.manageTitle', {
+                name: displayName,
+              })}
+            >
+              <View style={styles.moreDots}>
+                <View style={styles.moreDot} />
+                <View style={styles.moreDot} />
+                <View style={styles.moreDot} />
+              </View>
+            </Pressable>
+          </View>
         );
       }
 
@@ -225,7 +301,9 @@ export function ProjectsScreen({ navigation }: Props) {
         <Animated.View
           style={[
             styles.card,
+            styles.cardShadow,
             {
+              width: cardSize,
               opacity: deleteAnim,
               transform: [
                 {
@@ -244,11 +322,22 @@ export function ProjectsScreen({ navigation }: Props) {
             },
           ]}
         >
-          <ProjectCardContent item={item} />
+          <View style={styles.cardContent}>
+            <ProjectCardContent item={project} />
+          </View>
         </Animated.View>
       );
     },
-    [deleteAnim, deletingId, handleLongPressProject, handleOpenProject, t],
+    [
+      cardSize,
+      deleteAnim,
+      deletingId,
+      handleCreateProject,
+      handleOpenProject,
+      handleOpenProjectActions,
+      isCreating,
+      t,
+    ],
   );
 
   if (isLoading && projects.length === 0) {
@@ -274,38 +363,25 @@ export function ProjectsScreen({ navigation }: Props) {
         <View style={styles.headerSpacer} />
       </View>
 
-      <FlatList
-        data={projects}
-        keyExtractor={item => item.id}
-        renderItem={renderProject}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              styles.cardShadow,
-              styles.newCard,
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() => {
-              void handleCreateProject();
-            }}
-            disabled={isCreating}
-            accessibilityRole="button"
-            accessibilityLabel={t('newProject')}
-          >
-            {isCreating ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : (
-              <>
-                <Text style={styles.cardTitle}>+ {t('newProject')}</Text>
-                <Text style={styles.cardMeta}>{t('blankWorkspace')}</Text>
-              </>
-            )}
-          </Pressable>
+      <FlatList<ProjectListItem>
+        data={listItems}
+        keyExtractor={item =>
+          item.kind === 'create'
+            ? CREATE_PROJECT_KEY
+            : `project-${item.project.id}`
         }
-        ListEmptyComponent={
-          <Text style={styles.emptyHint}>{t('noProjects')}</Text>
+        renderItem={renderListItem}
+        numColumns={GRID_COLUMN_COUNT}
+        columnWrapperStyle={styles.listRow}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: insets.bottom + spacing['3xl'] },
+        ]}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          projects.length === 0 ? (
+            <Text style={styles.emptyHint}>{t('noProjects')}</Text>
+          ) : null
         }
       />
 
