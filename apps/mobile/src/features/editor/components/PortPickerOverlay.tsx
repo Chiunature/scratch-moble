@@ -23,7 +23,7 @@ import {
   type RnPortPickerOpenMessage,
 } from '@scratch-mobile/shared';
 
-import type { ParsedWatchPort } from '../../../services/ble';
+import { useDeviceWatch } from '../../../services/ble';
 import { fontSize, fontWeight, spacing } from '../../../theme';
 import { useTranslation } from '@scratch-mobile/i18n';
 import {
@@ -37,8 +37,6 @@ import {
 
 type Props = {
   session: RnPortPickerOpenMessage | null;
-  /** 传感器接口 A–D 的实时数据 */
-  sensorPorts?: ParsedWatchPort[];
   onValueChange: (sessionId: string, value: string) => void;
   onClose: (sessionId: string) => void;
 };
@@ -262,13 +260,13 @@ function PortDetailPanel({
 
 export function PortPickerOverlay({
   session,
-  sensorPorts,
   onValueChange,
   onClose,
 }: Props) {
   const { t, i18n } = useTranslation('overlays');
   const { height: screenHeight } = useWindowDimensions();
   const sheetHeight = screenHeight * SHEET_HEIGHT_RATIO;
+  const { sensorPorts } = useDeviceWatch();
 
   const portDefinitions = useMemo(
     () => buildPortDefinitions(sensorPorts),

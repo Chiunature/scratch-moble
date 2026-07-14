@@ -3,6 +3,7 @@ export {
   deleteProject,
   listProjects,
   loadProject,
+  reconcileProjects,
   renameProject,
   saveProjectWorkspace,
   waitForPendingProjectSaves,

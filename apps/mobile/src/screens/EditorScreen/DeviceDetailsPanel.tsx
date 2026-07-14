@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
 import { ScrollablePanel } from '../../components/ScrollablePanel';
-import type { ParsedWatchPort } from '../../services/ble';
+import { useDeviceWatch, type ParsedWatchPort } from '../../services/ble';
+import { useBleStore } from '../../store/useBleStore';
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
 import {
   formatDeviceKindLabel,
@@ -14,17 +15,6 @@ import {
 } from './deviceWatchDisplay';
 
 type Props = {
-  isConnected: boolean;
-  isAvailable: boolean;
-  battery: string | null;
-  isProgramRunning: boolean;
-  connectedCount: number;
-  portCount: number;
-  ports: ParsedWatchPort[];
-  flashFree: string | null;
-  flashTotal: string | null;
-  version: number | null;
-  heap: string | null;
   onClose: () => void;
 };
 
@@ -51,22 +41,19 @@ function PortCard({ port }: { port: ParsedWatchPort }) {
   );
 }
 
-export function DeviceDetailsPanel({
-  isConnected,
-  isAvailable,
-  battery,
-  isProgramRunning,
-  connectedCount,
-  portCount,
-  ports,
-  flashFree,
-  flashTotal,
-  version,
-  heap,
-  onClose,
-}: Props) {
+export function DeviceDetailsPanel({ onClose }: Props) {
   const { t } = useTranslation('editorShell');
   const [systemExpanded, setSystemExpanded] = useState(false);
+  const isConnected = useBleStore(state => state.connectionStatus) === 'connected';
+  const {
+    watch,
+    isAvailable,
+    sensorPorts,
+    sensorConnectedPorts,
+    sensorPortCount,
+  } = useDeviceWatch();
+
+  const battery = watch?.battery ?? null;
   const percent = parseBatteryPercent(battery);
   const dotColor = getBatteryStatusColor(percent, isConnected, isAvailable);
 
@@ -102,14 +89,14 @@ export function DeviceDetailsPanel({
           </Text>
         </View>
         <Text style={styles.summaryMeta}>
-          {isProgramRunning
+          {watch?.isProgramRunning
             ? t('sensorPanel.running')
             : t('sensorPanel.stopped')}
           {t('sensorPanel.summarySeparator')}
           {isAvailable
             ? t('sensorPanel.portCount', {
-                connected: connectedCount,
-                total: portCount,
+                connected: sensorConnectedPorts.length,
+                total: sensorPortCount,
               })
             : '—'}
         </Text>
@@ -119,7 +106,7 @@ export function DeviceDetailsPanel({
         <Text style={styles.hint}>{statusMessage}</Text>
       ) : (
         <ScrollablePanel style={styles.scrollBody} contentContainerStyle={styles.scrollContent}>
-          {ports.map(port => (
+          {sensorPorts.map(port => (
             <PortCard key={`port-${port.port}`} port={port} />
           ))}
 
@@ -137,14 +124,14 @@ export function DeviceDetailsPanel({
             <View style={styles.systemBlock}>
               <Text style={styles.systemLine}>
                 {t('sensorPanel.storage', {
-                  free: flashFree ?? '—',
-                  total: flashTotal ?? '—',
+                  free: watch?.flash?.free ?? '—',
+                  total: watch?.flash?.total ?? '—',
                 })}
               </Text>
               <Text style={styles.systemLine}>
                 {t('sensorPanel.versionHeap', {
-                  version: version ?? '—',
-                  heap: heap ?? '—',
+                  version: watch?.version ?? '—',
+                  heap: watch?.heap ?? '—',
                 })}
               </Text>
             </View>

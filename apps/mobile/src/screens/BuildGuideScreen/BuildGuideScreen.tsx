@@ -15,6 +15,7 @@ import { containerDemoManifestParsed } from '../../features/buildGuide/data/bund
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
 import type { BuildGuideBundle } from '../../features/buildGuide/types';
+import '../../features/buildGuide/webgpu/setupThreeWebGpu';
 import { styles } from './BuildGuideScreen.styles';
 
 export function BuildGuideScreen() {

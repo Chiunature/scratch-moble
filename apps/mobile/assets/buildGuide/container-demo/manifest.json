@@ -2,7 +2,7 @@
   "version": 1,
   "id": "container-demo",
   "nameKey": "container.name",
-  "mpdUri": ".build/export.mpd",
+  "mpdUri": "build/export.mpd",
   "mainModelId": "main.ldr",
   "partsSource": "local",
   "mode": "instruction",

@@ -1,20 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
+import { useBleStore } from '../../store/useBleStore';
 import { colors, fontSize, fontWeight } from '../../theme';
 import {
   getBatteryStatusColor,
   parseBatteryPercent,
 } from './deviceWatchDisplay';
 
-type Props = {
-  battery: string | null;
-  isConnected: boolean;
-  hasData: boolean;
-};
-
-export function BatteryStatusLight({ battery, isConnected, hasData }: Props) {
+export function BatteryStatusLight() {
   const { t } = useTranslation('editorShell');
+  const isConnected = useBleStore(state => state.connectionStatus) === 'connected';
+  const battery = useBleStore(state => state.deviceWatch?.adc?.bat ?? null);
+  const hasData = useBleStore(state => state.deviceWatch != null);
   const percent = parseBatteryPercent(battery);
   const dotColor = getBatteryStatusColor(percent, isConnected, hasData);
   const label = !isConnected

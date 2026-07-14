@@ -1,5 +1,4 @@
-import * as THREE from 'three';
-import React, { useMemo, useRef } from 'react';
+import React from 'react';
 import { View, Text } from 'react-native';
 import { styles } from './AiChatScreen.styles';
 

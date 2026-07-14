@@ -38,10 +38,10 @@ import {
 } from '@scratch-mobile/i18n';
 import { EDITOR_EMBEDDED_LOCALE_GLOBAL } from '@scratch-mobile/shared';
 import {
-  EDITOR_BUNDLE_HTML,
   HandleShankPickerOverlay,
   injectEditorLocale,
   injectEditorMessage,
+  loadEditorBundleHtml,
   MatrixLightOverlay,
   NotePickerOverlay,
   NumberSliderOverlay,
@@ -51,8 +51,6 @@ import {
 } from '../../features/editor';
 import { GeneratedCodePanel } from './GeneratedCodePanel';
 import { type RootStackParamList } from '../../app/navigation';
-import { useDeviceWatch } from '../../services/ble';
-import { useBleStore } from '../../store/useBleStore';
 import { styles } from './EditorScreen.styles';
 import { colors } from '../../theme';
 import { useEditorProjectPersistence } from './useEditorProjectPersistence';
@@ -123,6 +121,8 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     useState<RnHandleShankOpenMessage | null>(null);
   const [rnVariablePromptSession, setRnVariablePromptSession] =
     useState<RnVariablePromptOpenMessage | null>(null);
+  const [editorHtml, setEditorHtml] = useState<string | null>(null);
+  const [editorHtmlError, setEditorHtmlError] = useState<string | null>(null);
   const codePlaceholderRef = useRef(t('loading.codePlaceholder'));
   const [generatedCode, setGeneratedCode] = useState(() =>
     t('loading.codePlaceholder'),
@@ -180,15 +180,26 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     });
   }, []);
 
-  const connectionStatus = useBleStore(state => state.connectionStatus);
-  const isBleConnected = connectionStatus === 'connected';
-  const {
-    watch,
-    isAvailable,
-    sensorPorts,
-    sensorConnectedPorts,
-    sensorPortCount,
-  } = useDeviceWatch();
+  useEffect(() => {
+    let cancelled = false;
+    void loadEditorBundleHtml()
+      .then(html => {
+        if (!cancelled) {
+          setEditorHtml(html);
+          setEditorHtmlError(null);
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          setEditorHtmlError(
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     pikaAction,
@@ -387,11 +398,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             </Text>
           ) : null}
         </View>
-        <BatteryStatusLight
-          battery={watch?.battery ?? null}
-          isConnected={isBleConnected}
-          hasData={isAvailable}
-        />
+        <BatteryStatusLight />
         <View style={styles.headerHostActions}>
           <Pressable
             style={[
@@ -489,15 +496,28 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
       />
       <PikaWorkflowModal {...workflowModal} onClose={closeWorkflowModal} />
       <View style={styles.editorPanel}>
-        <WebView
-          ref={webViewRef}
-          originWhitelist={['*']}
-          source={{ html: EDITOR_BUNDLE_HTML }} //加载编辑器网页
-          injectedJavaScriptBeforeContentLoaded={editorEmbeddedLocaleScript}
-          onMessage={handleMessage} //处理WebView发送的消息
-          javaScriptEnabled
-          domStorageEnabled
-        />
+        {editorHtmlError ? (
+          <View style={styles.projectLoadingOverlay} pointerEvents="auto">
+            <Text style={styles.projectLoadingText}>{editorHtmlError}</Text>
+          </View>
+        ) : editorHtml == null ? (
+          <View style={styles.projectLoadingOverlay} pointerEvents="auto">
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.projectLoadingText}>
+              {t('loading.project')}
+            </Text>
+          </View>
+        ) : (
+          <WebView
+            ref={webViewRef}
+            originWhitelist={['*']}
+            source={{ html: editorHtml }}
+            injectedJavaScriptBeforeContentLoaded={editorEmbeddedLocaleScript}
+            onMessage={handleMessage}
+            javaScriptEnabled
+            domStorageEnabled
+          />
+        )}
         {isProjectLoading ? (
           <View style={styles.projectLoadingOverlay} pointerEvents="auto">
             <ActivityIndicator size="large" color={colors.primary} />
@@ -524,25 +544,26 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             });
           }}
         />
-        <PortPickerOverlay
-          session={rnPortPickerSession}
-          sensorPorts={sensorPorts}
-          onValueChange={(sessionId, value) => {
-            injectEditorMessage(webViewRef.current, {
-              type: 'editor.portPicker.value',
-              sessionId,
-              value,
-            });
-          }}
-          onClose={sessionId => {
-            setRnPortPickerSession(null);
-            resetInjectEditorMessageDedup();
-            injectEditorMessage(webViewRef.current, {
-              type: 'editor.portPicker.close',
-              sessionId,
-            });
-          }}
-        />
+        {rnPortPickerSession ? (
+          <PortPickerOverlay
+            session={rnPortPickerSession}
+            onValueChange={(sessionId, value) => {
+              injectEditorMessage(webViewRef.current, {
+                type: 'editor.portPicker.value',
+                sessionId,
+                value,
+              });
+            }}
+            onClose={sessionId => {
+              setRnPortPickerSession(null);
+              resetInjectEditorMessageDedup();
+              injectEditorMessage(webViewRef.current, {
+                type: 'editor.portPicker.close',
+                sessionId,
+              });
+            }}
+          />
+        ) : null}
         <MatrixLightOverlay
           session={rnMatrixLightSession}
           onCommit={handleMatrixLightCommit}
@@ -610,20 +631,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
         />
         {isSensorPanelOpen ? (
           <View style={[styles.sidePanel, { width: sidePanelWidth }]}>
-            <DeviceDetailsPanel
-              isConnected={isBleConnected}
-              isAvailable={isAvailable}
-              battery={watch?.battery ?? null}
-              isProgramRunning={watch?.isProgramRunning ?? false}
-              connectedCount={sensorConnectedPorts.length}
-              portCount={sensorPortCount}
-              ports={sensorPorts}
-              flashFree={watch?.flash?.free ?? null}
-              flashTotal={watch?.flash?.total ?? null}
-              version={watch?.version ?? null}
-              heap={watch?.heap ?? null}
-              onClose={() => setIsSensorPanelOpen(false)}
-            />
+            <DeviceDetailsPanel onClose={() => setIsSensorPanelOpen(false)} />
           </View>
         ) : null}
         {isCodePanelOpen ? (

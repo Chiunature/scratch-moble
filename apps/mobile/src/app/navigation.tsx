@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { BuildGuideScreen } from '../screens/BuildGuideScreen';
-import { EditorScreen } from '../screens/EditorScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
@@ -14,6 +13,18 @@ import { RuntimeScreen } from '../screens/RuntimeScreen';
 import { BleDevicesScreen } from '../screens/BleDevicesScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { colors, fontWeight } from '../theme';
+
+const EditorScreen = React.lazy(() =>
+  import('../screens/EditorScreen').then(module => ({
+    default: module.EditorScreen,
+  })),
+);
+
+const BuildGuideScreen = React.lazy(() =>
+  import('../screens/BuildGuideScreen').then(module => ({
+    default: module.BuildGuideScreen,
+  })),
+);
 
 export type RootStackParamList = {
   Home: undefined;
@@ -28,6 +39,36 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function LazyScreenFallback() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.background,
+      }}
+    >
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  );
+}
+
+function withSuspense<P extends object>(
+  LazyComponent: React.ComponentType<P>,
+): React.ComponentType<P> {
+  return function SuspenseWrapped(props: P) {
+    return (
+      <Suspense fallback={<LazyScreenFallback />}>
+        <LazyComponent {...props} />
+      </Suspense>
+    );
+  };
+}
+
+const LazyEditorScreen = withSuspense(EditorScreen);
+const LazyBuildGuideScreen = withSuspense(BuildGuideScreen);
 
 export function RootNavigator() {
   const { t } = useTranslation('navigation');
@@ -53,12 +94,12 @@ export function RootNavigator() {
         />
         <Stack.Screen
           name="Editor"
-          component={EditorScreen}
+          component={LazyEditorScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
           name="BuildGuide"
-          component={BuildGuideScreen}
+          component={LazyBuildGuideScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

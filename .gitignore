@@ -35,6 +35,9 @@ local.properties
 !debug.keystore
 .kotlin/
 
+# Build Guide shipped MPD outputs (must not be covered by global `build/`)
+!apps/mobile/assets/buildGuide/*/build/
+!apps/mobile/assets/buildGuide/*/build/**
 # node.js
 #
 node_modules/
@@ -71,6 +74,10 @@ yarn-error.log
 
 # Editor web build outputs (regenerate with `yarn editor:web`)
 packages/scratch-editor-web/dist/
+# Editor HTML asset (regenerate with `yarn editor:web`)
+apps/mobile/assets/editor/editorBundle.html
+
+# Legacy generated TS embed (no longer produced)
 apps/mobile/src/features/editor/generated/*
 !apps/mobile/src/features/editor/generated/README.md
 
@@ -94,7 +101,9 @@ apps/mobile/src/features/editor/generated/*
 # Local Gradle state
 apps/mobile/android/.gradle-user-home/
 
-# Local LDraw parts library (place files here, then run: yarn workspace @scratch-mobile/mobile ldraw:sync)
+# Local LDraw parts library (gitignored). Prefer a dependency-closure subset:
+#   yarn workspace @scratch-mobile/mobile ldraw:subset   # from LDRAW_LIBRARY_ROOT or full tree
+#   yarn workspace @scratch-mobile/mobile ldraw:sync     # copy into Android/iOS native assets
 apps/mobile/assets/ldraw/
 apps/mobile/android/app/src/main/assets/ldraw/
 apps/mobile/ios/AwesomeProject/ldraw/

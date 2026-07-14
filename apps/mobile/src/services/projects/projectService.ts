@@ -84,19 +84,28 @@ async function reconcileProjectIndex(): Promise<ScratchProjectSummary[]> {
   const indexById = new Map(index.map(item => [item.id, item]));
   const next: ScratchProjectSummary[] = [];
 
-  for (const documentId of documentIds) {
-    try {
-      const document = await readProjectDocument(documentId);
-      const existing = indexById.get(documentId);
-      next.push(
-        summaryFromDocument(document, existing?.blockCount ?? 0),
-      );
-    } catch (error) {
-      if (error instanceof ProjectDocumentParseError) {
-        continue;
+  const documents = await Promise.all(
+    documentIds.map(async documentId => {
+      try {
+        const document = await readProjectDocument(documentId);
+        return { documentId, document };
+      } catch (error) {
+        if (error instanceof ProjectDocumentParseError) {
+          return null;
+        }
+        throw error;
       }
-      throw error;
+    }),
+  );
+
+  for (const entry of documents) {
+    if (entry == null) {
+      continue;
     }
+    const existing = indexById.get(entry.documentId);
+    next.push(
+      summaryFromDocument(entry.document, existing?.blockCount ?? 0),
+    );
   }
 
   if (!summariesEquivalent(index, next)) {
@@ -106,7 +115,16 @@ async function reconcileProjectIndex(): Promise<ScratchProjectSummary[]> {
   return next;
 }
 
+/** Fast path: return the persisted list index without reading project bodies. */
 export async function listProjects(): Promise<ScratchProjectSummary[]> {
+  return loadProjectIndex();
+}
+
+/**
+ * Rebuild the project index from on-disk documents (parallel reads).
+ * Use for pull-to-refresh or background consistency checks.
+ */
+export async function reconcileProjects(): Promise<ScratchProjectSummary[]> {
   return reconcileProjectIndex();
 }
 

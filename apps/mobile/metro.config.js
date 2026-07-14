@@ -36,6 +36,7 @@ config.resolver.assetExts = [
   'mpd',
   'ldr',
   'glb',
+  'html',
 ];
 config.resolver.sourceExts = [...sourceExts, 'svg'];
 config.resolver.nodeModulesPaths = [

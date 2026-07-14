@@ -24,4 +24,4 @@ export {
   formatDeviceKindLabel,
   formatPortReading,
 } from './data/deviceWatchDisplay';
-export { EDITOR_BUNDLE_HTML } from './generated/editorBundleHtml';
+export { loadEditorBundleHtml } from './loadEditorBundleHtml';

@@ -6,6 +6,7 @@ import {
   createProject as createProjectOnDisk,
   deleteProject as deleteProjectOnDisk,
   listProjects,
+  reconcileProjects,
   renameProject as renameProjectOnDisk,
 } from '../services/projects';
 
@@ -13,6 +14,7 @@ type ProjectStore = {
   projects: ScratchProjectSummary[];
   isLoading: boolean;
   loadProjects: () => Promise<void>;
+  reconcileAndTrack: () => Promise<void>;
   createAndTrack: (name?: string) => Promise<ScratchProjectSummary>;
   rename: (projectId: string, name: string) => Promise<void>;
   remove: (projectId: string) => Promise<void>;
@@ -28,9 +30,20 @@ export const useProjectStore = create<ProjectStore>(set => ({
     try {
       const projects = await listProjects();
       set({ projects, isLoading: false });
+      // Background reconcile keeps the index honest without blocking first paint.
+      void reconcileProjects()
+        .then(reconciled => {
+          set({ projects: reconciled });
+        })
+        .catch(() => undefined);
     } catch {
       set({ isLoading: false });
     }
+  },
+
+  reconcileAndTrack: async () => {
+    const projects = await reconcileProjects();
+    set({ projects });
   },
 
   createAndTrack: async name => {

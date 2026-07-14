@@ -3,8 +3,6 @@ import { StatusBar } from 'react-native';
 
 import { I18nextProvider, initI18n, i18n } from '@scratch-mobile/i18n';
 
-import './src/features/buildGuide/webgpu/setupThreeWebGpu';
-
 import { AppProviders } from './src/app/AppProviders';
 import { RootNavigator } from './src/app/navigation';
 import { loadSavedLocale } from './src/services/i18n/localeStorage';

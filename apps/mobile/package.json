@@ -11,7 +11,9 @@
     "prebuild": "expo prebuild",
     "deps:check": "expo install --check",
     "doctor": "expo-doctor",
+    "ldraw:subset": "node scripts/generate-ldraw-subset.mjs",
     "ldraw:sync": "node scripts/sync-ldraw-native.mjs",
+    "bundle:android": "expo export:embed --platform android --entry-file index.js --bundle-output /tmp/scratch-mobile-android.jsbundle --assets-dest /tmp/scratch-mobile-android-assets --dev false --minify true --skip-server",
     "test": "jest"
   },
   "dependencies": {

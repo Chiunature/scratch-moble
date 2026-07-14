@@ -13,8 +13,8 @@ import teslaModelSManifest from '../../../../assets/buildGuide/teslaModelS/mainf
  * Add a new entry here when introducing another build-guide bundle.
  */
 const MPD_ASSET_MODULES = {
-  'container-demo': require('../../../../assets/buildGuide/container-demo/.build/export.mpd'),
-  teslaModelS: require('../../../../assets/buildGuide/teslaModelS/.build/export.mpd'),
+  'container-demo': require('../../../../assets/buildGuide/container-demo/build/export.mpd'),
+  teslaModelS: require('../../../../assets/buildGuide/teslaModelS/build/export.mpd'),
 } as const satisfies Record<string, number>;
 
 export type BuildGuideBundleId = keyof typeof MPD_ASSET_MODULES;
