@@ -45,52 +45,49 @@ export function useLdrModel(manifest: BuildGuideManifest): UseLdrModelResult {
     setProgress(0);
     setError(null);
 
-    let mpdUri: string;
-    try {
-      mpdUri = resolveMpdUri(manifest);
-    } catch (cause) {
-      setError(formatLoadError(manifest, cause));
-      return () => {
-        cancelled = true;
-      };
-    }
-
     let loadedFiles = 0;
 
-    loadMpdFromUrl(mpdUri, manifest.mainModelId, {
-      partsSource: manifest.partsSource ?? 'local',
-      partsBaseUrl: manifest.partsBaseUrl,
-      readLocalPart: readLocalLdrawPart,
-      mainModelColor: manifest.mainModelColor,
-      mode: manifest.mode,
-      displayScale: manifest.displayScale,
-      onProgress() {
-        loadedFiles += 1;
-        if (!cancelled) {
-          setProgress(Math.min(loadedFiles / 40, 0.95));
+    void (async () => {
+      try {
+        const mpdUri = await resolveMpdUri(manifest);
+        if (cancelled) {
+          return;
         }
-      },
-      onError(issue: LdrLoadIssue) {
-        console.warn(
-          `[buildGuide:ldr:${manifest.id}]`,
-          issue.message,
-          issue.subModel ?? '',
-        );
-      },
-    })
-      .then((loaded: LoadedLdrModel) => {
+
+        const loaded = await loadMpdFromUrl(mpdUri, manifest.mainModelId, {
+          partsSource: manifest.partsSource ?? 'local',
+          partsBaseUrl: manifest.partsBaseUrl,
+          readLocalPart: readLocalLdrawPart,
+          mainModelColor: manifest.mainModelColor,
+          mode: manifest.mode,
+          displayScale: manifest.displayScale,
+          onProgress() {
+            loadedFiles += 1;
+            if (!cancelled) {
+              setProgress(Math.min(loadedFiles / 40, 0.95));
+            }
+          },
+          onError(issue: LdrLoadIssue) {
+            console.warn(
+              `[buildGuide:ldr:${manifest.id}]`,
+              issue.message,
+              issue.subModel ?? '',
+            );
+          },
+        });
+
         if (cancelled) {
           return;
         }
         setModel(loaded);
         setProgress(1);
-      })
-      .catch((cause: unknown) => {
+      } catch (cause: unknown) {
         if (cancelled) {
           return;
         }
         setError(formatLoadError(manifest, cause));
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;

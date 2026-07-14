@@ -1,4 +1,4 @@
-import { Image } from 'react-native';
+import { Asset } from 'expo-asset';
 import {
   parseMpdManifest,
   toManifestViewModel,
@@ -31,7 +31,16 @@ export const teslaModelSManifestParsed = toManifestViewModel(
   parseMpdManifest(teslaModelSManifest),
 );
 
-export function resolveMpdUri(manifest: BuildGuideManifest): string {
+/**
+ * Resolve a fetchable URI for the MPD.
+ *
+ * On Android release, Metro packs non-image assets into `res/raw` and
+ * `Image.resolveAssetSource()` returns a bare resource name (not a URL).
+ * `expo-asset` materializes that raw resource into a real `file://` path.
+ */
+export async function resolveMpdUri(
+  manifest: BuildGuideManifest,
+): Promise<string> {
   if (
     manifest.mpdUri.startsWith('http://') ||
     manifest.mpdUri.startsWith('https://')
@@ -40,7 +49,16 @@ export function resolveMpdUri(manifest: BuildGuideManifest): string {
   }
 
   const assetModule = getMpdAssetModule(manifest.id);
-  return Image.resolveAssetSource(assetModule).uri;
+  const asset = Asset.fromModule(assetModule);
+  await asset.downloadAsync();
+
+  if (asset.localUri == null) {
+    throw new Error(
+      `Failed to materialize MPD asset for build guide "${manifest.id}"`,
+    );
+  }
+
+  return asset.localUri;
 }
 
 function getMpdAssetModule(bundleId: string): number {

@@ -27,6 +27,7 @@
     "@scratch-mobile/protocol": "0.0.1",
     "@scratch-mobile/shared": "0.0.1",
     "expo": "~56.0.5",
+    "expo-asset": "~56.0.19",
     "expo-build-properties": "~56.0.15",
     "expo-dev-client": "~56.0.16",
     "expo-navigation-bar": "~56.0.3",
