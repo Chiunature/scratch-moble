@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { warnIfNotHardwareAccelerated } from 'react-native-webgpu';
 
+import { type RootStackParamList } from '../../app/navigation';
 import {
   BuildGuideBottomBar,
   BuildGuidePartsModal,
@@ -11,27 +12,29 @@ import {
   BuildGuideStepPickerModal,
   BuildGuideTopBar,
 } from '../../features/buildGuide/components';
-import { containerDemoManifestParsed } from '../../features/buildGuide/data/bundles';
+import { getBuildGuideManifest } from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
 import type { BuildGuideBundle } from '../../features/buildGuide/types';
 import '../../features/buildGuide/webgpu/setupThreeWebGpu';
 import { styles } from './BuildGuideScreen.styles';
 
-export function BuildGuideScreen() {
-  const navigation = useNavigation();
+type Props = NativeStackScreenProps<RootStackParamList, 'BuildGuidePlayer'>;
+
+export function BuildGuideScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const manifest = useMemo(
+    () => getBuildGuideManifest(route.params.modelId),
+    [route.params.modelId],
+  );
   const [partsModalVisible, setPartsModalVisible] = useState(false);
   const [stepPickerVisible, setStepPickerVisible] = useState(false);
-  const ldr = useLdrModel(containerDemoManifestParsed);
-  const steps = useBuildGuideSteps(
-    containerDemoManifestParsed,
-    ldr.stepHandler,
-  );
+  const ldr = useLdrModel(manifest);
+  const steps = useBuildGuideSteps(manifest, ldr.stepHandler);
 
-  const bundle = React.useMemo<BuildGuideBundle>(
+  const bundle = useMemo<BuildGuideBundle>(
     () => ({
-      manifest: containerDemoManifestParsed,
+      manifest,
       model: ldr.model,
       stepHandler: ldr.stepHandler,
       partsBuilder: ldr.partsBuilder,
@@ -39,7 +42,7 @@ export function BuildGuideScreen() {
       progress: ldr.progress,
       error: ldr.error,
     }),
-    [ldr],
+    [ldr, manifest],
   );
 
   React.useEffect(() => {
@@ -55,6 +58,10 @@ export function BuildGuideScreen() {
     });
   }, []);
 
+  const handleBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
   return (
     <View style={styles.container}>
       <BuildGuideTopBar
@@ -65,7 +72,7 @@ export function BuildGuideScreen() {
         paddingTop={insets.top}
         paddingLeft={insets.left}
         paddingRight={insets.right}
-        onBack={() => navigation.goBack()}
+        onBack={handleBack}
         onOpenStepPicker={() => setStepPickerVisible(true)}
         onOpenParts={() => setPartsModalVisible(true)}
       />

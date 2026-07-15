@@ -13,6 +13,11 @@
   "stepButtonLabel": "第 {{step}} 步",
   "gestureHint": "单指拖动旋转 · 双指捏合缩放",
   "reviewHint": "搭建已完成，可点击步骤或「上一步」回看",
+  "selectModel": "搭建说明",
+  "selectModelHint": "选择要查看的搭建说明",
+  "openGuide": "开始搭建",
+  "noModels": "暂无可用模型",
+  "backToHome": "返回首页",
   "container": {
     "name": "20 英尺集装箱"
   },

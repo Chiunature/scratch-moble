@@ -13,6 +13,11 @@
   "stepButtonLabel": "Step {{step}}",
   "gestureHint": "Drag to rotate · Pinch to zoom",
   "reviewHint": "Build complete — tap a step or use Previous to review",
+  "selectModel": "Build Guide",
+  "selectModelHint": "Choose a model to view its build instructions",
+  "openGuide": "Start building",
+  "noModels": "No models available",
+  "backToHome": "Back to home",
   "container": {
     "name": "20ft Container"
   },

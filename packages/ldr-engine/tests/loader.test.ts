@@ -7,11 +7,11 @@ import { loadMpdFromText } from '../src/loader/loadMpdModel';
 const repoRoot = path.resolve(__dirname, '../../..');
 const mpdPath = path.resolve(
   repoRoot,
-  'apps/mobile/assets/buildGuide/container-demo/build/export.mpd',
+  'apps/mobile/assets/buildGuide/models/container-demo/build/export.mpd',
 );
 const teslaMpdPath = path.resolve(
   repoRoot,
-  'apps/mobile/assets/buildGuide/teslaModelS/build/export.mpd',
+  'apps/mobile/assets/buildGuide/models/tesla-model-s/build/export.mpd',
 );
 const ldrawRoot = path.resolve(repoRoot, 'apps/mobile/assets/ldraw');
 

@@ -13,6 +13,11 @@
   "stepButtonLabel": "第 {{step}} 步",
   "gestureHint": "單指拖動旋轉 · 雙指捏合縮放",
   "reviewHint": "搭建已完成，可點擊步驟或「上一步」回看",
+  "selectModel": "搭建說明",
+  "selectModelHint": "選擇要查看的搭建說明",
+  "openGuide": "開始搭建",
+  "noModels": "暫無可用模型",
+  "backToHome": "返回首頁",
   "container": {
     "name": "20 英尺貨櫃"
   },

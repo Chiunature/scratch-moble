@@ -1,18 +1,29 @@
 # Build Guide
 
-Runtime **MPD** manifests drive the mobile build guide. Each bundle contains:
+Runtime **MPD** manifests drive the mobile build guide.
 
-- `manifest.json` — `MpdManifest` (mpd URI, parts base URL, optional step overrides)
-- `build/export.mpd` (or similar) — the LDraw model with `0 STEP` markers
+```
+apps/mobile/assets/buildGuide/
+  catalog.json                 # picker list (id, nameKey, optional cover)
+  models/
+    <model-id>/
+      manifest.json            # MpdManifest (mpd URI, mainModelId, cameras…)
+      build/export.mpd
+      cover.png                # optional picker cover (any local image name; register in bundles.ts)
+```
 
-## Mobile bundle example
+## Flow
 
-`apps/mobile/assets/buildGuide/container-demo/`
+1. Home → **Build Guide** opens the model picker (`catalog.json`)
+2. Selecting a model opens the player with that model's `manifest.json` + MPD
 
-## LDraw parts subset
+## Adding a model
 
-Do **not** ship the full LDraw catalog in the app. After placing a complete library
-at `LDRAW_LIBRARY_ROOT` (or temporarily under `apps/mobile/assets/ldraw`):
+1. Add `assets/buildGuide/models/<id>/manifest.json` + `build/export.mpd`
+2. Register a static `require` in `apps/mobile/src/features/buildGuide/data/bundles.ts`
+3. Append an entry to `catalog.json`
+4. Add i18n `nameKey` strings under `packages/i18n/.../buildGuide.json`
+5. Register the MPD in `apps/mobile/scripts/generate-ldraw-subset.mjs` and run:
 
 ```bash
 yarn workspace @scratch-mobile/mobile ldraw:subset
@@ -20,8 +31,7 @@ yarn workspace @scratch-mobile/mobile ldraw:sync
 ```
 
 `ldraw:subset` keeps only parts referenced by built-in `build/export.mpd` models.
-When adding a new built-in model, register its MPD in
-`apps/mobile/scripts/generate-ldraw-subset.mjs` and re-run both commands.
+Do **not** ship the full LDraw catalog in the app.
 
 ## Engine
 

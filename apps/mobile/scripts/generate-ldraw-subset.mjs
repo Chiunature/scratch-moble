@@ -33,8 +33,8 @@ const assetsRoot = path.join(mobileRoot, 'assets');
 const defaultDestRoot = path.join(assetsRoot, 'ldraw');
 
 const BUILTIN_MPDS = [
-  path.join(assetsRoot, 'buildGuide/container-demo/build/export.mpd'),
-  path.join(assetsRoot, 'buildGuide/teslaModelS/build/export.mpd'),
+  path.join(assetsRoot, 'buildGuide/models/container-demo/build/export.mpd'),
+  path.join(assetsRoot, 'buildGuide/models/tesla-model-s/build/export.mpd'),
 ];
 
 const ESSENTIAL_ROOT_FILES = [

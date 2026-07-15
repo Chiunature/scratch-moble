@@ -4,9 +4,9 @@ import { useTranslation } from '@scratch-mobile/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import type { BuildGuideModelId } from '../features/buildGuide/data/bundles';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
-import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { AiChatScreen } from '../screens/AiChatScreen';
 import { RemoteControlScreen } from '../screens/RemoteControlScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
@@ -17,6 +17,12 @@ import { colors, fontWeight } from '../theme';
 const EditorScreen = React.lazy(() =>
   import('../screens/EditorScreen').then(module => ({
     default: module.EditorScreen,
+  })),
+);
+
+const BuildGuidePickerScreen = React.lazy(() =>
+  import('../screens/BuildGuidePickerScreen').then(module => ({
+    default: module.BuildGuidePickerScreen,
   })),
 );
 
@@ -31,6 +37,7 @@ export type RootStackParamList = {
   Projects: undefined;
   Editor: { projectId: string };
   BuildGuide: undefined;
+  BuildGuidePlayer: { modelId: BuildGuideModelId };
   RemoteControl: undefined;
   AiChat: undefined;
   Runtime: undefined;
@@ -68,6 +75,7 @@ function withSuspense<P extends object>(
 }
 
 const LazyEditorScreen = withSuspense(EditorScreen);
+const LazyBuildGuidePickerScreen = withSuspense(BuildGuidePickerScreen);
 const LazyBuildGuideScreen = withSuspense(BuildGuideScreen);
 
 export function RootNavigator() {
@@ -99,6 +107,11 @@ export function RootNavigator() {
         />
         <Stack.Screen
           name="BuildGuide"
+          component={LazyBuildGuidePickerScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BuildGuidePlayer"
           component={LazyBuildGuideScreen}
           options={{ headerShown: false }}
         />

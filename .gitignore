@@ -36,8 +36,8 @@ local.properties
 .kotlin/
 
 # Build Guide shipped MPD outputs (must not be covered by global `build/`)
-!apps/mobile/assets/buildGuide/*/build/
-!apps/mobile/assets/buildGuide/*/build/**
+!apps/mobile/assets/buildGuide/models/*/build/
+!apps/mobile/assets/buildGuide/models/*/build/**
 # node.js
 #
 node_modules/

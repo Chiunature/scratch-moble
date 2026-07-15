@@ -4,32 +4,68 @@ import {
   toManifestViewModel,
 } from '@scratch-mobile/build-guide';
 
-import containerDemoManifest from '../../../../assets/buildGuide/container-demo/manifest.json';
+import catalogJson from '../../../../assets/buildGuide/catalog.json';
+import containerDemoManifest from '../../../../assets/buildGuide/models/container-demo/manifest.json';
+import teslaModelSManifest from '../../../../assets/buildGuide/models/tesla-model-s/manifest.json';
 import type { BuildGuideManifest } from '../types';
-import teslaModelSManifest from '../../../../assets/buildGuide/teslaModelS/mainfest.json';
 
 /**
  * Metro requires static `require()` for bundled MPD assets.
- * Add a new entry here when introducing another build-guide bundle.
+ * Add a new entry here when introducing another build-guide model.
  */
-const MPD_ASSET_MODULES = {
-  'container-demo': require('../../../../assets/buildGuide/container-demo/build/export.mpd'),
-  teslaModelS: require('../../../../assets/buildGuide/teslaModelS/build/export.mpd'),
-} as const satisfies Record<string, number>;
+const BUILD_GUIDE_MODELS = {
+  'container-demo': {
+    manifest: containerDemoManifest,
+    mpd: require('../../../../assets/buildGuide/models/container-demo/build/export.mpd'),
+    cover: require('../../../../assets/buildGuide/models/container-demo/container.png'),
+  },
+  'tesla-model-s': {
+    manifest: teslaModelSManifest,
+    mpd: require('../../../../assets/buildGuide/models/tesla-model-s/build/export.mpd'),
+    cover: require('../../../../assets/buildGuide/models/tesla-model-s/teslaModelS.png'),
+  },
+} as const satisfies Record<
+  string,
+  { manifest: unknown; mpd: number; cover: number }
+>;
 
-export type BuildGuideBundleId = keyof typeof MPD_ASSET_MODULES;
+export type BuildGuideModelId = keyof typeof BUILD_GUIDE_MODELS;
 
-export const BUILD_GUIDE_BUNDLE_IDS = Object.keys(
-  MPD_ASSET_MODULES,
-) as BuildGuideBundleId[];
+export type BuildGuideCatalogEntry = {
+  id: BuildGuideModelId;
+  nameKey: string;
+  cover: number;
+};
 
-export const containerDemoManifestParsed = toManifestViewModel(
-  parseMpdManifest(containerDemoManifest),
-);
+export const BUILD_GUIDE_MODEL_IDS = Object.keys(
+  BUILD_GUIDE_MODELS,
+) as BuildGuideModelId[];
 
-export const teslaModelSManifestParsed = toManifestViewModel(
-  parseMpdManifest(teslaModelSManifest),
-);
+export function isBuildGuideModelId(id: string): id is BuildGuideModelId {
+  return id in BUILD_GUIDE_MODELS;
+}
+
+export const BUILD_GUIDE_CATALOG: BuildGuideCatalogEntry[] =
+  catalogJson.models.map(entry => {
+    if (!isBuildGuideModelId(entry.id)) {
+      throw new Error(
+        `catalog.json references unknown model "${entry.id}". Register it in BUILD_GUIDE_MODELS (bundles.ts).`,
+      );
+    }
+    return {
+      id: entry.id,
+      nameKey: entry.nameKey,
+      cover: BUILD_GUIDE_MODELS[entry.id].cover,
+    };
+  });
+
+export function getBuildGuideManifest(
+  modelId: BuildGuideModelId,
+): BuildGuideManifest {
+  return toManifestViewModel(
+    parseMpdManifest(BUILD_GUIDE_MODELS[modelId].manifest),
+  );
+}
 
 /**
  * Resolve a fetchable URI for the MPD.
@@ -48,8 +84,15 @@ export async function resolveMpdUri(
     return manifest.mpdUri;
   }
 
-  const assetModule = getMpdAssetModule(manifest.id);
-  const asset = Asset.fromModule(assetModule);
+  if (!isBuildGuideModelId(manifest.id)) {
+    throw new Error(
+      `Unknown build guide model "${manifest.id}". Register it in BUILD_GUIDE_MODELS (bundles.ts). Known models: ${BUILD_GUIDE_MODEL_IDS.join(
+        ', ',
+      )}`,
+    );
+  }
+
+  const asset = Asset.fromModule(BUILD_GUIDE_MODELS[manifest.id].mpd);
   await asset.downloadAsync();
 
   if (asset.localUri == null) {
@@ -59,17 +102,4 @@ export async function resolveMpdUri(
   }
 
   return asset.localUri;
-}
-
-function getMpdAssetModule(bundleId: string): number {
-  const assetModule = MPD_ASSET_MODULES[bundleId as BuildGuideBundleId];
-  if (assetModule == null) {
-    throw new Error(
-      `Unknown build guide bundle "${bundleId}". Register it in MPD_ASSET_MODULES (bundles.ts). Known bundles: ${BUILD_GUIDE_BUNDLE_IDS.join(
-        ', ',
-      )}`,
-    );
-  }
-
-  return assetModule;
 }

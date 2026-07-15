@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "container-demo",
+      "nameKey": "container.name"
+    },
+    {
+      "id": "tesla-model-s",
+      "nameKey": "teslaModelS.name"
+    }
+  ]
+}

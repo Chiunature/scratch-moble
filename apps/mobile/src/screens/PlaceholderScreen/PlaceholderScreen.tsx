@@ -9,7 +9,7 @@ type PlaceholderRouteName = 'RemoteControl' | 'AiChat';
 type Props = NativeStackScreenProps<RootStackParamList, PlaceholderRouteName>;
 
 const pageCopy: Record<
-  Exclude<PlaceholderRouteName, 'BuildGuide'>,
+  PlaceholderRouteName,
   { title: string; body: string }
 > = {
   RemoteControl: {

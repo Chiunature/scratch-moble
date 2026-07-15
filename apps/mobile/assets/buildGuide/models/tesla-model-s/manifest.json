@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "id": "teslaModelS",
+  "id": "tesla-model-s",
   "nameKey": "teslaModelS.name",
   "mpdUri": "build/export.mpd",
   "mainModelId": "2014 - TeslaModelS.ldr",
