@@ -13,7 +13,6 @@ type StepCamera = NonNullable<BuildGuideStep['camera']>;
 
 const _defaultMatrix = new THREE.Matrix4();
 const _rotationMatrix = new THREE.Matrix4();
-const _bDiff = new THREE.Vector3();
 const _boxSize = new THREE.Vector3();
 const _boxCenter = new THREE.Vector3();
 
@@ -26,30 +25,20 @@ function isProjectionCamera(
   );
 }
 
+/**
+ * 说明书每步始终用累计包围盒居中 + fit。
+ *
+ * 不根据「当前步零件更小」自动切到 step bounds：
+ * 那种比例策略会把大量正常步骤误判成局部放大。
+ * viewport 只参与相机 frustum，不参与取景决策，保证跨设备一致。
+ */
 function selectBounds(
   stepHandler: LdrStepHandlerFacade,
-  viewport: ViewportSize,
 ): { bounds: THREE.Box3; useAccumulated: boolean } {
-  let useAccumulated = true;
-  let bounds = stepHandler.getAccumulatedBounds().clone();
-
-  const size = bounds.min.distanceTo(bounds.max);
-  const viewPortSize = 0.75 * Math.hypot(viewport.width, viewport.height);
-
-  if (size > viewPortSize) {
-    useAccumulated = false;
-    bounds = stepHandler.getBounds().clone();
-    const stepSize = bounds.min.distanceTo(bounds.max);
-
-    if (stepSize < viewPortSize) {
-      _bDiff.subVectors(bounds.max, bounds.min);
-      _bDiff.multiplyScalar(0.1 * (viewPortSize / stepSize - 1));
-      bounds.max.add(_bDiff);
-      bounds.min.sub(_bDiff);
-    }
-  }
-
-  return { bounds, useAccumulated };
+  return {
+    bounds: stepHandler.getAccumulatedBounds().clone(),
+    useAccumulated: true,
+  };
 }
 
 function updateInstructionCamera(
@@ -208,7 +197,7 @@ function applyInstructionStepToScene(
 ): void {
   updateInstructionCamera(camera, stepHandler, viewport);
 
-  const { bounds, useAccumulated } = selectBounds(stepHandler, viewport);
+  const { bounds, useAccumulated } = selectBounds(stepHandler);
 
   const [position, rotation] = stepHandler.computeCameraPositionRotation(
     _defaultMatrix,
