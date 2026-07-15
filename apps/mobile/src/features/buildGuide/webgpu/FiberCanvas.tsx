@@ -1,22 +1,28 @@
 /**
  * R3F + react-native-webgpu 画布桥接。
  *
- * 分辨率 / 抗锯齿：通过 configure({ dpr: getRenderDpr() }) 交给 Three.js 管理，
+ * 结构对齐 Expo 官方 with-webgpu 模板（src/lib/fiber-canvas.tsx）：
+ * https://github.com/expo/examples/tree/master/with-webgpu
+ * 差异（有意保留）：
+ * - 先 await renderer.init() 再 configure，避免 render-before-init 报错
+ * - dpr 用 getRenderDpr() 超采样（官方为 1）
+ * - 白色 clearColor
+ *
+ * 分辨率 / 抗锯齿：通过 configure({ dpr }) 交给 Three.js 管理，
  * 不要在这里手动设置 canvas.width（会与 renderer 内部状态不一致）。
  * 画质参数见 makeWebGPURenderer.ts。
  */
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import React, { useEffect, useRef, useState } from 'react';
+import type { ReconcilerRoot, RootState } from '@react-three/fiber';
 import {
   extend,
   createRoot,
   unmountComponentAtNode,
   events,
 } from '@react-three/fiber';
-import type { ReconcilerRoot, RootState } from '@react-three/fiber';
 import type { ViewProps } from 'react-native';
-import type { CanvasRef } from 'react-native-webgpu';
-import { Canvas } from 'react-native-webgpu';
+import { Canvas, type CanvasRef } from 'react-native-webgpu';
 
 import { getRenderDpr, makeWebGPURenderer } from './makeWebGPURenderer';
 
@@ -34,21 +40,19 @@ interface FiberCanvasProps {
   scene?: THREE.Scene;
 }
 
-export function FiberCanvas({
+export const FiberCanvas = ({
   children,
   style,
   scene,
   camera,
-}: FiberCanvasProps) {
+}: FiberCanvasProps) => {
   const root = useRef<ReconcilerRoot<WebGpuCanvasElement> | null>(null);
   const mountedCanvasRef = useRef<WebGpuCanvasElement | null>(null);
   const rendererRef = useRef<RootState['gl'] | null>(null);
   const [ready, setReady] = useState(false);
 
-  React.useMemo(() => {
-    // @ts-expect-error WebGPU three bundle shape differs from @types/three catalogue
-    extend(THREE);
-  }, []);
+  // @ts-expect-error WebGPU three bundle shape differs from @types/three catalogue
+  React.useMemo(() => extend(THREE), []);
 
   const canvasRef = useRef<CanvasRef>(null);
 
@@ -77,6 +81,7 @@ export function FiberCanvas({
         samples: 4,
       });
       renderer.setClearColor(0xffffff, 1);
+      // makeWebGPURenderer 里 ReactNativeCanvas 包装的就是这个 canvas
       const canvas = context.canvas as unknown as WebGpuCanvasElement;
 
       await renderer.init();
@@ -84,6 +89,7 @@ export function FiberCanvas({
         return;
       }
 
+      // 官方模板同款：每帧 render 后必须 context.present()
       const renderFrame = renderer.render.bind(renderer);
       renderer.render = (
         sceneToRender: THREE.Scene,
@@ -121,7 +127,12 @@ export function FiberCanvas({
   }, []);
 
   useEffect(() => {
-    if (!ready || !root.current || !mountedCanvasRef.current || !rendererRef.current) {
+    if (
+      !ready ||
+      !root.current ||
+      !mountedCanvasRef.current ||
+      !rendererRef.current
+    ) {
       return;
     }
 
@@ -145,4 +156,4 @@ export function FiberCanvas({
   }, [ready, camera, children, scene]);
 
   return <Canvas ref={canvasRef} style={style} />;
-}
+};
