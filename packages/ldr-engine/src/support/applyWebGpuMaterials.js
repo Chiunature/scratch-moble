@@ -109,10 +109,49 @@ function createLineMaterial(THREE, colors, colorId, conditional) {
   return createBasicLineMaterial(THREE, colors, colorId);
 }
 
+function getWebGpuMaterialCache(LDR) {
+  if (!LDR.__webGpuMaterialCache) {
+    LDR.__webGpuMaterialCache = {
+      lineMaterials: new Map(),
+    };
+  }
+
+  return LDR.__webGpuMaterialCache;
+}
+
+function isDynamicLDrawColor(colorId) {
+  return colorId === 16 || colorId === 24;
+}
+
+function getLineMaterialCacheKey(THREE, colorId, conditional) {
+  const materialType = conditional && typeof THREE.LineBasicNodeMaterial === 'function'
+    ? 'conditional-node-line'
+    : 'basic-line';
+
+  return `${materialType}:${colorId}`;
+}
+
+function getCachedLineMaterial(THREE, colors, cache, colorId, conditional) {
+  if (isDynamicLDrawColor(colorId)) {
+    return createLineMaterial(THREE, colors, colorId, conditional);
+  }
+
+  const key = getLineMaterialCacheKey(THREE, colorId, conditional);
+  const cached = cache.lineMaterials.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const material = createLineMaterial(THREE, colors, colorId, conditional);
+  cache.lineMaterials.set(key, material);
+  return material;
+}
+
 function applyWebGpuMaterials() {
   const THREE = globalThis.THREE;
-  const colors = globalThis.LDR.Colors;
   const LDR = globalThis.LDR;
+  const colors = LDR.Colors;
+  const materialCache = getWebGpuMaterialCache(LDR);
 
   colors.buildTriangleMaterial = function buildTriangleMaterial(colorId) {
     const colorInfo = resolveColorInfo(colors, colorId);
@@ -131,7 +170,13 @@ function applyWebGpuMaterials() {
   };
 
   colors.buildLineMaterial = function buildLineMaterial(colorId, conditional) {
-    return createLineMaterial(THREE, colors, colorId, conditional);
+    return getCachedLineMaterial(
+      THREE,
+      colors,
+      materialCache,
+      colorId,
+      conditional,
+    );
   };
 
   const originalAddLines = LDR.MeshCollector.prototype.addLines;

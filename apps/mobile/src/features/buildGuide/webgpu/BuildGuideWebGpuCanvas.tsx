@@ -12,8 +12,14 @@
  *   - instruction：正交相机 + LDraw step/orientation 对齐
  *   - preview：透视相机 + 已经 fitObjectToView 的静态整模
  */
-import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
 import * as THREE from 'three';
 
 import { resolveStepViewModel } from '@scratch-mobile/build-guide';
@@ -23,6 +29,8 @@ import type { BuildGuideBundle } from '../types';
 import { FiberCanvas } from './FiberCanvas';
 import { LdrModelScene } from './LdrModelScene';
 import useOrbitControls from './useOrbitControls';
+
+const INTERACTION_RESTORE_DELAY_MS = 160;
 
 type BuildGuideCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
@@ -79,17 +87,106 @@ export function BuildGuideWebGpuCanvas({
   bundle,
   stepIndex,
 }: BuildGuideWebGpuCanvasProps) {
-  const [OrbitControls, events] = useOrbitControls();
+  const [OrbitControls, controlEvents] = useOrbitControls();
+  const [isModelInteracting, setIsModelInteracting] = useState(false);
+  const isModelInteractingRef = useRef(false);
+  const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mode = resolveDisplayMode(bundle);
+  const renderQuality = isModelInteracting ? 'interaction' : 'default';
   const camera = useMemo(() => createBuildGuideCamera(mode), [mode]);
+
+  const beginInteraction = useCallback(() => {
+    if (restoreTimerRef.current) {
+      clearTimeout(restoreTimerRef.current);
+      restoreTimerRef.current = null;
+    }
+
+    if (isModelInteractingRef.current) {
+      return;
+    }
+
+    isModelInteractingRef.current = true;
+    setIsModelInteracting(true);
+  }, []);
+
+  const endInteraction = useCallback(() => {
+    if (restoreTimerRef.current) {
+      clearTimeout(restoreTimerRef.current);
+    }
+
+    restoreTimerRef.current = setTimeout(() => {
+      restoreTimerRef.current = null;
+
+      if (!isModelInteractingRef.current) {
+        return;
+      }
+
+      isModelInteractingRef.current = false;
+      setIsModelInteracting(false);
+    }, INTERACTION_RESTORE_DELAY_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (restoreTimerRef.current) {
+        clearTimeout(restoreTimerRef.current);
+      }
+    };
+  }, []);
+
+  const events = useMemo(
+    () => ({
+      ...controlEvents,
+      onStartShouldSetResponder(event: GestureResponderEvent) {
+        const shouldStart = controlEvents.onStartShouldSetResponder(event);
+        if (shouldStart) {
+          beginInteraction();
+        }
+        return shouldStart;
+      },
+      onMoveShouldSetResponder(event: GestureResponderEvent) {
+        const shouldStart = controlEvents.onMoveShouldSetResponder(event);
+        if (shouldStart) {
+          beginInteraction();
+        }
+        return shouldStart;
+      },
+      onResponderMove(event: GestureResponderEvent) {
+        beginInteraction();
+        controlEvents.onResponderMove(event);
+      },
+      onResponderRelease() {
+        controlEvents.onResponderRelease();
+        endInteraction();
+      },
+      onResponderTerminate() {
+        controlEvents.onResponderRelease();
+        endInteraction();
+      },
+    }),
+    [beginInteraction, controlEvents, endInteraction],
+  );
+
+  const canvasChildren = useMemo(
+    () => (
+      <>
+        <ambientLight intensity={0.65} />
+        <directionalLight intensity={1.1} position={[4, 6, 3]} />
+        <OrbitControls enablePan={false} dampingFactor={0.28} />
+        <BuildGuideScene bundle={bundle} stepIndex={stepIndex} mode={mode} />
+      </>
+    ),
+    [OrbitControls, bundle, mode, stepIndex],
+  );
 
   return (
     <View style={styles.container} {...events}>
-      <FiberCanvas style={styles.canvas} camera={camera}>
-        <ambientLight intensity={0.65} />
-        <directionalLight intensity={1.1} position={[4, 6, 3]} />
-        <OrbitControls enablePan={false} dampingFactor={0.08} />
-        <BuildGuideScene bundle={bundle} stepIndex={stepIndex} mode={mode} />
+      <FiberCanvas
+        style={styles.canvas}
+        camera={camera}
+        renderQuality={renderQuality}
+      >
+        {canvasChildren}
       </FiberCanvas>
     </View>
   );

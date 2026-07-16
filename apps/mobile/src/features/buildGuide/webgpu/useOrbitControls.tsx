@@ -639,11 +639,12 @@ function OrbitControls({ controls, ...props }: OrbitControlsInternalProps) {
 // eslint-disable-next-line import/no-default-export
 export default function useControls() {
   const controls = useMemo(() => createControls(), []);
-
-  return [
-    (props: OrbitControlsProps) => (
+  const ControlsComponent = useMemo(
+    () => (props: OrbitControlsProps) => (
       <OrbitControls controls={controls} {...props} />
     ),
-    controls.events,
-  ] as const;
+    [controls],
+  );
+
+  return [ControlsComponent, controls.events] as const;
 }

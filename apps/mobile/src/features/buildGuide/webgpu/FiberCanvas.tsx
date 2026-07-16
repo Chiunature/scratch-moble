@@ -13,7 +13,12 @@
  * 画质参数见 makeWebGPURenderer.ts。
  */
 import * as THREE from 'three/webgpu';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { ReconcilerRoot, RootState } from '@react-three/fiber';
 import {
   extend,
@@ -21,10 +26,24 @@ import {
   unmountComponentAtNode,
   events,
 } from '@react-three/fiber';
-import type { ViewProps } from 'react-native';
+import type { LayoutChangeEvent, ViewProps } from 'react-native';
 import { Canvas, type CanvasRef } from 'react-native-webgpu';
 
-import { getRenderDpr, makeWebGPURenderer } from './makeWebGPURenderer';
+import {
+  getRenderDpr,
+  makeWebGPURenderer,
+  type RenderQuality,
+} from './makeWebGPURenderer';
+
+type CanvasLayoutSize = {
+  width: number;
+  height: number;
+};
+
+type PixelRatioRenderer = RootState['gl'] & {
+  setPixelRatio(pixelRatio: number): void;
+  setSize(width: number, height: number, updateStyle?: boolean): void;
+};
 
 interface WebGpuCanvasElement {
   width: number;
@@ -38,6 +57,7 @@ interface FiberCanvasProps {
   style?: ViewProps['style'];
   camera?: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   scene?: THREE.Scene;
+  renderQuality?: RenderQuality;
 }
 
 export const FiberCanvas = ({
@@ -45,16 +65,31 @@ export const FiberCanvas = ({
   style,
   scene,
   camera,
+  renderQuality = 'default',
 }: FiberCanvasProps) => {
   const root = useRef<ReconcilerRoot<WebGpuCanvasElement> | null>(null);
   const mountedCanvasRef = useRef<WebGpuCanvasElement | null>(null);
   const rendererRef = useRef<RootState['gl'] | null>(null);
   const [ready, setReady] = useState(false);
+  const [layoutSize, setLayoutSize] = useState<CanvasLayoutSize | null>(null);
 
   // @ts-expect-error WebGPU three bundle shape differs from @types/three catalogue
   React.useMemo(() => extend(THREE), []);
 
   const canvasRef = useRef<CanvasRef>(null);
+
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    setLayoutSize(current =>
+      current?.width === width && current.height === height
+        ? current
+        : { width, height },
+    );
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,29 +166,39 @@ export const FiberCanvas = ({
       !ready ||
       !root.current ||
       !mountedCanvasRef.current ||
-      !rendererRef.current
+      !rendererRef.current ||
+      !layoutSize
     ) {
       return;
     }
 
-    const canvas = mountedCanvasRef.current;
     root.current.configure({
       size: {
         top: 0,
         left: 0,
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
+        width: layoutSize.width,
+        height: layoutSize.height,
       },
       events,
       scene,
       camera,
       gl: rendererRef.current,
       frameloop: 'always',
-      // R3F 会调用 gl.setPixelRatio + gl.setSize，驱动实际渲染分辨率
+      // 初始 DPR 由 R3F 配置；交互态切换走下方 renderer 级别更新，避免重配 root 触发相机 fit。
       dpr: getRenderDpr(),
     });
     root.current.render(children);
-  }, [ready, camera, children, scene]);
+  }, [ready, camera, children, layoutSize, scene]);
 
-  return <Canvas ref={canvasRef} style={style} />;
+  useEffect(() => {
+    if (!ready || !rendererRef.current || !layoutSize) {
+      return;
+    }
+
+    const renderer = rendererRef.current as PixelRatioRenderer;
+    renderer.setPixelRatio(getRenderDpr(renderQuality));
+    renderer.setSize(layoutSize.width, layoutSize.height, false);
+  }, [layoutSize, ready, renderQuality]);
+
+  return <Canvas ref={canvasRef} style={style} onLayout={handleLayout} />;
 };

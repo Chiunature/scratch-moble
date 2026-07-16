@@ -2337,6 +2337,7 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
             }
 	    
             let mesh = new THREE.Mesh(g.clone(), material);
+            mesh.userData.ldrTextureKey = textureFile;
             mesh.geometry.applyMatrix4(m4);
             mc.addMesh(c3, mesh, pd);
         });
@@ -2829,6 +2830,168 @@ LDR.TexmapPlacement.prototype.toLDR = function(lines, loader) {
   - 'old': A part placed in 'earlier steps' can be colored 'old' to highlight new parts
   - 'ghost': 'Ghosted' parts will be shown by their lines only (no faces).
 */
+function getLdrBatchGhostKey(part) {
+    return part && part.original && part.original.ghost ? 'ghost' : 'solid';
+}
+
+function getLdrBatchStepKey(meshCollector) {
+    return meshCollector && meshCollector.idx !== undefined ? meshCollector.idx : 'step';
+}
+
+function getLdrBatchOldKey(meshCollector) {
+    return meshCollector && meshCollector.old ? 'old' : 'new';
+}
+
+function getLdrBatchStateKey(meshCollector, part) {
+    return [
+        getLdrBatchStepKey(meshCollector),
+        getLdrBatchOldKey(meshCollector),
+        getLdrBatchGhostKey(part),
+    ].join('|');
+}
+
+function getLdrBatchTextureKey(mesh) {
+    if(mesh.userData && mesh.userData.ldrTextureKey) {
+        return mesh.userData.ldrTextureKey;
+    }
+    const material = mesh.material;
+    const map = material && (material.map || (material.uniforms && material.uniforms.map && material.uniforms.map.value));
+    if(map && map.uuid) {
+        return map.uuid;
+    }
+    return map ? 'texture' : 'none';
+}
+
+function getLdrBatchMaterialKey(mesh) {
+    const material = mesh.material;
+    if(!material) {
+        return 'none';
+    }
+    return [
+        material.type || 'material',
+        material.transparent ? 'trans' : 'opaque',
+        material.depthWrite === false ? 'no-depth-write' : 'depth-write',
+        material.side === undefined ? 'side-default' : material.side,
+        getLdrBatchTextureKey(mesh),
+    ].join('|');
+}
+
+function makeLdrMeshBatchKey(color, mesh, part, meshCollector) {
+    return [
+        color,
+        LDR.Colors.isTrans(color) ? 'trans' : 'opaque',
+        getLdrBatchTextureKey(mesh),
+        getLdrBatchMaterialKey(mesh),
+        getLdrBatchStateKey(meshCollector, part),
+    ].join('|');
+}
+
+function makeLdrLineBatchKey(color, part, meshCollector) {
+    return [
+        getLdrBatchStepKey(meshCollector),
+        color,
+        getLdrBatchOldKey(meshCollector),
+        getLdrBatchGhostKey(part),
+    ].join('|');
+}
+
+function cloneGeometryForLdrBatch(mesh) {
+    mesh.updateMatrix();
+    const geometry = mesh.geometry.clone();
+    geometry.applyMatrix4(mesh.matrix);
+    return geometry;
+}
+
+function sameLdrGeometryAttributes(a, b) {
+    const aNames = Object.keys(a.attributes).sort();
+    const bNames = Object.keys(b.attributes).sort();
+    if(aNames.length !== bNames.length) {
+        return false;
+    }
+    for(let i = 0; i < aNames.length; i++) {
+        if(aNames[i] !== bNames[i]) {
+            return false;
+        }
+        const aa = a.attributes[aNames[i]];
+        const ba = b.attributes[bNames[i]];
+        if(aa.itemSize !== ba.itemSize || aa.normalized !== ba.normalized || aa.array.constructor !== ba.array.constructor) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function mergeLdrBufferGeometries(geometries) {
+    if(geometries.length === 0) {
+        return null;
+    }
+    if(geometries.length === 1) {
+        return geometries[0];
+    }
+
+    const first = geometries[0];
+    for(let i = 1; i < geometries.length; i++) {
+        if(!sameLdrGeometryAttributes(first, geometries[i])) {
+            return null;
+        }
+    }
+
+    const attributeNames = Object.keys(first.attributes);
+    const merged = new THREE.BufferGeometry();
+    let vertexOffset = 0;
+    let totalVertices = 0;
+    let totalIndexCount = 0;
+
+    geometries.forEach(geometry => {
+        const position = geometry.getAttribute('position');
+        totalVertices += position.count;
+        totalIndexCount += geometry.index ? geometry.index.count : position.count;
+    });
+
+    attributeNames.forEach(name => {
+        const firstAttribute = first.getAttribute(name);
+        const ArrayType = firstAttribute.array.constructor;
+        const array = new ArrayType(totalVertices * firstAttribute.itemSize);
+        let offset = 0;
+        geometries.forEach(geometry => {
+            const attribute = geometry.getAttribute(name);
+            array.set(attribute.array, offset);
+            offset += attribute.array.length;
+        });
+        merged.setAttribute(name, new THREE.BufferAttribute(array, firstAttribute.itemSize, firstAttribute.normalized));
+    });
+
+    const IndexArrayType = totalVertices > 65535 ? Uint32Array : Uint16Array;
+    const indices = new IndexArrayType(totalIndexCount);
+    let indexOffset = 0;
+    geometries.forEach(geometry => {
+        const position = geometry.getAttribute('position');
+        if(geometry.index) {
+            const source = geometry.index.array;
+            for(let i = 0; i < source.length; i++) {
+                indices[indexOffset++] = source[i] + vertexOffset;
+            }
+        }
+        else {
+            for(let i = 0; i < position.count; i++) {
+                indices[indexOffset++] = vertexOffset + i;
+            }
+        }
+        vertexOffset += position.count;
+    });
+    merged.setIndex(new THREE.BufferAttribute(indices, 1));
+    merged.computeBoundingBox();
+    return merged;
+}
+
+function createLdrBatchObject(template, geometry, isLine) {
+    const obj = isLine ? new THREE.LineSegments(geometry, template.material) : new THREE.Mesh(geometry, template.material);
+    obj.receiveShadow = template.receiveShadow;
+    obj.castShadow = template.castShadow;
+    obj.renderOrder = template.renderOrder;
+    obj.frustumCulled = template.frustumCulled;
+    return obj;
+}
 LDR.MeshCollectorIdx = 0;
 LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner) {
     this.opaqueObject = opaqueObject;
@@ -2838,6 +3001,8 @@ LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner)
 
     this.lineMeshes = []; // {color,originalColor,mesh,part,conditional}
     this.triangleMeshes = []; // {color,originalColor,mesh,part,parent}
+    this.pendingLineBatches = {};
+    this.pendingTriangleBatches = {};
 
     this.old = false;
     this.visible = true;
@@ -2848,34 +3013,119 @@ LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner)
     this.idx = LDR.MeshCollectorIdx++;
 }
 
+function addLdrPendingBatch(map, key, record) {
+    if(!map.hasOwnProperty(key)) {
+        map[key] = [];
+    }
+    map[key].push(record);
+}
+
 LDR.MeshCollector.prototype.addLines = function(color, mesh, part, conditional) {
-    this.lineMeshes.push({color:color, originalColor:color, mesh:mesh, part:part, conditional:conditional});
-    this.opaqueObject.add(mesh);
+    if(conditional) {
+        this.lineMeshes.push({color:color, originalColor:color, mesh:mesh, part:part, conditional:conditional});
+        this.opaqueObject.add(mesh);
+        return;
+    }
+
+    const key = makeLdrLineBatchKey(color, part, this);
+    addLdrPendingBatch(this.pendingLineBatches, key, {color:color, originalColor:color, mesh:mesh, part:part, conditional:false});
 }
 
 LDR.MeshCollector.prototype.addHoverBox = () => {};
 
-LDR.MeshCollector.prototype.addMesh = function(color, mesh, part) {
-    this.addHoverBox(mesh, part);
-    let parent;
+LDR.MeshCollector.prototype.getTriangleParent = function(color) {
     if(color === 16) {
-	parent = this.sixteenObject;
+	return this.sixteenObject;
     }
-    else if(LDR.Colors.isTrans(color)) {
-	parent = this.transObject;
-        let lum = LDR.Colors.getLuminance(color);
-        if(lum > 0) {
-            this.glowObjects.push({mesh:mesh, color:color});
-        }
+    if(LDR.Colors.isTrans(color)) {
+	return this.transObject;
     }
-    else {
-	parent = this.opaqueObject;
+    return this.opaqueObject;
+}
+
+LDR.MeshCollector.prototype.trackGlowObject = function(color, mesh) {
+    if(!LDR.Colors.isTrans(color)) {
+        return;
     }
+    let lum = LDR.Colors.getLuminance(color);
+    if(lum > 0) {
+        this.glowObjects.push({mesh:mesh, color:color});
+    }
+}
+
+LDR.MeshCollector.prototype.addMeshObject = function(color, mesh, part) {
+    this.addHoverBox(mesh, part);
+    const parent = this.getTriangleParent(color);
+    this.trackGlowObject(color, mesh);
     this.triangleMeshes.push({color:color, originalColor:color, mesh:mesh, part:part, parent:parent});
     parent.add(mesh);
 }
 
+LDR.MeshCollector.prototype.addMesh = function(color, mesh, part) {
+    const key = makeLdrMeshBatchKey(color, mesh, part, this);
+    addLdrPendingBatch(this.pendingTriangleBatches, key, {color:color, originalColor:color, mesh:mesh, part:part});
+}
+
+LDR.MeshCollector.prototype.flushLineBatch = function(records) {
+    if(records.length === 1) {
+        const record = records[0];
+        this.lineMeshes.push(record);
+        this.opaqueObject.add(record.mesh);
+        return;
+    }
+
+    const geometries = records.map(record => cloneGeometryForLdrBatch(record.mesh));
+    const geometry = mergeLdrBufferGeometries(geometries);
+    if(!geometry) {
+        records.forEach(record => {
+            this.lineMeshes.push(record);
+            this.opaqueObject.add(record.mesh);
+        });
+        return;
+    }
+
+    const first = records[0];
+    const mesh = createLdrBatchObject(first.mesh, geometry, true);
+    this.lineMeshes.push({color:first.color, originalColor:first.originalColor, mesh:mesh, part:first.part, conditional:false});
+    this.opaqueObject.add(mesh);
+}
+
+LDR.MeshCollector.prototype.flushTriangleBatch = function(records) {
+    if(records.length === 1) {
+        const record = records[0];
+        this.addMeshObject(record.color, record.mesh, record.part);
+        return;
+    }
+
+    const geometries = records.map(record => cloneGeometryForLdrBatch(record.mesh));
+    const geometry = mergeLdrBufferGeometries(geometries);
+    if(!geometry) {
+        records.forEach(record => this.addMeshObject(record.color, record.mesh, record.part));
+        return;
+    }
+
+    const first = records[0];
+    const mesh = createLdrBatchObject(first.mesh, geometry, false);
+    this.addMeshObject(first.color, mesh, first.part);
+}
+
+LDR.MeshCollector.prototype.flushBatches = function() {
+    for(let key in this.pendingLineBatches) {
+        if(this.pendingLineBatches.hasOwnProperty(key)) {
+            this.flushLineBatch(this.pendingLineBatches[key]);
+        }
+    }
+    for(let key in this.pendingTriangleBatches) {
+        if(this.pendingTriangleBatches.hasOwnProperty(key)) {
+            this.flushTriangleBatch(this.pendingTriangleBatches[key]);
+        }
+    }
+    this.pendingLineBatches = {};
+    this.pendingTriangleBatches = {};
+}
+
 LDR.MeshCollector.prototype.getGlowObjects = function(map) {
+    this.flushBatches();
     if(LDR.Colors.canBeOld && this.old && LDR.Options && LDR.Options.showOldColors === 3) {
         return; // Don't glow when old.
     }
@@ -2932,6 +3182,7 @@ LDR.MeshCollector.prototype.attachGlowPasses = function(w, h, scene, camera, com
 }
 
 LDR.MeshCollector.prototype.removeAllMeshes = function() {
+    this.flushBatches();
     let self = this;
     this.lineMeshes.forEach(obj => self.opaqueObject.remove(obj.mesh));
     this.triangleMeshes.forEach(obj => obj.parent.remove(obj.mesh));
@@ -2942,6 +3193,7 @@ LDR.MeshCollector.prototype.removeAllMeshes = function() {
   visibility of this meshCollector.
  */
 LDR.MeshCollector.prototype.updateMeshVisibility = function() {
+    this.flushBatches();
     const v = this.visible;
 
     this.lineMeshes.forEach(obj => obj.mesh.visible = v);
@@ -2972,6 +3224,7 @@ LDR.MeshCollector.prototype.expandBoundingBox = function(boundingBox, m) {
 }
 
 LDR.MeshCollector.prototype.setOldValue = function(old) {
+    this.flushBatches();
     if(!LDR.Colors.canBeOld) {
 	return;
     }
@@ -2992,6 +3245,7 @@ LDR.MeshCollector.prototype.setOldValue = function(old) {
 }
 
 LDR.MeshCollector.prototype.colorLinesLDraw = function() {
+    this.flushBatches();
     this.lineMeshes.forEach(mesh => {
         let m = mesh.mesh.material;
         m.uniforms.color.value = LDR.Colors.getColor4(mesh.color);
@@ -2999,6 +3253,7 @@ LDR.MeshCollector.prototype.colorLinesLDraw = function() {
 }
 
 LDR.MeshCollector.prototype.colorLinesHighContrast = function() {
+    this.flushBatches();
     this.lineMeshes.forEach(mesh => {
         let m = mesh.mesh.material;
         m.uniforms.color.value = LDR.Colors.getHighContrastColor4(mesh.color);
@@ -3028,6 +3283,7 @@ LDR.MeshCollector.prototype.update = function(old) {
 }
 
 LDR.MeshCollector.prototype.overwriteColor = function(color) {
+    this.flushBatches();
     if(this.overwrittenColor === color) {
         return;
     }
@@ -3075,6 +3331,7 @@ LDR.MeshCollector.prototype.isVisible = function() {
   Update meshes and set own visibility indicator.
 */
 LDR.MeshCollector.prototype.setVisible = function(v) {
+    this.flushBatches();
     if(this.visible === v && this.old) { // If not old, ghosting might have changed.
 	return;
     }
@@ -3083,6 +3340,7 @@ LDR.MeshCollector.prototype.setVisible = function(v) {
 }
 
 LDR.MeshCollector.prototype.getGhostedParts = function() {
+    this.flushBatches();
     let lineObjects = this.lineMeshes.filter(obj => obj.part && obj.part.original.ghost);
     let triangleObjects = this.triangleMeshes.filter(obj => obj.part && obj.part.original.ghost);
     return [lineObjects,triangleObjects];
