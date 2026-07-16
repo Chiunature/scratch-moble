@@ -2312,10 +2312,8 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
 	}
         let c3 = transformColor(tc);
 
-	let material = new LDR.Colors.buildLineMaterial(c3, false);
-	let normalLines = new THREE.LineSegments(this.geometry.lineGeometries[tc], material);
-	normalLines.applyMatrix4(m4);
-	mc.addLines(c3, normalLines, pd, false);
+	let record = createLdrLineBatchRecord(this.geometry.lineGeometries[tc], c3, m4, false);
+	mc.addLineRecord(c3, record, pd, false);
     }
     
     for(let tc in this.geometry.conditionalLineGeometries) {
@@ -2324,10 +2322,8 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
 	}
         let c3 = transformColor(tc);
 
-	let material = new LDR.Colors.buildLineMaterial(c3, true);
-	let conditionalLines = new THREE.LineSegments(this.geometry.conditionalLineGeometries[tc], material);
-	conditionalLines.applyMatrix4(m4);
-	mc.addLines(c3, conditionalLines, pd, true);
+	let record = createLdrLineBatchRecord(this.geometry.conditionalLineGeometries[tc], c3, m4, true);
+	mc.addLineRecord(c3, record, pd, true);
     }
 
     let b = this.geometry.boundingBox;
@@ -2824,6 +2820,35 @@ function createLdrTriangleBatchRecord(geometry, color, matrix, loader, textureKe
     };
 }
 
+function applyLdrMatrixToVector3Attribute(attribute, matrix) {
+    if(!attribute) {
+        return;
+    }
+    const v = new THREE.Vector3();
+    for(let i = 0; i < attribute.count; i++) {
+        v.fromBufferAttribute(attribute, i);
+        v.applyMatrix4(matrix);
+        attribute.setXYZ(i, v.x, v.y, v.z);
+    }
+    attribute.needsUpdate = true;
+}
+
+function createLdrLineBatchRecord(geometry, color, matrix, conditional) {
+    const recordGeometry = geometry.clone();
+    recordGeometry.applyMatrix4(matrix);
+    if(conditional) {
+        applyLdrMatrixToVector3Attribute(recordGeometry.getAttribute('p2'), matrix);
+        applyLdrMatrixToVector3Attribute(recordGeometry.getAttribute('p3'), matrix);
+        applyLdrMatrixToVector3Attribute(recordGeometry.getAttribute('p4'), matrix);
+    }
+    return {
+        kind: conditional ? 'conditional-line' : 'line',
+        geometry: recordGeometry,
+        color: color,
+        conditional: conditional,
+    };
+}
+
 function getLdrBatchStateKey(meshCollector, part) {
     return [
         getLdrBatchStepKey(meshCollector),
@@ -2850,6 +2875,14 @@ function makeLdrMeshBatchKey(color, batchRecord, part, meshCollector) {
         LDR.Colors.isTrans(color) ? 'trans' : 'opaque',
         getLdrBatchTextureKey(batchRecord),
         getLdrBatchMaterialKey(batchRecord),
+        getLdrBatchStateKey(meshCollector, part),
+    ].join('|');
+}
+
+function makeLdrLineBatchKey(color, batchRecord, part, meshCollector) {
+    return [
+        color,
+        batchRecord.kind,
         getLdrBatchStateKey(meshCollector, part),
     ].join('|');
 }
@@ -2987,6 +3020,10 @@ function createLdrTriangleMeshFromBatchRecord(batchRecord, geometry, loader) {
     mesh.userData = batchRecord.userData ? {...batchRecord.userData} : {};
     return mesh;
 }
+
+function createLdrLineSegmentsFromBatchRecord(batchRecord, geometry) {
+    return new THREE.LineSegments(geometry, LDR.Colors.buildLineMaterial(batchRecord.color, batchRecord.conditional));
+}
 LDR.MeshCollectorIdx = 0;
 LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner, loader) {
     this.opaqueObject = opaqueObject;
@@ -2997,6 +3034,7 @@ LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner,
 
     this.lineMeshes = []; // {color,originalColor,mesh,part,conditional}
     this.triangleMeshes = []; // {color,originalColor,mesh,part,parent}
+    this.pendingLineBatches = {};
     this.pendingTriangleBatches = {};
 
     this.old = false;
@@ -3015,9 +3053,18 @@ function addLdrPendingBatch(map, key, record) {
     map[key].push(record);
 }
 
-LDR.MeshCollector.prototype.addLines = function(color, mesh, part, conditional) {
+LDR.MeshCollector.prototype.addLineObject = function(color, mesh, part, conditional) {
     this.lineMeshes.push({color:color, originalColor:color, mesh:mesh, part:part, conditional:conditional});
     this.opaqueObject.add(mesh);
+}
+
+LDR.MeshCollector.prototype.addLines = function(color, mesh, part, conditional) {
+    this.addLineObject(color, mesh, part, conditional);
+}
+
+LDR.MeshCollector.prototype.addLineRecord = function(color, batchRecord, part, conditional) {
+    const key = makeLdrLineBatchKey(color, batchRecord, part, this);
+    addLdrPendingBatch(this.pendingLineBatches, key, {color:color, originalColor:color, batchRecord:batchRecord, part:part, conditional:conditional});
 }
 
 LDR.MeshCollector.prototype.addHoverBox = () => {};
@@ -3055,6 +3102,29 @@ LDR.MeshCollector.prototype.addMesh = function(color, batchRecord, part) {
     addLdrPendingBatch(this.pendingTriangleBatches, key, {color:color, originalColor:color, batchRecord:batchRecord, part:part});
 }
 
+LDR.MeshCollector.prototype.flushLineBatch = function(records) {
+    if(records.length === 1) {
+        const record = records[0];
+        const mesh = createLdrLineSegmentsFromBatchRecord(record.batchRecord, getGeometryForLdrBatchRecord(record.batchRecord));
+        this.addLines(record.color, mesh, record.part, record.conditional);
+        return;
+    }
+
+    const geometries = records.map(record => getGeometryForLdrBatchRecord(record.batchRecord));
+    const geometry = mergeLdrBufferGeometries(geometries);
+    if(!geometry) {
+        records.forEach(record => {
+            const mesh = createLdrLineSegmentsFromBatchRecord(record.batchRecord, getGeometryForLdrBatchRecord(record.batchRecord));
+            this.addLines(record.color, mesh, record.part, record.conditional);
+        });
+        return;
+    }
+
+    const first = records[0];
+    const mesh = createLdrLineSegmentsFromBatchRecord(first.batchRecord, geometry);
+    this.addLines(first.color, mesh, first.part, first.conditional);
+}
+
 LDR.MeshCollector.prototype.flushTriangleBatch = function(records) {
     if(records.length === 1) {
         const record = records[0];
@@ -3079,6 +3149,13 @@ LDR.MeshCollector.prototype.flushTriangleBatch = function(records) {
 }
 
 LDR.MeshCollector.prototype.flushBatches = function() {
+    for(let key in this.pendingLineBatches) {
+        if(this.pendingLineBatches.hasOwnProperty(key)) {
+            this.flushLineBatch(this.pendingLineBatches[key]);
+        }
+    }
+    this.pendingLineBatches = {};
+
     for(let key in this.pendingTriangleBatches) {
         if(this.pendingTriangleBatches.hasOwnProperty(key)) {
             this.flushTriangleBatch(this.pendingTriangleBatches[key]);
