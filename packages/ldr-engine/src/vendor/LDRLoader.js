@@ -2295,11 +2295,8 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
 	else { // Physical rendering:
             material = LDR.Colors.buildStandardMaterial(c3, false);
 	}
-        let mesh = new THREE.Mesh(g.clone(), material); // Using clone to ensure matrix in next line doesn't affect other usages of the geometry.
-        mesh.receiveShadow = mesh.castShadow = loader.physicalRenderingAge !== 0;
-        mesh.geometry.applyMatrix4(m4);
-        //mesh.applyMatrix4(m4); // Doesn't work for all LDraw parts as the matrix needs to be decomposable to position, quaternion and scale. Some rotation matrices in LDraw parts are not decomposable.
-        mc.addMesh(c3, mesh, pd);
+        let record = createLdrTriangleBatchRecord(g, material, m4, loader);
+        mc.addMesh(c3, record, pd);
     }
 
     let self = this;
@@ -2336,10 +2333,8 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
                 material = buildMaterial(texture);
             }
 	    
-            let mesh = new THREE.Mesh(g.clone(), material);
-            mesh.userData.ldrTextureKey = textureFile;
-            mesh.geometry.applyMatrix4(m4);
-            mc.addMesh(c3, mesh, pd);
+            let record = createLdrTriangleBatchRecord(g, material, m4, loader, {ldrTextureKey: textureFile});
+            mc.addMesh(c3, record, pd);
         });
     }
 
@@ -2842,6 +2837,21 @@ function getLdrBatchOldKey(meshCollector) {
     return meshCollector && meshCollector.old ? 'old' : 'new';
 }
 
+function createLdrTriangleBatchRecord(geometry, material, matrix, loader, userData) {
+    const recordGeometry = geometry.clone();
+    recordGeometry.applyMatrix4(matrix);
+    return {
+        geometry: recordGeometry,
+        material: material,
+        receiveShadow: loader.physicalRenderingAge !== 0,
+        castShadow: loader.physicalRenderingAge !== 0,
+        renderOrder: 0,
+        frustumCulled: true,
+        userData: userData ? {...userData} : {},
+        isLdrBatchRecord: true,
+    };
+}
+
 function getLdrBatchStateKey(meshCollector, part) {
     return [
         getLdrBatchStepKey(meshCollector),
@@ -2886,16 +2896,10 @@ function makeLdrMeshBatchKey(color, mesh, part, meshCollector) {
     ].join('|');
 }
 
-function makeLdrLineBatchKey(color, part, meshCollector) {
-    return [
-        getLdrBatchStepKey(meshCollector),
-        color,
-        getLdrBatchOldKey(meshCollector),
-        getLdrBatchGhostKey(part),
-    ].join('|');
-}
-
 function cloneGeometryForLdrBatch(mesh) {
+    if(mesh && mesh.isLdrBatchRecord) {
+        return mesh.geometry;
+    }
     mesh.updateMatrix();
     const geometry = mesh.geometry.clone();
     geometry.applyMatrix4(mesh.matrix);
@@ -2984,13 +2988,14 @@ function mergeLdrBufferGeometries(geometries) {
     return merged;
 }
 
-function createLdrBatchObject(template, geometry, isLine) {
-    const obj = isLine ? new THREE.LineSegments(geometry, template.material) : new THREE.Mesh(geometry, template.material);
-    obj.receiveShadow = template.receiveShadow;
-    obj.castShadow = template.castShadow;
-    obj.renderOrder = template.renderOrder;
-    obj.frustumCulled = template.frustumCulled;
-    return obj;
+function createLdrTriangleMeshFromBatchRecord(batchRecord, geometry) {
+    const mesh = new THREE.Mesh(geometry, batchRecord.material);
+    mesh.receiveShadow = batchRecord.receiveShadow;
+    mesh.castShadow = batchRecord.castShadow;
+    mesh.renderOrder = batchRecord.renderOrder;
+    mesh.frustumCulled = batchRecord.frustumCulled;
+    mesh.userData = batchRecord.userData ? {...batchRecord.userData} : {};
+    return mesh;
 }
 LDR.MeshCollectorIdx = 0;
 LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner) {
@@ -3001,7 +3006,6 @@ LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner)
 
     this.lineMeshes = []; // {color,originalColor,mesh,part,conditional}
     this.triangleMeshes = []; // {color,originalColor,mesh,part,parent}
-    this.pendingLineBatches = {};
     this.pendingTriangleBatches = {};
 
     this.old = false;
@@ -3021,14 +3025,8 @@ function addLdrPendingBatch(map, key, record) {
 }
 
 LDR.MeshCollector.prototype.addLines = function(color, mesh, part, conditional) {
-    if(conditional) {
-        this.lineMeshes.push({color:color, originalColor:color, mesh:mesh, part:part, conditional:conditional});
-        this.opaqueObject.add(mesh);
-        return;
-    }
-
-    const key = makeLdrLineBatchKey(color, part, this);
-    addLdrPendingBatch(this.pendingLineBatches, key, {color:color, originalColor:color, mesh:mesh, part:part, conditional:false});
+    this.lineMeshes.push({color:color, originalColor:color, mesh:mesh, part:part, conditional:conditional});
+    this.opaqueObject.add(mesh);
 }
 
 LDR.MeshCollector.prototype.addHoverBox = () => {};
@@ -3061,66 +3059,40 @@ LDR.MeshCollector.prototype.addMeshObject = function(color, mesh, part) {
     parent.add(mesh);
 }
 
-LDR.MeshCollector.prototype.addMesh = function(color, mesh, part) {
-    const key = makeLdrMeshBatchKey(color, mesh, part, this);
-    addLdrPendingBatch(this.pendingTriangleBatches, key, {color:color, originalColor:color, mesh:mesh, part:part});
-}
-
-LDR.MeshCollector.prototype.flushLineBatch = function(records) {
-    if(records.length === 1) {
-        const record = records[0];
-        this.lineMeshes.push(record);
-        this.opaqueObject.add(record.mesh);
-        return;
-    }
-
-    const geometries = records.map(record => cloneGeometryForLdrBatch(record.mesh));
-    const geometry = mergeLdrBufferGeometries(geometries);
-    if(!geometry) {
-        records.forEach(record => {
-            this.lineMeshes.push(record);
-            this.opaqueObject.add(record.mesh);
-        });
-        return;
-    }
-
-    const first = records[0];
-    const mesh = createLdrBatchObject(first.mesh, geometry, true);
-    this.lineMeshes.push({color:first.color, originalColor:first.originalColor, mesh:mesh, part:first.part, conditional:false});
-    this.opaqueObject.add(mesh);
+LDR.MeshCollector.prototype.addMesh = function(color, batchRecord, part) {
+    const key = makeLdrMeshBatchKey(color, batchRecord, part, this);
+    addLdrPendingBatch(this.pendingTriangleBatches, key, {color:color, originalColor:color, batchRecord:batchRecord, part:part});
 }
 
 LDR.MeshCollector.prototype.flushTriangleBatch = function(records) {
     if(records.length === 1) {
         const record = records[0];
-        this.addMeshObject(record.color, record.mesh, record.part);
+        const mesh = createLdrTriangleMeshFromBatchRecord(record.batchRecord, cloneGeometryForLdrBatch(record.batchRecord));
+        this.addMeshObject(record.color, mesh, record.part);
         return;
     }
 
-    const geometries = records.map(record => cloneGeometryForLdrBatch(record.mesh));
+    const geometries = records.map(record => cloneGeometryForLdrBatch(record.batchRecord));
     const geometry = mergeLdrBufferGeometries(geometries);
     if(!geometry) {
-        records.forEach(record => this.addMeshObject(record.color, record.mesh, record.part));
+        records.forEach(record => {
+            const mesh = createLdrTriangleMeshFromBatchRecord(record.batchRecord, cloneGeometryForLdrBatch(record.batchRecord));
+            this.addMeshObject(record.color, mesh, record.part);
+        });
         return;
     }
 
     const first = records[0];
-    const mesh = createLdrBatchObject(first.mesh, geometry, false);
+    const mesh = createLdrTriangleMeshFromBatchRecord(first.batchRecord, geometry);
     this.addMeshObject(first.color, mesh, first.part);
 }
 
 LDR.MeshCollector.prototype.flushBatches = function() {
-    for(let key in this.pendingLineBatches) {
-        if(this.pendingLineBatches.hasOwnProperty(key)) {
-            this.flushLineBatch(this.pendingLineBatches[key]);
-        }
-    }
     for(let key in this.pendingTriangleBatches) {
         if(this.pendingTriangleBatches.hasOwnProperty(key)) {
             this.flushTriangleBatch(this.pendingTriangleBatches[key]);
         }
     }
-    this.pendingLineBatches = {};
     this.pendingTriangleBatches = {};
 }
 
