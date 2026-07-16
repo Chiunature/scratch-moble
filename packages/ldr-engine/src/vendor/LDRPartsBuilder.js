@@ -135,7 +135,7 @@ LDR.PartAndColor.prototype.ensureMeshCollector = function(baseObject) {
 	baseObject.add(opaqueObject);
 	baseObject.add(sixteenObject);
 	baseObject.add(transObject);
-	let mc = this.partType.pliMC = new LDR.MeshCollector(opaqueObject, sixteenObject, transObject);
+	let mc = this.partType.pliMC = new LDR.MeshCollector(opaqueObject, sixteenObject, transObject, undefined, this.loader);
 	let p = new THREE.Vector3();
 	let r = new THREE.Matrix3();
 	r.set(1,0,0, 0,-1,0, 0,0,-1);

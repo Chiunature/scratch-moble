@@ -236,7 +236,7 @@ LDR.StepHandler.prototype.nextStep = function(skipDrawing) {
 	let meshCollector = step.meshCollector;
 	if(!meshCollector) {
 	    let pd = this.partDescs[0];
-            step.meshCollector = meshCollector = new LDR.MeshCollector(this.opaqueObject, this.sixteenObject, this.transObject, this.manager);
+            step.meshCollector = meshCollector = new LDR.MeshCollector(this.opaqueObject, this.sixteenObject, this.transObject, this.manager, this.loader);
 
 	    step.step.generateThreePart(this.loader, pd.c, pd.p, pd.r, true, false, meshCollector);
 	    if(step.step.original) { // The step contains colored clones, so clean up from the original:
@@ -577,7 +577,7 @@ LDR.StepHandler.prototype.drawExtras = function() {
     }
 
     if(!step.meshCollector) { // Not already loaded
-	let meshCollector = new LDR.MeshCollector(this.opaqueObject, this.sixteenObject, this.transObject, this.manager);
+	let meshCollector = new LDR.MeshCollector(this.opaqueObject, this.sixteenObject, this.transObject, this.manager, this.loader);
         step.meshCollector = meshCollector;
 
 	let prevAccumulatedBounds = new THREE.Box3();

@@ -2288,18 +2288,10 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
         let c3 = transformColor(tc);
 	let g = this.geometry.triangleGeometries[tc];
 
-	let material;
-	if(loader.physicalRenderingAge === 0) { // Simple rendering:
-            material = new LDR.Colors.buildTriangleMaterial(c3, false);
-        }
-	else { // Physical rendering:
-            material = LDR.Colors.buildStandardMaterial(c3, false);
-	}
-        let record = createLdrTriangleBatchRecord(g, material, m4, loader);
+        let record = createLdrTriangleBatchRecord(g, c3, m4, loader);
         mc.addMesh(c3, record, pd);
     }
 
-    let self = this;
     for(let idx in this.geometry.texmapGeometries) { // Texmap geometries:
         if(!this.geometry.texmapGeometries.hasOwnProperty(idx)) {
             continue;
@@ -2309,31 +2301,7 @@ THREE.LDRPartType.prototype.generateThreePart = function(loader, c, p, r, cull, 
             let c3 = transformColor(c2);
             let textureFile = LDR.TexmapPlacements[idx].file;
 	    
-            let material;
-            let buildMaterial, setMap;
-            if(loader.physicalRenderingAge === 0) {
-                buildMaterial = t => LDR.Colors.buildTriangleMaterial(c3, t);
-                setMap = t => material.uniforms.map.value = t;
-            }
-            else {
-                buildMaterial = t => LDR.Colors.buildStandardMaterial(c3, t);
-                setMap = t => material.map = t;
-            }
-	    
-            if(loader.texmaps[textureFile] === true) { // Texture not yet loaded:
-                material = buildMaterial(true);
-                function setTexmap(t) {
-                    setMap(t);
-                    material.needsUpdate = true;
-                }
-                loader.texmapListeners[textureFile].push(setTexmap);
-            }
-            else {
-                let texture = loader.texmaps[textureFile];
-                material = buildMaterial(texture);
-            }
-	    
-            let record = createLdrTriangleBatchRecord(g, material, m4, loader, {ldrTextureKey: textureFile});
+            let record = createLdrTriangleBatchRecord(g, c3, m4, loader, textureFile, {ldrTextureKey: textureFile});
             mc.addMesh(c3, record, pd);
         });
     }
@@ -2837,18 +2805,22 @@ function getLdrBatchOldKey(meshCollector) {
     return meshCollector && meshCollector.old ? 'old' : 'new';
 }
 
-function createLdrTriangleBatchRecord(geometry, material, matrix, loader, userData) {
+function createLdrTriangleBatchRecord(geometry, color, matrix, loader, textureKey, userData) {
     const recordGeometry = geometry.clone();
     recordGeometry.applyMatrix4(matrix);
     return {
+        kind: 'triangle',
         geometry: recordGeometry,
-        material: material,
-        receiveShadow: loader.physicalRenderingAge !== 0,
-        castShadow: loader.physicalRenderingAge !== 0,
-        renderOrder: 0,
-        frustumCulled: true,
+        color: color,
+        materialKind: loader.physicalRenderingAge === 0 ? 'shader' : 'standard',
+        textureKey: textureKey || null,
+        flags: {
+            receiveShadow: loader.physicalRenderingAge !== 0,
+            castShadow: loader.physicalRenderingAge !== 0,
+            renderOrder: 0,
+            frustumCulled: true,
+        },
         userData: userData ? {...userData} : {},
-        isLdrBatchRecord: true,
     };
 }
 
@@ -2860,50 +2832,30 @@ function getLdrBatchStateKey(meshCollector, part) {
     ].join('|');
 }
 
-function getLdrBatchTextureKey(mesh) {
-    if(mesh.userData && mesh.userData.ldrTextureKey) {
-        return mesh.userData.ldrTextureKey;
-    }
-    const material = mesh.material;
-    const map = material && (material.map || (material.uniforms && material.uniforms.map && material.uniforms.map.value));
-    if(map && map.uuid) {
-        return map.uuid;
-    }
-    return map ? 'texture' : 'none';
+function getLdrBatchTextureKey(batchRecord) {
+    return batchRecord.textureKey || 'none';
 }
 
-function getLdrBatchMaterialKey(mesh) {
-    const material = mesh.material;
-    if(!material) {
-        return 'none';
-    }
+function getLdrBatchMaterialKey(batchRecord) {
     return [
-        material.type || 'material',
-        material.transparent ? 'trans' : 'opaque',
-        material.depthWrite === false ? 'no-depth-write' : 'depth-write',
-        material.side === undefined ? 'side-default' : material.side,
-        getLdrBatchTextureKey(mesh),
+        batchRecord.kind,
+        batchRecord.materialKind,
+        getLdrBatchTextureKey(batchRecord),
     ].join('|');
 }
 
-function makeLdrMeshBatchKey(color, mesh, part, meshCollector) {
+function makeLdrMeshBatchKey(color, batchRecord, part, meshCollector) {
     return [
         color,
         LDR.Colors.isTrans(color) ? 'trans' : 'opaque',
-        getLdrBatchTextureKey(mesh),
-        getLdrBatchMaterialKey(mesh),
+        getLdrBatchTextureKey(batchRecord),
+        getLdrBatchMaterialKey(batchRecord),
         getLdrBatchStateKey(meshCollector, part),
     ].join('|');
 }
 
-function cloneGeometryForLdrBatch(mesh) {
-    if(mesh && mesh.isLdrBatchRecord) {
-        return mesh.geometry;
-    }
-    mesh.updateMatrix();
-    const geometry = mesh.geometry.clone();
-    geometry.applyMatrix4(mesh.matrix);
-    return geometry;
+function getGeometryForLdrBatchRecord(batchRecord) {
+    return batchRecord.geometry;
 }
 
 function sameLdrGeometryAttributes(a, b) {
@@ -2988,21 +2940,60 @@ function mergeLdrBufferGeometries(geometries) {
     return merged;
 }
 
-function createLdrTriangleMeshFromBatchRecord(batchRecord, geometry) {
-    const mesh = new THREE.Mesh(geometry, batchRecord.material);
-    mesh.receiveShadow = batchRecord.receiveShadow;
-    mesh.castShadow = batchRecord.castShadow;
-    mesh.renderOrder = batchRecord.renderOrder;
-    mesh.frustumCulled = batchRecord.frustumCulled;
+function createLdrTriangleMaterialFromBatchRecord(batchRecord, loader) {
+    const textureKey = batchRecord.textureKey;
+    let texmap = false;
+    let material;
+
+    if(textureKey) {
+        const texture = loader && loader.texmaps ? loader.texmaps[textureKey] : undefined;
+        if(texture === true) {
+            material = batchRecord.materialKind === 'shader' ?
+                LDR.Colors.buildTriangleMaterial(batchRecord.color, true) :
+                LDR.Colors.buildStandardMaterial(batchRecord.color, true);
+
+            function setTexmap(t) {
+                if(batchRecord.materialKind === 'shader') {
+                    material.uniforms.map.value = t;
+                }
+                else {
+                    material.map = t;
+                }
+                material.needsUpdate = true;
+            }
+
+            if(loader && loader.texmapListeners) {
+                if(!loader.texmapListeners[textureKey]) {
+                    loader.texmapListeners[textureKey] = [];
+                }
+                loader.texmapListeners[textureKey].push(setTexmap);
+            }
+            return material;
+        }
+        texmap = texture;
+    }
+
+    return batchRecord.materialKind === 'shader' ?
+        LDR.Colors.buildTriangleMaterial(batchRecord.color, texmap) :
+        LDR.Colors.buildStandardMaterial(batchRecord.color, texmap);
+}
+
+function createLdrTriangleMeshFromBatchRecord(batchRecord, geometry, loader) {
+    const mesh = new THREE.Mesh(geometry, createLdrTriangleMaterialFromBatchRecord(batchRecord, loader));
+    mesh.receiveShadow = batchRecord.flags.receiveShadow;
+    mesh.castShadow = batchRecord.flags.castShadow;
+    mesh.renderOrder = batchRecord.flags.renderOrder;
+    mesh.frustumCulled = batchRecord.flags.frustumCulled;
     mesh.userData = batchRecord.userData ? {...batchRecord.userData} : {};
     return mesh;
 }
 LDR.MeshCollectorIdx = 0;
-LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner) {
+LDR.MeshCollector = function(opaqueObject, sixteenObject, transObject, outliner, loader) {
     this.opaqueObject = opaqueObject;
     this.sixteenObject = sixteenObject; // To be painted after anything opaque, as it might be trans.
     this.transObject = transObject; // To be painted last.
     this.outliner = outliner || false; // With outlined objects
+    this.loader = loader;
 
     this.lineMeshes = []; // {color,originalColor,mesh,part,conditional}
     this.triangleMeshes = []; // {color,originalColor,mesh,part,parent}
@@ -3067,23 +3058,23 @@ LDR.MeshCollector.prototype.addMesh = function(color, batchRecord, part) {
 LDR.MeshCollector.prototype.flushTriangleBatch = function(records) {
     if(records.length === 1) {
         const record = records[0];
-        const mesh = createLdrTriangleMeshFromBatchRecord(record.batchRecord, cloneGeometryForLdrBatch(record.batchRecord));
+        const mesh = createLdrTriangleMeshFromBatchRecord(record.batchRecord, getGeometryForLdrBatchRecord(record.batchRecord), this.loader);
         this.addMeshObject(record.color, mesh, record.part);
         return;
     }
 
-    const geometries = records.map(record => cloneGeometryForLdrBatch(record.batchRecord));
+    const geometries = records.map(record => getGeometryForLdrBatchRecord(record.batchRecord));
     const geometry = mergeLdrBufferGeometries(geometries);
     if(!geometry) {
         records.forEach(record => {
-            const mesh = createLdrTriangleMeshFromBatchRecord(record.batchRecord, cloneGeometryForLdrBatch(record.batchRecord));
+            const mesh = createLdrTriangleMeshFromBatchRecord(record.batchRecord, getGeometryForLdrBatchRecord(record.batchRecord), this.loader);
             this.addMeshObject(record.color, mesh, record.part);
         });
         return;
     }
 
     const first = records[0];
-    const mesh = createLdrTriangleMeshFromBatchRecord(first.batchRecord, geometry);
+    const mesh = createLdrTriangleMeshFromBatchRecord(first.batchRecord, geometry, this.loader);
     this.addMeshObject(first.color, mesh, first.part);
 }
 
