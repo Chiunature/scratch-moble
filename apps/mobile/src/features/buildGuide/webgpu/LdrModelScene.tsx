@@ -18,7 +18,7 @@ type LdrModelSceneProps = {
 
 /**
  * 说明书 3D 场景：切步 → 取景 → WebGPU 稳定化。
- * 描边由 FiberCanvas 后处理负责；零件显隐由 ldr-engine scale 方案负责。
+ * 边线为 LineSegments；显隐由 ldr-engine scale + removeFromParent 负责。
  */
 export function LdrModelScene({
   stepHandler,

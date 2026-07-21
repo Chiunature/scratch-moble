@@ -216,11 +216,6 @@ export type LdrGlobalNamespace = {
   getScreenSize: () => [number, number];
   equals: (a: number, b: number) => boolean;
   EPS: number;
-  /** @deprecated No-op — conditional lines are GPU-culled via LineBasicNodeMaterial */
-  updateWebGpuConditionalLines?: (
-    root?: THREE.Object3D,
-    camera?: THREE.Camera,
-  ) => void;
   tmpSize?: THREE.Vector3;
 };
 

@@ -5,14 +5,13 @@
  * https://github.com/expo/examples/tree/master/with-webgpu
  * 差异：保留 samples（MSAA）参数与 getRenderDpr 超采样。
  *
- * 画质相关有两层：
- * 1. MSAA（samples）—— 平滑三角面边缘，对 LDraw 1px 描边帮助有限
- * 2. 超采样（getRenderDpr）—— 提高渲染分辨率，整体更清晰
+ * 画质（对齐 87e7b59）：
+ * 1. MSAA samples=4 —— 平滑三角面边缘
+ * 2. 超采样 dpr = min(PixelRatio×2, 4)
  *
  * 后续调画质：
- * - 默认清晰度：调 RENDER_DPR_PROFILES.default
- * - 交互顺滑度：调 RENDER_DPR_PROFILES.interaction
- * - samples 在 Three.js r185 实际固定为 4，改 samples 参数暂无更大 MSAA
+ * - 默认：RENDER_DPR_PROFILES.default（2× / 封顶 4）
+ * - 交互：RENDER_DPR_PROFILES.interaction（略降）
  */
 import * as THREE from 'three/webgpu';
 import { PixelRatio } from 'react-native';

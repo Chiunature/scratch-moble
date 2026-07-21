@@ -721,9 +721,11 @@ LDR.StepHandler.prototype.debugVisibilityReport = function() {
                     meshCount += 1;
                     const isLine =
                         mesh.isLineSegments === true || mesh.type === 'LineSegments';
-                    // WebGPU 用 scale 隐藏，不能只看 visible
+                    // WebGPU：scale + 是否仍在场景图（隐藏步会 removeFromParent）
+                    const hasParent = !!mesh.parent;
                     const effectivelyShown =
                         mesh.visible !== false &&
+                        hasParent &&
                         Math.abs(mesh.scale.x) > 1e-6 &&
                         Math.abs(mesh.scale.y) > 1e-6 &&
                         Math.abs(mesh.scale.z) > 1e-6;
@@ -734,6 +736,7 @@ LDR.StepHandler.prototype.debugVisibilityReport = function() {
                                 path: path + '/step' + i,
                                 collectorVisible: !!mc.visible,
                                 meshVisible: !!mesh.visible,
+                                hasParent: hasParent,
                                 scaleX: mesh.scale.x,
                                 type: mesh.type,
                                 isLine: !!isLine,

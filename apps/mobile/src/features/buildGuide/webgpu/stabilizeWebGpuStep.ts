@@ -1,11 +1,11 @@
 /**
  * RN WebGPU 切步后的场景稳定化。
  *
- * 背景：visible=false / LineSegments 在真机上不可靠；切步后需：
- * - 关掉 frustumCulled、禁用 polygonOffset
- * - 按世界包围盒收紧 near/far（深度精度）
- * - 对当前显示的 Mesh 换新材质，打断偶发坏掉的 pipeline 缓存
+ * - frustumCulled=false；按包围盒收紧 near/far
+ * - 显示中零件 Mesh / Type2 边线重建材质（打断坏 pipeline，不可省略）
+ * - 面 +1 / 线 -4 polygonOffset；条件线材质保留不换
  */
+
 import * as THREE from 'three';
 
 const _sphere = new THREE.Sphere();
@@ -13,6 +13,8 @@ const _box = new THREE.Box3();
 const _center = new THREE.Vector3();
 
 const RUNTIME_MATERIAL_FLAG = 'ldrRuntimeMaterial';
+const CONDITIONAL_LINE_FLAG = 'ldrConditionalLine';
+const EDGE_LINE_FLAG = 'ldrEdgeLine';
 
 function isScaledShown(object: THREE.Object3D): boolean {
   return (
@@ -60,7 +62,9 @@ function refreshShownMeshMaterial(mesh: THREE.Mesh): void {
     depthWrite: !isTrans,
     transparent: isTrans,
     opacity: isTrans ? (prevMat.opacity ?? 0.75) : 1,
-    polygonOffset: false,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
   });
   next.userData[RUNTIME_MATERIAL_FLAG] = true;
 
@@ -70,22 +74,50 @@ function refreshShownMeshMaterial(mesh: THREE.Mesh): void {
   mesh.scale.set(1, 1, 1);
 }
 
-function disablePolygonOffset(
-  material: THREE.Material | THREE.Material[] | undefined,
-): void {
-  if (!material) {
+function refreshShownEdgeLineMaterial(line: THREE.LineSegments): void {
+  const previous = Array.isArray(line.material)
+    ? line.material[0]
+    : line.material;
+  if (!previous) {
     return;
   }
-  const list = Array.isArray(material) ? material : [material];
-  for (const item of list) {
-    if (!item || item.polygonOffset !== true) {
-      continue;
-    }
-    item.polygonOffset = false;
-    item.polygonOffsetFactor = 0;
-    item.polygonOffsetUnits = 0;
-    item.needsUpdate = true;
+
+  let NodeLine: (new (params?: object) => THREE.Material) | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const webgpu = require('three/webgpu') as {
+      LineBasicNodeMaterial?: new (params?: object) => THREE.Material;
+    };
+    NodeLine = webgpu.LineBasicNodeMaterial ?? null;
+  } catch {
+    NodeLine = null;
   }
+
+  const color = getBaseColor(previous).clone();
+  const next = NodeLine
+    ? new NodeLine({
+        color,
+        depthWrite: false,
+        depthTest: true,
+        transparent: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
+      })
+    : new THREE.LineBasicMaterial({
+        color,
+        depthWrite: false,
+        depthTest: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
+      });
+  next.userData[RUNTIME_MATERIAL_FLAG] = true;
+  next.userData[EDGE_LINE_FLAG] = true;
+
+  disposeRuntimeMaterial(line.material);
+  line.material = next;
+  line.visible = true;
 }
 
 function tightenCameraDepth(
@@ -107,19 +139,29 @@ function tightenCameraDepth(
   camera.updateProjectionMatrix();
 }
 
-/**
- * 在 moveTo + 相机/root 变换之后调用。
- */
+/** 在 moveTo + 相机/root 变换之后调用。 */
 export function stabilizeWebGpuStep(
   root: THREE.Object3D,
   camera: THREE.Camera | null,
 ): void {
   root.traverse(child => {
     if (child.type === 'LineSegments') {
-      // 边线默认不生成；若热更新残留则 scale 隐藏
-      child.frustumCulled = false;
-      child.visible = true;
-      child.scale.set(0, 0, 0);
+      const line = child as THREE.LineSegments;
+      line.frustumCulled = false;
+      line.visible = true;
+
+      if (line.userData?.[CONDITIONAL_LINE_FLAG]) {
+        return;
+      }
+
+      if (line.userData?.[EDGE_LINE_FLAG]) {
+        if (isScaledShown(line)) {
+          refreshShownEdgeLineMaterial(line);
+        }
+        return;
+      }
+
+      line.scale.set(0, 0, 0);
       return;
     }
 
@@ -129,7 +171,6 @@ export function stabilizeWebGpuStep(
 
     const mesh = child as THREE.Mesh;
     mesh.frustumCulled = false;
-    disablePolygonOffset(mesh.material);
 
     if (isScaledShown(mesh)) {
       refreshShownMeshMaterial(mesh);

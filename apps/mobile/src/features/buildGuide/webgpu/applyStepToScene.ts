@@ -56,7 +56,7 @@ function updateInstructionCamera(
 
   const accBounds = stepHandler.getAccumulatedBounds();
   const size = accBounds.min.distanceTo(accBounds.max) || 1000;
-  // 相机距原点约 15.78*size；收紧 near/far，减轻正交深度精度导致的面消失/描边残影
+  // 相机距原点约 15.78*size；先给一个合理 near/far，stabilize 还会按包围盒再收紧
   const distance = 15.7797 * size;
 
   camera.position.set(10 * size, 7 * size, 10 * size);
