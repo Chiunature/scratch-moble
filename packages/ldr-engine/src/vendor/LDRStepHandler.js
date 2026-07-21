@@ -38,7 +38,7 @@ LDR.StepHandler = function(manager, partDescs, isForMainModel) {
 LDR.StepHandler.prototype.rebuild = function() {
     this.removeGeometries();
 
-    this.current = -1; // �ndex of currently-shown step (call nextStep() to initialize)
+    this.current = -1; // �ndex of currently-shown step (call nextStep() to initialize)
     this.length = this.part.steps.length;
     if(this.length === 0) {
 	console.dir(this);
@@ -682,3 +682,93 @@ LDR.StepHandler.prototype.updateMeshCollectors = function(old) {
         }
     }
 }
+
+/**
+ * 诊断：collector.visible flag 与 mesh.visible 是否脱节（残影/缺件主嫌疑）。
+ * 返回可 JSON 序列化的摘要，不抛错。
+ */
+LDR.StepHandler.prototype.debugVisibilityReport = function() {
+    const mismatches = [];
+    let collectors = 0;
+    let meshCount = 0;
+    let flagTrue = 0;
+    let flagFalse = 0;
+    let mismatchCount = 0;
+
+    const walk = (handler, path) => {
+        const limit = handler.hasExtraParts ? handler.length + 1 : handler.length;
+        for (let i = 0; i < limit; i++) {
+            const step = handler.steps[i];
+            if (!step) {
+                continue;
+            }
+            const mc = step.meshCollector;
+            if (mc) {
+                collectors += 1;
+                if (mc.visible) {
+                    flagTrue += 1;
+                } else {
+                    flagFalse += 1;
+                }
+                const meshes = []
+                    .concat(mc.triangleMeshes || [])
+                    .concat(mc.lineMeshes || []);
+                for (let j = 0; j < meshes.length; j++) {
+                    const mesh = meshes[j] && meshes[j].mesh;
+                    if (!mesh) {
+                        continue;
+                    }
+                    meshCount += 1;
+                    const isLine =
+                        mesh.isLineSegments === true || mesh.type === 'LineSegments';
+                    // WebGPU 用 scale 隐藏，不能只看 visible
+                    const effectivelyShown =
+                        mesh.visible !== false &&
+                        Math.abs(mesh.scale.x) > 1e-6 &&
+                        Math.abs(mesh.scale.y) > 1e-6 &&
+                        Math.abs(mesh.scale.z) > 1e-6;
+                    if (effectivelyShown !== !!mc.visible) {
+                        mismatchCount += 1;
+                        if (mismatches.length < 20) {
+                            mismatches.push({
+                                path: path + '/step' + i,
+                                collectorVisible: !!mc.visible,
+                                meshVisible: !!mesh.visible,
+                                scaleX: mesh.scale.x,
+                                type: mesh.type,
+                                isLine: !!isLine,
+                                uuid: mesh.uuid,
+                            });
+                        }
+                    }
+                }
+            }
+            if (step.stepHandler) {
+                walk(step.stepHandler, path + '/step' + i + '/sub');
+            }
+        }
+    };
+
+    try {
+        walk(this, 'root');
+    } catch (e) {
+        return {
+            error: String(e && e.message ? e.message : e),
+            collectors: 0,
+            meshCount: 0,
+            flagTrue: 0,
+            flagFalse: 0,
+            mismatchCount: 0,
+            mismatches: [],
+        };
+    }
+
+    return {
+        collectors,
+        meshCount,
+        flagTrue,
+        flagFalse,
+        mismatchCount,
+        mismatches,
+    };
+};

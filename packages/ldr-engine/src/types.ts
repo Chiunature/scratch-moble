@@ -96,6 +96,22 @@ export type LoadedLdrModel = {
   mode: LdrDisplayMode;
 };
 
+export type LdrVisibilityDebugReport = {
+  collectors: number;
+  meshCount: number;
+  flagTrue: number;
+  flagFalse: number;
+  mismatchCount: number;
+  mismatches: Array<{
+    path: string;
+    collectorVisible: boolean;
+    meshVisible: boolean;
+    type: string;
+    uuid: string;
+  }>;
+  error?: string;
+};
+
 export type LdrStepHandlerFacade = {
   moveTo: (index: number) => void;
   nextStep: () => boolean;
@@ -103,6 +119,8 @@ export type LdrStepHandlerFacade = {
   getCurrentStepIndex: () => number;
   getTotalSteps: () => number;
   getRoot: () => THREE.Group;
+  /** 诊断用：collector.visible 与 mesh.visible 脱节报告 */
+  debugVisibilityReport?: () => LdrVisibilityDebugReport;
   computeCameraPositionRotation: (
     defaultMatrix: THREE.Matrix4,
     currentRotationMatrix: THREE.Matrix4,
@@ -220,6 +238,7 @@ export type LdrStepHandlerInstance = {
   isAtFirstStep: () => boolean;
   isAtLastStep: () => boolean;
   cleanUpAfterWalking: () => void;
+  debugVisibilityReport?: () => LdrVisibilityDebugReport;
 };
 
 export type LdrPartsBuilderInstance = {

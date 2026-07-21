@@ -56,9 +56,12 @@ function updateInstructionCamera(
 
   const accBounds = stepHandler.getAccumulatedBounds();
   const size = accBounds.min.distanceTo(accBounds.max) || 1000;
+  // 相机距原点约 15.78*size；收紧 near/far，减轻正交深度精度导致的面消失/描边残影
+  const distance = 15.7797 * size;
 
   camera.position.set(10 * size, 7 * size, 10 * size);
-  camera.far = 2 * 15.7797 * size;
+  camera.near = Math.max(0.1, distance * 0.01);
+  camera.far = distance * 4;
   camera.lookAt(0, 0, 0);
   camera.updateProjectionMatrix();
 }
@@ -205,13 +208,13 @@ function applyInstructionStepToScene(
     useAccumulated,
   );
 
+  // 必须先写完 position+rotation 再 measure，避免 zoom 与真实 matrixWorld 不一致
+  root.position.copy(position);
   root.setRotationFromMatrix(rotation);
   root.updateMatrixWorld(true);
 
   const measurer = new LdrMeasurer(camera);
   const [dx, dy] = measurer.measure(bounds, root.matrixWorld);
-
-  root.position.copy(position);
 
   const scale = 1.1;
   const defaultZoom =

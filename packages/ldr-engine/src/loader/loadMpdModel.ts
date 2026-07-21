@@ -91,6 +91,20 @@ function wrapStepHandler(
     getRoot() {
       return root;
     },
+    debugVisibilityReport() {
+      if (typeof handler.debugVisibilityReport !== 'function') {
+        return {
+          collectors: 0,
+          meshCount: 0,
+          flagTrue: 0,
+          flagFalse: 0,
+          mismatchCount: 0,
+          mismatches: [],
+          error: 'debugVisibilityReport unavailable',
+        };
+      }
+      return handler.debugVisibilityReport();
+    },
     computeCameraPositionRotation(
       defaultMatrix,
       currentRotationMatrix,

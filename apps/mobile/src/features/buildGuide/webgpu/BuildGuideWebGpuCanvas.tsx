@@ -31,6 +31,7 @@ import { LdrModelScene } from './LdrModelScene';
 import useOrbitControls from './useOrbitControls';
 
 const INTERACTION_RESTORE_DELAY_MS = 160;
+const SCENE_BACKGROUND = 0xffffff;
 
 type BuildGuideCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
@@ -40,6 +41,12 @@ function createBuildGuideCamera(mode: LdrDisplayMode): BuildGuideCamera {
   }
 
   return new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 1000);
+}
+
+function createBuildGuideScene(): THREE.Scene {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(SCENE_BACKGROUND);
+  return scene;
 }
 
 function resolveDisplayMode(bundle: BuildGuideBundle): LdrDisplayMode {
@@ -94,6 +101,7 @@ export function BuildGuideWebGpuCanvas({
   const mode = resolveDisplayMode(bundle);
   const renderQuality = isModelInteracting ? 'interaction' : 'default';
   const camera = useMemo(() => createBuildGuideCamera(mode), [mode]);
+  const scene = useMemo(() => createBuildGuideScene(), []);
 
   const beginInteraction = useCallback(() => {
     if (restoreTimerRef.current) {
@@ -184,6 +192,7 @@ export function BuildGuideWebGpuCanvas({
       <FiberCanvas
         style={styles.canvas}
         camera={camera}
+        scene={scene}
         renderQuality={renderQuality}
       >
         {canvasChildren}
