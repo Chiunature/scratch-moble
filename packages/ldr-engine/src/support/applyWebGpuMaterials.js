@@ -6,7 +6,8 @@
  * - Type 2 / Type 5：LineBasicNodeMaterial；切步由 stabilize 换材质防残影
  * - 显隐：scale 0/1 + 隐藏时 removeFromParent
  * - 面 polygonOffset +1 / 线 -4，减轻共面断续
- * - lineContrast / showOldColors：在 setOldValue / colorLines* 里改 MeshBasic 颜色
+ * - lineContrast / showOldColors：在 setOldValue / colorLines* 里改材质颜色
+ * - 透明件：MeshPhongNodeMaterial（光照+高光）；不透明：MeshBasic
  * - 超采样 2× 封顶 4 + MSAA4 见 makeWebGPURenderer / FiberCanvas
  */
 
@@ -18,6 +19,8 @@ const SCENE_PARENT_KEY = 'ldrSceneParent';
 const FACE_BASE_COLOR_KEY = 'ldrBaseFaceColor';
 const EDGE_BASE_COLOR_KEY = 'ldrBaseEdgeColor';
 const COLOR_ID_KEY = 'ldrColorId';
+const TRANSPARENT_FLAG = 'ldrTransparent';
+const OPACITY_KEY = 'ldrOpacity';
 
 const HIGHLIGHT_EDGE_RED = 0xcc0000;
 const HIGHLIGHT_EDGE_LIME = 0x20f000;
@@ -25,6 +28,14 @@ const HIGHLIGHT_EDGE_LIME = 0x20f000;
 function resolveColorInfo(colors, colorId) {
   const resolvedId = colorId < 0 ? -colorId - 1 : colorId;
   return colors[resolvedId];
+}
+
+function resolveFaceOpacity(colors, colorId) {
+  const colorInfo = resolveColorInfo(colors, colorId);
+  if (!colorInfo || !(colorInfo.alpha > 0)) {
+    return 1;
+  }
+  return colorInfo.alpha / 255;
 }
 
 function vector4ToHex(v4) {
@@ -44,6 +55,62 @@ function resolveLineColor(colors, colorId) {
   }
   const colorInfo = resolveColorInfo(colors, colorId);
   return colorInfo?.edge ?? colorInfo?.value ?? 0x333333;
+}
+
+/**
+ * 透明件：Phong NodeMaterial（吃光照 + 高光），对齐 BI.js shininess/reflectivity。
+ * 不透明件：继续 MeshBasic，说明书风格 + 性能。
+ */
+function createTriangleMaterial(THREE, WebGpuTHREE, colors, colorId) {
+  const colorInfo = resolveColorInfo(colors, colorId);
+  const isTrans = colors.isTrans(colorId);
+  const opacity = isTrans ? resolveFaceOpacity(colors, colorId) : 1;
+  const color = colorInfo?.value ?? 0x808080;
+  const polygon = {
+    polygonOffset: true,
+    polygonOffsetFactor: colors.DEFAULT_POLYGON_OFFSET_FACTOR ?? 1,
+    polygonOffsetUnits: colors.DEFAULT_POLYGON_OFFSET_UNITS ?? 1,
+  };
+
+  let material;
+  if (isTrans) {
+    const PhongCtor =
+      WebGpuTHREE.MeshPhongNodeMaterial || WebGpuTHREE.MeshPhongMaterial;
+    if (typeof PhongCtor === 'function') {
+      material = new PhongCtor({
+        color,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        depthTest: true,
+        side: THREE.DoubleSide,
+        shininess: 100,
+        specular: 0xffffff,
+        ...polygon,
+      });
+      if ('reflectivity' in material) {
+        material.reflectivity = 0.65;
+      }
+    }
+  }
+
+  if (!material) {
+    material = new THREE.MeshBasicMaterial({
+      color,
+      transparent: isTrans,
+      opacity,
+      depthWrite: !isTrans,
+      side: THREE.DoubleSide,
+      ...polygon,
+    });
+  }
+
+  material.userData = material.userData || {};
+  if (isTrans) {
+    material.userData[TRANSPARENT_FLAG] = true;
+    material.userData[OPACITY_KEY] = opacity;
+  }
+  return material;
 }
 
 function setMaterialHex(material, hex) {
@@ -238,19 +305,7 @@ function applyWebGpuMaterials() {
   colors.canBeOld = true;
 
   colors.buildTriangleMaterial = function buildTriangleMaterial(colorId) {
-    const colorInfo = resolveColorInfo(colors, colorId);
-    const isTrans = colors.isTrans(colorId);
-
-    return new THREE.MeshBasicMaterial({
-      color: colorInfo?.value ?? 0x808080,
-      transparent: isTrans,
-      opacity: isTrans ? 0.75 : 1,
-      depthWrite: !isTrans,
-      side: THREE.DoubleSide,
-      polygonOffset: true,
-      polygonOffsetFactor: colors.DEFAULT_POLYGON_OFFSET_FACTOR ?? 1,
-      polygonOffsetUnits: colors.DEFAULT_POLYGON_OFFSET_UNITS ?? 1,
-    });
+    return createTriangleMaterial(THREE, WebGpuTHREE, colors, colorId);
   };
 
   colors.buildLineMaterial = function buildLineMaterial(colorId, conditional) {
@@ -439,4 +494,6 @@ function applyWebGpuMaterials() {
 
 module.exports = {
   applyWebGpuMaterials,
+  TRANSPARENT_FLAG,
+  OPACITY_KEY,
 };

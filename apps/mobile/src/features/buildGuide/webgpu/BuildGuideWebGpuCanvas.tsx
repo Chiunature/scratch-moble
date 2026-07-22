@@ -189,8 +189,11 @@ export function BuildGuideWebGpuCanvas({
   const canvasChildren = useMemo(
     () => (
       <>
-        <ambientLight intensity={0.65} />
-        <directionalLight intensity={1.1} position={[4, 6, 3]} />
+        {/* 半球光补环境：透明 Phong 高光更自然，避免只有一盏方向灯发灰 */}
+        <hemisphereLight args={[0xffffff, 0xb0b8c8, 0.55]} />
+        <ambientLight intensity={0.35} />
+        <directionalLight intensity={1.15} position={[4, 6, 3]} />
+        <directionalLight intensity={0.35} position={[-3, 2, -2]} />
         <OrbitControls enablePan={false} dampingFactor={0.28} />
         <BuildGuideScene
           bundle={bundle}
