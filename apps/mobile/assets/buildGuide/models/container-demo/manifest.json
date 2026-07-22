@@ -7,6 +7,7 @@
   "partsSource": "local",
   "mode": "instruction",
   "displayScale": 1,
+  "mainModelColor": 71,
   "cameraDefault": {
     "position": [-1.88, 0.45, 2.59],
     "target": [0, 0.1, 0]

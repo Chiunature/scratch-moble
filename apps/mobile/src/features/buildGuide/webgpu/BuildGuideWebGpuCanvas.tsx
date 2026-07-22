@@ -26,6 +26,7 @@ import { resolveStepViewModel } from '@scratch-mobile/build-guide';
 import type { LdrDisplayMode } from '@scratch-mobile/ldr-engine';
 
 import type { BuildGuideBundle } from '../types';
+import type { StepAnimationMode } from '../settings';
 import { FiberCanvas } from './FiberCanvas';
 import { LdrModelScene } from './LdrModelScene';
 import useOrbitControls from './useOrbitControls';
@@ -57,10 +58,14 @@ function BuildGuideScene({
   bundle,
   stepIndex,
   mode,
+  animationMode,
+  appearanceRevision,
 }: {
   bundle: BuildGuideBundle;
   stepIndex: number;
   mode: LdrDisplayMode;
+  animationMode: StepAnimationMode;
+  appearanceRevision: number;
 }) {
   const totalSteps = bundle.stepHandler?.getTotalSteps() ?? 0;
   const step = useMemo(
@@ -81,6 +86,8 @@ function BuildGuideScene({
       step={step}
       stepIndex={stepIndex}
       mode={mode}
+      animationMode={animationMode}
+      appearanceRevision={appearanceRevision}
     />
   );
 }
@@ -88,11 +95,15 @@ function BuildGuideScene({
 type BuildGuideWebGpuCanvasProps = {
   bundle: BuildGuideBundle;
   stepIndex: number;
+  animationMode: StepAnimationMode;
+  appearanceRevision: number;
 };
 
 export function BuildGuideWebGpuCanvas({
   bundle,
   stepIndex,
+  animationMode,
+  appearanceRevision,
 }: BuildGuideWebGpuCanvasProps) {
   const [OrbitControls, controlEvents] = useOrbitControls();
   const [isModelInteracting, setIsModelInteracting] = useState(false);
@@ -181,10 +192,16 @@ export function BuildGuideWebGpuCanvas({
         <ambientLight intensity={0.65} />
         <directionalLight intensity={1.1} position={[4, 6, 3]} />
         <OrbitControls enablePan={false} dampingFactor={0.28} />
-        <BuildGuideScene bundle={bundle} stepIndex={stepIndex} mode={mode} />
+        <BuildGuideScene
+          bundle={bundle}
+          stepIndex={stepIndex}
+          mode={mode}
+          animationMode={animationMode}
+          appearanceRevision={appearanceRevision}
+        />
       </>
     ),
-    [OrbitControls, bundle, mode, stepIndex],
+    [OrbitControls, appearanceRevision, animationMode, bundle, mode, stepIndex],
   );
 
   return (

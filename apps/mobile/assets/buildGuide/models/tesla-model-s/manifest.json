@@ -5,5 +5,6 @@
   "mpdUri": "build/export.mpd",
   "mainModelId": "2014 - TeslaModelS.ldr",
   "partsSource": "local",
-  "displayScale": 1
+  "displayScale": 1,
+  "mainModelColor": 1
 }

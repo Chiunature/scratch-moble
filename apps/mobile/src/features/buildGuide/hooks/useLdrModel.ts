@@ -29,7 +29,9 @@ function formatLoadError(manifest: BuildGuideManifest, cause: unknown): Error {
   );
 }
 
-export function useLdrModel(manifest: BuildGuideManifest): UseLdrModelResult {
+export function useLdrModel(
+  manifest: BuildGuideManifest | null,
+): UseLdrModelResult {
   const [model, setModel] = useState<LoadedLdrModel | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<Error | null>(null);
@@ -40,6 +42,13 @@ export function useLdrModel(manifest: BuildGuideManifest): UseLdrModelResult {
   }, []);
 
   useEffect(() => {
+    if (!manifest) {
+      setModel(null);
+      setProgress(0);
+      setError(null);
+      return;
+    }
+
     let cancelled = false;
     setModel(null);
     setProgress(0);

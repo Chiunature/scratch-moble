@@ -91,6 +91,9 @@ function wrapStepHandler(
     getRoot() {
       return root;
     },
+    refreshAppearance() {
+      handler.updateMeshCollectors(undefined);
+    },
     debugVisibilityReport() {
       if (typeof handler.debugVisibilityReport !== 'function') {
         return {
@@ -177,7 +180,8 @@ export function loadMpdFromText(
     partsBaseUrl,
     partsSource = partsBaseUrl ? 'local-then-remote' : 'local',
     readLocalPart,
-    mainModelColor = 16,
+    // 16=Main_Colour 占位黄 #FFFF80；未指定时用白，避免整模发黄
+    mainModelColor = 15,
     displayScale = 1,
     mode = 'instruction',
     onProgress,
@@ -200,6 +204,29 @@ export function loadMpdFromText(
   return new Promise((resolve, reject) => {
     const LdrLoaderCtor = (globalThis.THREE as LdrThreeVendor).LDRLoader;
     let loader: LdrLoaderInstance;
+
+    // 按当前 Options 注册 stud 生成器（高对比 / logo）
+    const studs = (
+      globalThis as typeof globalThis & {
+        LDR?: {
+          Studs?: {
+            makeGenerators: (
+              force: string,
+              highContrast: boolean,
+              logoType: number,
+            ) => void;
+          };
+          Options?: { studHighContrast?: number; studLogo?: number };
+        };
+      }
+    ).LDR;
+    if (studs?.Studs?.makeGenerators) {
+      studs.Studs.makeGenerators(
+        '',
+        studs.Options?.studHighContrast === 1,
+        studs.Options?.studLogo ?? 0,
+      );
+    }
 
     const handleError = (issue: { message: string; subModel?: string }) => {
       onError?.(issue);

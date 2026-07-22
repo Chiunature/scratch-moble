@@ -51,6 +51,22 @@ async function resolveFromStorage(
   return resolveGeneratedParts(loader, remaining);
 }
 
+function shouldPreferGeneratedStud(id: string): boolean {
+  const options = (
+    globalThis as typeof globalThis & {
+      LDR?: { Options?: { studHighContrast?: number; studLogo?: number } };
+    }
+  ).LDR?.Options;
+  if (!options) {
+    return false;
+  }
+  if (options.studHighContrast !== 1 && !(options.studLogo && options.studLogo > 0)) {
+    return false;
+  }
+  const base = id.replace(/\\/g, '/').toLowerCase();
+  return base.startsWith('stud') || base.includes('/stud');
+}
+
 export async function loadPartContent(
   loader: LdrLoaderInstance,
   id: string,
@@ -62,6 +78,15 @@ export async function loadPartContent(
   },
 ): Promise<boolean> {
   const normalizedId = normalizeId(id);
+
+  // stud 高对比 / logo 开启时优先用 Generator，覆盖本地标准 stud.dat
+  if (shouldPreferGeneratedStud(normalizedId)) {
+    const generated = LDR.Generator?.make(normalizedId);
+    if (generated) {
+      loader.setPartType(generated);
+      return true;
+    }
+  }
 
   const cached = await storage.get(normalizedId);
   if (cached != null) {

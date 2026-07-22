@@ -192,12 +192,19 @@ export function applyStepToScene(
   camera.lookAt(0, 0, 0);
 }
 
-function applyInstructionStepToScene(
+export type InstructionStepTarget = {
+  position: THREE.Vector3;
+  rotation: THREE.Matrix4;
+  zoom: number;
+};
+
+/** 计算说明书步进姿态（会临时写入 root 以测量 zoom，调用方负责最终应用/动画）。 */
+export function computeInstructionStepTarget(
   camera: THREE.OrthographicCamera,
   root: THREE.Object3D,
   stepHandler: LdrStepHandlerFacade,
   viewport: ViewportSize,
-): void {
+): InstructionStepTarget {
   updateInstructionCamera(camera, stepHandler, viewport);
 
   const { bounds, useAccumulated } = selectBounds(stepHandler);
@@ -222,7 +229,29 @@ function applyInstructionStepToScene(
       ? (2 * camera.zoom) / (dx * scale)
       : (2 * camera.zoom) / (dy * scale);
 
-  camera.zoom = defaultZoom;
+  return {
+    position: position.clone(),
+    rotation: rotation.clone(),
+    zoom: defaultZoom,
+  };
+}
+
+function applyInstructionStepToScene(
+  camera: THREE.OrthographicCamera,
+  root: THREE.Object3D,
+  stepHandler: LdrStepHandlerFacade,
+  viewport: ViewportSize,
+): void {
+  const target = computeInstructionStepTarget(
+    camera,
+    root,
+    stepHandler,
+    viewport,
+  );
+  root.position.copy(target.position);
+  root.setRotationFromMatrix(target.rotation);
+  root.updateMatrixWorld(true);
+  camera.zoom = target.zoom;
   camera.updateProjectionMatrix();
 }
 

@@ -2,7 +2,11 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
-import { ChevronLeftIcon, ListIcon } from './icons/BuildGuideIcons';
+import {
+  ChevronLeftIcon,
+  ListIcon,
+  SettingsIcon,
+} from './icons/BuildGuideIcons';
 import { styles } from './BuildGuideTopBar.styles';
 
 type BuildGuideTopBarProps = {
@@ -16,6 +20,7 @@ type BuildGuideTopBarProps = {
   onBack: () => void;
   onOpenStepPicker: () => void;
   onOpenParts: () => void;
+  onOpenSettings: () => void;
 };
 
 export function BuildGuideTopBar({
@@ -29,6 +34,7 @@ export function BuildGuideTopBar({
   onBack,
   onOpenStepPicker,
   onOpenParts,
+  onOpenSettings,
 }: BuildGuideTopBarProps) {
   const { t } = useTranslation('buildGuide');
   const { t: tCommon } = useTranslation('common');
@@ -86,6 +92,18 @@ export function BuildGuideTopBar({
           ]}
         >
           <ListIcon size={20} color="#4f46e5" />
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('openSettings')}
+          onPress={onOpenSettings}
+          style={({ pressed }) => [
+            styles.iconButton,
+            pressed && styles.iconButtonPressed,
+          ]}
+        >
+          <SettingsIcon size={20} color="#4f46e5" />
         </Pressable>
       </View>
 

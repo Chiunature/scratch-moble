@@ -6,6 +6,7 @@
  * - Type 2 / Type 5：LineBasicNodeMaterial；切步由 stabilize 换材质防残影
  * - 显隐：scale 0/1 + 隐藏时 removeFromParent
  * - 面 polygonOffset +1 / 线 -4，减轻共面断续
+ * - lineContrast / showOldColors：在 setOldValue / colorLines* 里改 MeshBasic 颜色
  * - 超采样 2× 封顶 4 + MSAA4 见 makeWebGPURenderer / FiberCanvas
  */
 
@@ -14,15 +15,108 @@ const ENABLE_CONDITIONAL_LINES = true;
 const CONDITIONAL_LINE_FLAG = 'ldrConditionalLine';
 const EDGE_LINE_FLAG = 'ldrEdgeLine';
 const SCENE_PARENT_KEY = 'ldrSceneParent';
+const FACE_BASE_COLOR_KEY = 'ldrBaseFaceColor';
+const EDGE_BASE_COLOR_KEY = 'ldrBaseEdgeColor';
+const COLOR_ID_KEY = 'ldrColorId';
+
+const HIGHLIGHT_EDGE_RED = 0xcc0000;
+const HIGHLIGHT_EDGE_LIME = 0x20f000;
 
 function resolveColorInfo(colors, colorId) {
   const resolvedId = colorId < 0 ? -colorId - 1 : colorId;
   return colors[resolvedId];
 }
 
+function vector4ToHex(v4) {
+  if (!v4) {
+    return 0x333333;
+  }
+  const r = Math.round(v4.x * 255);
+  const g = Math.round(v4.y * 255);
+  const b = Math.round(v4.z * 255);
+  return (r << 16) | (g << 8) | b;
+}
+
 function resolveLineColor(colors, colorId) {
+  const LDR = globalThis.LDR;
+  if (LDR?.Options?.lineContrast === 0 && colors.getHighContrastColor4) {
+    return vector4ToHex(colors.getHighContrastColor4(colorId));
+  }
   const colorInfo = resolveColorInfo(colors, colorId);
   return colorInfo?.edge ?? colorInfo?.value ?? 0x333333;
+}
+
+function setMaterialHex(material, hex) {
+  if (!material) {
+    return;
+  }
+  if (material.color && typeof material.color.setHex === 'function') {
+    material.color.setHex(hex);
+    return;
+  }
+  if (material.color && typeof material.color.set === 'function') {
+    material.color.set(hex);
+  }
+}
+
+function applyCollectorAppearance(collector, old) {
+  const LDR = globalThis.LDR;
+  const mode = LDR?.Options?.showOldColors ?? 2;
+  const oldFace = LDR?.Options?.oldColor ?? 0xffff6f;
+  const oldEdge = 0xaaaa66;
+
+  collector.triangleMeshes.forEach(obj => {
+    const mesh = obj.mesh;
+    if (!mesh) {
+      return;
+    }
+    const base =
+      mesh.userData?.[FACE_BASE_COLOR_KEY] ??
+      resolveColorInfo(LDR.Colors, obj.color)?.value ??
+      0x808080;
+    if (old && mode === 3) {
+      setMaterialHex(mesh.material, oldFace);
+    } else {
+      setMaterialHex(mesh.material, base);
+    }
+  });
+
+  collector.lineMeshes.forEach(obj => {
+    const mesh = obj.mesh;
+    if (!mesh || mesh.userData?.[CONDITIONAL_LINE_FLAG]) {
+      return;
+    }
+    const base =
+      mesh.userData?.[EDGE_BASE_COLOR_KEY] ??
+      resolveLineColor(LDR.Colors, obj.color);
+
+    if (old && mode === 3) {
+      setMaterialHex(mesh.material, oldEdge);
+    } else if (!old && mode === 0) {
+      setMaterialHex(mesh.material, HIGHLIGHT_EDGE_RED);
+    } else if (!old && mode === 1) {
+      setMaterialHex(mesh.material, HIGHLIGHT_EDGE_LIME);
+    } else {
+      setMaterialHex(mesh.material, base);
+    }
+  });
+}
+
+function recolorCollectorLines(collector, highContrast) {
+  const LDR = globalThis.LDR;
+  const colors = LDR.Colors;
+  collector.lineMeshes.forEach(obj => {
+    const mesh = obj.mesh;
+    if (!mesh || mesh.userData?.[CONDITIONAL_LINE_FLAG]) {
+      return;
+    }
+    const hex = highContrast
+      ? vector4ToHex(colors.getHighContrastColor4(obj.color))
+      : resolveColorInfo(colors, obj.color)?.edge ??
+        resolveColorInfo(colors, obj.color)?.value ??
+        0x333333;
+    mesh.userData[EDGE_BASE_COLOR_KEY] = hex;
+  });
 }
 
 /** scale 0/1 + 场景图摘挂；parent 按 mesh 存。 */
@@ -140,6 +234,9 @@ function applyWebGpuMaterials() {
   const LDR = globalThis.LDR;
   const colors = LDR.Colors;
 
+  // WebGPU 用改 color 代替 RawShader old uniform
+  colors.canBeOld = true;
+
   colors.buildTriangleMaterial = function buildTriangleMaterial(colorId) {
     const colorInfo = resolveColorInfo(colors, colorId);
     const isTrans = colors.isTrans(colorId);
@@ -253,6 +350,8 @@ function applyWebGpuMaterials() {
     mesh.renderOrder = conditional ? 2 : 1;
     mesh.frustumCulled = false;
     mesh.userData = mesh.userData || {};
+    mesh.userData[COLOR_ID_KEY] = color;
+    mesh.userData[EDGE_BASE_COLOR_KEY] = resolveLineColor(colors, color);
     if (conditional) {
       mesh.userData[CONDITIONAL_LINE_FLAG] = true;
     } else {
@@ -275,6 +374,10 @@ function applyWebGpuMaterials() {
     part,
   ) {
     mesh.frustumCulled = false;
+    mesh.userData = mesh.userData || {};
+    mesh.userData[COLOR_ID_KEY] = color;
+    mesh.userData[FACE_BASE_COLOR_KEY] =
+      resolveColorInfo(colors, color)?.value ?? 0x808080;
     const result = originalAddMeshObject.call(this, color, mesh, part);
     const record = this.triangleMeshes[this.triangleMeshes.length - 1];
     const parent = record?.parent || this.getTriangleParent(color);
@@ -302,6 +405,36 @@ function applyWebGpuMaterials() {
         );
       });
     };
+
+  LDR.MeshCollector.prototype.setOldValue = function setOldValue(old) {
+    this.flushBatches();
+    applyCollectorAppearance(this, old);
+  };
+
+  LDR.MeshCollector.prototype.colorLinesLDraw = function colorLinesLDraw() {
+    this.flushBatches();
+    recolorCollectorLines(this, false);
+  };
+
+  LDR.MeshCollector.prototype.colorLinesHighContrast =
+    function colorLinesHighContrast() {
+      this.flushBatches();
+      recolorCollectorLines(this, true);
+    };
+
+  // 始终按当前 Options 刷新边线基准色 + old/高亮外观（设置面板即时生效）
+  LDR.MeshCollector.prototype.update = function update(old) {
+    this.flushBatches();
+    if (LDR.Options) {
+      if (LDR.Options.lineContrast === 1) {
+        this.colorLinesLDraw();
+      } else {
+        this.colorLinesHighContrast();
+      }
+    }
+    this.setOldValue(old);
+    this.updateState(old);
+  };
 }
 
 module.exports = {

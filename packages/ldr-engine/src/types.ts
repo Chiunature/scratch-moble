@@ -119,6 +119,8 @@ export type LdrStepHandlerFacade = {
   getCurrentStepIndex: () => number;
   getTotalSteps: () => number;
   getRoot: () => THREE.Group;
+  /** 按当前 LDR.Options 重刷 old/边线外观（不切步） */
+  refreshAppearance: () => void;
   /** 诊断用：collector.visible 与 mesh.visible 脱节报告 */
   debugVisibilityReport?: () => LdrVisibilityDebugReport;
   computeCameraPositionRotation: (
@@ -233,6 +235,7 @@ export type LdrStepHandlerInstance = {
   isAtFirstStep: () => boolean;
   isAtLastStep: () => boolean;
   cleanUpAfterWalking: () => void;
+  updateMeshCollectors: (old?: boolean) => void;
   debugVisibilityReport?: () => LdrVisibilityDebugReport;
 };
 
