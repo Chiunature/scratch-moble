@@ -10,13 +10,15 @@ import {
   execute,
   executeBytecode,
   getDefaultBytecodePath,
+  getPikaErrorName,
+  isPikaSuccess,
   readFile,
+  type PikaErrorName,
+  type PikaPhase,
   type PikaResult,
 } from 'react-native-pika';
 
 import { base64ToBytes } from '../../utils/bleProtocol';
-
-const PIKA_OK = 0;
 
 /** PikaScript 字节码 magic：0x0f + "pyo"，合法 .py.o 文件必须以这 4 字节开头 */
 const PIKA_BYTECODE_MAGIC = [0x0f, 0x70, 0x79, 0x6f] as const;
@@ -28,18 +30,24 @@ const NON_COMPILABLE_SOURCE_PREFIXES = [
   '# 请从「当程序启动时」积木开始搭建程序',
 ] as const;
 
-export type PikaCompileOutcome = {
+type ResolvedPikaErrorName = PikaErrorName | 'UNKNOWN_ERROR';
+
+type PikaOutcomeBase = {
   ok: boolean;
   message: string;
+  errorName?: string;
+  phase?: PikaPhase;
+  output?: string;
+  outputTruncated?: boolean;
+};
+
+export type PikaCompileOutcome = PikaOutcomeBase & {
   bytecodePath: string | null;
   bytecodeSize: number;
   hexPreview: string;
 };
 
-export type PikaRunOutcome = {
-  ok: boolean;
-  message: string;
-};
+export type PikaRunOutcome = PikaOutcomeBase;
 
 function decodeHexPayload(hex: string): Uint8Array {
   const normalized = hex.trim();
@@ -76,11 +84,152 @@ function hexPreview(result: PikaResult, maxBytes = 16): string {
     .join('');
 }
 
+function resolveErrorName(result: PikaResult): ResolvedPikaErrorName | undefined {
+  if (isPikaSuccess(result)) {
+    return undefined;
+  }
+  return result.errorName ?? getPikaErrorName(result.code) ?? 'UNKNOWN_ERROR';
+}
+
+function humanizeErrorName(errorName: ResolvedPikaErrorName): string {
+  switch (errorName) {
+    case 'SYNTAX_ERROR':
+      return '语法错误';
+    case 'INDEX_ERROR':
+      return '索引越界';
+    case 'RUNTIME_ERROR':
+      return '运行错误';
+    case 'ASSERT_ERROR':
+      return '断言失败';
+    case 'IO_ERROR':
+    case 'IO_OPERATION_ERROR':
+      return '文件读写错误';
+    case 'OUT_OF_RANGE':
+      return '数值超出范围';
+    case 'INVALID_PARAM':
+      return '参数无效';
+    case 'INSUFFICIENT_RESOURCE':
+      return '资源不足';
+    case 'OPERATION_FAILED':
+      return '操作失败';
+    case 'ARG_NOT_FOUND':
+      return '缺少参数';
+    case 'UNKNOWN_INSTRUCTION':
+      return '未知指令';
+    case 'INVALID_POINTER':
+    case 'UNALIGNED_POINTER':
+      return '内部指针错误';
+    case 'INVALID_VERSION':
+      return '版本不兼容';
+    case 'ILLEGAL_MAGIC_CODE':
+      return '字节码格式无效';
+    case 'SIGNAL_QUEUE_FULL':
+    case 'SIGNAL_QUEUE_EMPTY':
+      return '信号队列异常';
+    case 'UNKNOWN_ERROR':
+      return '未知错误';
+    default: {
+      const _exhaustive: never = errorName;
+      return _exhaustive;
+    }
+  }
+}
+
+function humanizePhase(phase: PikaPhase): string {
+  switch (phase) {
+    case 'compile':
+      return '编译';
+    case 'execute':
+      return '运行';
+    case 'bytecode':
+      return '执行字节码';
+    case 'io':
+      return '读写文件';
+    default: {
+      const _exhaustive: never = phase;
+      return _exhaustive;
+    }
+  }
+}
+
+function isGenericNativeMessage(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.length === 0 ||
+    normalized === 'error' ||
+    normalized === 'ok' ||
+    /^error:\s*syntax error\.?$/.test(normalized)
+  );
+}
+
+/** 去掉与标题重复的尾巴，保留虚线框里的出错代码 */
+function extractDiagnosticSnippet(output: string, nativeMessage: string): string {
+  let text = output.trim();
+  if (!text) {
+    return '';
+  }
+
+  if (nativeMessage && text.endsWith(nativeMessage)) {
+    text = text.slice(0, -nativeMessage.length).trim();
+  }
+
+  // 形如 ----\n[4]\ncode\n---- ，抽出中间代码更易读
+  const boxed = text.match(/^-{3,}\n([\s\S]*?)\n-{3,}$/);
+  if (boxed?.[1]) {
+    return boxed[1].trim();
+  }
+
+  return text;
+}
+
+/**
+ * 成功：优先展示 print/诊断 output，否则用 message。
+ * 失败：中文摘要 + 出错代码片段，避免抛一堆英文错误码。
+ */
 function mapPikaMessage(result: PikaResult): string {
-  if (result.code === PIKA_OK) {
+  const output = result.output?.trim() ?? '';
+
+  if (isPikaSuccess(result)) {
+    if (output) {
+      return result.outputTruncated ? `${output}\n（输出过长，已截断）` : output;
+    }
     return result.message || 'ok';
   }
-  return result.message || `PikaScript 错误 (${result.code})`;
+
+  const errorName = resolveErrorName(result) ?? 'UNKNOWN_ERROR';
+  const label = humanizeErrorName(errorName);
+  const phaseLabel = result.phase ? humanizePhase(result.phase) : undefined;
+  const nativeMessage = result.message?.trim() ?? '';
+
+  const parts = [
+    phaseLabel ? `${label}（发生在${phaseLabel}）` : label,
+  ];
+
+  if (nativeMessage && !isGenericNativeMessage(nativeMessage)) {
+    parts.push(nativeMessage);
+  }
+
+  const snippet = extractDiagnosticSnippet(output, nativeMessage);
+  if (snippet && snippet !== nativeMessage) {
+    parts.push('', '出错附近：', snippet);
+  }
+
+  if (result.outputTruncated) {
+    parts.push('（输出过长，已截断）');
+  }
+
+  return parts.join('\n');
+}
+
+function mapPikaOutcomeBase(result: PikaResult): PikaOutcomeBase {
+  return {
+    ok: isPikaSuccess(result),
+    message: mapPikaMessage(result),
+    errorName: resolveErrorName(result),
+    phase: result.phase,
+    output: result.output,
+    outputTruncated: result.outputTruncated === true,
+  };
 }
 
 function isCompilablePythonSource(source: string): boolean {
@@ -122,15 +271,13 @@ export async function compileGeneratedCode(
 
   const targetPath = outputPath ?? (await getDefaultBytecodePath());
   const result = await compile(trimmed, targetPath);
-  const bytecodePath = targetPath;
-  const size = getBytecodeSize(result);
+  const ok = isPikaSuccess(result);
 
   return {
-    ok: result.code === PIKA_OK,
-    message: mapPikaMessage(result),
-    bytecodePath: result.code === PIKA_OK ? bytecodePath : null,
-    bytecodeSize: size,
-    hexPreview: result.code === PIKA_OK ? hexPreview(result) : '',
+    ...mapPikaOutcomeBase(result),
+    bytecodePath: ok ? targetPath : null,
+    bytecodeSize: getBytecodeSize(result),
+    hexPreview: ok ? hexPreview(result) : '',
   };
 }
 
@@ -140,11 +287,7 @@ export async function runGeneratedCode(source: string): Promise<PikaRunOutcome> 
     return { ok: false, message: '暂无有效 Python 代码' };
   }
 
-  const result = await execute(trimmed);
-  return {
-    ok: result.code === PIKA_OK,
-    message: mapPikaMessage(result),
-  };
+  return mapPikaOutcomeBase(await execute(trimmed));
 }
 
 export async function runCompiledBytecode(
@@ -154,11 +297,7 @@ export async function runCompiledBytecode(
     return { ok: false, message: '请先编译生成字节码' };
   }
 
-  const result = await executeBytecode(bytecodePath);
-  return {
-    ok: result.code === PIKA_OK,
-    message: mapPikaMessage(result),
-  };
+  return mapPikaOutcomeBase(await executeBytecode(bytecodePath));
 }
 
 /**
@@ -167,8 +306,8 @@ export async function runCompiledBytecode(
  */
 export async function readBytecodeFile(path: string): Promise<number[]> {
   const result = await readFile(path);
-  if (result.code !== PIKA_OK) {
-    throw new Error(result.message || '读取字节码失败');
+  if (!isPikaSuccess(result)) {
+    throw new Error(mapPikaMessage(result) || '读取字节码失败');
   }
   if (!result.data) {
     throw new Error('字节码文件为空');

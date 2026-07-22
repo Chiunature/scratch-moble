@@ -3,8 +3,10 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
@@ -70,8 +72,10 @@ export function PikaWorkflowModal({
   onClose,
 }: Props) {
   const { t, i18n } = useTranslation('editorShell');
+  const { height: windowHeight } = useWindowDimensions();
   const isProgress = kind === 'progress';
   const canDismiss = !isProgress;
+  const messageMaxHeight = Math.round(windowHeight * 0.45);
 
   const title = titleKey ? t(titleKey, titleOptions) : '';
   const message = useMemo(() => {
@@ -100,14 +104,14 @@ export function PikaWorkflowModal({
       navigationBarTranslucent // Android：延伸到底部导航区
       onRequestClose={canDismiss ? onClose : undefined}
     >
-      <Pressable
-        style={styles.backdrop}
-        onPress={canDismiss ? onClose : undefined}
-      >
+      {/* 遮罩与内容分离：避免外层 Pressable 吃掉 ScrollView 手势 */}
+      <View style={styles.backdrop}>
         <Pressable
-          style={styles.sheet}
-          onPress={event => event.stopPropagation()}
-        >
+          style={StyleSheet.absoluteFill}
+          onPress={canDismiss ? onClose : undefined}
+        />
+
+        <View style={styles.sheet}>
           {isProgress ? (
             <ActivityIndicator color={colors.primary} size="large" />
           ) : (
@@ -122,7 +126,25 @@ export function PikaWorkflowModal({
           )}
 
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+
+          {message ? (
+            <ScrollView
+              style={[styles.messageScroll, { maxHeight: messageMaxHeight }]}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              bounces={false}
+              showsVerticalScrollIndicator
+            >
+              <Text
+                style={[
+                  styles.message,
+                  kind === 'error' ? styles.messageError : null,
+                ]}
+              >
+                {message}
+              </Text>
+            </ScrollView>
+          ) : null}
 
           {isProgress && progress != null ? (
             <View style={styles.progressBlock}>
@@ -151,8 +173,8 @@ export function PikaWorkflowModal({
               <Text style={styles.buttonText}>{t('common.confirm')}</Text>
             </Pressable>
           ) : null}
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -170,12 +192,14 @@ const styles = StyleSheet.create({
   sheet: {
     width: '100%',
     maxWidth: 320,
+    maxHeight: '85%',
     backgroundColor: colors.codeBackground,
     borderRadius: spacing.lg,
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.primarySoft,
     alignItems: 'center',
+    zIndex: 1,
   },
   statusDot: {
     width: 12,
@@ -195,12 +219,20 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.extraBold,
     textAlign: 'center',
   },
+  messageScroll: {
+    alignSelf: 'stretch',
+    marginTop: spacing.sm,
+    flexGrow: 0,
+    flexShrink: 1,
+  },
   message: {
     color: colors.primarySoft,
     fontSize: fontSize.sm,
     textAlign: 'center',
-    marginTop: spacing.sm,
     lineHeight: 22,
+  },
+  messageError: {
+    textAlign: 'left',
   },
   progressBlock: {
     width: '100%',

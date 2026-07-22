@@ -7460,10 +7460,10 @@ react-native-blob-util@^0.24.10:
     base-64 "1.0.0"
     glob "13.0.6"
 
-react-native-pika@0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/react-native-pika/-/react-native-pika-0.1.0.tgz#575c97bfac2be1322979415aedcfb4c7426973ec"
-  integrity sha512-GPnrrxMnl3x7MD7YJnjtda+KSKwgPTmSSMbID/Uwfrja8E5mqoszMinacuT64X8pGdx+QUGg9kjpmKtTNeOuIw==
+react-native-pika@0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/react-native-pika/-/react-native-pika-0.1.1.tgz#6005889ed15ae0ab549728a9a1bea5df72af452b"
+  integrity sha512-0aB+Ws39KX1NIaYQ3xASMnxrhcaBhUzGpFRc6XIfUT1UqGlJCAhIOYAQ+qQLZKtUFn3R7rGvgU/OvKO6BcugGA==
 
 react-native-safe-area-context@~5.7.0:
   version "5.7.0"
