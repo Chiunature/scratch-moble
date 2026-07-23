@@ -3,7 +3,7 @@
   "id": "ming-green-figure",
   "nameKey": "mingGreenFigure.name",
   "mpdUri": "build/export.mpd",
-  "mainModelId": "人形-明绿-黑-灰.io",
+  "mainModelId": "Spark AI 人形机器人.io",
   "partsSource": "local",
   "mode": "instruction",
   "displayScale": 1,

@@ -28,7 +28,7 @@ const BUILD_GUIDE_MODELS = {
   'ming-green-figure': {
     manifest: mingGreenFigureManifest,
     mpd: require('../../../../assets/buildGuide/models/testlbs/build/export.mpd'),
-    cover: require('../../../../assets/buildGuide/models/testlbs/testlbs.jpg'),
+    cover: require('../../../../assets/buildGuide/models/testlbs/robot.png'),
   },
 } as const satisfies Record<
   string,

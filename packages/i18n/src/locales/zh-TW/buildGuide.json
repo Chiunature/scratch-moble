@@ -45,11 +45,19 @@
   "animationSlow": "慢速",
   "animationNormal": "正常",
   "animationOff": "直接跳轉",
+  "settingsPerfExp": "效能試驗（臨時）",
+  "settingsPerfExpHint": "用來對比卡頓原因，可單獨開關；預設皆為關閉。",
+  "perfExpDeferOff": "動畫前完整穩定",
+  "perfExpDeferOn": "動畫後再穩定",
+  "settingsPerfExpDeferHint": "開：切步動畫前跳過全量材質重建。動畫應更順，但可能短暫殘影。",
+  "perfExpLowRenderOff": "預設畫質",
+  "perfExpLowRenderOn": "低畫質",
+  "settingsPerfExpLowHint": "開：取消 2× 超取樣、MSAA 降為 1、拖曳時 DPR=1。用來看拖曳是否因填充率卡。",
   "container": {
     "name": "20 英尺貨櫃"
   },
   "teslaModelS": {
     "name": "特斯拉 Model S"
   },
-  "mingGreenFigure": { "name": "明綠人形" }
+  "mingGreenFigure": { "name": "Spark AI 人形機器人" }
 }

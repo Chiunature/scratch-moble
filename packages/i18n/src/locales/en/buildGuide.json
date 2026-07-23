@@ -45,11 +45,19 @@
   "animationSlow": "Slow",
   "animationNormal": "Normal",
   "animationOff": "Instant",
+  "settingsPerfExp": "Perf experiment (temp)",
+  "settingsPerfExpHint": "A/B toggles to isolate jank. Both off by default.",
+  "perfExpDeferOff": "Stabilize before anim",
+  "perfExpDeferOn": "Stabilize after anim",
+  "settingsPerfExpDeferHint": "On: skip full material rebuild before step animation. Smoother motion, possible brief artifacts.",
+  "perfExpLowRenderOff": "Default quality",
+  "perfExpLowRenderOn": "Low quality",
+  "settingsPerfExpLowHint": "On: no 2× supersample, MSAA 1, DPR=1 while dragging. Tests fill-rate jank.",
   "container": {
     "name": "20ft Container"
   },
   "teslaModelS": {
     "name": "Tesla Model S"
   },
-  "mingGreenFigure": { "name": "Ming Green Figure" }
+  "mingGreenFigure": { "name": "Spark AI Humanoid" }
 }
