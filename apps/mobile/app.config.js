@@ -1,6 +1,5 @@
-import type { ExpoConfig } from 'expo/config';
-
-const config: ExpoConfig = {
+/** @type {import('expo/config').ExpoConfig} */
+const config = {
   name: 'Scratch Mobile',
   slug: 'scratch-mobile',
   version: '1.0.0',
@@ -28,6 +27,12 @@ const config: ExpoConfig = {
     package: 'com.scratchmobile.app',
     versionCode: 1,
     permissions: ['android.permission.VIBRATE'],
+  },
+  extra: {
+    eas: {
+      // Created by `eas build:configure` for @chiunature/scratch-mobile
+      projectId: '451d5fd9-5595-41e3-aaaa-8898878882f5',
+    },
   },
   plugins: [
     './plugins/withExpoModuleGradlePlugin.js',
@@ -78,4 +83,4 @@ const config: ExpoConfig = {
   ],
 };
 
-export default config;
+module.exports = config;

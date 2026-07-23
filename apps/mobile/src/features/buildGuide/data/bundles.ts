@@ -7,6 +7,7 @@ import {
 import catalogJson from '../../../../assets/buildGuide/catalog.json';
 import containerDemoManifest from '../../../../assets/buildGuide/models/container-demo/manifest.json';
 import teslaModelSManifest from '../../../../assets/buildGuide/models/tesla-model-s/manifest.json';
+import mingGreenFigureManifest from '../../../../assets/buildGuide/models/testlbs/manifest.json';
 import type { BuildGuideManifest } from '../types';
 
 /**
@@ -23,6 +24,11 @@ const BUILD_GUIDE_MODELS = {
     manifest: teslaModelSManifest,
     mpd: require('../../../../assets/buildGuide/models/tesla-model-s/build/export.mpd'),
     cover: require('../../../../assets/buildGuide/models/tesla-model-s/teslaModelS.png'),
+  },
+  'ming-green-figure': {
+    manifest: mingGreenFigureManifest,
+    mpd: require('../../../../assets/buildGuide/models/testlbs/build/export.mpd'),
+    cover: require('../../../../assets/buildGuide/models/testlbs/testlbs.jpg'),
   },
 } as const satisfies Record<
   string,
@@ -86,7 +92,9 @@ export async function resolveMpdUri(
 
   if (!isBuildGuideModelId(manifest.id)) {
     throw new Error(
-      `Unknown build guide model "${manifest.id}". Register it in BUILD_GUIDE_MODELS (bundles.ts). Known models: ${BUILD_GUIDE_MODEL_IDS.join(
+      `Unknown build guide model "${
+        manifest.id
+      }". Register it in BUILD_GUIDE_MODELS (bundles.ts). Known models: ${BUILD_GUIDE_MODEL_IDS.join(
         ', ',
       )}`,
     );

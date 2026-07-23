@@ -8,6 +8,7 @@
     {
       "id": "tesla-model-s",
       "nameKey": "teslaModelS.name"
-    }
+    },
+    { "id": "ming-green-figure", "nameKey": "mingGreenFigure.name" }
   ]
 }

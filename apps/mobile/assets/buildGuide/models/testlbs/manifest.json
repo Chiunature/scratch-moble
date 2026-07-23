@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "ming-green-figure",
+  "nameKey": "mingGreenFigure.name",
+  "mpdUri": "build/export.mpd",
+  "mainModelId": "人形-明绿-黑-灰.io",
+  "partsSource": "local",
+  "mode": "instruction",
+  "displayScale": 1,
+  "mainModelColor": 15
+}

@@ -194,7 +194,7 @@ THREE.LDRLoader.prototype.reportProgress = function(id) {
     }
 };
 
-THREE.LDRLoader.prototype.parseColor = function(colorID) {
+THREE.LDRLoader.prototype.parseColor = function(colorID, line) {
     if(colorID.length === 9 && colorID.substring(0, 3) === '0x2') {
 	// Direct color: https://www.ldraw.org/article/218.html
 	let hexValue = parseInt(colorID.substring(3), 16);
@@ -202,8 +202,13 @@ THREE.LDRLoader.prototype.parseColor = function(colorID) {
 	return hexValue;
     }
     if(LDR.Colors[colorID] === undefined) {
-	// This color might be on the form "0x2995220", such as seen in 3626bps5.dat:
-	this.onWarning({message:'Unknown color "' + colorID + '". Black (0) will be shown instead.', line:i, subModel:part.ID});
+	// Studio / unofficial color IDs (e.g. 100167) are not in the bundled palette.
+	// Fall back to black instead of throwing — `line`/`part` are not in scope here.
+	this.onWarning({
+	    message:'Unknown color "' + colorID + '". Black (0) will be shown instead.',
+	    line: line,
+	    subModel: this.mainModel,
+	});
 	return 0;
     }
     return parseInt(colorID);
@@ -280,7 +285,7 @@ THREE.LDRLoader.prototype.parse = function(data, defaultID) {
 
         let colorID;
 	if(lineType !== 0) {
-	    colorID = self.parseColor(parts[1]);
+	    colorID = self.parseColor(parts[1], i);
 	}
 
         // Expire texmapPlacement:
@@ -512,7 +517,7 @@ THREE.LDRLoader.prototype.parse = function(data, defaultID) {
                 saveThisCommentLine = false;
 	    }
 	    else if(is("!PREVIEW")) {
-		colorID = self.parseColor(parts[2]);
+		colorID = self.parseColor(parts[2], i);
 		for(let j = 3; j < 15; j++) {
 		    parts[j] = parseFloat(parts[j]);
 		}
