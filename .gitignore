@@ -91,6 +91,9 @@ apps/mobile/src/features/editor/generated/*
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+.tmp-yarn/
+.tmp-yarn-cache/
+package-lock.json
 
 # Cursor
 .cursor/
