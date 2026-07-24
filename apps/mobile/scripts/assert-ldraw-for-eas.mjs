@@ -2,7 +2,9 @@
 /**
  * Fail fast on EAS if the LDraw subset is missing from the clone.
  * EAS does not run ldraw:subset (needs a full library). The subset under
- * apps/mobile/assets/ldraw must be committed so withLdrawAssets can copy it.
+ * apps/mobile/assets/ldraw must be committed; eas-build-post-install then
+ * runs ldraw:sync into android/ios (config plugins are skipped when those
+ * native folders are already in the repo).
  */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -24,6 +26,9 @@ EAS builds clone git only — commit apps/mobile/assets/ldraw (subset), then reb
 Generate locally with:
   yarn workspace @scratch-mobile/mobile ldraw:subset
   git add apps/mobile/assets/ldraw
+
+Note: with android/ios already in the repo, EAS skips config plugins.
+eas-build-post-install must run ldraw:sync after this assert.
 `);
   process.exit(1);
 }

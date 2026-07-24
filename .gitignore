@@ -104,9 +104,10 @@ package-lock.json
 # Local Gradle state
 apps/mobile/android/.gradle-user-home/
 
-# LDraw: commit the dependency-closure subset under assets/ldraw (needed by EAS /
-# withLdrawAssets). Keep regenerating with:
+# LDraw: commit the dependency-closure subset under assets/ldraw (needed by EAS).
+# Keep regenerating with:
 #   yarn workspace @scratch-mobile/mobile ldraw:subset   # from LDRAW_LIBRARY_ROOT or full tree
-# Native copies are produced at prebuild / ldraw:sync — do not commit them.
+# Native copies are produced by ldraw:sync (also in eas-build-post-install) —
+# do not commit them. withLdrawAssets only helps local expo prebuild.
 apps/mobile/android/app/src/main/assets/ldraw/
 apps/mobile/ios/AwesomeProject/ldraw/

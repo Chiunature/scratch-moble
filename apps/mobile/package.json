@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .js,.ts,.tsx",
     "start": "expo start --dev-client",
     "prebuild": "expo prebuild",
-    "eas-build-post-install": "yarn --cwd ../.. editor:web && node ./scripts/assert-ldraw-for-eas.mjs",
+    "eas-build-post-install": "yarn --cwd ../.. editor:web && node ./scripts/assert-ldraw-for-eas.mjs && node ./scripts/sync-ldraw-native.mjs",
     "deps:check": "expo install --check",
     "doctor": "expo-doctor",
     "ldraw:subset": "node scripts/generate-ldraw-subset.mjs",
