@@ -88,31 +88,35 @@ export async function loadPartContent(
     }
   }
 
-  const cached = await storage.get(normalizedId);
-  if (cached != null) {
-    loader.parse(cached, normalizedId);
-    return true;
-  }
-
-  if (options.readLocalPart) {
-    const localText = await options.readLocalPart(normalizedId);
-    if (localText != null) {
-      await storage.set(normalizedId, localText);
-      loader.parse(localText, normalizedId);
+  try {
+    const cached = await storage.get(normalizedId);
+    if (cached != null) {
+      loader.parse(cached, normalizedId);
       return true;
     }
-  }
 
-  const fetchText = options.fetchText ?? defaultFetchText;
-  for (const url of options.remoteUrls ?? []) {
-    try {
-      const text = await fetchText(url);
-      await storage.set(normalizedId, text);
-      loader.parse(text, normalizedId);
-      return true;
-    } catch {
-      // try next candidate
+    if (options.readLocalPart) {
+      const localText = await options.readLocalPart(normalizedId);
+      if (localText != null) {
+        await storage.set(normalizedId, localText);
+        loader.parse(localText, normalizedId);
+        return true;
+      }
     }
+
+    const fetchText = options.fetchText ?? defaultFetchText;
+    for (const url of options.remoteUrls ?? []) {
+      try {
+        const text = await fetchText(url);
+        await storage.set(normalizedId, text);
+        loader.parse(text, normalizedId);
+        return true;
+      } catch {
+        // try next candidate
+      }
+    }
+  } catch {
+    // Fall through to generator / cube fallback so one bad .dat cannot blank the model.
   }
 
   const generated = LDR.Generator?.make(normalizedId);
@@ -126,5 +130,5 @@ export async function loadPartContent(
 }
 
 function normalizeId(id: string): string {
-  return id.replace(/\\/g, '/');
+  return id.replace(/\\/g, '/').toLowerCase();
 }

@@ -277,7 +277,8 @@ export function loadMpdFromText(
     );
 
     loader.load = function patchedLoad(id: string) {
-      const normalizedId = id.replace(/\\/g, '/');
+      // Must match LDRLoader's lowercase IDs; Android asset paths are case-sensitive.
+      const normalizedId = normalizeLdrModelId(id);
 
       if (loader.partTypes[normalizedId]) {
         if (loader.partTypes[normalizedId] !== true) {
@@ -290,23 +291,34 @@ export function loadMpdFromText(
       loader.unloadedFiles += 1;
 
       void (async () => {
-        const loaded = await loadPartContent(loader, normalizedId, storage, {
-          readLocalPart: shouldReadLocal ? readLocalPart : undefined,
-          remoteUrls: shouldFetchRemote
-            ? remoteResolver?.resolvePart(normalizedId)
-            : undefined,
-          fetchText,
-        });
+        try {
+          const loaded = await loadPartContent(loader, normalizedId, storage, {
+            readLocalPart: shouldReadLocal ? readLocalPart : undefined,
+            remoteUrls: shouldFetchRemote
+              ? remoteResolver?.resolvePart(normalizedId)
+              : undefined,
+            fetchText,
+          });
 
-        if (!loaded) {
+          if (!loaded) {
+            handleError({
+              message: `Unable to load ${normalizedId}`,
+              subModel: normalizedId,
+            });
+          }
+        } catch (error: unknown) {
+          // Large Studio custom parts can throw while parsing; without this
+          // finally path, unloadedFiles never hits 0 and the model stays blank.
+          const detail =
+            error instanceof Error ? error.message : String(error);
           handleError({
-            message: `Unable to load ${normalizedId}`,
+            message: `Failed while loading ${normalizedId}: ${detail}`,
             subModel: normalizedId,
           });
+        } finally {
+          loader.unloadedFiles -= 1;
+          loader.reportProgress(normalizedId);
         }
-
-        loader.unloadedFiles -= 1;
-        loader.reportProgress(normalizedId);
       })();
     };
 

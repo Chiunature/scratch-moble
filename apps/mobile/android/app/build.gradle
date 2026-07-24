@@ -91,6 +91,12 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.scratchmobile.app'
+    // Keep LDraw parts uncompressed in the APK. Compressed assets >~1MB are
+    // flaky on some Android AssetManager paths; the humanoid model ships multi-MB
+    // Studio custom .dat files that container/Tesla do not need.
+    androidResources {
+        noCompress += ['dat', 'ldr', 'mpd']
+    }
     defaultConfig {
         applicationId 'com.scratchmobile.app'
         minSdkVersion rootProject.ext.minSdkVersion
