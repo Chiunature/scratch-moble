@@ -19,6 +19,9 @@ export type RenderSize = {
 export type RawGlShader = object;
 export type RawGlProgramHandle = object;
 export type RawGlBuffer = object;
+export type RawGlTexture = object;
+export type RawGlFramebuffer = object;
+export type RawGlRenderbuffer = object;
 export type RawGlUniformLocation = object;
 
 export type ExpoGlRuntimeContext = ExpoWebGLRenderingContext & {
@@ -41,6 +44,23 @@ export type ExpoGlRuntimeContext = ExpoWebGLRenderingContext & {
   readonly FRAGMENT_SHADER: number;
   readonly COMPILE_STATUS: number;
   readonly LINK_STATUS: number;
+  readonly POLYGON_OFFSET_FILL: number;
+  readonly FRAMEBUFFER: number;
+  readonly COLOR_ATTACHMENT0: number;
+  readonly TEXTURE_2D: number;
+  readonly TEXTURE0: number;
+  readonly TEXTURE_MIN_FILTER: number;
+  readonly TEXTURE_MAG_FILTER: number;
+  readonly TEXTURE_WRAP_S: number;
+  readonly TEXTURE_WRAP_T: number;
+  readonly LINEAR: number;
+  readonly CLAMP_TO_EDGE: number;
+  readonly RGBA: number;
+  readonly UNSIGNED_BYTE: number;
+  readonly RENDERBUFFER: number;
+  readonly DEPTH_COMPONENT16: number;
+  readonly DEPTH_ATTACHMENT: number;
+  readonly FRAMEBUFFER_COMPLETE: number;
   viewport(x: number, y: number, width: number, height: number): void;
   createShader(type: number): RawGlShader | null;
   shaderSource(shader: RawGlShader, source: string): void;
@@ -63,6 +83,48 @@ export type ExpoGlRuntimeContext = ExpoWebGLRenderingContext & {
   deleteBuffer(buffer: RawGlBuffer | null): void;
   bindBuffer(target: number, buffer: RawGlBuffer | null): void;
   bufferData(target: number, data: Float32Array, usage: number): void;
+  createTexture(): RawGlTexture | null;
+  deleteTexture(texture: RawGlTexture | null): void;
+  bindTexture(target: number, texture: RawGlTexture | null): void;
+  activeTexture(texture: number): void;
+  texParameteri(target: number, pname: number, param: number): void;
+  texImage2D(
+    target: number,
+    level: number,
+    internalFormat: number,
+    width: number,
+    height: number,
+    border: number,
+    format: number,
+    type: number,
+    pixels: ArrayBufferView | null,
+  ): void;
+  createFramebuffer(): RawGlFramebuffer | null;
+  deleteFramebuffer(framebuffer: RawGlFramebuffer | null): void;
+  bindFramebuffer(target: number, framebuffer: RawGlFramebuffer | null): void;
+  framebufferTexture2D(
+    target: number,
+    attachment: number,
+    textarget: number,
+    texture: RawGlTexture | null,
+    level: number,
+  ): void;
+  checkFramebufferStatus(target: number): number;
+  createRenderbuffer(): RawGlRenderbuffer | null;
+  deleteRenderbuffer(renderbuffer: RawGlRenderbuffer | null): void;
+  bindRenderbuffer(target: number, renderbuffer: RawGlRenderbuffer | null): void;
+  renderbufferStorage(
+    target: number,
+    internalFormat: number,
+    width: number,
+    height: number,
+  ): void;
+  framebufferRenderbuffer(
+    target: number,
+    attachment: number,
+    renderbuffertarget: number,
+    renderbuffer: RawGlRenderbuffer | null,
+  ): void;
   clearColor(red: number, green: number, blue: number, alpha: number): void;
   clearDepth(depth: number): void;
   enable(capability: number): void;
@@ -71,12 +133,15 @@ export type ExpoGlRuntimeContext = ExpoWebGLRenderingContext & {
   clear(mask: number): void;
   blendFunc(sourceFactor: number, destinationFactor: number): void;
   depthMask(flag: boolean): void;
+  polygonOffset(factor: number, units: number): void;
   useProgram(program: RawGlProgramHandle | null): void;
   uniformMatrix4fv(
     location: RawGlUniformLocation,
     transpose: boolean,
     value: readonly number[] | Float32Array,
   ): void;
+  uniform1i(location: RawGlUniformLocation, value: number): void;
+  uniform2f(location: RawGlUniformLocation, x: number, y: number): void;
   enableVertexAttribArray(index: number): void;
   disableVertexAttribArray(index: number): void;
   vertexAttribPointer(
@@ -104,23 +169,50 @@ export type RuntimeDrawMode = 'triangles' | 'lines';
 export type RuntimeDrawCall = {
   mode: RuntimeDrawMode;
   positions: Float32Array;
+  center: readonly [number, number, number];
   color: RuntimeColor;
   transparent: boolean;
+  polygonOffset: readonly [number, number] | null;
 };
 
 export type UploadedDrawCall = {
   mode: number;
   buffer: RawGlBuffer;
   count: number;
+  center: readonly [number, number, number];
   color: RuntimeColor;
   transparent: boolean;
+  polygonOffset: readonly [number, number] | null;
 };
 
-export type RawGlProgram = {
+export type SceneGlProgram = {
   program: RawGlProgramHandle;
   position: number;
   modelViewProjection: RawGlUniformLocation;
   color: RawGlUniformLocation;
+};
+
+export type FxaaGlProgram = {
+  program: RawGlProgramHandle;
+  position: number;
+  texCoord: number;
+  texture: RawGlUniformLocation;
+  resolution: RawGlUniformLocation;
+};
+
+export type FxaaRenderTarget = {
+  width: number;
+  height: number;
+  framebuffer: RawGlFramebuffer;
+  colorTexture: RawGlTexture;
+  depthBuffer: RawGlRenderbuffer;
+};
+
+export type RawGlProgram = {
+  scene: SceneGlProgram;
+  fxaa: FxaaGlProgram;
+  screenQuadBuffer: RawGlBuffer;
+  fxaaTarget: FxaaRenderTarget | null;
 };
 
 export type UploadedFrame = {

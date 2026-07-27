@@ -9,11 +9,44 @@ const OPACITY_KEY = 'ldrOpacity';
 const _rootMatrixWorldInverse = new THREE.Matrix4();
 const _relativeMatrixWorld = new THREE.Matrix4();
 const _vertex = new THREE.Vector3();
+const _displayColor = new THREE.Color();
+
+type FlattenedGeometry = {
+  positions: Float32Array;
+  center: readonly [number, number, number];
+};
 
 function getFirstMaterial(
   material: THREE.Material | THREE.Material[],
 ): THREE.Material {
   return Array.isArray(material) ? material[0] : material;
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function colorToDisplayColor(
+  color: THREE.Color,
+  alpha: number,
+): RuntimeColor {
+  _displayColor.copy(color).convertLinearToSRGB();
+  return [
+    clamp01(_displayColor.r),
+    clamp01(_displayColor.g),
+    clamp01(_displayColor.b),
+    clamp01(alpha),
+  ];
+}
+
+function vectorToRuntimeColor(value: THREE.Vector4): RuntimeColor {
+  _displayColor.setRGB(value.x, value.y, value.z).convertLinearToSRGB();
+  return [
+    clamp01(_displayColor.r),
+    clamp01(_displayColor.g),
+    clamp01(_displayColor.b),
+    clamp01(value.w),
+  ];
 }
 
 function getMaterialUniformColor(
@@ -26,11 +59,11 @@ function getMaterialUniformColor(
   ).uniforms?.color?.value;
 
   if (uniformValue instanceof THREE.Vector4) {
-    return [uniformValue.x, uniformValue.y, uniformValue.z, uniformValue.w];
+    return vectorToRuntimeColor(uniformValue);
   }
 
   if (uniformValue instanceof THREE.Color) {
-    return [uniformValue.r, uniformValue.g, uniformValue.b, 1];
+    return colorToDisplayColor(uniformValue, 1);
   }
 
   return null;
@@ -60,10 +93,10 @@ function getMaterialColor(material: THREE.Material): RuntimeColor {
   const color = (material as THREE.Material & { color?: THREE.Color }).color;
   const alpha = resolveMaterialOpacity(material);
   if (color instanceof THREE.Color) {
-    return [color.r, color.g, color.b, alpha];
+    return colorToDisplayColor(color, alpha);
   }
 
-  return [0.5, 0.5, 0.5, alpha];
+  return [0.5, 0.5, 0.5, clamp01(alpha)];
 }
 
 function isTransparentMaterial(material: THREE.Material): boolean {
@@ -92,10 +125,30 @@ function hasRenderableScale(object: THREE.Object3D): boolean {
   );
 }
 
+function resolvePolygonOffset(
+  material: THREE.Material,
+  mode: RuntimeDrawCall['mode'],
+): readonly [number, number] | null {
+  if (mode !== 'triangles') {
+    return null;
+  }
+
+  const offset = material as THREE.Material & {
+    polygonOffset?: boolean;
+    polygonOffsetFactor?: number;
+    polygonOffsetUnits?: number;
+  };
+  if (!offset.polygonOffset) {
+    return null;
+  }
+
+  return [offset.polygonOffsetFactor ?? 1, offset.polygonOffsetUnits ?? 1];
+}
+
 function flattenGeometryPositions(
   geometry: THREE.BufferGeometry,
   matrixWorld: THREE.Matrix4,
-): Float32Array | null {
+): FlattenedGeometry | null {
   const position = geometry.getAttribute('position');
   if (!position || position.count === 0) {
     return null;
@@ -104,19 +157,27 @@ function flattenGeometryPositions(
   const index = geometry.index;
   const count = index ? index.count : position.count;
   const positions = new Float32Array(count * 3);
+  let centerX = 0;
+  let centerY = 0;
+  let centerZ = 0;
 
   for (let i = 0; i < count; i += 1) {
     const sourceIndex = index ? index.getX(i) : i;
-    _vertex
-      .fromBufferAttribute(position, sourceIndex)
-      .applyMatrix4(matrixWorld);
+    _vertex.fromBufferAttribute(position, sourceIndex).applyMatrix4(matrixWorld);
     const target = i * 3;
     positions[target] = _vertex.x;
     positions[target + 1] = _vertex.y;
     positions[target + 2] = _vertex.z;
+    centerX += _vertex.x;
+    centerY += _vertex.y;
+    centerZ += _vertex.z;
   }
 
-  return positions;
+  const invCount = 1 / count;
+  return {
+    positions,
+    center: [centerX * invCount, centerY * invCount, centerZ * invCount],
+  };
 }
 
 export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[] {
@@ -139,22 +200,25 @@ export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[]
       return;
     }
 
-    const positions = flattenGeometryPositions(
+    const flattened = flattenGeometryPositions(
       object.geometry,
       _relativeMatrixWorld.multiplyMatrices(
         _rootMatrixWorldInverse,
         object.matrixWorld,
       ),
     );
-    if (!positions || positions.length === 0) {
+    if (!flattened || flattened.positions.length === 0) {
       return;
     }
 
+    const mode = object instanceof THREE.Mesh ? 'triangles' : 'lines';
     calls.push({
-      mode: object instanceof THREE.Mesh ? 'triangles' : 'lines',
-      positions,
+      mode,
+      positions: flattened.positions,
+      center: flattened.center,
       color: getMaterialColor(material),
       transparent: isTransparentMaterial(material),
+      polygonOffset: resolvePolygonOffset(material, mode),
     });
   });
 

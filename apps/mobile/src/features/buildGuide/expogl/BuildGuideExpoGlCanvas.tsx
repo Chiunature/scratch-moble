@@ -25,7 +25,7 @@ import {
   drawUploadedFrame,
   resolveRenderSize,
 } from './glFrameRenderer';
-import { createProgram } from './glProgram';
+import { createProgram, disposeProgram } from './glProgram';
 import type {
   BuildGuideCamera,
   CanvasLayoutSize,
@@ -215,9 +215,7 @@ export function BuildGuideExpoGlCanvas({
       if (gl) {
         disposeUploadedFrame(gl, uploadedFrameRef.current);
         uploadedFrameRef.current = null;
-        if (programRef.current) {
-          gl.deleteProgram(programRef.current.program);
-        }
+        disposeProgram(gl, programRef.current);
       }
 
       programRef.current = null;
