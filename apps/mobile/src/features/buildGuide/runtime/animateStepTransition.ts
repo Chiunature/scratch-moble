@@ -53,6 +53,7 @@ export function applyInstructionPose(
 
 /**
  * 返回 cancel 函数。mode=2 或 totalMs=0 时立即 finalize。
+ * onFrame：每帧姿态更新后回调（ExpoGL 用来重烘焙/重绘）。
  */
 export function animateInstructionTransition(
   root: THREE.Object3D,
@@ -61,6 +62,7 @@ export function animateInstructionTransition(
   to: InstructionPose,
   mode: StepAnimationMode,
   onDone?: () => void,
+  onFrame?: () => void,
 ): () => void {
   const { rotationMs, positionMs, totalMs } = getStepAnimationDurations(mode);
   const rotationChanges = from.quaternion.angleTo(to.quaternion) > 1e-4;
@@ -74,6 +76,7 @@ export function animateInstructionTransition(
 
   if (mode === 2 || duration <= 0 || totalMs <= 0) {
     applyInstructionPose(root, camera, to);
+    onFrame?.();
     onDone?.();
     return () => undefined;
   }
@@ -94,6 +97,7 @@ export function animateInstructionTransition(
     const elapsed = Date.now() - start;
     if (elapsed >= duration) {
       applyInstructionPose(root, camera, to);
+      onFrame?.();
       onDone?.();
       return;
     }
@@ -115,6 +119,7 @@ export function animateInstructionTransition(
 
     root.updateMatrixWorld(true);
     camera.updateProjectionMatrix();
+    onFrame?.();
     raf = requestAnimationFrame(tick);
   };
 

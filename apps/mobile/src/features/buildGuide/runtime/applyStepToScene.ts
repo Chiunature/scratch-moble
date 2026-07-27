@@ -25,13 +25,6 @@ function isProjectionCamera(
   );
 }
 
-/**
- * 说明书每步始终用累计包围盒居中 + fit。
- *
- * 不根据「当前步零件更小」自动切到 step bounds：
- * 那种比例策略会把大量正常步骤误判成局部放大。
- * viewport 只参与相机 frustum，不参与取景决策，保证跨设备一致。
- */
 function selectBounds(
   stepHandler: LdrStepHandlerFacade,
 ): { bounds: THREE.Box3; useAccumulated: boolean } {
@@ -56,7 +49,6 @@ function updateInstructionCamera(
 
   const accBounds = stepHandler.getAccumulatedBounds();
   const size = accBounds.min.distanceTo(accBounds.max) || 1000;
-  // 相机距原点约 15.78*size；先给一个合理 near/far，stabilize 还会按包围盒再收紧
   const distance = 15.7797 * size;
 
   camera.position.set(10 * size, 7 * size, 10 * size);
@@ -95,7 +87,7 @@ function applyPreviewStepToScene(
   camera: THREE.Camera,
   root: THREE.Object3D,
   viewport?: ViewportSize,
-): void {
+): THREE.Vector3 {
   updatePerspectiveCamera(camera, viewport);
 
   root.updateMatrixWorld(true);
@@ -123,8 +115,11 @@ function applyPreviewStepToScene(
   if (isProjectionCamera(camera)) {
     camera.updateProjectionMatrix();
   }
+
+  return _boxCenter.clone();
 }
 
+/** Applies step camera/model pose. Returns the orbit look-at target. */
 export function applyStepToScene(
   camera: THREE.Camera,
   root: THREE.Object3D,
@@ -133,7 +128,7 @@ export function applyStepToScene(
   stepHandler?: LdrStepHandlerFacade | null,
   viewport?: ViewportSize,
   mode: LdrDisplayMode = 'instruction',
-): void {
+): THREE.Vector3 {
   if (
     mode === 'instruction' &&
     camera instanceof THREE.OrthographicCamera &&
@@ -141,16 +136,20 @@ export function applyStepToScene(
     viewport
   ) {
     applyInstructionStepToScene(camera, root, stepHandler, viewport);
-    return;
+    // Instruction camera looks at the world origin (legacy OrbitControls target).
+    return new THREE.Vector3(0, 0, 0);
   }
   if (step?.camera) {
     applyStepCamera(camera, step.camera, viewport);
-    return;
+    return new THREE.Vector3(
+      step.camera.target[0],
+      step.camera.target[1],
+      step.camera.target[2],
+    );
   }
 
   if (mode === 'preview') {
-    applyPreviewStepToScene(camera, root, viewport);
-    return;
+    return applyPreviewStepToScene(camera, root, viewport);
   }
 
   if (stepHandler) {
@@ -176,9 +175,9 @@ export function applyStepToScene(
         .add(direction)
         .add(offset.multiplyScalar(0.001));
       camera.lookAt(target);
-      return;
+      return target.clone();
     } catch {
-      // Bounds may be unavailable during early loading; fall through.
+      // Bounds can be unavailable during early model loading.
     }
   }
 
@@ -190,6 +189,7 @@ export function applyStepToScene(
     Math.cos(angle) * radius,
   );
   camera.lookAt(0, 0, 0);
+  return new THREE.Vector3(0, 0, 0);
 }
 
 export type InstructionStepTarget = {
@@ -198,7 +198,6 @@ export type InstructionStepTarget = {
   zoom: number;
 };
 
-/** 计算说明书步进姿态（会临时写入 root 以测量 zoom，调用方负责最终应用/动画）。 */
 export function computeInstructionStepTarget(
   camera: THREE.OrthographicCamera,
   root: THREE.Object3D,
@@ -215,7 +214,6 @@ export function computeInstructionStepTarget(
     useAccumulated,
   );
 
-  // 必须先写完 position+rotation 再 measure，避免 zoom 与真实 matrixWorld 不一致
   root.position.copy(position);
   root.setRotationFromMatrix(rotation);
   root.updateMatrixWorld(true);

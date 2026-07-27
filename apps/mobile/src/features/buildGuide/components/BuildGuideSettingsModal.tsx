@@ -6,9 +6,6 @@ import { useTranslation } from '@scratch-mobile/i18n';
 import type { BuildGuideSettings } from '../settings';
 import { styles } from './BuildGuideSettingsModal.styles';
 import {
-  AnimNormalPreview,
-  AnimOffPreview,
-  AnimSlowPreview,
   HighlightLimePreview,
   HighlightNormalPreview,
   HighlightOldMonoPreview,
@@ -16,6 +13,9 @@ import {
   LineContrastHighPreview,
   LineContrastLdrawPreview,
   SettingsOptionChip,
+  AnimNormalPreview,
+  AnimOffPreview,
+  AnimSlowPreview,
   StudHollowPreview,
   StudLogoPreview,
   StudPlainPreview,
@@ -207,6 +207,7 @@ export function BuildGuideSettingsModal({
                 </SettingsOptionChip>
               </View>
             </View>
+
           </ScrollView>
         </Pressable>
       </Pressable>

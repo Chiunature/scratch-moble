@@ -15,12 +15,6 @@ const workspacePackages = {
   '@scratch-mobile/shared': path.resolve(packagesRoot, 'shared/src'),
 };
 
-const r3fPath = path.dirname(
-  require.resolve('@react-three/fiber/package.json', {
-    paths: [__dirname, workspaceRoot],
-  }),
-);
-
 const config = getDefaultConfig(__dirname);
 const { assetExts, sourceExts } = config.resolver;
 
@@ -57,27 +51,6 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
         'examples/jsm/',
         `${moduleName.replace('three/addons/', '')}.js`,
       ),
-      type: 'sourceFile',
-    };
-  }
-
-  if (moduleName === 'three' || moduleName === 'three/webgpu') {
-    return {
-      filePath: path.resolve(threePackagePath, 'build/three.webgpu.js'),
-      type: 'sourceFile',
-    };
-  }
-
-  if (moduleName === 'three/tsl') {
-    return {
-      filePath: path.resolve(threePackagePath, 'build/three.tsl.js'),
-      type: 'sourceFile',
-    };
-  }
-
-  if (moduleName === '@react-three/fiber') {
-    return {
-      filePath: path.resolve(r3fPath, 'dist/react-three-fiber.esm.js'),
       type: 'sourceFile',
     };
   }

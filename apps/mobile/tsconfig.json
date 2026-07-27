@@ -12,7 +12,7 @@
       "@scratch-mobile/build-guide": ["../../packages/build-guide/src"],
       "@scratch-mobile/ldr-engine": ["../../packages/ldr-engine/src"]
     },
-    "types": ["jest", "@webgpu/types"]
+    "types": ["jest"]
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],
   "exclude": ["**/node_modules", "**/Pods"]

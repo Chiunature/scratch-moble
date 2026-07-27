@@ -45,14 +45,6 @@
   "animationSlow": "慢速",
   "animationNormal": "正常",
   "animationOff": "直接跳转",
-  "settingsPerfExp": "性能试验（临时）",
-  "settingsPerfExpHint": "用来对比卡顿原因，可单独开关；默认均为关闭。",
-  "perfExpDeferOff": "动画前完整稳定",
-  "perfExpDeferOn": "动画后再稳定",
-  "settingsPerfExpDeferHint": "开：切步动画前跳过全量材质重建。动画应更顺，但可能短暂残影。",
-  "perfExpLowRenderOff": "默认画质",
-  "perfExpLowRenderOn": "低画质",
-  "settingsPerfExpLowHint": "开：取消 2× 超采样、MSAA 降为 1、拖拽时 DPR=1。用来看拖拽是否因填充率卡。",
   "container": {
     "name": "20 英尺集装箱"
   },

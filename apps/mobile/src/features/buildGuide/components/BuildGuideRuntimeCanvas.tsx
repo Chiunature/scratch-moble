@@ -1,9 +1,9 @@
 import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
+import { BuildGuideExpoGlCanvas } from '../expogl/BuildGuideExpoGlCanvas';
 import type { StepAnimationMode } from '../settings';
 import type { BuildGuideBundle } from '../types';
-import { BuildGuideWebGpuCanvas } from '../webgpu/BuildGuideWebGpuCanvas';
 
 type BuildGuideRuntimeCanvasProps = {
   bundle: BuildGuideBundle;
@@ -44,7 +44,7 @@ export function BuildGuideRuntimeCanvas({
   }
 
   return (
-    <BuildGuideWebGpuCanvas
+    <BuildGuideExpoGlCanvas
       bundle={bundle}
       stepIndex={stepIndex}
       animationMode={animationMode}

@@ -38,7 +38,7 @@ require('./vendor/LDRPartsBuilder.js');
 require('./vendor/LDRMeasurer.js');
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { applyWebGpuMaterials } = require('./support/applyWebGpuMaterials.js');
-applyWebGpuMaterials();
+const { applyRuntimeMaterials } = require('./support/applyRuntimeMaterials.js');
+applyRuntimeMaterials();
 
 export { THREE };

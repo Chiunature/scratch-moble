@@ -25,9 +25,8 @@ function getLdr(): LdrRuntime | undefined {
 }
 
 /**
- * 同步到 LDR.Options，供 WebGPU 材质 / stud 加载读取。
- * 动画速度只走 React prop，不写入 Options。
- * canBeOld 由 applyWebGpuMaterials 注册时设置。
+ * 同步到 LDR.Options，供运行时材质和 stud 加载读取。
+ * canBeOld 由 ldr-engine 的 runtime material 注册时设置。
  */
 export function syncLdrOptions(settings: BuildGuideSettings): void {
   const LDR = getLdr();

@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { warnIfNotHardwareAccelerated } from 'react-native-webgpu';
 
 import { type RootStackParamList } from '../../app/navigation';
-import '../../features/buildGuide/webgpu/setupThreeWebGpu';
+import '../../features/buildGuide/runtime/setupThreeRuntime';
 import {
   BuildGuideBottomBar,
   BuildGuidePartsModal,
@@ -42,6 +41,7 @@ export function BuildGuideScreen({ navigation, route }: Props) {
 
   // 等设置 sync 到 LDR.Options 后再加载，避免 stud 选项闪默认值再重载
   const ldr = useLdrModel(settingsReady ? manifest : null);
+  const reloadLdrModel = ldr.reload;
   const steps = useBuildGuideSteps(manifest, ldr.stepHandler);
 
   const bundle = useMemo<BuildGuideBundle>(
@@ -58,24 +58,11 @@ export function BuildGuideScreen({ navigation, route }: Props) {
   );
 
   useEffect(() => {
-    const gpu = globalThis.navigator?.gpu;
-    if (!gpu) {
-      return;
-    }
-
-    void gpu.requestAdapter().then(adapter => {
-      if (adapter) {
-        warnIfNotHardwareAccelerated(adapter);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     if (geometryRevision === 0) {
       return;
     }
-    ldr.reload();
-  }, [geometryRevision, ldr.reload]);
+    reloadLdrModel();
+  }, [geometryRevision, reloadLdrModel]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
