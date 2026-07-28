@@ -16,7 +16,22 @@ export {
   centerObject,
   fitObjectToView,
 } from './steps/LdrSceneManager';
+export {
+  resolveCurrentStepPliEntries,
+  resolveModelStepPliEntries,
+  resolveStepPliEntries,
+} from './pli/resolveStepPliEntries';
+export {
+  createPliPartObject,
+  type CreatePliPartObjectInput,
+} from './pli/createPliPartObject';
 export { LdrMeasurer } from './measurer';
+export type {
+  LdrPliAnnotation,
+  LdrPliBuildContext,
+  LdrPliEntry,
+  LdrPliRule,
+} from './pli/types';
 export type {
   LdrColorInfo,
   LdrLoadIssue,

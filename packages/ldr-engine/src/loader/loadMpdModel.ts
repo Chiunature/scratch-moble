@@ -255,6 +255,7 @@ export function loadMpdFromText(
           resolve({
             loader,
             mainModelId: resolvedMainModelId,
+            mainModelColor,
             stepHandler: wrapStepHandler(handler, manager.baseObject),
             partsBuilder: wrapPartsBuilder(partsBuilder),
             root: manager.baseObject,

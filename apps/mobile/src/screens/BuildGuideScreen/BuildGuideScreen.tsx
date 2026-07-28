@@ -17,6 +17,7 @@ import { getBuildGuideManifest } from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
 import { useBuildGuideSettings } from '../../features/buildGuide/settings';
+import { useBuildGuidePliEntries } from '../../features/buildGuide/pli';
 import type { BuildGuideBundle } from '../../features/buildGuide/types';
 import { styles } from './BuildGuideScreen.styles';
 
@@ -43,6 +44,10 @@ export function BuildGuideScreen({ navigation, route }: Props) {
   const ldr = useLdrModel(settingsReady ? manifest : null);
   const reloadLdrModel = ldr.reload;
   const steps = useBuildGuideSteps(manifest, ldr.stepHandler);
+  const pli = useBuildGuidePliEntries(
+    partsModalVisible ? ldr.model : null,
+    steps.currentIndex,
+  );
 
   const bundle = useMemo<BuildGuideBundle>(
     () => ({
@@ -107,6 +112,9 @@ export function BuildGuideScreen({ navigation, route }: Props) {
       <BuildGuidePartsModal
         visible={partsModalVisible}
         parts={ldr.partsBuilder?.parts ?? []}
+        pliItems={pli.items}
+        pliError={pli.error}
+        pliModel={partsModalVisible ? ldr.model : null}
         onClose={() => setPartsModalVisible(false)}
       />
 

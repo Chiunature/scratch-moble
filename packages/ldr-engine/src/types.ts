@@ -21,6 +21,29 @@ export type PartAndColor = {
   edgeHex: string;
 };
 
+export type LdrPliEntry = PartAndColor & {
+  description?: string;
+  annotation?: string;
+  sourcePartID?: string;
+};
+
+export type LdrPliAnnotation = {
+  partID: string;
+  text: string;
+};
+
+export type LdrPliRule = {
+  partID: string;
+  replacementPartID?: string;
+  orientation?: ReadonlyArray<number>;
+  annotation?: string;
+};
+
+export type LdrPliBuildContext = {
+  mainModelId: string;
+  stepIndex: number;
+};
+
 export type LdrLoaderOptions = {
   partsBaseUrl?: string;
   readLocalPart?: (id: string) => Promise<string | null>;
@@ -47,13 +70,29 @@ export type LdrPartType = {
   ID: string;
   name?: string;
   modelDescription?: string;
+  annotation?: string;
+  replacement?: string;
+  pli?: LdrPartType;
+  isPart?: boolean;
   steps: LdrParsedStep[];
+  generateThreePart?: (
+    loader: LdrLoaderInstance,
+    colorID: number,
+    position: THREE.Vector3,
+    rotation: THREE.Matrix3,
+    cull: boolean,
+    invertCCW: boolean,
+    meshCollector: LdrMeshCollector,
+    partDesc?: LdrParsedSubModel,
+    taskList?: Array<() => void>,
+  ) => void;
 };
 
 export type LdrParsedStep = {
   subModels: LdrParsedSubModel[];
   rotation?: LdrStepRotation;
   original?: LdrParsedStep;
+  containsNonPartSubModels?: (loader: LdrLoaderInstance) => boolean;
 };
 
 export type LdrParsedSubModel = {
@@ -90,6 +129,7 @@ export type LdrDisplayMode = 'instruction' | 'preview';
 export type LoadedLdrModel = {
   loader: LdrLoaderInstance;
   mainModelId: string;
+  mainModelColor: number;
   stepHandler: LdrStepHandlerFacade;
   partsBuilder: LdrPartsBuilderFacade;
   root: THREE.Group;
@@ -209,6 +249,7 @@ export type LdrGlobalNamespace = {
     sixteenObject: THREE.Group,
     transObject: THREE.Group,
     manager?: LdrSceneManager,
+    loader?: LdrLoaderInstance,
   ) => LdrMeshCollector;
   Measurer: new (camera: THREE.Camera) => LdrMeasurerInstance;
   MeasuringLine: new (
@@ -229,6 +270,7 @@ export type LdrStepHandlerInstance = {
   nextStep: (skipDrawing?: boolean) => boolean;
   prevStep: (skipDrawing?: boolean) => boolean;
   getCurrentStepIndex: () => number;
+  getCurrentStep: () => LdrParsedStep | undefined;
   computeCameraPositionRotation: LdrStepHandlerFacade['computeCameraPositionRotation'];
   getAccumulatedBounds: () => THREE.Box3;
   getBounds: () => THREE.Box3;

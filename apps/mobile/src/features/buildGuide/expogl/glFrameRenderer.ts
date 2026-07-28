@@ -64,25 +64,36 @@ export function uploadRuntimeDrawCalls(
   gl: ExpoGlRuntimeContext,
   drawCalls: RuntimeDrawCall[],
 ): UploadedFrame {
-  const calls = drawCalls.map(call => {
-    const buffer = gl.createBuffer();
-    if (!buffer) {
-      throw new Error('Failed to create Expo GL buffer.');
+  const calls: UploadedDrawCall[] = [];
+
+  try {
+    for (const call of drawCalls) {
+      const buffer = gl.createBuffer();
+      if (!buffer) {
+        throw new Error('Failed to create Expo GL buffer.');
+      }
+
+      const uploadedCall: UploadedDrawCall = {
+        mode: call.mode === 'triangles' ? gl.TRIANGLES : gl.LINES,
+        buffer,
+        count: call.positions.length / 3,
+        center: call.center,
+        color: call.color,
+        transparent: call.transparent,
+        polygonOffset: call.polygonOffset,
+      };
+      calls.push(uploadedCall);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, call.positions, gl.STATIC_DRAW);
     }
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, call.positions, gl.STATIC_DRAW);
-
-    return {
-      mode: call.mode === 'triangles' ? gl.TRIANGLES : gl.LINES,
-      buffer,
-      count: call.positions.length / 3,
-      center: call.center,
-      color: call.color,
-      transparent: call.transparent,
-      polygonOffset: call.polygonOffset,
-    };
-  });
+  } catch (cause: unknown) {
+    for (const call of calls) {
+      gl.deleteBuffer(call.buffer);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    throw cause;
+  }
 
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 

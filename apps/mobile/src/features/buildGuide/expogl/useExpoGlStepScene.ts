@@ -41,7 +41,6 @@ type RuntimeDrawCallCache = {
   entries: Map<number, RuntimeDrawCall[]>;
 };
 
-const STEP_PERF_LOG_PREFIX = '[BuildGuideGLPerf]';
 const DRAW_CALL_CACHE_RADIUS = 5;
 const ANIMATED_PREWARM_DELAY_MS = 160;
 const SKIP_ANIMATION_PREWARM_DELAY_MS = 24;
@@ -143,35 +142,8 @@ function pruneRuntimeDrawCallCache(
   }
 }
 
-function getCachedStepIndices(cache: RuntimeDrawCallCache): number[] {
-  return [...cache.entries.keys()].sort((a, b) => a - b);
-}
-
 function countDrawCallVertices(drawCalls: RuntimeDrawCall[]): number {
   return drawCalls.reduce((sum, call) => sum + call.positions.length / 3, 0);
-}
-
-function nowMs(): number {
-  return Date.now();
-}
-
-function roundMs(value: number): number {
-  return Math.round(value * 10) / 10;
-}
-
-function markTiming(
-  timings: Record<string, number>,
-  key: string,
-  startedAt: number,
-): void {
-  timings[key] = roundMs(nowMs() - startedAt);
-}
-
-function logStepPerf(event: string, payload: Record<string, unknown>): void {
-  // eslint-disable-next-line no-console
-  console.info(
-    `${STEP_PERF_LOG_PREFIX} ${event} ${JSON.stringify(payload)}`,
-  );
 }
 
 type UseExpoGlStepSceneParams = {
@@ -267,26 +239,6 @@ export function useExpoGlStepScene({
     const totalSteps = stepHandler.getTotalSteps();
     const currentStepBefore = stepHandler.getCurrentStepIndex();
     const navigationDirection = stepIndex - currentStepBefore < 0 ? -1 : 1;
-    const effectStartedAt = nowMs();
-    const timings: Record<string, number> = {};
-    const previousUploadedCalls = uploadedFrameRef.current?.calls.length ?? 0;
-
-    const createLogPayload = (extra: Record<string, unknown> = {}) => ({
-      stepIndex,
-      currentStepBefore,
-      currentStepAfter: stepHandler.getCurrentStepIndex(),
-      mode,
-      geometryDirty,
-      animationMode: animationModeRef.current,
-      appearanceRevision: appearanceRevisionRef.current,
-      layoutSize,
-      renderSize: renderSizeRef.current,
-      previousUploadedCalls,
-      cachedSteps: getCachedStepIndices(drawCallCache),
-      timings,
-      totalMs: roundMs(nowMs() - effectStartedAt),
-      ...extra,
-    });
 
     const cancelScheduledPrewarm = () => {
       cancelScheduledPrewarmRefs(prewarmTimeoutRef, prewarmRafRef);
@@ -297,14 +249,10 @@ export function useExpoGlStepScene({
         return;
       }
 
-      const moveStartedAt = nowMs();
       stepHandler.moveTo(stepIndex);
-      markTiming(timings, 'moveTo', moveStartedAt);
 
       if (appearanceRevisionRef.current > 0) {
-        const refreshStartedAt = nowMs();
         stepHandler.refreshAppearance();
-        markTiming(timings, 'refreshAppearance', refreshStartedAt);
       }
     };
 
@@ -325,7 +273,7 @@ export function useExpoGlStepScene({
       renderFrame();
     };
 
-    const scheduleAdjacentPrewarm = (sourceReason: string) => {
+    const scheduleAdjacentPrewarm = () => {
       const resolvePrewarmStepIndex = () =>
         findMissingPrewarmStepIndex(
           stepIndex,
@@ -355,9 +303,7 @@ export function useExpoGlStepScene({
           return;
         }
 
-        const prewarmStartedAt = nowMs();
-        const prewarmTimings: Record<string, number> = {};
-        let warmedSuccessfully = false;
+        const prewarmStartedAt = Date.now();
         let warmedTotalMs = 0;
         let warmedVertexCount = 0;
         const restoreStepIndex = stepHandler.getCurrentStepIndex();
@@ -370,64 +316,28 @@ export function useExpoGlStepScene({
           camera instanceof THREE.OrthographicCamera ? camera.zoom : null;
 
         try {
-          const moveStartedAt = nowMs();
           stepHandler.moveTo(prewarmStepIndex);
-          markTiming(prewarmTimings, 'moveTo', moveStartedAt);
 
           if (appearanceRevisionRef.current > 0) {
-            const refreshStartedAt = nowMs();
             stepHandler.refreshAppearance();
-            markTiming(prewarmTimings, 'refreshAppearance', refreshStartedAt);
           }
 
-          const updateMatrixStartedAt = nowMs();
           root.updateMatrixWorld(true);
-          markTiming(prewarmTimings, 'updateMatrixWorld', updateMatrixStartedAt);
 
-          const collectStartedAt = nowMs();
           const drawCalls = collectRuntimeDrawCalls(root);
-          markTiming(prewarmTimings, 'collectDrawCalls', collectStartedAt);
 
           drawCallCache.entries.set(prewarmStepIndex, drawCalls);
           pruneRuntimeDrawCallCache(drawCallCache, stepIndex, totalSteps);
 
-          warmedSuccessfully = true;
-          warmedTotalMs = roundMs(nowMs() - prewarmStartedAt);
+          warmedTotalMs = Date.now() - prewarmStartedAt;
           warmedVertexCount = countDrawCallVertices(drawCalls);
-
-          logStepPerf('prewarm-bake', {
-            stepIndex,
-            prewarmStepIndex,
-            sourceReason,
-            restoreStepIndex,
-            remainingPasses,
-            chainContinueMaxMs: PREWARM_CHAIN_CONTINUE_MAX_MS,
-            chainContinueMaxVertices: PREWARM_CHAIN_CONTINUE_MAX_VERTICES,
-            prewarmDelayMs,
-            prewarmFrameDelay,
-            drawCalls: drawCalls.length,
-            vertexCount: warmedVertexCount,
-            cachedSteps: getCachedStepIndices(drawCallCache),
-            timings: prewarmTimings,
-            totalMs: warmedTotalMs,
-          });
-        } catch (cause: unknown) {
-          logStepPerf('prewarm-error', {
-            stepIndex,
-            prewarmStepIndex,
-            sourceReason,
-            remainingPasses,
-            message: formatRuntimeError(cause),
-            timings: prewarmTimings,
-            totalMs: roundMs(nowMs() - prewarmStartedAt),
-          });
+        } catch {
+          return;
         } finally {
-          const restoreStartedAt = nowMs();
           stepHandler.moveTo(restoreStepIndex);
           if (appearanceRevisionRef.current > 0) {
             stepHandler.refreshAppearance();
           }
-          markTiming(prewarmTimings, 'restoreMoveTo', restoreStartedAt);
 
           root.position.copy(rootPosition);
           root.quaternion.copy(rootQuaternion);
@@ -445,7 +355,6 @@ export function useExpoGlStepScene({
         }
 
         if (
-          !warmedSuccessfully ||
           remainingPasses <= 1 ||
           warmedTotalMs > PREWARM_CHAIN_CONTINUE_MAX_MS ||
           warmedVertexCount > PREWARM_CHAIN_CONTINUE_MAX_VERTICES ||
@@ -484,54 +393,28 @@ export function useExpoGlStepScene({
       schedulePrewarmStart(prewarmFrameDelay);
     };
 
-    const bakeAndRender = (reason: string) => {
-      const updateMatrixStartedAt = nowMs();
+    const bakeAndRender = () => {
       root.updateMatrixWorld(true);
-      markTiming(timings, 'updateMatrixWorld', updateMatrixStartedAt);
 
       if (camera instanceof THREE.OrthographicCamera) {
         orbitRef.current.zoom = camera.zoom;
       }
 
       let drawCalls = drawCallCache.entries.get(stepIndex);
-      const cacheHit = Boolean(drawCalls);
-      if (drawCalls) {
-        timings.collectDrawCalls = 0;
-      } else {
-        const collectStartedAt = nowMs();
+      if (!drawCalls) {
         drawCalls = collectRuntimeDrawCalls(root);
-        markTiming(timings, 'collectDrawCalls', collectStartedAt);
         drawCallCache.entries.set(stepIndex, drawCalls);
       }
 
       pruneRuntimeDrawCallCache(drawCallCache, stepIndex, totalSteps);
-      const vertexCount = countDrawCallVertices(drawCalls);
 
-      const uploadStartedAt = nowMs();
       const nextFrame = uploadRuntimeDrawCalls(gl, drawCalls);
-      markTiming(timings, 'uploadGlBuffers', uploadStartedAt);
-
-      const disposeStartedAt = nowMs();
       disposeUploadedFrame(gl, uploadedFrameRef.current);
-      markTiming(timings, 'disposeOldFrame', disposeStartedAt);
 
       uploadedFrameRef.current = nextFrame;
       uploadedSceneRef.current = { gl, stepHandler, stepIndex };
 
-      const renderStartedAt = nowMs();
       renderFrame();
-      markTiming(timings, 'renderFrameCall', renderStartedAt);
-
-      logStepPerf(
-        'step-bake',
-        createLogPayload({
-          reason,
-          cacheHit,
-          drawCalls: drawCalls.length,
-          vertexCount,
-          uploadedCalls: nextFrame.calls.length,
-        }),
-      );
     };
 
     cancelScheduledPrewarm();
@@ -553,14 +436,12 @@ export function useExpoGlStepScene({
 
         moveToStepIfNeeded();
 
-        const computeTargetStartedAt = nowMs();
         const target = computeInstructionStepTarget(
           camera,
           root,
           stepHandler,
           layoutSize,
         );
-        markTiming(timings, 'computeInstructionTarget', computeTargetStartedAt);
         const to: InstructionPose = {
           position: target.position.clone(),
           quaternion: new THREE.Quaternion().setFromRotationMatrix(
@@ -583,11 +464,11 @@ export function useExpoGlStepScene({
           );
           orbitRef.current.zoom = to.zoom;
           if (geometryDirty) {
-            bakeAndRender('instruction-skip-animation');
+            bakeAndRender();
           } else {
             renderPoseFrame();
           }
-          scheduleAdjacentPrewarm('instruction-skip-animation');
+          scheduleAdjacentPrewarm();
           return cleanup;
         }
 
@@ -597,7 +478,7 @@ export function useExpoGlStepScene({
           orbitTargetRef.current,
         );
         orbitRef.current.zoom = from.zoom;
-        bakeAndRender('instruction-animation-start');
+        bakeAndRender();
 
         cancelStepAnimRef.current = animateInstructionTransition(
           root,
@@ -608,7 +489,7 @@ export function useExpoGlStepScene({
           () => {
             orbitRef.current.zoom = to.zoom;
             renderPoseFrame();
-            scheduleAdjacentPrewarm('instruction-animation-done');
+            scheduleAdjacentPrewarm();
           },
           () => {
             orbitRef.current.zoom = camera.zoom;
@@ -621,7 +502,6 @@ export function useExpoGlStepScene({
 
       moveToStepIfNeeded();
 
-      const applyStepStartedAt = nowMs();
       const orbitTarget = applyStepToScene(
         camera,
         root,
@@ -631,7 +511,6 @@ export function useExpoGlStepScene({
         layoutSize,
         mode,
       );
-      markTiming(timings, 'applyStepToScene', applyStepStartedAt);
       orbitTargetRef.current.copy(orbitTarget);
       orbitRef.current = captureOrbitFromCamera(
         camera,
@@ -639,21 +518,15 @@ export function useExpoGlStepScene({
       );
       isFirstStepRef.current = false;
       if (geometryDirty) {
-        bakeAndRender('step-apply');
+        bakeAndRender();
       } else {
         renderPoseFrame();
       }
-      scheduleAdjacentPrewarm('step-apply');
+      scheduleAdjacentPrewarm();
     } catch (cause: unknown) {
       const message = formatRuntimeError(cause);
       renderFailedRef.current = true;
       setRenderError(message);
-      logStepPerf(
-        'step-error',
-        createLogPayload({
-          message,
-        }),
-      );
     }
 
     return cleanup;
@@ -700,26 +573,16 @@ export function useExpoGlStepScene({
       mode,
       appearanceRevision,
     );
-    const effectStartedAt = nowMs();
-    const timings: Record<string, number> = {};
 
     try {
-      const refreshStartedAt = nowMs();
       stepHandler.refreshAppearance();
-      markTiming(timings, 'refreshAppearance', refreshStartedAt);
 
       const root = stepHandler.getRoot();
       rootRef.current = root;
 
-      const updateMatrixStartedAt = nowMs();
       root.updateMatrixWorld(true);
-      markTiming(timings, 'updateMatrixWorld', updateMatrixStartedAt);
 
-      const collectStartedAt = nowMs();
       const drawCalls = collectRuntimeDrawCalls(root);
-      markTiming(timings, 'collectDrawCalls', collectStartedAt);
-
-      const vertexCount = countDrawCallVertices(drawCalls);
       const currentStepIndex = stepHandler.getCurrentStepIndex();
       drawCallCache.entries.set(currentStepIndex, drawCalls);
       pruneRuntimeDrawCallCache(
@@ -728,43 +591,18 @@ export function useExpoGlStepScene({
         stepHandler.getTotalSteps(),
       );
 
-      const uploadStartedAt = nowMs();
       const nextFrame = uploadRuntimeDrawCalls(gl, drawCalls);
-      markTiming(timings, 'uploadGlBuffers', uploadStartedAt);
-
-      const disposeStartedAt = nowMs();
       disposeUploadedFrame(gl, uploadedFrameRef.current);
-      markTiming(timings, 'disposeOldFrame', disposeStartedAt);
 
       uploadedFrameRef.current = nextFrame;
       renderFailedRef.current = false;
       setRenderError(null);
 
-      const renderStartedAt = nowMs();
       renderFrame();
-      markTiming(timings, 'renderFrameCall', renderStartedAt);
-
-      logStepPerf('appearance-bake', {
-        stepIndex: currentStepIndex,
-        appearanceRevision,
-        drawCalls: drawCalls.length,
-        vertexCount,
-        uploadedCalls: nextFrame.calls.length,
-        cachedSteps: getCachedStepIndices(drawCallCache),
-        timings,
-        totalMs: roundMs(nowMs() - effectStartedAt),
-      });
     } catch (cause: unknown) {
       const message = formatRuntimeError(cause);
       renderFailedRef.current = true;
       setRenderError(message);
-      logStepPerf('appearance-error', {
-        stepIndex: stepHandler.getCurrentStepIndex(),
-        appearanceRevision,
-        message,
-        timings,
-        totalMs: roundMs(nowMs() - effectStartedAt),
-      });
     }
   }, [
     appearanceRevision,
