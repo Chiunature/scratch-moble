@@ -16,10 +16,55 @@ type FlattenedGeometry = {
   center: readonly [number, number, number];
 };
 
+type FlattenedGeometryCacheEntry = {
+  geometry: THREE.BufferGeometry;
+  position: unknown;
+  index: THREE.BufferAttribute | null;
+  positionVersion: number;
+  indexVersion: number;
+  positionCount: number;
+  indexCount: number;
+  matrixElements: number[];
+  flattened: FlattenedGeometry;
+};
+
+const MATRIX_CACHE_EPSILON = 1e-9;
+const _flattenedGeometryCache = new WeakMap<
+  THREE.Object3D,
+  FlattenedGeometryCacheEntry
+>();
+
 function getFirstMaterial(
   material: THREE.Material | THREE.Material[],
 ): THREE.Material {
   return Array.isArray(material) ? material[0] : material;
+}
+
+function getAttributeVersion(attribute: unknown): number {
+  const version = (attribute as { version?: unknown } | null)?.version;
+  return typeof version === 'number' ? version : 0;
+}
+
+function getAttributeCount(attribute: unknown): number {
+  const count = (attribute as { count?: unknown } | null)?.count;
+  return typeof count === 'number' ? count : 0;
+}
+
+function matrixElementsAlmostEqual(
+  left: readonly number[],
+  right: readonly number[],
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    if (Math.abs(left[index] - right[index]) > MATRIX_CACHE_EPSILON) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function clamp01(value: number): number {
@@ -180,6 +225,58 @@ function flattenGeometryPositions(
   };
 }
 
+function flattenObjectGeometryPositions(
+  object: THREE.Mesh | THREE.Line,
+  matrixWorld: THREE.Matrix4,
+): FlattenedGeometry | null {
+  const geometry = object.geometry;
+  const position = geometry.getAttribute('position');
+  if (!position || position.count === 0) {
+    _flattenedGeometryCache.delete(object);
+    return null;
+  }
+
+  const index = geometry.index;
+  const positionVersion = getAttributeVersion(position);
+  const indexVersion = getAttributeVersion(index);
+  const positionCount = getAttributeCount(position);
+  const indexCount = getAttributeCount(index);
+  const cached = _flattenedGeometryCache.get(object);
+  if (
+    cached &&
+    cached.geometry === geometry &&
+    cached.position === position &&
+    cached.index === index &&
+    cached.positionVersion === positionVersion &&
+    cached.indexVersion === indexVersion &&
+    cached.positionCount === positionCount &&
+    cached.indexCount === indexCount &&
+    matrixElementsAlmostEqual(cached.matrixElements, matrixWorld.elements)
+  ) {
+    return cached.flattened;
+  }
+
+  const flattened = flattenGeometryPositions(geometry, matrixWorld);
+  if (!flattened) {
+    _flattenedGeometryCache.delete(object);
+    return null;
+  }
+
+  _flattenedGeometryCache.set(object, {
+    geometry,
+    position,
+    index,
+    positionVersion,
+    indexVersion,
+    positionCount,
+    indexCount,
+    matrixElements: [...matrixWorld.elements],
+    flattened,
+  });
+
+  return flattened;
+}
+
 export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[] {
   const calls: RuntimeDrawCall[] = [];
 
@@ -200,8 +297,8 @@ export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[]
       return;
     }
 
-    const flattened = flattenGeometryPositions(
-      object.geometry,
+    const flattened = flattenObjectGeometryPositions(
+      object,
       _relativeMatrixWorld.multiplyMatrices(
         _rootMatrixWorldInverse,
         object.matrixWorld,
