@@ -93,14 +93,40 @@ export function BuildGuideExpoGlCanvas({
   const [layoutSize, setLayoutSize] = useState<CanvasLayoutSize | null>(null);
   const [contextReady, setContextReady] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
+  // handleLayout 已 round；PLI 显隐改尺寸时 remount，避免 framebuffer 与镜头不一致
+  const canvasKey = layoutSize
+    ? `${layoutSize.width}x${layoutSize.height}`
+    : 'pending';
 
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
 
+  /** 仍持有有效 context 时释放 GPU 资源（组件卸载） */
+  const disposeGlResources = useCallback(() => {
+    const gl = glRef.current;
+    if (gl) {
+      disposeUploadedFrame(gl, uploadedFrameRef.current);
+      disposeProgram(gl, programRef.current);
+    }
+    uploadedFrameRef.current = null;
+    programRef.current = null;
+    glRef.current = null;
+    renderSizeRef.current = null;
+  }, []);
+
+  /** remount 时 native context 已随旧 GLView 销毁，只清 JS 引用 */
+  const dropGlRefs = useCallback(() => {
+    uploadedFrameRef.current = null;
+    programRef.current = null;
+    glRef.current = null;
+    renderSizeRef.current = null;
+  }, []);
+
   useEffect(() => {
-    layoutSizeRef.current = layoutSize;
-  }, [layoutSize]);
+    setContextReady(false);
+    dropGlRefs();
+  }, [canvasKey, dropGlRefs]);
 
   const renderFrame = useCallback(() => {
     if (renderFailedRef.current) {
@@ -153,22 +179,29 @@ export function BuildGuideExpoGlCanvas({
       return;
     }
 
-    setLayoutSize(current =>
-      current?.width === width && current.height === height
-        ? current
-        : { width, height },
-    );
+    const next = {
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+    setLayoutSize(current => {
+      if (current?.width === next.width && current.height === next.height) {
+        return current;
+      }
+      layoutSizeRef.current = next;
+      return next;
+    });
   }, []);
 
   const handleContextCreate = useCallback(
     (context: ExpoWebGLRenderingContext) => {
       const gl = context as ExpoGlRuntimeContext;
-      const initialSize = layoutSize ?? {
+      const initialSize = layoutSizeRef.current ?? {
         width: Math.max(1, gl.drawingBufferWidth / PixelRatio.get()),
         height: Math.max(1, gl.drawingBufferHeight / PixelRatio.get()),
       };
 
       try {
+        dropGlRefs();
         const program = createProgram(gl);
         glRef.current = gl;
         programRef.current = program;
@@ -176,13 +209,12 @@ export function BuildGuideExpoGlCanvas({
         renderFailedRef.current = false;
         setRenderError(null);
         setContextReady(true);
-        renderFrame();
       } catch (cause: unknown) {
         renderFailedRef.current = true;
         setRenderError(formatRuntimeError(cause));
       }
     },
-    [layoutSize, renderFrame],
+    [dropGlRefs],
   );
 
   useExpoGlStepScene({
@@ -211,29 +243,23 @@ export function BuildGuideExpoGlCanvas({
   useEffect(
     () => () => {
       stopOrbitLoop();
-      const gl = glRef.current;
-      if (gl) {
-        disposeUploadedFrame(gl, uploadedFrameRef.current);
-        uploadedFrameRef.current = null;
-        disposeProgram(gl, programRef.current);
-      }
-
-      programRef.current = null;
+      disposeGlResources();
       rootRef.current = null;
-      glRef.current = null;
-      renderSizeRef.current = null;
       setContextReady(false);
     },
-    [stopOrbitLoop],
+    [disposeGlResources, stopOrbitLoop],
   );
 
   return (
     <View style={styles.container} onLayout={handleLayout} {...panHandlers}>
-      <GLView
-        style={styles.canvas}
-        msaaSamples={4}
-        onContextCreate={handleContextCreate}
-      />
+      {layoutSize ? (
+        <GLView
+          key={canvasKey}
+          style={styles.canvas}
+          msaaSamples={4}
+          onContextCreate={handleContextCreate}
+        />
+      ) : null}
       {renderError ? (
         <View pointerEvents="none" style={styles.errorOverlay}>
           <Text style={styles.errorTitle}>Expo GL renderer failed</Text>
