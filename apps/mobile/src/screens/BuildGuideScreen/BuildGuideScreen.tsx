@@ -7,7 +7,7 @@ import { type RootStackParamList } from '../../app/navigation';
 import '../../features/buildGuide/runtime/setupThreeRuntime';
 import {
   BuildGuideBottomBar,
-  BuildGuidePartsModal,
+  BuildGuidePliSidePanel,
   BuildGuideRuntimeCanvas,
   BuildGuideSettingsModal,
   BuildGuideStepPickerModal,
@@ -29,7 +29,7 @@ export function BuildGuideScreen({ navigation, route }: Props) {
     () => getBuildGuideManifest(route.params.modelId),
     [route.params.modelId],
   );
-  const [partsModalVisible, setPartsModalVisible] = useState(false);
+  const [pliVisible, setPliVisible] = useState(true);
   const [stepPickerVisible, setStepPickerVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const {
@@ -44,10 +44,7 @@ export function BuildGuideScreen({ navigation, route }: Props) {
   const ldr = useLdrModel(settingsReady ? manifest : null);
   const reloadLdrModel = ldr.reload;
   const steps = useBuildGuideSteps(manifest, ldr.stepHandler);
-  const pli = useBuildGuidePliEntries(
-    partsModalVisible ? ldr.model : null,
-    steps.currentIndex,
-  );
+  const pli = useBuildGuidePliEntries(ldr.model, steps.currentIndex);
 
   const bundle = useMemo<BuildGuideBundle>(
     () => ({
@@ -73,6 +70,10 @@ export function BuildGuideScreen({ navigation, route }: Props) {
     navigation.goBack();
   }, [navigation]);
 
+  const togglePliVisible = useCallback(() => {
+    setPliVisible(visible => !visible);
+  }, []);
+
   return (
     <View style={styles.container}>
       <BuildGuideTopBar
@@ -83,19 +84,30 @@ export function BuildGuideScreen({ navigation, route }: Props) {
         paddingTop={insets.top}
         paddingLeft={insets.left}
         paddingRight={insets.right}
+        pliVisible={pliVisible}
         onBack={handleBack}
         onOpenStepPicker={() => setStepPickerVisible(true)}
-        onOpenParts={() => setPartsModalVisible(true)}
+        onTogglePli={togglePliVisible}
         onOpenSettings={() => setSettingsVisible(true)}
       />
 
-      <View style={styles.canvas}>
-        <BuildGuideRuntimeCanvas
-          bundle={bundle}
-          stepIndex={steps.currentIndex}
-          animationMode={settings.showStepRotationAnimations}
-          appearanceRevision={appearanceRevision}
-        />
+      <View style={styles.stage}>
+        {pliVisible ? (
+          <BuildGuidePliSidePanel
+            items={pli.items}
+            error={pli.error}
+            model={ldr.model}
+            paddingLeft={insets.left}
+          />
+        ) : null}
+        <View style={styles.canvas}>
+          <BuildGuideRuntimeCanvas
+            bundle={bundle}
+            stepIndex={steps.currentIndex}
+            animationMode={settings.showStepRotationAnimations}
+            appearanceRevision={appearanceRevision}
+          />
+        </View>
       </View>
 
       <BuildGuideBottomBar
@@ -107,15 +119,6 @@ export function BuildGuideScreen({ navigation, route }: Props) {
         paddingRight={insets.right}
         onPrev={steps.goPrev}
         onNext={steps.goNext}
-      />
-
-      <BuildGuidePartsModal
-        visible={partsModalVisible}
-        parts={ldr.partsBuilder?.parts ?? []}
-        pliItems={pli.items}
-        pliError={pli.error}
-        pliModel={partsModalVisible ? ldr.model : null}
-        onClose={() => setPartsModalVisible(false)}
       />
 
       <BuildGuideStepPickerModal

@@ -8,12 +8,14 @@ export type PliItemMeasurement = {
   annotationLines: number;
 };
 
-export const PLI_CARD_VERTICAL_PADDING = 18;
+export const PLI_CARD_VERTICAL_PADDING = 12; // 与 styles 中 spacing.sm 一致
 export const PLI_THUMBNAIL_HEIGHT = 72;
 export const PLI_TITLE_LINE_HEIGHT = 17;
 export const PLI_SUBTITLE_LINE_HEIGHT = 15;
 export const PLI_ANNOTATION_LINE_HEIGHT = 14;
-export const PLI_SECTION_GAP = 8;
+export const PLI_SECTION_GAP = 10; // thumbnailSlot.marginBottom = spacing.xs
+export const PLI_SUBTITLE_MARGIN_TOP = 3;
+export const PLI_ANNOTATION_MARGIN_TOP = 4;
 
 function estimateLineCount(text: string | undefined, charsPerLine: number): number {
   if (!text) {
@@ -27,8 +29,9 @@ export function measurePliItem(
   item: BuildGuidePliItemViewModel,
   width: number,
 ): PliItemMeasurement {
-  const textWidth = Math.max(width - 32, 80);
-  const charsPerLine = Math.max(10, Math.floor(textWidth / 7));
+  // 侧栏较窄时按实际可用文字宽度估行数，避免卡片高度偏小导致重叠
+  const textWidth = Math.max(width - 24, 64);
+  const charsPerLine = Math.max(8, Math.floor(textWidth / 7.5));
   const titleLines = Math.min(2, estimateLineCount(item.title, charsPerLine));
   const subtitleLines = Math.min(2, estimateLineCount(item.subtitle, charsPerLine));
   const annotationLines = Math.min(1, estimateLineCount(item.annotation, charsPerLine));
@@ -40,8 +43,10 @@ export function measurePliItem(
       PLI_THUMBNAIL_HEIGHT +
       PLI_SECTION_GAP +
       titleLines * PLI_TITLE_LINE_HEIGHT +
-      subtitleLines * PLI_SUBTITLE_LINE_HEIGHT +
-      annotationLines * PLI_ANNOTATION_LINE_HEIGHT,
+      (subtitleLines > 0 ? PLI_SUBTITLE_MARGIN_TOP + subtitleLines * PLI_SUBTITLE_LINE_HEIGHT : 0) +
+      (annotationLines > 0
+        ? PLI_ANNOTATION_MARGIN_TOP + annotationLines * PLI_ANNOTATION_LINE_HEIGHT
+        : 0),
     titleLines,
     subtitleLines,
     annotationLines,

@@ -45,6 +45,8 @@ type BuildGuidePliExpoGlLayerProps = {
   thumbnails: ReadonlyArray<PliThumbnailRequest>;
   layoutSize: CanvasLayoutSize;
   onUnavailable?: () => void;
+  /** 首帧缩略图绘制完成（切步 loading 用） */
+  onReady?: () => void;
 };
 
 const MAX_PLI_THUMBNAIL_CACHE_ENTRIES = 80;
@@ -226,13 +228,21 @@ export function BuildGuidePliExpoGlLayer({
   thumbnails,
   layoutSize,
   onUnavailable,
+  onReady,
 }: BuildGuidePliExpoGlLayerProps) {
   const glRef = useRef<ExpoGlRuntimeContext | null>(null);
   const programRef = useRef<RawGlProgram | null>(null);
   const cacheRef = useRef<PliThumbnailUploadCache | null>(null);
+  const onUnavailableRef = useRef(onUnavailable);
+  const onReadyRef = useRef(onReady);
   const [contextReady, setContextReady] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const { height: layoutHeight, width: layoutWidth } = layoutSize;
+  // expo-gl 在父级尺寸变化时往往不重建 framebuffer，导致视口映射错位；用 key 强制重建
+  const canvasKey = `${Math.round(layoutWidth)}x${Math.round(layoutHeight)}`;
+
+  onUnavailableRef.current = onUnavailable;
+  onReadyRef.current = onReady;
 
   const releaseRuntime = useCallback(() => {
     resetThumbnailCache(cacheRef);
@@ -249,8 +259,13 @@ export function BuildGuidePliExpoGlLayer({
     releaseRuntime();
     setContextReady(false);
     setDisabled(true);
-    onUnavailable?.();
-  }, [onUnavailable, releaseRuntime]);
+    onUnavailableRef.current?.();
+  }, [releaseRuntime]);
+
+  useEffect(() => {
+    setContextReady(false);
+    releaseRuntime();
+  }, [canvasKey, releaseRuntime]);
 
   const handleContextCreate = useCallback(
     (context: ExpoWebGLRenderingContext) => {
@@ -259,6 +274,7 @@ export function BuildGuidePliExpoGlLayer({
       }
 
       try {
+        releaseRuntime();
         const gl = context as ExpoGlRuntimeContext;
         const program = createProgram(gl);
         glRef.current = gl;
@@ -268,7 +284,7 @@ export function BuildGuidePliExpoGlLayer({
         disableLayer();
       }
     },
-    [disabled, disableLayer],
+    [disabled, disableLayer, releaseRuntime],
   );
 
   useEffect(() => {
@@ -288,6 +304,13 @@ export function BuildGuidePliExpoGlLayer({
         width: layoutWidth,
       };
       const renderSize = resolveRenderSize(gl, renderLayoutSize);
+      // drawingBuffer 与布局比例不一致时跳过本帧，等 GLView 按 key 重建后再画
+      const layoutAspect = layoutWidth / layoutHeight;
+      const bufferAspect = renderSize.width / renderSize.height;
+      if (Math.abs(layoutAspect - bufferAspect) > 0.05) {
+        return;
+      }
+
       const cache = model ? resolveThumbnailCache(cacheRef, gl, model) : null;
       if (!cache) {
         resetThumbnailCache(cacheRef);
@@ -311,8 +334,11 @@ export function BuildGuidePliExpoGlLayer({
       );
 
       if (model && thumbnails.length > 0 && uploadedThumbnails.length === 0) {
-        onUnavailable?.();
+        onUnavailableRef.current?.();
+        return;
       }
+
+      onReadyRef.current?.();
     } catch {
       disableLayer();
     }
@@ -323,7 +349,6 @@ export function BuildGuidePliExpoGlLayer({
     layoutHeight,
     layoutWidth,
     model,
-    onUnavailable,
     thumbnails,
   ]);
 
@@ -355,6 +380,7 @@ export function BuildGuidePliExpoGlLayer({
       ]}
     >
       <GLView
+        key={canvasKey}
         style={styles.canvas}
         msaaSamples={4}
         onContextCreate={handleContextCreate}

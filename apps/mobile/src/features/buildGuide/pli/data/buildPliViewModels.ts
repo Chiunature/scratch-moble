@@ -6,7 +6,6 @@ export type BuildGuidePliItemViewModel = {
   colorID: number;
   colorName: string;
   colorHex: string;
-  edgeHex: string;
   quantity: number;
   quantityText: string;
   title: string;
@@ -33,7 +32,6 @@ function buildPliViewModel(entry: LdrPliEntry): BuildGuidePliItemViewModel {
     colorID: entry.c,
     colorName: entry.colorName,
     colorHex: entry.colorHex,
-    edgeHex: entry.edgeHex,
     quantity: entry.amount,
     quantityText: `× ${entry.amount}`,
     title,

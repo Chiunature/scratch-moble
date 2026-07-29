@@ -7,6 +7,10 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     flex: 1,
   },
+  stage: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   canvas: {
     flex: 1,
   },

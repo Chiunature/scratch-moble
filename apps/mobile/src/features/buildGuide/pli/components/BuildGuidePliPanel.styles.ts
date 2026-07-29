@@ -16,16 +16,36 @@ export const styles = StyleSheet.create({
   },
   cardSurface: {
     backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
     borderRadius: 18,
     borderWidth: 1,
+    overflow: 'hidden',
     padding: spacing.sm,
     position: 'absolute',
   },
   container: {
     gap: spacing.sm,
   },
-  grid: {
+  stage: {
     position: 'relative',
+  },
+  grid: {
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  loadingOverlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  loadingText: {
+    color: colors.textSubtle,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
   },
   hiddenSwatch: {
     opacity: 0,
@@ -38,8 +58,9 @@ export const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   partSwatch: {
+    borderColor: '#e2e8f0',
     borderRadius: 18,
-    borderWidth: 2,
+    borderWidth: 1,
     height: 52,
     shadowColor: '#0f172a',
     shadowOffset: { height: 2, width: 0 },

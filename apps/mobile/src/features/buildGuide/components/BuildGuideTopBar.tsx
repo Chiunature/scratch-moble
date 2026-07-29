@@ -17,9 +17,10 @@ type BuildGuideTopBarProps = {
   paddingTop: number;
   paddingLeft: number;
   paddingRight: number;
+  pliVisible: boolean;
   onBack: () => void;
   onOpenStepPicker: () => void;
-  onOpenParts: () => void;
+  onTogglePli: () => void;
   onOpenSettings: () => void;
 };
 
@@ -31,9 +32,10 @@ export function BuildGuideTopBar({
   paddingTop,
   paddingLeft,
   paddingRight,
+  pliVisible,
   onBack,
   onOpenStepPicker,
-  onOpenParts,
+  onTogglePli,
   onOpenSettings,
 }: BuildGuideTopBarProps) {
   const { t } = useTranslation('buildGuide');
@@ -84,10 +86,13 @@ export function BuildGuideTopBar({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('openPartsList')}
-          onPress={onOpenParts}
+          accessibilityLabel={
+            pliVisible ? t('hidePliPanel') : t('showPliPanel')
+          }
+          onPress={onTogglePli}
           style={({ pressed }) => [
             styles.iconButton,
+            pliVisible && styles.iconButtonActive,
             pressed && styles.iconButtonPressed,
           ]}
         >

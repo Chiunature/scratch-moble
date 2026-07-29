@@ -56,6 +56,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 36,
   },
+  iconButtonActive: {
+    backgroundColor: '#eef2ff',
+    borderColor: '#a5b4fc',
+  },
   iconButtonPressed: {
     opacity: 0.85,
   },
