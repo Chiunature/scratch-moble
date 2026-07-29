@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { redux } from 'zustand/middleware';
 
 /** 摇杆尺寸（与样式保持一致） */
 export const JOYSTICK = {
@@ -11,7 +10,6 @@ export const JOYSTICK = {
   dotInset: 8, // 防滑圆点内边距
   directionIconSize: 50, // 方向图标尺寸
   rightRemoteTextContainerSize: 50, // 右远程文本容器尺寸
-  remoteBottomButtonSize: 60, // 远程底部按钮尺寸
   get maxTravel() {
     return (this.baseSize - this.headSize) / 2; //获取可移动最大半径
   },
@@ -36,10 +34,21 @@ export const JOYSTICK = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    flexDirection: 'row',
     experimental_backgroundImage: 'linear-gradient(145deg, #e6e8ec, #caccd4)',
+  },
+
+  /** 摇杆停靠：偏左下，留出方向图标外溢空间 */
+  joystickDock: {
+    position: 'absolute',
+    left: 56,
+    bottom: 56,
+  },
+
+  /** YABX 停靠：偏右下 */
+  actionDock: {
+    position: 'absolute',
+    right: 56,
+    bottom: 56,
   },
 
   /** 外圈凹槽：内阴影在「容器」上，模拟陷进去 */
@@ -306,6 +315,35 @@ export const styles = StyleSheet.create({
       },
     ],
   },
+  /** 圆形动作键按下：保留圆角与外阴影，避免套用底部键的 pressIn 变成方块 */
+  actionButtonPressed: {
+    backgroundColor: '#e6e6e6',
+    boxShadow: [
+      {
+        offsetX: -1,
+        offsetY: 1,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.35)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 2,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.75)',
+        inset: true,
+      },
+      {
+        offsetX: 0,
+        offsetY: -2,
+        blurRadius: 3,
+        spreadDistance: 0,
+        color: 'rgba(0,0,0,0.4)',
+        inset: true,
+      },
+    ],
+  },
   rightRemoteTextContainerTop: {
     top: JOYSTICK.rightRemoteTextContainerOutSize,
     left: JOYSTICK.rightRemoteTextContainerOffset,
@@ -327,62 +365,44 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#7a7a98',
   },
-  remoteBottomButtonsContainer: {
-    position: 'absolute',
-    bottom: 10,
-    marginHorizontal: 'auto',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  actionButtonHitTarget: {
+    flex: 1,
+    alignSelf: 'stretch',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 28,
-    borderRadius: 20,
-    gap: 16,
-    experimental_backgroundImage: 'linear-gradient(145deg, #e0e2e8, #c4c6ce)',
-    boxShadow: [
-      {
-        offsetX: 6,
-        offsetY: 6,
-        blurRadius: 14,
-        spreadDistance: 0,
-        color: 'rgba(0,0,0,0.1)',
-      },
-      {
-        offsetX: -4,
-        offsetY: -4,
-        blurRadius: 10,
-        spreadDistance: 0,
-        color: 'rgba(255,255,255,0.7)',
-      },
-      {
-        offsetX: 1,
-        offsetY: 1,
-        blurRadius: 2,
-        spreadDistance: 0,
-        color: 'rgba(255,255,255,0.5)',
-        inset: true,
-      },
-    ],
-  },
-  remoteBottomButton: {
     justifyContent: 'center',
+    borderRadius: JOYSTICK.rightRemoteTextContainerSize / 2,
+  },
+  /** 肩键 L：左上 */
+  shoulderDockLeft: {
+    position: 'absolute',
+    left: 40,
+    top: 28,
+  },
+  /** 肩键 R：右上 */
+  shoulderDockRight: {
+    position: 'absolute',
+    right: 40,
+    top: 28,
+  },
+  shoulderButton: {
+    width: 96,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
-    width: JOYSTICK.remoteBottomButtonSize,
-    height: JOYSTICK.remoteBottomButtonSize,
-    borderRadius: JOYSTICK.remoteBottomButtonSize / 2,
+    justifyContent: 'center',
     experimental_backgroundImage: 'linear-gradient(145deg,#f0f1f5,#d4d6dc)',
     boxShadow: [
       {
-        offsetX: 4,
-        offsetY: 4,
-        blurRadius: 10,
+        offsetX: 3,
+        offsetY: 3,
+        blurRadius: 8,
         spreadDistance: 0,
         color: 'rgba(0,0,0,0.12)',
       },
       {
-        offsetX: -3,
-        offsetY: -3,
-        blurRadius: 8,
+        offsetX: -2,
+        offsetY: -2,
+        blurRadius: 6,
         spreadDistance: 0,
         color: 'rgba(255,255,255,0.7)',
       },
@@ -396,24 +416,39 @@ export const styles = StyleSheet.create({
       },
     ],
   },
-  pressIn: {
+  shoulderButtonPressed: {
+    experimental_backgroundImage: 'linear-gradient(145deg,#d8dae0,#c8cad0)',
     boxShadow: [
       {
-        offsetX: 3,
-        offsetY: 3,
-        blurRadius: 8,
+        offsetX: 1,
+        offsetY: 1,
+        blurRadius: 4,
         spreadDistance: 0,
-        color: 'rgba(0,0,0,0.1)',
+        color: 'rgba(0,0,0,0.15)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 2,
+        blurRadius: 2,
+        spreadDistance: 0,
+        color: 'rgba(255,255,255,0.55)',
         inset: true,
       },
       {
-        offsetX: -2,
+        offsetX: 0,
         offsetY: -2,
-        blurRadius: 5,
+        blurRadius: 3,
         spreadDistance: 0,
-        color: 'rgba(255,255,255,0.5)',
+        color: 'rgba(0,0,0,0.2)',
         inset: true,
       },
     ],
+  },
+  shoulderButtonHitTarget: {
+    flex: 1,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
   },
 });

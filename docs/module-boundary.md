@@ -17,3 +17,5 @@
 ## 运行时边界
 
 `packages/core`、`packages/protocol` 和 `packages/shared` 应保持纯 TypeScript。React Native API、权限、BLE、串口、文件系统访问、导航和 UI 组件都应放在 `apps/mobile` 内。
+
+App 内功能模块（如遥控）放在 `apps/mobile/src/features/*`。给 mobile 安装 Expo/RN 依赖、以及 Expo 与 monorepo 的分工，见 [`expo-monorepo.md`](./expo-monorepo.md)。

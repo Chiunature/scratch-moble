@@ -11,6 +11,8 @@
     "android": "yarn editor:web:sync && yarn workspace @scratch-mobile/mobile android",
     "ios": "yarn editor:web:sync && yarn workspace @scratch-mobile/mobile ios",
     "start": "yarn workspace @scratch-mobile/mobile start",
+    "mobile:add": "yarn workspace @scratch-mobile/mobile add",
+    "mobile:expo-install": "yarn --cwd apps/mobile expo install",
     "usb": "adb reverse tcp:8081 tcp:8081 && yarn start --reset-cache",
     "editor:web:build": "yarn workspace @scratch-mobile/scratch-editor-web build",
     "editor:web:sync": "yarn workspace @scratch-mobile/scratch-editor-web sync:mobile",

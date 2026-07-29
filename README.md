@@ -8,6 +8,18 @@
 yarn install
 ```
 
+给 **mobile App** 加依赖请用根脚本（不要在仓库根目录直接 `npx expo install` / `yarn add`）：
+
+```sh
+# Expo / RN 原生库（自动选 SDK 兼容版本）
+yarn mobile:expo-install react-native-gesture-handler
+
+# 指定版本或普通 JS 库
+yarn mobile:add lodash
+```
+
+说明见 [`docs/expo-monorepo.md`](./docs/expo-monorepo.md)。
+
 ## 工作区结构
 
 ```text
@@ -56,6 +68,7 @@ yarn typecheck
 ```
 
 模块边界规则见 `docs/module-boundary.md`。
+Expo + monorepo 约定（装依赖、目录边界）见 `docs/expo-monorepo.md`。
 scratch 的积木块更改规则见 `docs/scratch-blocks-guide.md`。
 PikaScript 编译与本地运行（轨道 A）见 `docs/pika-runtime.md`。
 蓝牙主机连接见 `docs/ble-connection.md`。
