@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 
+import {
+  CONDITIONAL_FLOATS_PER_VERTEX,
+  countConditionalVertices,
+} from './glConditionalLayout';
 import type { RuntimeColor, RuntimeDrawCall } from './glTypes';
 
 const CONDITIONAL_LINE_FLAG = 'ldrConditionalLine';
@@ -28,10 +32,29 @@ type FlattenedGeometryCacheEntry = {
   flattened: FlattenedGeometry;
 };
 
+type FlattenedConditionalCacheEntry = {
+  geometry: THREE.BufferGeometry;
+  position: unknown;
+  p2: unknown;
+  p3: unknown;
+  p4: unknown;
+  positionVersion: number;
+  p2Version: number;
+  p3Version: number;
+  p4Version: number;
+  positionCount: number;
+  matrixElements: number[];
+  flattened: FlattenedGeometry;
+};
+
 const MATRIX_CACHE_EPSILON = 1e-9;
 const _flattenedGeometryCache = new WeakMap<
   THREE.Object3D,
   FlattenedGeometryCacheEntry
+>();
+const _flattenedConditionalCache = new WeakMap<
+  THREE.Object3D,
+  FlattenedConditionalCacheEntry
 >();
 
 function getFirstMaterial(
@@ -277,6 +300,125 @@ function flattenObjectGeometryPositions(
   return flattened;
 }
 
+function writeTransformedAttribute(
+  attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute,
+  index: number,
+  matrixWorld: THREE.Matrix4,
+  target: Float32Array,
+  offset: number,
+): void {
+  _vertex.fromBufferAttribute(attribute, index).applyMatrix4(matrixWorld);
+  target[offset] = _vertex.x;
+  target[offset + 1] = _vertex.y;
+  target[offset + 2] = _vertex.z;
+}
+
+function flattenConditionalLineGeometry(
+  geometry: THREE.BufferGeometry,
+  matrixWorld: THREE.Matrix4,
+): FlattenedGeometry | null {
+  const position = geometry.getAttribute('position');
+  const p2 = geometry.getAttribute('p2');
+  const p3 = geometry.getAttribute('p3');
+  const p4 = geometry.getAttribute('p4');
+  if (
+    !position ||
+    !p2 ||
+    !p3 ||
+    !p4 ||
+    position.count === 0 ||
+    p2.count !== position.count ||
+    p3.count !== position.count ||
+    p4.count !== position.count
+  ) {
+    return null;
+  }
+
+  const count = position.count;
+  const positions = new Float32Array(count * CONDITIONAL_FLOATS_PER_VERTEX);
+  let centerX = 0;
+  let centerY = 0;
+  let centerZ = 0;
+
+  for (let i = 0; i < count; i += 1) {
+    const base = i * CONDITIONAL_FLOATS_PER_VERTEX;
+    writeTransformedAttribute(position, i, matrixWorld, positions, base);
+    writeTransformedAttribute(p2, i, matrixWorld, positions, base + 3);
+    writeTransformedAttribute(p3, i, matrixWorld, positions, base + 6);
+    writeTransformedAttribute(p4, i, matrixWorld, positions, base + 9);
+    centerX += positions[base];
+    centerY += positions[base + 1];
+    centerZ += positions[base + 2];
+  }
+
+  const invCount = 1 / count;
+  return {
+    positions,
+    center: [centerX * invCount, centerY * invCount, centerZ * invCount],
+  };
+}
+
+function flattenObjectConditionalLineGeometry(
+  object: THREE.Line,
+  matrixWorld: THREE.Matrix4,
+): FlattenedGeometry | null {
+  const geometry = object.geometry;
+  const position = geometry.getAttribute('position');
+  const p2 = geometry.getAttribute('p2');
+  const p3 = geometry.getAttribute('p3');
+  const p4 = geometry.getAttribute('p4');
+  if (!position || !p2 || !p3 || !p4 || position.count === 0) {
+    _flattenedConditionalCache.delete(object);
+    return null;
+  }
+
+  const positionVersion = getAttributeVersion(position);
+  const p2Version = getAttributeVersion(p2);
+  const p3Version = getAttributeVersion(p3);
+  const p4Version = getAttributeVersion(p4);
+  const positionCount = getAttributeCount(position);
+  const cached = _flattenedConditionalCache.get(object);
+  if (
+    cached &&
+    cached.geometry === geometry &&
+    cached.position === position &&
+    cached.p2 === p2 &&
+    cached.p3 === p3 &&
+    cached.p4 === p4 &&
+    cached.positionVersion === positionVersion &&
+    cached.p2Version === p2Version &&
+    cached.p3Version === p3Version &&
+    cached.p4Version === p4Version &&
+    cached.positionCount === positionCount &&
+    matrixElementsAlmostEqual(cached.matrixElements, matrixWorld.elements)
+  ) {
+    return cached.flattened;
+  }
+
+  const flattened = flattenConditionalLineGeometry(geometry, matrixWorld);
+  if (!flattened) {
+    _flattenedConditionalCache.delete(object);
+    return null;
+  }
+
+  _flattenedConditionalCache.set(object, {
+    geometry,
+    position,
+    p2,
+    p3,
+    p4,
+    positionVersion,
+    p2Version,
+    p3Version,
+    p4Version,
+    positionCount,
+    matrixElements: [...matrixWorld.elements],
+    flattened,
+  });
+
+  return flattened;
+}
+
 export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[] {
   const calls: RuntimeDrawCall[] = [];
 
@@ -293,17 +435,40 @@ export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[]
     }
 
     const material = getFirstMaterial(object.material);
-    if (!material.visible || isConditionalLine(object, material)) {
+    if (!material.visible) {
       return;
     }
 
-    const flattened = flattenObjectGeometryPositions(
-      object,
-      _relativeMatrixWorld.multiplyMatrices(
-        _rootMatrixWorldInverse,
-        object.matrixWorld,
-      ),
+    const relativeMatrix = _relativeMatrixWorld.multiplyMatrices(
+      _rootMatrixWorldInverse,
+      object.matrixWorld,
     );
+
+    if (isConditionalLine(object, material)) {
+      if (!(object instanceof THREE.Line)) {
+        return;
+      }
+
+      const flattened = flattenObjectConditionalLineGeometry(
+        object,
+        relativeMatrix,
+      );
+      if (!flattened || flattened.positions.length === 0) {
+        return;
+      }
+
+      calls.push({
+        mode: 'conditional-lines',
+        positions: flattened.positions,
+        center: flattened.center,
+        color: getMaterialColor(material),
+        transparent: false,
+        polygonOffset: null,
+      });
+      return;
+    }
+
+    const flattened = flattenObjectGeometryPositions(object, relativeMatrix);
     if (!flattened || flattened.positions.length === 0) {
       return;
     }
@@ -325,13 +490,38 @@ export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[]
 export function orderRuntimeDrawCalls(
   calls: RuntimeDrawCall[],
 ): RuntimeDrawCall[] {
-  const opaqueTriangles = calls.filter(
-    call => call.mode === 'triangles' && !call.transparent,
-  );
-  const transparentTriangles = calls.filter(
-    call => call.mode === 'triangles' && call.transparent,
-  );
-  const lines = calls.filter(call => call.mode === 'lines');
+  const opaqueTriangles: RuntimeDrawCall[] = [];
+  const transparentTriangles: RuntimeDrawCall[] = [];
+  const lines: RuntimeDrawCall[] = [];
+  const conditionalLines: RuntimeDrawCall[] = [];
 
-  return [...opaqueTriangles, ...transparentTriangles, ...lines];
+  for (const call of calls) {
+    if (call.mode === 'conditional-lines') {
+      conditionalLines.push(call);
+    } else if (call.mode === 'lines') {
+      lines.push(call);
+    } else if (call.transparent) {
+      transparentTriangles.push(call);
+    } else {
+      opaqueTriangles.push(call);
+    }
+  }
+
+  return [
+    ...opaqueTriangles,
+    ...transparentTriangles,
+    ...lines,
+    ...conditionalLines,
+  ];
+}
+
+export function countRuntimeDrawCallVertices(
+  drawCalls: RuntimeDrawCall[],
+): number {
+  return drawCalls.reduce((sum, call) => {
+    if (call.mode === 'conditional-lines') {
+      return sum + countConditionalVertices(call.positions);
+    }
+    return sum + call.positions.length / 3;
+  }, 0);
 }

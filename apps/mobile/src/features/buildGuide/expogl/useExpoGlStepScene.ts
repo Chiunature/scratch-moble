@@ -30,7 +30,7 @@ import type {
 } from './glTypes';
 import { captureOrbitFromCamera, type OrbitState } from './orbitState';
 import { formatRuntimeError } from './runtimeError';
-import { collectRuntimeDrawCalls } from './sceneDrawCalls';
+import { collectRuntimeDrawCalls, countRuntimeDrawCallVertices } from './sceneDrawCalls';
 
 type MutableRef<T> = { current: T };
 
@@ -140,10 +140,6 @@ function pruneRuntimeDrawCallCache(
       cache.entries.delete(cachedStep);
     }
   }
-}
-
-function countDrawCallVertices(drawCalls: RuntimeDrawCall[]): number {
-  return drawCalls.reduce((sum, call) => sum + call.positions.length / 3, 0);
 }
 
 type UseExpoGlStepSceneParams = {
@@ -330,7 +326,7 @@ export function useExpoGlStepScene({
           pruneRuntimeDrawCallCache(drawCallCache, stepIndex, totalSteps);
 
           warmedTotalMs = Date.now() - prewarmStartedAt;
-          warmedVertexCount = countDrawCallVertices(drawCalls);
+          warmedVertexCount = countRuntimeDrawCallVertices(drawCalls);
         } catch {
           return;
         } finally {

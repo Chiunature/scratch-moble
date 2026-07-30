@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 
+import { drawUploadedCalls } from '../../expogl/drawUploadedCalls';
 import type {
   CanvasLayoutSize,
   ExpoGlRuntimeContext,
   RawGlProgram,
   RenderSize,
-  SceneGlProgram,
-  UploadedDrawCall,
   UploadedFrame,
 } from '../../expogl/glTypes';
 import type { PliThumbnailViewport } from './types';
@@ -40,34 +39,6 @@ function resetGlState(gl: ExpoGlRuntimeContext, size: RenderSize): void {
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT);
-}
-
-function applyDrawState(
-  gl: ExpoGlRuntimeContext,
-  call: UploadedDrawCall,
-): void {
-  if (call.polygonOffset && call.mode !== gl.LINES) {
-    gl.enable(gl.POLYGON_OFFSET_FILL);
-    gl.polygonOffset(call.polygonOffset[0], call.polygonOffset[1]);
-  } else {
-    gl.disable(gl.POLYGON_OFFSET_FILL);
-  }
-
-  if (call.transparent) {
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.depthMask(false);
-    return;
-  }
-
-  if (call.mode === gl.LINES) {
-    gl.disable(gl.BLEND);
-    gl.depthMask(false);
-    return;
-  }
-
-  gl.disable(gl.BLEND);
-  gl.depthMask(true);
 }
 
 function updateCameraMatrix(camera: THREE.Camera): void {
@@ -114,7 +85,7 @@ function resolvePhysicalViewport(
 
 function drawSceneCalls(
   gl: ExpoGlRuntimeContext,
-  sceneProgram: SceneGlProgram,
+  program: RawGlProgram,
   frame: UploadedFrame,
   camera: THREE.OrthographicCamera,
 ): void {
@@ -124,34 +95,7 @@ function drawSceneCalls(
     _identityMatrix,
   );
   _mvpMatrix.multiplyMatrices(camera.projectionMatrix, _modelViewMatrix);
-
-  gl.useProgram(sceneProgram.program);
-  gl.uniformMatrix4fv(
-    sceneProgram.modelViewProjection,
-    false,
-    _mvpMatrix.elements,
-  );
-  gl.enableVertexAttribArray(sceneProgram.position);
-
-  for (const call of frame.calls) {
-    applyDrawState(gl, call);
-    gl.bindBuffer(gl.ARRAY_BUFFER, call.buffer);
-    gl.vertexAttribPointer(sceneProgram.position, 3, gl.FLOAT, false, 0, 0);
-    gl.uniform4f(
-      sceneProgram.color,
-      call.color[0],
-      call.color[1],
-      call.color[2],
-      call.color[3],
-    );
-    gl.drawArrays(call.mode, 0, call.count);
-  }
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, null);
-  gl.disableVertexAttribArray(sceneProgram.position);
-  gl.depthMask(true);
-  gl.disable(gl.BLEND);
-  gl.disable(gl.POLYGON_OFFSET_FILL);
+  drawUploadedCalls(gl, program, frame.calls, _mvpMatrix.elements);
 }
 
 export function drawPliThumbnailFrame(
@@ -174,7 +118,7 @@ export function drawPliThumbnailFrame(
     }
 
     gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-    drawSceneCalls(gl, program.scene, thumbnail.frame, thumbnail.camera);
+    drawSceneCalls(gl, program, thumbnail.frame, thumbnail.camera);
   }
 
   gl.flushEXP();

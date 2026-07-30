@@ -164,10 +164,11 @@ export type ExpoGlRuntimeContext = ExpoWebGLRenderingContext & {
 
 export type RuntimeColor = readonly [number, number, number, number];
 
-export type RuntimeDrawMode = 'triangles' | 'lines';
+export type RuntimeDrawMode = 'triangles' | 'lines' | 'conditional-lines';
 
 export type RuntimeDrawCall = {
   mode: RuntimeDrawMode;
+  /** triangles/lines: xyz…; conditional-lines: interleaved [pos,p2,p3,p4]… */
   positions: Float32Array;
   center: readonly [number, number, number];
   color: RuntimeColor;
@@ -177,6 +178,7 @@ export type RuntimeDrawCall = {
 
 export type UploadedDrawCall = {
   mode: number;
+  kind: 'solid' | 'conditional';
   buffer: RawGlBuffer;
   count: number;
   center: readonly [number, number, number];
@@ -188,6 +190,16 @@ export type UploadedDrawCall = {
 export type SceneGlProgram = {
   program: RawGlProgramHandle;
   position: number;
+  modelViewProjection: RawGlUniformLocation;
+  color: RawGlUniformLocation;
+};
+
+export type ConditionalGlProgram = {
+  program: RawGlProgramHandle;
+  position: number;
+  p2: number;
+  p3: number;
+  p4: number;
   modelViewProjection: RawGlUniformLocation;
   color: RawGlUniformLocation;
 };
@@ -210,6 +222,7 @@ export type FxaaRenderTarget = {
 
 export type RawGlProgram = {
   scene: SceneGlProgram;
+  conditional: ConditionalGlProgram;
   fxaa: FxaaGlProgram;
   screenQuadBuffer: RawGlBuffer;
   fxaaTarget: FxaaRenderTarget | null;

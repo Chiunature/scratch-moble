@@ -24,6 +24,38 @@ void main() {
 }
 `;
 
+/** LDraw conditional line: draw when camera sees p3 and p4 on the same side of p1–p2. */
+const CONDITIONAL_VERTEX_SHADER_SOURCE = `
+attribute vec3 a_position;
+attribute vec3 a_p2;
+attribute vec3 a_p3;
+attribute vec3 a_p4;
+uniform mat4 u_modelViewProjection;
+varying float v_visible;
+
+void main() {
+  vec4 clip1 = u_modelViewProjection * vec4(a_position, 1.0);
+  gl_Position = clip1;
+  vec2 xp1 = clip1.xy;
+  vec2 d12 = (u_modelViewProjection * vec4(a_p2, 1.0)).yx - xp1.yx;
+  d12.y = -d12.y;
+  vec2 d13 = (u_modelViewProjection * vec4(a_p3, 1.0)).xy - xp1;
+  vec2 d14 = (u_modelViewProjection * vec4(a_p4, 1.0)).xy - xp1;
+  v_visible = sign(dot(d12, d13) * dot(d12, d14));
+}
+`;
+
+const CONDITIONAL_FRAGMENT_SHADER_SOURCE = `
+precision mediump float;
+uniform vec4 u_color;
+varying float v_visible;
+
+void main() {
+  if (v_visible <= 0.001) discard;
+  gl_FragColor = u_color;
+}
+`;
+
 const FXAA_VERTEX_SHADER_SOURCE = `
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
@@ -197,8 +229,14 @@ export function createProgram(gl: ExpoGlRuntimeContext): RawGlProgram {
     SCENE_VERTEX_SHADER_SOURCE,
     SCENE_FRAGMENT_SHADER_SOURCE,
   );
+  let conditionalProgram: RawGlProgramHandle | null = null;
 
   try {
+    conditionalProgram = createLinkedProgram(
+      gl,
+      CONDITIONAL_VERTEX_SHADER_SOURCE,
+      CONDITIONAL_FRAGMENT_SHADER_SOURCE,
+    );
     const fxaaProgram = createLinkedProgram(
       gl,
       FXAA_VERTEX_SHADER_SOURCE,
@@ -207,10 +245,25 @@ export function createProgram(gl: ExpoGlRuntimeContext): RawGlProgram {
     const screenQuadBuffer = createScreenQuadBuffer(gl);
 
     const scenePosition = gl.getAttribLocation(sceneProgram, 'a_position');
+    const conditionalPosition = gl.getAttribLocation(
+      conditionalProgram,
+      'a_position',
+    );
+    const conditionalP2 = gl.getAttribLocation(conditionalProgram, 'a_p2');
+    const conditionalP3 = gl.getAttribLocation(conditionalProgram, 'a_p3');
+    const conditionalP4 = gl.getAttribLocation(conditionalProgram, 'a_p4');
     const fxaaPosition = gl.getAttribLocation(fxaaProgram, 'a_position');
     const fxaaTexCoord = gl.getAttribLocation(fxaaProgram, 'a_texCoord');
 
-    if (scenePosition < 0 || fxaaPosition < 0 || fxaaTexCoord < 0) {
+    if (
+      scenePosition < 0 ||
+      conditionalPosition < 0 ||
+      conditionalP2 < 0 ||
+      conditionalP3 < 0 ||
+      conditionalP4 < 0 ||
+      fxaaPosition < 0 ||
+      fxaaTexCoord < 0
+    ) {
       gl.deleteProgram(fxaaProgram);
       gl.deleteBuffer(screenQuadBuffer);
       throw new Error('Expo GL program is missing required attributes.');
@@ -227,6 +280,19 @@ export function createProgram(gl: ExpoGlRuntimeContext): RawGlProgram {
         ),
         color: getRequiredUniformLocation(gl, sceneProgram, 'u_color'),
       },
+      conditional: {
+        program: conditionalProgram,
+        position: conditionalPosition,
+        p2: conditionalP2,
+        p3: conditionalP3,
+        p4: conditionalP4,
+        modelViewProjection: getRequiredUniformLocation(
+          gl,
+          conditionalProgram,
+          'u_modelViewProjection',
+        ),
+        color: getRequiredUniformLocation(gl, conditionalProgram, 'u_color'),
+      },
       fxaa: {
         program: fxaaProgram,
         position: fxaaPosition,
@@ -238,6 +304,9 @@ export function createProgram(gl: ExpoGlRuntimeContext): RawGlProgram {
       fxaaTarget: null,
     };
   } catch (cause: unknown) {
+    if (conditionalProgram) {
+      gl.deleteProgram(conditionalProgram);
+    }
     gl.deleteProgram(sceneProgram);
     throw cause;
   }
@@ -255,5 +324,6 @@ export function disposeProgram(
   program.fxaaTarget = null;
   gl.deleteBuffer(program.screenQuadBuffer);
   gl.deleteProgram(program.scene.program);
+  gl.deleteProgram(program.conditional.program);
   gl.deleteProgram(program.fxaa.program);
 }

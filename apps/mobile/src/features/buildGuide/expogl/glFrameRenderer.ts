@@ -1,6 +1,8 @@
 import { PixelRatio } from 'react-native';
 import * as THREE from 'three';
 
+import { drawUploadedCalls } from './drawUploadedCalls';
+import { countConditionalVertices } from './glConditionalLayout';
 import type {
   CanvasLayoutSize,
   ExpoGlRuntimeContext,
@@ -8,7 +10,6 @@ import type {
   RawGlProgram,
   RenderSize,
   RuntimeDrawCall,
-  SceneGlProgram,
   UploadedDrawCall,
   UploadedFrame,
 } from './glTypes';
@@ -73,10 +74,14 @@ export function uploadRuntimeDrawCalls(
         throw new Error('Failed to create Expo GL buffer.');
       }
 
+      const isConditional = call.mode === 'conditional-lines';
       const uploadedCall: UploadedDrawCall = {
         mode: call.mode === 'triangles' ? gl.TRIANGLES : gl.LINES,
+        kind: isConditional ? 'conditional' : 'solid',
         buffer,
-        count: call.positions.length / 3,
+        count: isConditional
+          ? countConditionalVertices(call.positions)
+          : call.positions.length / 3,
         center: call.center,
         color: call.color,
         transparent: call.transparent,
@@ -222,34 +227,6 @@ function resetGlState(gl: ExpoGlRuntimeContext, size: RenderSize): void {
   gl.clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT);
 }
 
-function applyDrawState(
-  gl: ExpoGlRuntimeContext,
-  call: UploadedDrawCall,
-): void {
-  if (call.polygonOffset && call.mode !== gl.LINES) {
-    gl.enable(gl.POLYGON_OFFSET_FILL);
-    gl.polygonOffset(call.polygonOffset[0], call.polygonOffset[1]);
-  } else {
-    gl.disable(gl.POLYGON_OFFSET_FILL);
-  }
-
-  if (call.transparent) {
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.depthMask(false);
-    return;
-  }
-
-  if (call.mode === gl.LINES) {
-    gl.disable(gl.BLEND);
-    gl.depthMask(false);
-    return;
-  }
-
-  gl.disable(gl.BLEND);
-  gl.depthMask(true);
-}
-
 function updateCameraMatrix(camera: THREE.Camera): void {
   camera.updateMatrixWorld(true);
   camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
@@ -294,7 +271,7 @@ function resolveDrawOrder(
 
 function drawSceneCalls(
   gl: ExpoGlRuntimeContext,
-  sceneProgram: SceneGlProgram,
+  program: RawGlProgram,
   frame: UploadedFrame,
   camera: THREE.Camera,
   modelMatrix: THREE.Matrix4,
@@ -302,34 +279,12 @@ function drawSceneCalls(
   updateCameraMatrix(camera);
   _modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, modelMatrix);
   _mvpMatrix.multiplyMatrices(camera.projectionMatrix, _modelViewMatrix);
-
-  gl.useProgram(sceneProgram.program);
-  gl.uniformMatrix4fv(
-    sceneProgram.modelViewProjection,
-    false,
+  drawUploadedCalls(
+    gl,
+    program,
+    resolveDrawOrder(gl, frame.calls, _modelViewMatrix),
     _mvpMatrix.elements,
   );
-  gl.enableVertexAttribArray(sceneProgram.position);
-
-  for (const call of resolveDrawOrder(gl, frame.calls, _modelViewMatrix)) {
-    applyDrawState(gl, call);
-    gl.bindBuffer(gl.ARRAY_BUFFER, call.buffer);
-    gl.vertexAttribPointer(sceneProgram.position, 3, gl.FLOAT, false, 0, 0);
-    gl.uniform4f(
-      sceneProgram.color,
-      call.color[0],
-      call.color[1],
-      call.color[2],
-      call.color[3],
-    );
-    gl.drawArrays(call.mode, 0, call.count);
-  }
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, null);
-  gl.disableVertexAttribArray(sceneProgram.position);
-  gl.depthMask(true);
-  gl.disable(gl.BLEND);
-  gl.disable(gl.POLYGON_OFFSET_FILL);
 }
 
 function drawFxaaPass(
@@ -399,12 +354,12 @@ export function drawUploadedFrame(
   if (fxaaTarget) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fxaaTarget.framebuffer);
     resetGlState(gl, size);
-    drawSceneCalls(gl, program.scene, frame, camera, modelMatrix);
+    drawSceneCalls(gl, program, frame, camera, modelMatrix);
     drawFxaaPass(gl, program, fxaaTarget, size);
   } else {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     resetGlState(gl, size);
-    drawSceneCalls(gl, program.scene, frame, camera, modelMatrix);
+    drawSceneCalls(gl, program, frame, camera, modelMatrix);
   }
 
   gl.flushEXP();
