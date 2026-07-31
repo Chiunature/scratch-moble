@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { resolveStepViewModel } from '@scratch-mobile/build-guide';
 import type { LdrStepHandlerFacade } from '@scratch-mobile/ldr-engine';
 
+import { markStepNavigation } from '../runtime/stepNavigationSignal';
 import type { BuildGuideManifest, BuildGuideStep } from '../types';
 
 type UseBuildGuideStepsResult = {
@@ -24,8 +25,14 @@ export function useBuildGuideSteps(
 ): UseBuildGuideStepsResult {
   const totalSteps = stepHandler?.getTotalSteps() ?? 0;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(currentIndex);
 
   useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
+  useEffect(() => {
+    currentIndexRef.current = 0;
     setCurrentIndex(0);
   }, [stepHandler]);
 
@@ -35,30 +42,38 @@ export function useBuildGuideSteps(
   );
 
   const applyStepIndex = useCallback(
-    (index: number) => {
-      setCurrentIndex(clampIndex(index));
+    (resolveIndex: (current: number) => number) => {
+      const current = currentIndexRef.current;
+      const next = clampIndex(resolveIndex(current));
+      if (next === current) {
+        return;
+      }
+
+      currentIndexRef.current = next;
+      markStepNavigation();
+      setCurrentIndex(next);
     },
     [clampIndex],
+  );
+
+  const goPrev = useCallback(() => {
+    applyStepIndex(current => current - 1);
+  }, [applyStepIndex]);
+
+  const goNext = useCallback(() => {
+    applyStepIndex(current => current + 1);
+  }, [applyStepIndex]);
+
+  const goToStep = useCallback(
+    (index: number) => {
+      applyStepIndex(() => index);
+    },
+    [applyStepIndex],
   );
 
   const currentStep = useMemo(
     () => resolveStepViewModel(manifest, currentIndex, totalSteps),
     [currentIndex, manifest, totalSteps],
-  );
-
-  const goPrev = useCallback(() => {
-    applyStepIndex(currentIndex - 1);
-  }, [applyStepIndex, currentIndex]);
-
-  const goNext = useCallback(() => {
-    applyStepIndex(currentIndex + 1);
-  }, [applyStepIndex, currentIndex]);
-
-  const goToStep = useCallback(
-    (index: number) => {
-      applyStepIndex(index);
-    },
-    [applyStepIndex],
   );
 
   return useMemo(

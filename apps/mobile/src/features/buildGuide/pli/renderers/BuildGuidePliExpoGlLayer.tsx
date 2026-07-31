@@ -14,6 +14,7 @@ import type {
   CanvasLayoutSize,
   ExpoGlRuntimeContext,
   RawGlProgram,
+  RuntimeDrawCall,
   UploadedFrame,
 } from '../../expogl/glTypes';
 import { collectRuntimeDrawCalls } from '../../expogl/sceneDrawCalls';
@@ -25,6 +26,18 @@ import { createPliThumbnailScene } from './thumbnailScene';
 import type { PliThumbnailRequest } from './types';
 
 type MutableRef<T> = { current: T };
+
+type PliThumbnailGeometryCacheEntry = {
+  cacheKey: string;
+  drawCalls: RuntimeDrawCall[];
+  camera: PliUploadedThumbnail['camera'];
+  lastUsed: number;
+};
+
+type PliThumbnailGeometryCache = {
+  entries: Map<string, PliThumbnailGeometryCacheEntry>;
+  useSeq: number;
+};
 
 type PliThumbnailCacheEntry = {
   cacheKey: string;
@@ -50,7 +63,16 @@ type BuildGuidePliExpoGlLayerProps = {
 };
 
 const MAX_PLI_THUMBNAIL_CACHE_ENTRIES = 80;
+const MAX_PLI_THUMBNAIL_GEOMETRY_CACHE_ENTRIES = 160;
+const thumbnailGeometryCaches = new WeakMap<
+  LoadedLdrModel,
+  PliThumbnailGeometryCache
+>();
 const ASPECT_KEY_PRECISION = 1000;
+/** 步进防抖：连点时只为停住的那一步建缩略图。 */
+const PLI_THUMBNAIL_BUILD_DEFER_MS = 450;
+/** 每帧最多新建 1 个；单个 createThumbnailScene 可能很重。 */
+const PLI_THUMBNAILS_PER_CHUNK = 1;
 
 function normalizePartID(partID: string): string {
   return partID.replace(/\\/g, '/').toLowerCase();
@@ -134,13 +156,50 @@ function pruneThumbnailCache(
   }
 }
 
-function createThumbnailCacheEntry(
-  gl: ExpoGlRuntimeContext,
+function resolveThumbnailGeometryCache(
+  model: LoadedLdrModel,
+): PliThumbnailGeometryCache {
+  const cache = thumbnailGeometryCaches.get(model);
+  if (cache) {
+    return cache;
+  }
+
+  const nextCache: PliThumbnailGeometryCache = {
+    entries: new Map<string, PliThumbnailGeometryCacheEntry>(),
+    useSeq: 0,
+  };
+  thumbnailGeometryCaches.set(model, nextCache);
+  return nextCache;
+}
+
+function pruneThumbnailGeometryCache(
+  cache: PliThumbnailGeometryCache,
+  maxEntries: number,
+): void {
+  const overflow = cache.entries.size - maxEntries;
+  if (overflow <= 0) {
+    return;
+  }
+
+  const staleEntries = [...cache.entries.values()]
+    .sort((a, b) => a.lastUsed - b.lastUsed)
+    .slice(0, overflow);
+
+  for (const entry of staleEntries) {
+    if (cache.entries.get(entry.cacheKey) !== entry) {
+      continue;
+    }
+
+    cache.entries.delete(entry.cacheKey);
+  }
+}
+
+function createThumbnailGeometryCacheEntry(
   model: LoadedLdrModel,
   request: PliThumbnailRequest,
   cacheKey: string,
   lastUsed: number,
-): PliThumbnailCacheEntry | null {
+): PliThumbnailGeometryCacheEntry | null {
   const scene = createPliThumbnailScene(model, request);
   if (!scene) {
     return null;
@@ -151,12 +210,65 @@ function createThumbnailCacheEntry(
     return null;
   }
 
-  const frame = uploadRuntimeDrawCalls(gl, drawCalls);
+  return {
+    cacheKey,
+    drawCalls,
+    camera: scene.camera,
+    lastUsed,
+  };
+}
+
+function resolveCachedThumbnailGeometry(
+  model: LoadedLdrModel,
+  request: PliThumbnailRequest,
+  cacheKey: string,
+): PliThumbnailGeometryCacheEntry | null {
+  const cache = resolveThumbnailGeometryCache(model);
+  const nextUseSeq = cache.useSeq + 1;
+  cache.useSeq = nextUseSeq;
+
+  const cached = cache.entries.get(cacheKey);
+  if (cached) {
+    cached.lastUsed = nextUseSeq;
+    return cached;
+  }
+
+  const created = createThumbnailGeometryCacheEntry(
+    model,
+    request,
+    cacheKey,
+    nextUseSeq,
+  );
+  if (!created) {
+    return null;
+  }
+
+  cache.entries.set(cacheKey, created);
+  pruneThumbnailGeometryCache(
+    cache,
+    MAX_PLI_THUMBNAIL_GEOMETRY_CACHE_ENTRIES,
+  );
+  return created;
+}
+
+function createThumbnailCacheEntry(
+  gl: ExpoGlRuntimeContext,
+  model: LoadedLdrModel,
+  request: PliThumbnailRequest,
+  cacheKey: string,
+  lastUsed: number,
+): PliThumbnailCacheEntry | null {
+  const geometry = resolveCachedThumbnailGeometry(model, request, cacheKey);
+  if (!geometry) {
+    return null;
+  }
+
+  const frame = uploadRuntimeDrawCalls(gl, geometry.drawCalls);
 
   return {
     cacheKey,
     frame,
-    camera: scene.camera,
+    camera: geometry.camera,
     lastUsed,
   };
 }
@@ -255,6 +367,12 @@ export function BuildGuidePliExpoGlLayer({
     glRef.current = null;
   }, []);
 
+  const dropRuntimeRefs = useCallback(() => {
+    cacheRef.current = null;
+    programRef.current = null;
+    glRef.current = null;
+  }, []);
+
   const disableLayer = useCallback(() => {
     releaseRuntime();
     setContextReady(false);
@@ -264,8 +382,8 @@ export function BuildGuidePliExpoGlLayer({
 
   useEffect(() => {
     setContextReady(false);
-    releaseRuntime();
-  }, [canvasKey, releaseRuntime]);
+    dropRuntimeRefs();
+  }, [canvasKey, dropRuntimeRefs]);
 
   const handleContextCreate = useCallback(
     (context: ExpoWebGLRenderingContext) => {
@@ -274,7 +392,7 @@ export function BuildGuidePliExpoGlLayer({
       }
 
       try {
-        releaseRuntime();
+        dropRuntimeRefs();
         const gl = context as ExpoGlRuntimeContext;
         const program = createProgram(gl);
         glRef.current = gl;
@@ -284,7 +402,7 @@ export function BuildGuidePliExpoGlLayer({
         disableLayer();
       }
     },
-    [disabled, disableLayer, releaseRuntime],
+    [disabled, disableLayer, dropRuntimeRefs],
   );
 
   useEffect(() => {
@@ -298,28 +416,19 @@ export function BuildGuidePliExpoGlLayer({
       return;
     }
 
-    try {
-      const renderLayoutSize: CanvasLayoutSize = {
-        height: layoutHeight,
-        width: layoutWidth,
-      };
-      const renderSize = resolveRenderSize(gl, renderLayoutSize);
-      // drawingBuffer 与布局比例不一致时跳过本帧，等 GLView 按 key 重建后再画
-      const layoutAspect = layoutWidth / layoutHeight;
-      const bufferAspect = renderSize.width / renderSize.height;
-      if (Math.abs(layoutAspect - bufferAspect) > 0.05) {
+    let cancelled = false;
+    let deferTimer: ReturnType<typeof setTimeout> | null = null;
+    let chunkRaf = 0;
+
+    const finishWithThumbnails = (
+      uploadedThumbnails: PliUploadedThumbnail[],
+      renderLayoutSize: CanvasLayoutSize,
+      renderSize: ReturnType<typeof resolveRenderSize>,
+      cache: PliThumbnailUploadCache | null,
+    ) => {
+      if (cancelled) {
         return;
       }
-
-      const cache = model ? resolveThumbnailCache(cacheRef, gl, model) : null;
-      if (!cache) {
-        resetThumbnailCache(cacheRef);
-      }
-
-      const uploadedThumbnails =
-        model && cache
-          ? buildUploadedThumbnails(gl, model, cache, thumbnails)
-          : [];
 
       if (cache) {
         pruneThumbnailCache(cache, MAX_PLI_THUMBNAIL_CACHE_ENTRIES);
@@ -339,9 +448,125 @@ export function BuildGuidePliExpoGlLayer({
       }
 
       onReadyRef.current?.();
-    } catch {
-      disableLayer();
+    };
+
+    const startBuild = () => {
+      if (cancelled) {
+        return;
+      }
+
+      try {
+        const renderLayoutSize: CanvasLayoutSize = {
+          height: layoutHeight,
+          width: layoutWidth,
+        };
+        const renderSize = resolveRenderSize(gl, renderLayoutSize);
+        // drawingBuffer 与布局比例不一致时跳过本帧，等 GLView 按 key 重建后再画
+        const layoutAspect = layoutWidth / layoutHeight;
+        const bufferAspect = renderSize.width / renderSize.height;
+        if (Math.abs(layoutAspect - bufferAspect) > 0.05) {
+          return;
+        }
+
+        const cache = model ? resolveThumbnailCache(cacheRef, gl, model) : null;
+        if (!cache) {
+          resetThumbnailCache(cacheRef);
+          finishWithThumbnails([], renderLayoutSize, renderSize, null);
+          return;
+        }
+
+        if (!model || thumbnails.length === 0) {
+          finishWithThumbnails([], renderLayoutSize, renderSize, cache);
+          return;
+        }
+
+        // 全命中缓存时一次做完，避免无意义分帧延迟。
+        const allCached = thumbnails.every(request =>
+          cache.entries.has(createThumbnailCacheKey(request)),
+        );
+        if (allCached) {
+          finishWithThumbnails(
+            buildUploadedThumbnails(gl, model, cache, thumbnails),
+            renderLayoutSize,
+            renderSize,
+            cache,
+          );
+          return;
+        }
+
+        const uploadedThumbnails: PliUploadedThumbnail[] = [];
+        let index = 0;
+
+        const pumpChunk = () => {
+          if (cancelled) {
+            return;
+          }
+
+          const end = Math.min(
+            index + PLI_THUMBNAILS_PER_CHUNK,
+            thumbnails.length,
+          );
+          for (; index < end; index += 1) {
+            const thumbnail = resolveCachedUploadedThumbnail(
+              gl,
+              model,
+              cache,
+              thumbnails[index],
+            );
+            if (thumbnail) {
+              uploadedThumbnails.push(thumbnail);
+            }
+          }
+
+          if (index < thumbnails.length) {
+            chunkRaf = requestAnimationFrame(() => {
+              chunkRaf = requestAnimationFrame(pumpChunk);
+            });
+            return;
+          }
+
+          finishWithThumbnails(
+            uploadedThumbnails,
+            renderLayoutSize,
+            renderSize,
+            cache,
+          );
+        };
+
+        pumpChunk();
+      } catch {
+        if (!cancelled) {
+          disableLayer();
+        }
+      }
+    };
+
+    const uploadedCache = cacheRef.current;
+    const canDrawFromUploadCache =
+      model != null &&
+      uploadedCache != null &&
+      uploadedCache.gl === gl &&
+      uploadedCache.model === model &&
+      thumbnails.length > 0 &&
+      thumbnails.every(request =>
+        uploadedCache.entries.has(createThumbnailCacheKey(request)),
+      );
+
+    if (!model || thumbnails.length === 0 || canDrawFromUploadCache) {
+      chunkRaf = requestAnimationFrame(startBuild);
+    } else {
+      deferTimer = setTimeout(() => {
+        chunkRaf = requestAnimationFrame(startBuild);
+      }, PLI_THUMBNAIL_BUILD_DEFER_MS);
     }
+
+    return () => {
+      cancelled = true;
+      if (deferTimer) {
+        clearTimeout(deferTimer);
+      }
+      cancelAnimationFrame(chunkRaf);
+    };
   }, [
     contextReady,
     disabled,

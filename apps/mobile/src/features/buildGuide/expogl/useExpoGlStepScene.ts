@@ -13,6 +13,7 @@ import {
   applyStepToScene,
   computeInstructionStepTarget,
 } from '../runtime/applyStepToScene';
+import { getLastStepNavigationAt } from '../runtime/stepNavigationSignal';
 import type { StepAnimationMode } from '../settings';
 import type { BuildGuideBundle, BuildGuideStep } from '../types';
 import {
@@ -30,23 +31,28 @@ import type {
 } from './glTypes';
 import { captureOrbitFromCamera, type OrbitState } from './orbitState';
 import { formatRuntimeError } from './runtimeError';
-import { collectRuntimeDrawCalls, countRuntimeDrawCallVertices } from './sceneDrawCalls';
+import {
+  collectRuntimeDrawCalls,
+  countRuntimeDrawCallVertices,
+} from './sceneDrawCalls';
+import {
+  isSameRuntimeDrawCallCache,
+  pruneRuntimeCaches,
+  releaseRuntimeDrawCallCacheRef,
+  resolveRuntimeDrawCallCache,
+  type RuntimeDrawCallCache,
+} from './runtimeDrawCallCache';
 
 type MutableRef<T> = { current: T };
 
-type RuntimeDrawCallCache = {
-  stepHandler: NonNullable<BuildGuideBundle['stepHandler']>;
-  mode: LdrDisplayMode;
-  appearanceRevision: number;
-  entries: Map<number, RuntimeDrawCall[]>;
-};
-
-const DRAW_CALL_CACHE_RADIUS = 5;
 const ANIMATED_PREWARM_DELAY_MS = 160;
-const SKIP_ANIMATION_PREWARM_DELAY_MS = 24;
+/** 停稳超过此时长才预热，避免连点被同步 moveTo/collect 堵死。 */
+const PREWARM_IDLE_MS = 520;
 const PREWARM_CHAIN_PASSES = 2;
 const PREWARM_CHAIN_CONTINUE_MAX_MS = 300;
 const PREWARM_CHAIN_CONTINUE_MAX_VERTICES = 200_000;
+/** 两次点击间隔（按点击时刻）小于此时长 → 连点，跳过姿态动画。 */
+const RAPID_STEP_NAVIGATION_MS = 450;
 
 function findMissingPrewarmStepIndex(
   stepIndex: number,
@@ -80,65 +86,12 @@ function findMissingPrewarmStepIndex(
   return undefined;
 }
 
-function cancelScheduledPrewarmRefs(
+function cancelScheduledPrewarmTimeout(
   prewarmTimeoutRef: MutableRef<ReturnType<typeof setTimeout> | null>,
-  prewarmRafRef: MutableRef<
-    ReturnType<typeof requestAnimationFrame> | null
-  >,
 ): void {
-  if (prewarmRafRef.current != null) {
-    cancelAnimationFrame(prewarmRafRef.current);
-    prewarmRafRef.current = null;
-  }
-
   if (prewarmTimeoutRef.current) {
     clearTimeout(prewarmTimeoutRef.current);
     prewarmTimeoutRef.current = null;
-  }
-}
-
-function resolveRuntimeDrawCallCache(
-  cacheRef: MutableRef<RuntimeDrawCallCache | null>,
-  stepHandler: NonNullable<BuildGuideBundle['stepHandler']>,
-  mode: LdrDisplayMode,
-  appearanceRevision: number,
-): RuntimeDrawCallCache {
-  const cache = cacheRef.current;
-  if (
-    cache &&
-    cache.stepHandler === stepHandler &&
-    cache.mode === mode &&
-    cache.appearanceRevision === appearanceRevision
-  ) {
-    return cache;
-  }
-
-  const nextCache = {
-    stepHandler,
-    mode,
-    appearanceRevision,
-    entries: new Map<number, RuntimeDrawCall[]>(),
-  };
-  cacheRef.current = nextCache;
-  return nextCache;
-}
-
-function pruneRuntimeDrawCallCache(
-  cache: RuntimeDrawCallCache,
-  stepIndex: number,
-  totalSteps: number,
-): void {
-  const keep = new Set(
-    Array.from(
-      { length: DRAW_CALL_CACHE_RADIUS * 2 + 1 },
-      (_, offset) => stepIndex - DRAW_CALL_CACHE_RADIUS + offset,
-    ).filter(index => index >= 0 && index < totalSteps),
-  );
-
-  for (const cachedStep of cache.entries.keys()) {
-    if (!keep.has(cachedStep)) {
-      cache.entries.delete(cachedStep);
-    }
   }
 }
 
@@ -189,20 +142,21 @@ export function useExpoGlStepScene({
 }: UseExpoGlStepSceneParams): void {
   const cancelStepAnimRef = useRef<(() => void) | null>(null);
   const isFirstStepRef = useRef(true);
+  const lastStepNavigatedAtRef = useRef(0);
+  const prewarmEpochRef = useRef(0);
   const animationModeRef = useRef(animationMode);
   const appearanceRevisionRef = useRef(appearanceRevision);
   const uploadedSceneRef = useRef<{
     gl: ExpoGlRuntimeContext;
     stepHandler: NonNullable<BuildGuideBundle['stepHandler']>;
     stepIndex: number;
+    mode: LdrDisplayMode;
+    appearanceRevision: number;
   } | null>(null);
   const drawCallCacheRef = useRef<RuntimeDrawCallCache | null>(null);
   const prewarmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const prewarmRafRef = useRef<ReturnType<
-    typeof requestAnimationFrame
-  > | null>(null);
 
   animationModeRef.current = animationMode;
   appearanceRevisionRef.current = appearanceRevision;
@@ -221,23 +175,40 @@ export function useExpoGlStepScene({
     const root = stepHandler.getRoot();
     rootRef.current = root;
 
+    const currentAppearanceRevision = appearanceRevisionRef.current;
+    const uploadedScene = uploadedSceneRef.current;
+    const existingRuntimeCache = drawCallCacheRef.current;
+    const runtimeCacheReusable =
+      existingRuntimeCache != null &&
+      isSameRuntimeDrawCallCache(
+        existingRuntimeCache,
+        gl,
+        stepHandler,
+        mode,
+        currentAppearanceRevision,
+      );
     const geometryDirty =
-      !uploadedSceneRef.current ||
-      uploadedSceneRef.current.gl !== gl ||
-      uploadedSceneRef.current.stepHandler !== stepHandler ||
-      uploadedSceneRef.current.stepIndex !== stepIndex;
+      !uploadedScene ||
+      uploadedScene.gl !== gl ||
+      uploadedScene.stepHandler !== stepHandler ||
+      uploadedScene.stepIndex !== stepIndex ||
+      uploadedScene.mode !== mode ||
+      uploadedScene.appearanceRevision !== currentAppearanceRevision ||
+      !runtimeCacheReusable;
     const drawCallCache = resolveRuntimeDrawCallCache(
       drawCallCacheRef,
+      gl,
       stepHandler,
       mode,
-      appearanceRevisionRef.current,
+      currentAppearanceRevision,
     );
     const totalSteps = stepHandler.getTotalSteps();
     const currentStepBefore = stepHandler.getCurrentStepIndex();
     const navigationDirection = stepIndex - currentStepBefore < 0 ? -1 : 1;
 
     const cancelScheduledPrewarm = () => {
-      cancelScheduledPrewarmRefs(prewarmTimeoutRef, prewarmRafRef);
+      prewarmEpochRef.current += 1;
+      cancelScheduledPrewarmTimeout(prewarmTimeoutRef);
     };
 
     const moveToStepIfNeeded = () => {
@@ -275,18 +246,25 @@ export function useExpoGlStepScene({
           stepIndex,
           navigationDirection,
           totalSteps,
-          drawCallCache.entries,
+          drawCallCache.drawCallsByStep,
           PREWARM_CHAIN_PASSES,
         );
 
-      if (resolvePrewarmStepIndex() == null) {
+      const firstMissing = resolvePrewarmStepIndex();
+      if (firstMissing == null) {
         return;
       }
 
       cancelScheduledPrewarm();
+      const epoch = prewarmEpochRef.current;
+      const idleDelayMs = PREWARM_IDLE_MS;
 
       const runPrewarm = (remainingPasses: number) => {
         prewarmTimeoutRef.current = null;
+
+        if (epoch !== prewarmEpochRef.current) {
+          return;
+        }
 
         const prewarmStepIndex = resolvePrewarmStepIndex();
         if (
@@ -314,16 +292,28 @@ export function useExpoGlStepScene({
         try {
           stepHandler.moveTo(prewarmStepIndex);
 
+          if (epoch !== prewarmEpochRef.current) {
+            return;
+          }
+
           if (appearanceRevisionRef.current > 0) {
             stepHandler.refreshAppearance();
           }
 
           root.updateMatrixWorld(true);
 
-          const drawCalls = collectRuntimeDrawCalls(root);
+          const drawCalls = collectRuntimeDrawCalls(
+            root,
+            drawCallCache.sceneDrawCallCache,
+          );
 
-          drawCallCache.entries.set(prewarmStepIndex, drawCalls);
-          pruneRuntimeDrawCallCache(drawCallCache, stepIndex, totalSteps);
+          if (epoch !== prewarmEpochRef.current) {
+            return;
+          }
+
+          drawCallCache.drawCallsByStep.set(prewarmStepIndex, drawCalls);
+          uploadRuntimeDrawCalls(gl, drawCalls, drawCallCache.uploadCache);
+          pruneRuntimeCaches(drawCallCache, stepIndex, totalSteps);
 
           warmedTotalMs = Date.now() - prewarmStartedAt;
           warmedVertexCount = countRuntimeDrawCallVertices(drawCalls);
@@ -350,6 +340,10 @@ export function useExpoGlStepScene({
           camera.updateProjectionMatrix();
         }
 
+        if (epoch !== prewarmEpochRef.current) {
+          return;
+        }
+
         if (
           remainingPasses <= 1 ||
           warmedTotalMs > PREWARM_CHAIN_CONTINUE_MAX_MS ||
@@ -359,34 +353,17 @@ export function useExpoGlStepScene({
           return;
         }
 
-        prewarmTimeoutRef.current = setTimeout(
-          () => runPrewarm(remainingPasses - 1),
-          prewarmDelayMs,
-        );
+        prewarmTimeoutRef.current = setTimeout(() => {
+          runPrewarm(remainingPasses - 1);
+        }, ANIMATED_PREWARM_DELAY_MS);
       };
 
-      const prewarmDelayMs =
-        animationModeRef.current === 2
-          ? SKIP_ANIMATION_PREWARM_DELAY_MS
-          : ANIMATED_PREWARM_DELAY_MS;
-      const prewarmFrameDelay = animationModeRef.current === 2 ? 1 : 2;
-
-      const schedulePrewarmStart = (remainingFrames: number) => {
-        if (remainingFrames <= 0) {
-          prewarmTimeoutRef.current = setTimeout(
-            () => runPrewarm(PREWARM_CHAIN_PASSES),
-            prewarmDelayMs,
-          );
+      prewarmTimeoutRef.current = setTimeout(() => {
+        if (epoch !== prewarmEpochRef.current) {
           return;
         }
-
-        prewarmRafRef.current = requestAnimationFrame(() => {
-          prewarmRafRef.current = null;
-          schedulePrewarmStart(remainingFrames - 1);
-        });
-      };
-
-      schedulePrewarmStart(prewarmFrameDelay);
+        runPrewarm(PREWARM_CHAIN_PASSES);
+      }, idleDelayMs);
     };
 
     const bakeAndRender = () => {
@@ -396,19 +373,32 @@ export function useExpoGlStepScene({
         orbitRef.current.zoom = camera.zoom;
       }
 
-      let drawCalls = drawCallCache.entries.get(stepIndex);
+      let drawCalls = drawCallCache.drawCallsByStep.get(stepIndex);
       if (!drawCalls) {
-        drawCalls = collectRuntimeDrawCalls(root);
-        drawCallCache.entries.set(stepIndex, drawCalls);
+        drawCalls = collectRuntimeDrawCalls(
+          root,
+          drawCallCache.sceneDrawCallCache,
+        );
+        drawCallCache.drawCallsByStep.set(stepIndex, drawCalls);
       }
 
-      pruneRuntimeDrawCallCache(drawCallCache, stepIndex, totalSteps);
+      pruneRuntimeCaches(drawCallCache, stepIndex, totalSteps);
 
-      const nextFrame = uploadRuntimeDrawCalls(gl, drawCalls);
+      const nextFrame = uploadRuntimeDrawCalls(
+        gl,
+        drawCalls,
+        drawCallCache.uploadCache,
+      );
       disposeUploadedFrame(gl, uploadedFrameRef.current);
 
       uploadedFrameRef.current = nextFrame;
-      uploadedSceneRef.current = { gl, stepHandler, stepIndex };
+      uploadedSceneRef.current = {
+        gl,
+        stepHandler,
+        stepIndex,
+        mode,
+        appearanceRevision: currentAppearanceRevision,
+      };
 
       renderFrame();
     };
@@ -448,8 +438,21 @@ export function useExpoGlStepScene({
 
         orbitTargetRef.current.set(0, 0, 0);
 
+        const stepDelta = Math.abs(stepIndex - currentStepBefore);
+        const navigateAt = getLastStepNavigationAt();
+        const previousNavigateAt = lastStepNavigatedAtRef.current;
+        lastStepNavigatedAtRef.current = navigateAt;
+        const clickGapMs =
+          previousNavigateAt > 0 ? navigateAt - previousNavigateAt : -1;
+        const rapidNavigation =
+          previousNavigateAt > 0 && clickGapMs < RAPID_STEP_NAVIGATION_MS;
+
         const skipAnimation =
-          isFirstStepRef.current || modeNow === 2 || !geometryDirty;
+          isFirstStepRef.current ||
+          modeNow === 2 ||
+          !geometryDirty ||
+          stepDelta > 1 ||
+          rapidNavigation;
         isFirstStepRef.current = false;
 
         if (skipAnimation) {
@@ -476,22 +479,31 @@ export function useExpoGlStepScene({
         orbitRef.current.zoom = from.zoom;
         bakeAndRender();
 
-        cancelStepAnimRef.current = animateInstructionTransition(
-          root,
-          camera,
-          from,
-          to,
-          modeNow,
-          () => {
-            orbitRef.current.zoom = to.zoom;
-            renderPoseFrame();
-            scheduleAdjacentPrewarm();
-          },
-          () => {
-            orbitRef.current.zoom = camera.zoom;
-            renderPoseFrame();
-          },
-        );
+        // bake + React 提交可能堵住主线程；延后一帧再开动画，避免首帧时间跳跃。
+        let stopAnim: (() => void) | null = null;
+        const startAnimRaf = requestAnimationFrame(() => {
+          stopAnim = animateInstructionTransition(
+            root,
+            camera,
+            from,
+            to,
+            modeNow,
+            () => {
+              orbitRef.current.zoom = to.zoom;
+              renderPoseFrame();
+              scheduleAdjacentPrewarm();
+            },
+            () => {
+              orbitRef.current.zoom = camera.zoom;
+              renderPoseFrame();
+            },
+          );
+        });
+        cancelStepAnimRef.current = () => {
+          cancelAnimationFrame(startAnimRaf);
+          stopAnim?.();
+          stopAnim = null;
+        };
 
         return cleanup;
       }
@@ -562,9 +574,10 @@ export function useExpoGlStepScene({
     }
 
     const stepHandler = bundle.stepHandler;
-    cancelScheduledPrewarmRefs(prewarmTimeoutRef, prewarmRafRef);
+    cancelScheduledPrewarmTimeout(prewarmTimeoutRef);
     const drawCallCache = resolveRuntimeDrawCallCache(
       drawCallCacheRef,
+      gl,
       stepHandler,
       mode,
       appearanceRevision,
@@ -578,19 +591,33 @@ export function useExpoGlStepScene({
 
       root.updateMatrixWorld(true);
 
-      const drawCalls = collectRuntimeDrawCalls(root);
+      const drawCalls = collectRuntimeDrawCalls(
+        root,
+        drawCallCache.sceneDrawCallCache,
+      );
       const currentStepIndex = stepHandler.getCurrentStepIndex();
-      drawCallCache.entries.set(currentStepIndex, drawCalls);
-      pruneRuntimeDrawCallCache(
+      drawCallCache.drawCallsByStep.set(currentStepIndex, drawCalls);
+      pruneRuntimeCaches(
         drawCallCache,
         currentStepIndex,
         stepHandler.getTotalSteps(),
       );
 
-      const nextFrame = uploadRuntimeDrawCalls(gl, drawCalls);
+      const nextFrame = uploadRuntimeDrawCalls(
+        gl,
+        drawCalls,
+        drawCallCache.uploadCache,
+      );
       disposeUploadedFrame(gl, uploadedFrameRef.current);
 
       uploadedFrameRef.current = nextFrame;
+      uploadedSceneRef.current = {
+        gl,
+        stepHandler,
+        stepIndex: currentStepIndex,
+        mode,
+        appearanceRevision,
+      };
       renderFailedRef.current = false;
       setRenderError(null);
 
@@ -613,11 +640,22 @@ export function useExpoGlStepScene({
     uploadedFrameRef,
   ]);
 
+  useEffect(() => {
+    if (contextReady && glRef.current) {
+      return;
+    }
+
+    releaseRuntimeDrawCallCacheRef(drawCallCacheRef, glRef.current);
+    uploadedSceneRef.current = null;
+  }, [contextReady, glRef]);
+
   useEffect(
     () => () => {
-      cancelScheduledPrewarmRefs(prewarmTimeoutRef, prewarmRafRef);
+      cancelScheduledPrewarmTimeout(prewarmTimeoutRef);
       cancelStepAnimRef.current?.();
       cancelStepAnimRef.current = null;
+      releaseRuntimeDrawCallCacheRef(drawCallCacheRef, glRef.current);
+      uploadedSceneRef.current = null;
     },
     [],
   );

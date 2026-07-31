@@ -17,7 +17,6 @@ import { getBuildGuideManifest } from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
 import { useBuildGuideSettings } from '../../features/buildGuide/settings';
-import { useBuildGuidePliEntries } from '../../features/buildGuide/pli';
 import type { BuildGuideBundle } from '../../features/buildGuide/types';
 import { styles } from './BuildGuideScreen.styles';
 
@@ -44,7 +43,6 @@ export function BuildGuideScreen({ navigation, route }: Props) {
   const ldr = useLdrModel(settingsReady ? manifest : null);
   const reloadLdrModel = ldr.reload;
   const steps = useBuildGuideSteps(manifest, ldr.stepHandler);
-  const pli = useBuildGuidePliEntries(ldr.model, steps.currentIndex);
 
   const bundle = useMemo<BuildGuideBundle>(
     () => ({
@@ -74,6 +72,22 @@ export function BuildGuideScreen({ navigation, route }: Props) {
     setPliVisible(visible => !visible);
   }, []);
 
+  const handleOpenStepPicker = useCallback(() => {
+    setStepPickerVisible(true);
+  }, []);
+
+  const handleCloseStepPicker = useCallback(() => {
+    setStepPickerVisible(false);
+  }, []);
+
+  const handleOpenSettings = useCallback(() => {
+    setSettingsVisible(true);
+  }, []);
+
+  const handleCloseSettings = useCallback(() => {
+    setSettingsVisible(false);
+  }, []);
+
   return (
     <View style={styles.container}>
       <BuildGuideTopBar
@@ -86,17 +100,16 @@ export function BuildGuideScreen({ navigation, route }: Props) {
         paddingRight={insets.right}
         pliVisible={pliVisible}
         onBack={handleBack}
-        onOpenStepPicker={() => setStepPickerVisible(true)}
+        onOpenStepPicker={handleOpenStepPicker}
         onTogglePli={togglePliVisible}
-        onOpenSettings={() => setSettingsVisible(true)}
+        onOpenSettings={handleOpenSettings}
       />
 
       <View style={styles.stage}>
         {pliVisible ? (
           <BuildGuidePliSidePanel
-            items={pli.items}
-            error={pli.error}
             model={ldr.model}
+            stepIndex={steps.currentIndex}
             paddingLeft={insets.left}
           />
         ) : null}
@@ -121,20 +134,24 @@ export function BuildGuideScreen({ navigation, route }: Props) {
         onNext={steps.goNext}
       />
 
-      <BuildGuideStepPickerModal
-        visible={stepPickerVisible}
-        currentIndex={steps.currentIndex}
-        totalSteps={steps.totalSteps}
-        onSelectStep={steps.goToStep}
-        onClose={() => setStepPickerVisible(false)}
-      />
+      {stepPickerVisible ? (
+        <BuildGuideStepPickerModal
+          visible={stepPickerVisible}
+          currentIndex={steps.currentIndex}
+          totalSteps={steps.totalSteps}
+          onSelectStep={steps.goToStep}
+          onClose={handleCloseStepPicker}
+        />
+      ) : null}
 
-      <BuildGuideSettingsModal
-        visible={settingsVisible}
-        settings={settings}
-        onClose={() => setSettingsVisible(false)}
-        onChange={updateSetting}
-      />
+      {settingsVisible ? (
+        <BuildGuideSettingsModal
+          visible={settingsVisible}
+          settings={settings}
+          onClose={handleCloseSettings}
+          onChange={updateSetting}
+        />
+      ) : null}
     </View>
   );
 }

@@ -7,6 +7,7 @@ import type {
   CanvasLayoutSize,
   ExpoGlRuntimeContext,
   FxaaRenderTarget,
+  RawGlBuffer,
   RawGlProgram,
   RenderSize,
   RuntimeDrawCall,
@@ -48,11 +49,52 @@ export function resolveRenderSize(
   };
 }
 
+export type RuntimeDrawCallUploadCache = {
+  gl: ExpoGlRuntimeContext;
+  buffersByPositions: Map<Float32Array, RawGlBuffer>;
+};
+
+export function createRuntimeDrawCallUploadCache(
+  gl: ExpoGlRuntimeContext,
+): RuntimeDrawCallUploadCache {
+  return {
+    gl,
+    buffersByPositions: new Map<Float32Array, RawGlBuffer>(),
+  };
+}
+
+export function disposeRuntimeDrawCallUploadCache(
+  cache: RuntimeDrawCallUploadCache | null,
+): void {
+  if (!cache) {
+    return;
+  }
+
+  for (const buffer of cache.buffersByPositions.values()) {
+    cache.gl.deleteBuffer(buffer);
+  }
+  cache.buffersByPositions.clear();
+  cache.gl.bindBuffer(cache.gl.ARRAY_BUFFER, null);
+}
+
+export function pruneRuntimeDrawCallUploadCache(
+  cache: RuntimeDrawCallUploadCache,
+  retainedPositions: ReadonlySet<Float32Array>,
+): void {
+  for (const [positions, buffer] of cache.buffersByPositions) {
+    if (!retainedPositions.has(positions)) {
+      cache.gl.deleteBuffer(buffer);
+      cache.buffersByPositions.delete(positions);
+    }
+  }
+  cache.gl.bindBuffer(cache.gl.ARRAY_BUFFER, null);
+}
+
 export function disposeUploadedFrame(
   gl: ExpoGlRuntimeContext,
   frame: UploadedFrame | null,
 ): void {
-  if (!frame) {
+  if (!frame || frame.bufferOwner !== 'frame') {
     return;
   }
 
@@ -61,40 +103,96 @@ export function disposeUploadedFrame(
   }
 }
 
+function createUploadedDrawCall(
+  gl: ExpoGlRuntimeContext,
+  call: RuntimeDrawCall,
+  buffer: RawGlBuffer,
+): UploadedDrawCall {
+  const isConditional = call.mode === 'conditional-lines';
+  return {
+    mode: call.mode === 'triangles' ? gl.TRIANGLES : gl.LINES,
+    kind: isConditional ? 'conditional' : 'solid',
+    buffer,
+    count: isConditional
+      ? countConditionalVertices(call.positions)
+      : call.positions.length / 3,
+    center: call.center,
+    color: call.color,
+    transparent: call.transparent,
+    polygonOffset: call.polygonOffset,
+  };
+}
+
+function resolveUploadedBuffer(
+  gl: ExpoGlRuntimeContext,
+  positions: Float32Array,
+  cache?: RuntimeDrawCallUploadCache,
+): RawGlBuffer {
+  if (!cache) {
+    const buffer = gl.createBuffer();
+    if (!buffer) {
+      throw new Error('Failed to create Expo GL buffer.');
+    }
+
+    try {
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+      return buffer;
+    } catch (cause: unknown) {
+      gl.deleteBuffer(buffer);
+      throw cause;
+    }
+  }
+
+  if (cache.gl !== gl) {
+    throw new Error('Runtime draw call upload cache belongs to another GL context.');
+  }
+
+  const cached = cache.buffersByPositions.get(positions);
+  if (cached) {
+    return cached;
+  }
+
+  const buffer = gl.createBuffer();
+  if (!buffer) {
+    throw new Error('Failed to create Expo GL buffer.');
+  }
+
+  try {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    cache.buffersByPositions.set(positions, buffer);
+    return buffer;
+  } catch (cause: unknown) {
+    gl.deleteBuffer(buffer);
+    throw cause;
+  }
+}
+
 export function uploadRuntimeDrawCalls(
   gl: ExpoGlRuntimeContext,
   drawCalls: RuntimeDrawCall[],
+  cache?: RuntimeDrawCallUploadCache,
 ): UploadedFrame {
   const calls: UploadedDrawCall[] = [];
+  const uploadedForThisFrame: Array<{ positions: Float32Array; buffer: RawGlBuffer }> = [];
 
   try {
     for (const call of drawCalls) {
-      const buffer = gl.createBuffer();
-      if (!buffer) {
-        throw new Error('Failed to create Expo GL buffer.');
+      const beforeUpload =
+        cache?.buffersByPositions.get(call.positions) ?? null;
+      const buffer = resolveUploadedBuffer(gl, call.positions, cache);
+      calls.push(createUploadedDrawCall(gl, call, buffer));
+      if (!beforeUpload) {
+        uploadedForThisFrame.push({ positions: call.positions, buffer });
       }
-
-      const isConditional = call.mode === 'conditional-lines';
-      const uploadedCall: UploadedDrawCall = {
-        mode: call.mode === 'triangles' ? gl.TRIANGLES : gl.LINES,
-        kind: isConditional ? 'conditional' : 'solid',
-        buffer,
-        count: isConditional
-          ? countConditionalVertices(call.positions)
-          : call.positions.length / 3,
-        center: call.center,
-        color: call.color,
-        transparent: call.transparent,
-        polygonOffset: call.polygonOffset,
-      };
-      calls.push(uploadedCall);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, call.positions, gl.STATIC_DRAW);
     }
   } catch (cause: unknown) {
-    for (const call of calls) {
-      gl.deleteBuffer(call.buffer);
+    for (const { positions, buffer } of uploadedForThisFrame) {
+      gl.deleteBuffer(buffer);
+      if (cache?.buffersByPositions.get(positions) === buffer) {
+        cache.buffersByPositions.delete(positions);
+      }
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     throw cause;
@@ -104,6 +202,7 @@ export function uploadRuntimeDrawCalls(
 
   return {
     calls,
+    bufferOwner: cache ? 'cache' : 'frame',
   };
 }
 

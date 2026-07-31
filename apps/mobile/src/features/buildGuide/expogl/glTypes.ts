@@ -230,4 +230,5 @@ export type RawGlProgram = {
 
 export type UploadedFrame = {
   calls: UploadedDrawCall[];
+  bufferOwner: 'frame' | 'cache';
 };

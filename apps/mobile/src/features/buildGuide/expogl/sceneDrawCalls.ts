@@ -47,15 +47,55 @@ type FlattenedConditionalCacheEntry = {
   flattened: FlattenedGeometry;
 };
 
+type ObjectDrawCallCacheEntry = {
+  flattened: FlattenedGeometry;
+  mode: RuntimeDrawCall['mode'];
+  signature: string;
+  drawCall: RuntimeDrawCall;
+};
+
+type SceneDrawCallCacheState = {
+  flattenedGeometry: WeakMap<THREE.Object3D, FlattenedGeometryCacheEntry>;
+  flattenedConditional: WeakMap<THREE.Object3D, FlattenedConditionalCacheEntry>;
+  objectDrawCalls: WeakMap<THREE.Object3D, ObjectDrawCallCacheEntry>;
+};
+
+const SCENE_DRAW_CALL_CACHE_STATE: unique symbol = Symbol(
+  'SceneDrawCallCacheState',
+);
+
+export type SceneDrawCallCache = {
+  readonly [SCENE_DRAW_CALL_CACHE_STATE]: unknown;
+};
+
 const MATRIX_CACHE_EPSILON = 1e-9;
-const _flattenedGeometryCache = new WeakMap<
-  THREE.Object3D,
-  FlattenedGeometryCacheEntry
->();
-const _flattenedConditionalCache = new WeakMap<
-  THREE.Object3D,
-  FlattenedConditionalCacheEntry
->();
+
+function createSceneDrawCallCacheState(): SceneDrawCallCacheState {
+  return {
+    flattenedGeometry: new WeakMap<THREE.Object3D, FlattenedGeometryCacheEntry>(),
+    flattenedConditional: new WeakMap<
+      THREE.Object3D,
+      FlattenedConditionalCacheEntry
+    >(),
+    objectDrawCalls: new WeakMap<THREE.Object3D, ObjectDrawCallCacheEntry>(),
+  };
+}
+
+export function createSceneDrawCallCache(): SceneDrawCallCache {
+  return {
+    [SCENE_DRAW_CALL_CACHE_STATE]: createSceneDrawCallCacheState(),
+  };
+}
+
+function getSceneDrawCallCacheState(
+  cache: SceneDrawCallCache,
+): SceneDrawCallCacheState {
+  return cache[
+    SCENE_DRAW_CALL_CACHE_STATE
+  ] as SceneDrawCallCacheState;
+}
+
+const _defaultSceneDrawCallCache = createSceneDrawCallCache();
 
 function getFirstMaterial(
   material: THREE.Material | THREE.Material[],
@@ -213,6 +253,66 @@ function resolvePolygonOffset(
   return [offset.polygonOffsetFactor ?? 1, offset.polygonOffsetUnits ?? 1];
 }
 
+function createDrawCallSignature(
+  mode: RuntimeDrawCall['mode'],
+  color: RuntimeColor,
+  transparent: boolean,
+  polygonOffset: readonly [number, number] | null,
+): string {
+  return [
+    mode,
+    color[0],
+    color[1],
+    color[2],
+    color[3],
+    transparent ? 1 : 0,
+    polygonOffset?.[0] ?? '',
+    polygonOffset?.[1] ?? '',
+  ].join('|');
+}
+
+function resolveCachedObjectDrawCall(
+  cache: SceneDrawCallCacheState,
+  object: THREE.Object3D,
+  flattened: FlattenedGeometry,
+  mode: RuntimeDrawCall['mode'],
+  color: RuntimeColor,
+  transparent: boolean,
+  polygonOffset: readonly [number, number] | null,
+): RuntimeDrawCall {
+  const signature = createDrawCallSignature(
+    mode,
+    color,
+    transparent,
+    polygonOffset,
+  );
+  const cached = cache.objectDrawCalls.get(object);
+  if (
+    cached &&
+    cached.flattened === flattened &&
+    cached.mode === mode &&
+    cached.signature === signature
+  ) {
+    return cached.drawCall;
+  }
+
+  const drawCall: RuntimeDrawCall = {
+    mode,
+    positions: flattened.positions,
+    center: flattened.center,
+    color,
+    transparent,
+    polygonOffset,
+  };
+  cache.objectDrawCalls.set(object, {
+    flattened,
+    mode,
+    signature,
+    drawCall,
+  });
+  return drawCall;
+}
+
 function flattenGeometryPositions(
   geometry: THREE.BufferGeometry,
   matrixWorld: THREE.Matrix4,
@@ -251,11 +351,13 @@ function flattenGeometryPositions(
 function flattenObjectGeometryPositions(
   object: THREE.Mesh | THREE.Line,
   matrixWorld: THREE.Matrix4,
+  cache: SceneDrawCallCacheState,
 ): FlattenedGeometry | null {
   const geometry = object.geometry;
   const position = geometry.getAttribute('position');
   if (!position || position.count === 0) {
-    _flattenedGeometryCache.delete(object);
+    cache.flattenedGeometry.delete(object);
+    cache.objectDrawCalls.delete(object);
     return null;
   }
 
@@ -264,7 +366,7 @@ function flattenObjectGeometryPositions(
   const indexVersion = getAttributeVersion(index);
   const positionCount = getAttributeCount(position);
   const indexCount = getAttributeCount(index);
-  const cached = _flattenedGeometryCache.get(object);
+  const cached = cache.flattenedGeometry.get(object);
   if (
     cached &&
     cached.geometry === geometry &&
@@ -281,11 +383,12 @@ function flattenObjectGeometryPositions(
 
   const flattened = flattenGeometryPositions(geometry, matrixWorld);
   if (!flattened) {
-    _flattenedGeometryCache.delete(object);
+    cache.flattenedGeometry.delete(object);
+    cache.objectDrawCalls.delete(object);
     return null;
   }
 
-  _flattenedGeometryCache.set(object, {
+  cache.flattenedGeometry.set(object, {
     geometry,
     position,
     index,
@@ -361,6 +464,7 @@ function flattenConditionalLineGeometry(
 function flattenObjectConditionalLineGeometry(
   object: THREE.Line,
   matrixWorld: THREE.Matrix4,
+  cache: SceneDrawCallCacheState,
 ): FlattenedGeometry | null {
   const geometry = object.geometry;
   const position = geometry.getAttribute('position');
@@ -368,7 +472,8 @@ function flattenObjectConditionalLineGeometry(
   const p3 = geometry.getAttribute('p3');
   const p4 = geometry.getAttribute('p4');
   if (!position || !p2 || !p3 || !p4 || position.count === 0) {
-    _flattenedConditionalCache.delete(object);
+    cache.flattenedConditional.delete(object);
+    cache.objectDrawCalls.delete(object);
     return null;
   }
 
@@ -377,7 +482,7 @@ function flattenObjectConditionalLineGeometry(
   const p3Version = getAttributeVersion(p3);
   const p4Version = getAttributeVersion(p4);
   const positionCount = getAttributeCount(position);
-  const cached = _flattenedConditionalCache.get(object);
+  const cached = cache.flattenedConditional.get(object);
   if (
     cached &&
     cached.geometry === geometry &&
@@ -397,11 +502,12 @@ function flattenObjectConditionalLineGeometry(
 
   const flattened = flattenConditionalLineGeometry(geometry, matrixWorld);
   if (!flattened) {
-    _flattenedConditionalCache.delete(object);
+    cache.flattenedConditional.delete(object);
+    cache.objectDrawCalls.delete(object);
     return null;
   }
 
-  _flattenedConditionalCache.set(object, {
+  cache.flattenedConditional.set(object, {
     geometry,
     position,
     p2,
@@ -419,7 +525,11 @@ function flattenObjectConditionalLineGeometry(
   return flattened;
 }
 
-export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[] {
+export function collectRuntimeDrawCalls(
+  root: THREE.Object3D,
+  cache: SceneDrawCallCache = _defaultSceneDrawCallCache,
+): RuntimeDrawCall[] {
+  const cacheState = getSceneDrawCallCacheState(cache);
   const calls: RuntimeDrawCall[] = [];
 
   root.updateMatrixWorld(true);
@@ -452,36 +562,47 @@ export function collectRuntimeDrawCalls(root: THREE.Object3D): RuntimeDrawCall[]
       const flattened = flattenObjectConditionalLineGeometry(
         object,
         relativeMatrix,
+        cacheState,
       );
       if (!flattened || flattened.positions.length === 0) {
         return;
       }
 
-      calls.push({
-        mode: 'conditional-lines',
-        positions: flattened.positions,
-        center: flattened.center,
-        color: getMaterialColor(material),
-        transparent: false,
-        polygonOffset: null,
-      });
+      calls.push(
+        resolveCachedObjectDrawCall(
+          cacheState,
+          object,
+          flattened,
+          'conditional-lines',
+          getMaterialColor(material),
+          false,
+          null,
+        ),
+      );
       return;
     }
 
-    const flattened = flattenObjectGeometryPositions(object, relativeMatrix);
+    const flattened = flattenObjectGeometryPositions(
+      object,
+      relativeMatrix,
+      cacheState,
+    );
     if (!flattened || flattened.positions.length === 0) {
       return;
     }
 
     const mode = object instanceof THREE.Mesh ? 'triangles' : 'lines';
-    calls.push({
-      mode,
-      positions: flattened.positions,
-      center: flattened.center,
-      color: getMaterialColor(material),
-      transparent: isTransparentMaterial(material),
-      polygonOffset: resolvePolygonOffset(material, mode),
-    });
+    calls.push(
+      resolveCachedObjectDrawCall(
+        cacheState,
+        object,
+        flattened,
+        mode,
+        getMaterialColor(material),
+        isTransparentMaterial(material),
+        resolvePolygonOffset(material, mode),
+      ),
+    );
   });
 
   return orderRuntimeDrawCalls(calls);

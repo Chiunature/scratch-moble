@@ -18,6 +18,7 @@ import {
   packPliItems,
   type BuildGuidePliLayoutItem,
 } from '../layout/packPliItems';
+import type { CanvasLayoutSize } from '../../expogl/glTypes';
 import { BuildGuidePliExpoGlLayer } from '../renderers/BuildGuidePliExpoGlLayer';
 import type { PliThumbnailRequest } from '../renderers/types';
 import { styles } from './BuildGuidePliPanel.styles';
@@ -39,7 +40,7 @@ function cardFrameStyle(item: BuildGuidePliLayoutItem): ViewStyle {
   };
 }
 
-function PliCardSurface({
+const PliCardSurface = React.memo(function PliCardSurface({
   item,
   hideSwatch,
 }: {
@@ -59,9 +60,13 @@ function PliCardSurface({
       </View>
     </View>
   );
-}
+});
 
-function PliCardContent({ item }: { item: BuildGuidePliLayoutItem }) {
+const PliCardContent = React.memo(function PliCardContent({
+  item,
+}: {
+  item: BuildGuidePliLayoutItem;
+}) {
   return (
     <View style={[styles.cardContent, cardFrameStyle(item)]}>
       <View style={styles.thumbnailSlot}>
@@ -82,7 +87,51 @@ function PliCardContent({ item }: { item: BuildGuidePliLayoutItem }) {
       ) : null}
     </View>
   );
-}
+});
+
+type PliGridContentProps = {
+  items: ReadonlyArray<BuildGuidePliLayoutItem>;
+  layoutSize: CanvasLayoutSize;
+  model: LoadedLdrModel | null;
+  shouldRenderThumbnails: boolean;
+  thumbnails: ReadonlyArray<PliThumbnailRequest>;
+  onThumbnailUnavailable: () => void;
+  onThumbnailsReady: () => void;
+};
+
+const PliGridContent = React.memo(function PliGridContent({
+  items,
+  layoutSize,
+  model,
+  shouldRenderThumbnails,
+  thumbnails,
+  onThumbnailUnavailable,
+  onThumbnailsReady,
+}: PliGridContentProps) {
+  return (
+    <>
+      {items.map(item => (
+        <PliCardSurface
+          key={`${item.key}:surface`}
+          item={item}
+          hideSwatch={shouldRenderThumbnails}
+        />
+      ))}
+      {shouldRenderThumbnails ? (
+        <BuildGuidePliExpoGlLayer
+          layoutSize={layoutSize}
+          model={model}
+          thumbnails={thumbnails}
+          onUnavailable={onThumbnailUnavailable}
+          onReady={onThumbnailsReady}
+        />
+      ) : null}
+      {items.map(item => (
+        <PliCardContent key={item.key} item={item} />
+      ))}
+    </>
+  );
+});
 
 export function BuildGuidePliPanel({
   items,
@@ -120,6 +169,13 @@ export function BuildGuidePliPanel({
       })),
     [layout.items],
   );
+  const layoutSize = useMemo<CanvasLayoutSize>(
+    () => ({
+      height: layout.contentHeight,
+      width: layout.contentWidth,
+    }),
+    [layout.contentHeight, layout.contentWidth],
+  );
   const hasModel = model != null;
   const [thumbnailRendererUnavailable, setThumbnailRendererUnavailable] =
     useState(false);
@@ -148,18 +204,28 @@ export function BuildGuidePliPanel({
     setThumbnailRendererUnavailable(false);
   }, [hasModel, thumbnailsKey]);
 
+  const gridStyle = useMemo<StyleProp<ViewStyle>>(
+    () => [
+      styles.grid,
+      {
+        height: layoutSize.height,
+        width: layoutSize.width,
+        opacity: showLoading ? 0 : 1,
+      },
+    ],
+    [layoutSize.height, layoutSize.width, showLoading],
+  );
+  const loadingOverlayStyle = useMemo<StyleProp<ViewStyle>>(
+    () => [
+      styles.loadingOverlay,
+      { minHeight: Math.max(layoutSize.height, 120) },
+    ],
+    [layoutSize.height],
+  );
+
   if (layout.items.length === 0) {
     return null;
   }
-
-  const gridStyle: StyleProp<ViewStyle> = [
-    styles.grid,
-    {
-      height: layout.contentHeight,
-      width: layout.contentWidth,
-      opacity: showLoading ? 0 : 1,
-    },
-  ];
 
   return (
     <View style={styles.container}>
@@ -170,40 +236,18 @@ export function BuildGuidePliPanel({
           // 隐藏时仍参与布局，避免 loading 结束高度跳动
           pointerEvents={showLoading ? 'none' : 'auto'}
         >
-          {/* 底层：卡片背景与色块占位（GL 不可用时露出色块） */}
-          {layout.items.map(item => (
-            <PliCardSurface
-              key={`${item.key}:surface`}
-              item={item}
-              hideSwatch={shouldRenderThumbnails}
-            />
-          ))}
-          {/* 中层：整块 GL 画布，按 viewport 在各卡片缩略图槽位绘制 3D 零件 */}
-          {shouldRenderThumbnails ? (
-            <BuildGuidePliExpoGlLayer
-              layoutSize={{
-                height: layout.contentHeight,
-                width: layout.contentWidth,
-              }}
-              model={model}
-              thumbnails={thumbnails}
-              onUnavailable={handleThumbnailUnavailable}
-              onReady={handleThumbnailsReady}
-            />
-          ) : null}
-          {/* 顶层：数量角标与标题等文字，盖在 GL 之上 */}
-          {layout.items.map(item => (
-            <PliCardContent key={item.key} item={item} />
-          ))}
+          <PliGridContent
+            items={layout.items}
+            layoutSize={layoutSize}
+            model={model ?? null}
+            shouldRenderThumbnails={shouldRenderThumbnails}
+            thumbnails={thumbnails}
+            onThumbnailUnavailable={handleThumbnailUnavailable}
+            onThumbnailsReady={handleThumbnailsReady}
+          />
         </View>
         {showLoading ? (
-          <View
-            accessibilityLabel={t('pliLoading')}
-            style={[
-              styles.loadingOverlay,
-              { minHeight: Math.max(layout.contentHeight, 120) },
-            ]}
-          >
+          <View accessibilityLabel={t('pliLoading')} style={loadingOverlayStyle}>
             <ActivityIndicator color={colors.primary} size="small" />
             <Text style={styles.loadingText}>{t('pliLoading')}</Text>
           </View>
