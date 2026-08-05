@@ -48,6 +48,36 @@ describe('normalizeWorkspaceShadows', () => {
     expect(state.inputs.CONDITION.shadow).toBeUndefined();
   });
 
+  test('migrates legacy multi-port reporter to pair dropdown shadow', () => {
+    const workspace = {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          {
+            type: 'pair',
+            inputs: {
+              PORTS: {
+                block: {
+                  type: 'port_dropdown',
+                  fields: { PORT: '0,1' },
+                },
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    normalizeDefaultShadowReportersInWorkspaceState(workspace);
+
+    expect(workspace.blocks.blocks[0].inputs.PORTS).toEqual({
+      shadow: {
+        type: 'port_pair_dropdown',
+        fields: { PORT: '0,1' },
+      },
+    });
+  });
+
   test('normalizes workspace save payload roots', () => {
     const workspace = {
       blocks: {

@@ -28,7 +28,6 @@ import type {
   RnMatrixLightOpenMessage,
   RnNotePickerOpenMessage,
   RnNumberSliderOpenMessage,
-  RnPortPickerOpenMessage,
   RnVariablePromptOpenMessage,
 } from '@scratch-mobile/shared';
 import {
@@ -45,7 +44,6 @@ import {
   MatrixLightOverlay,
   NotePickerOverlay,
   NumberSliderOverlay,
-  PortPickerOverlay,
   resetInjectEditorMessageDedup,
   VariablePromptOverlay,
 } from '../../features/editor';
@@ -111,8 +109,6 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   //存储当前激活的数字滑块会话
   const [rnSliderSession, setRnSliderSession] =
     useState<RnNumberSliderOpenMessage | null>(null);
-  const [rnPortPickerSession, setRnPortPickerSession] =
-    useState<RnPortPickerOpenMessage | null>(null);
   const [rnMatrixLightSession, setRnMatrixLightSession] =
     useState<RnMatrixLightOpenMessage | null>(null);
   const [rnNotePickerSession, setRnNotePickerSession] =
@@ -293,16 +289,6 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
           return;
         case 'editor.numberSlider.close':
           setRnSliderSession(current =>
-            current?.sessionId === message.sessionId ? null : current,
-          );
-          return;
-        case 'editor.portPicker.open':
-          setRnPortPickerSession(current =>
-            current?.sessionId === message.sessionId ? current : message,
-          );
-          return;
-        case 'editor.portPicker.close':
-          setRnPortPickerSession(current =>
             current?.sessionId === message.sessionId ? null : current,
           );
           return;
@@ -544,26 +530,6 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
             });
           }}
         />
-        {rnPortPickerSession ? (
-          <PortPickerOverlay
-            session={rnPortPickerSession}
-            onValueChange={(sessionId, value) => {
-              injectEditorMessage(webViewRef.current, {
-                type: 'editor.portPicker.value',
-                sessionId,
-                value,
-              });
-            }}
-            onClose={sessionId => {
-              setRnPortPickerSession(null);
-              resetInjectEditorMessageDedup();
-              injectEditorMessage(webViewRef.current, {
-                type: 'editor.portPicker.close',
-                sessionId,
-              });
-            }}
-          />
-        ) : null}
         <MatrixLightOverlay
           session={rnMatrixLightSession}
           onCommit={handleMatrixLightCommit}

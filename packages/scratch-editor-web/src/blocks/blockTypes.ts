@@ -6,8 +6,10 @@ import { TOOLBOX_AT_RIGHT } from "scratch-blocks";
  */
 export const BLOCK_TYPES = {
   common: {
-    /** 通用端口下拉报告块（Number），可作为任意 PORT/PORTS 输入槽的默认阴影 */
+    /** 通用单端口下拉报告块（Number），可作为 PORT/PORTS 输入槽的默认阴影 */
     portDropdown: 'port_dropdown',
+    /** 通用双端口下拉报告块（Number list），用于需要两个端口的 PORTS 输入槽 */
+    portPairDropdown: 'port_pair_dropdown',
     /** 整数滑块阴影（precision=1） */
     integerSlider: 'number_slider_integer',
     /** 小数滑块阴影（默认 precision=0.1） */

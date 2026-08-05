@@ -1,7 +1,6 @@
 import type { EditorInMessage } from '@scratch-mobile/shared';
 import { handleEditorLocaleInbound } from './editorLocaleInbound';
 import { handleNumberSliderInbound } from '../workspace-custom/fields/numberSliderEditor';
-import { handlePortPickerInbound } from '../workspace-custom/fields/portPickerEditor';
 import { handleMatrixLightInbound } from '../workspace-custom/fields/matrixLightEditor';
 import { handleNotePickerInbound } from '../workspace-custom/fields/notePickerEditor';
 import { handleHandleShankInbound } from '../workspace-custom/fields/handleShankPickerEditor';
@@ -21,10 +20,6 @@ export function handleMessageFromNative(message: EditorInMessage): void {
     case 'editor.numberSlider.value':
     case 'editor.numberSlider.close':
       handleNumberSliderInbound(message);
-      break;
-    case 'editor.portPicker.value':
-    case 'editor.portPicker.close':
-      handlePortPickerInbound(message);
       break;
     case 'editor.matrixLight.commit':
     case 'editor.matrixLight.close':

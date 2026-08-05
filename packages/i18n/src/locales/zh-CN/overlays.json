@@ -9,35 +9,6 @@
     "variableName": "变量名称",
     "listName": "列表名称"
   },
-  "portPicker": {
-    "sensorSection": "传感器 A–D",
-    "motorSection": "电机 E–H",
-    "currentSelection": "当前选择",
-    "selectedCount": "已选 {{count}}/{{max}}",
-    "confirmSelect": "确认选择",
-    "portLabel": "端口 {{label}}",
-    "selectedPorts": "已选端口",
-    "interfaceType": "接口类型",
-    "deviceName": "设备名称",
-    "deviceTypeLabel": "设备类型",
-    "status": "状态",
-    "motorInterface": "电机接口",
-    "sensorInterface": "传感器接口",
-    "motorDeviceName": "电机 {{label}}",
-    "listSeparator": "、",
-    "legend": {
-      "selected": "已选中",
-      "connected": "已连接",
-      "warning": "异常",
-      "disconnected": "未连接",
-      "motor": "电机口"
-    },
-    "runtime": {
-      "noMonitor": "无监控数据",
-      "disconnected": "未连接",
-      "connectionError": "连接异常"
-    }
-  },
   "matrixLight": {
     "title": "编辑矩阵灯 (7×5)",
     "hint": "点击切换，按住滑动连续绘制",

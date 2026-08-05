@@ -4,7 +4,6 @@
  *
  * 须用 setStyle(父块 styleName)，勿用 setColour(getColour())，否则阴影会变成
  * auto_#9966ff，打开 field_dropdown 时会拼成 auto_#9966ff_selected 并触发 Invalid colour。
- * RN 端口弹窗使用自有主题（portPickerOptions），不从 Web 取色。
  */
 import * as ScratchBlocks from 'scratch-blocks';
 import { Events, renderManagement } from 'scratch-blocks';
@@ -12,11 +11,15 @@ import { Events, renderManagement } from 'scratch-blocks';
 import { BLOCK_TYPES } from './blockTypes';
 import type { Workspace } from '../codegen/types';
 
-const PORT_DROPDOWN_TYPE = BLOCK_TYPES.common.portDropdown;
+const PORT_REPORTER_TYPES = new Set<string>([
+  BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.portPairDropdown,
+]);
 
 /** 使用 colours_from_parent 扩展的 reporter / shadow 块 */
 export const COLOURS_FROM_PARENT_BLOCK_TYPES = new Set<string>([
   BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.portPairDropdown,
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,
   BLOCK_TYPES.common.positiveKeyboard,
@@ -36,7 +39,7 @@ function getHostParent(block: ColouredBlock): ColouredBlock | null {
   if (!parent) {
     return null;
   }
-  if (parent.type === PORT_DROPDOWN_TYPE) {
+  if (PORT_REPORTER_TYPES.has(parent.type)) {
     return null;
   }
   return parent;

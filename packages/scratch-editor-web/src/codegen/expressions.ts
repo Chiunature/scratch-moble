@@ -42,7 +42,10 @@ export function expressionBlockToPython(block: ScratchBlock): string {
     return getFieldValue(block, 'NUM') ?? '0';
   }
 
-  if (block.type === BLOCK_TYPES.common.portDropdown) {
+  if (
+    block.type === BLOCK_TYPES.common.portDropdown ||
+    block.type === BLOCK_TYPES.common.portPairDropdown
+  ) {
     const raw = getFieldValue(block, 'PORT') ?? '0';
     const ports = parsePortFieldValue(raw);
     if (ports.length === 1) {
@@ -398,7 +401,10 @@ export function multiPortsInputToPythonArgs(
     return parsePortFieldValue(fallback);
   }
 
-  if (targetBlock.type === BLOCK_TYPES.common.portDropdown) {
+  if (
+    targetBlock.type === BLOCK_TYPES.common.portDropdown ||
+    targetBlock.type === BLOCK_TYPES.common.portPairDropdown
+  ) {
     const raw = getFieldValue(targetBlock, 'PORT') ?? fallback;
     return parsePortFieldValue(raw);
   }

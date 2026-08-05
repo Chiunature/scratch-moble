@@ -3,6 +3,7 @@ import { BLOCK_TYPES } from '../blocks/blockTypes';
 /** toolbox 默认 shadow reporter 类型；槽内仅字段、无用户拖入的独立逻辑块 */
 export const DEFAULT_SHADOW_REPORTER_BLOCK_TYPES = [
   BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.portPairDropdown,
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,
   BLOCK_TYPES.common.positiveKeyboard,
@@ -103,6 +104,16 @@ function walkSerializedBlockTree(
   }
 }
 
+function migrateLegacyPortPairReporter(block: SerializedBlockState): void {
+  if (block.type !== BLOCK_TYPES.common.portDropdown) {
+    return;
+  }
+  const port = block.fields?.PORT;
+  if (typeof port === 'string' && port.includes(',')) {
+    block.type = BLOCK_TYPES.common.portPairDropdown;
+  }
+}
+
 /** 规范化 Blockly workspace 序列化 JSON，避免默认 shadow 以 block 存盘/加载后出现白底 reporter。 */
 export function normalizeDefaultShadowReportersInWorkspaceState(
   state: unknown,
@@ -112,6 +123,7 @@ export function normalizeDefaultShadowReportersInWorkspaceState(
   }
 
   walkSerializedBlockTree(state, block => {
+    migrateLegacyPortPairReporter(block);
     demoteMatchingBlocksToShadows(block, DEFAULT_SHADOW_REPORTER_TYPE_SET);
   });
 

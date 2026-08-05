@@ -25,17 +25,6 @@ export type EditorOutMessage =
       sessionId: string;
     }
   | {
-      type: 'editor.portPicker.open';
-      sessionId: string;
-      value: string;
-      /** 1 = 单选，>1 = 多选（如 2） */
-      maxSelections?: number;
-    }
-  | {
-      type: 'editor.portPicker.close';
-      sessionId: string;
-    }
-  | {
       type: 'editor.matrixLight.open';
       sessionId: string;
       /** 逗号分隔的 7 行 hex，与 field_matrix_light 存储格式一致 */
@@ -101,15 +90,6 @@ export type EditorInMessage =
     }
   | {
       type: 'editor.numberSlider.close';
-      sessionId: string;
-    }
-  | {
-      type: 'editor.portPicker.value';
-      sessionId: string;
-      value: string;
-    }
-  | {
-      type: 'editor.portPicker.close';
       sessionId: string;
     }
   | {
@@ -185,11 +165,6 @@ export type RnWorkspaceLoadedMessage = Extract<
 export type RnNumberSliderOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.numberSlider.open' }
->;
-
-export type RnPortPickerOpenMessage = Extract<
-  EditorOutMessage,
-  { type: 'editor.portPicker.open' }
 >;
 
 export type RnMatrixLightOpenMessage = Extract<

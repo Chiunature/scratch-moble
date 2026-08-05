@@ -9,35 +9,6 @@
     "variableName": "Variable name",
     "listName": "List name"
   },
-  "portPicker": {
-    "sensorSection": "Sensors A–D",
-    "motorSection": "Motors E–H",
-    "currentSelection": "Current selection",
-    "selectedCount": "Selected {{count}}/{{max}}",
-    "confirmSelect": "Confirm selection",
-    "portLabel": "Port {{label}}",
-    "selectedPorts": "Selected ports",
-    "interfaceType": "Interface type",
-    "deviceName": "Device name",
-    "deviceTypeLabel": "Device type",
-    "status": "Status",
-    "motorInterface": "Motor port",
-    "sensorInterface": "Sensor port",
-    "motorDeviceName": "Motor {{label}}",
-    "listSeparator": ", ",
-    "legend": {
-      "selected": "Selected",
-      "connected": "Connected",
-      "warning": "Warning",
-      "disconnected": "Disconnected",
-      "motor": "Motor port"
-    },
-    "runtime": {
-      "noMonitor": "No monitor data",
-      "disconnected": "Disconnected",
-      "connectionError": "Connection error"
-    }
-  },
   "matrixLight": {
     "title": "Edit matrix (7×5)",
     "hint": "Tap to toggle, hold and drag to paint",

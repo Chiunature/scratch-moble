@@ -9,35 +9,6 @@
     "variableName": "變數名稱",
     "listName": "清單名稱"
   },
-  "portPicker": {
-    "sensorSection": "感測器 A–D",
-    "motorSection": "電機 E–H",
-    "currentSelection": "目前選擇",
-    "selectedCount": "已選 {{count}}/{{max}}",
-    "confirmSelect": "確認選擇",
-    "portLabel": "埠 {{label}}",
-    "selectedPorts": "已選埠",
-    "interfaceType": "介面類型",
-    "deviceName": "裝置名稱",
-    "deviceTypeLabel": "裝置類型",
-    "status": "狀態",
-    "motorInterface": "電機介面",
-    "sensorInterface": "感測器介面",
-    "motorDeviceName": "電機 {{label}}",
-    "listSeparator": "、",
-    "legend": {
-      "selected": "已選中",
-      "connected": "已連接",
-      "warning": "異常",
-      "disconnected": "未連接",
-      "motor": "電機口"
-    },
-    "runtime": {
-      "noMonitor": "無監控資料",
-      "disconnected": "未連接",
-      "connectionError": "連接異常"
-    }
-  },
   "matrixLight": {
     "title": "編輯矩陣燈 (7×5)",
     "hint": "點擊切換，按住滑動連續繪製",

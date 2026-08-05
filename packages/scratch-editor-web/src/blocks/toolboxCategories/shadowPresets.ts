@@ -11,14 +11,13 @@ export function portShadow(port: string | number = '0') {
 }
 
 /**
- * toolbox 多选端口阴影：type 仍为 port_dropdown，PORT 为 "0,1"。
- * 字段在 setValue/doClassValidation 时根据逗号自动切为多选（见 patchFieldPortPicker）。
+ * toolbox 双端口阴影：普通下拉选项保存为 "0,1"。
  */
 export function portShadowMulti(
   ports: [string | number, string | number] = ['0', '1'],
 ) {
   return {
-    type: BLOCK_TYPES.common.portDropdown,
+    type: BLOCK_TYPES.common.portPairDropdown,
     fields: { PORT: ports.map(String).join(',') },
   } as const;
 }
