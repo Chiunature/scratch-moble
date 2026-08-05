@@ -17,8 +17,6 @@ import {
   AnimOffPreview,
   AnimSlowPreview,
   StudHollowPreview,
-  StudLogoPreview,
-  StudPlainPreview,
   StudSolidPreview,
 } from './BuildGuideSettingsPreviews';
 
@@ -115,28 +113,6 @@ export function BuildGuideSettingsModal({
                   <StudHollowPreview selected={settings.studHighContrast === 0} />
                 </SettingsOptionChip>
               </View>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('settingsStudLogo')}</Text>
-              <Text style={styles.sectionHint}>{t('settingsStudLogoHint')}</Text>
-              <View style={styles.optionRow}>
-                <SettingsOptionChip
-                  selected={settings.studLogo === 0}
-                  label={t('studLogoOff')}
-                  onPress={() => onChange('studLogo', 0)}
-                >
-                  <StudPlainPreview selected={settings.studLogo === 0} />
-                </SettingsOptionChip>
-                <SettingsOptionChip
-                  selected={settings.studLogo === 1}
-                  label={t('studLogoOn')}
-                  onPress={() => onChange('studLogo', 1)}
-                >
-                  <StudLogoPreview selected={settings.studLogo === 1} />
-                </SettingsOptionChip>
-              </View>
-              <Text style={styles.studReloadNote}>{t('studReloadNote')}</Text>
             </View>
 
             <View style={styles.section}>

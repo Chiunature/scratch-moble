@@ -87,15 +87,4 @@ export const styles = StyleSheet.create({
   optionLabelSelected: {
     color: colors.primary,
   },
-  studReloadNote: {
-    backgroundColor: '#fff7ed',
-    borderColor: '#fed7aa',
-    borderRadius: 10,
-    borderWidth: 1,
-    color: '#9a3412',
-    fontSize: fontSize.xs,
-    lineHeight: 18,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
 });

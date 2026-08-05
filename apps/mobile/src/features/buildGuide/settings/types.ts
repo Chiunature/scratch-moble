@@ -6,9 +6,6 @@ export type LineContrastMode = 0 | 1;
 /** 0=关, 1=开（圆柱黑实心） */
 export type StudHighContrastMode = 0 | 1;
 
-/** 0=无 logo, 1=线条 LEGO logo */
-export type StudLogoMode = 0 | 1;
-
 /**
  * 新零件高亮：
  * 0=新件红描边
@@ -24,7 +21,6 @@ export type StepAnimationMode = 0 | 1 | 2;
 export type BuildGuideSettings = {
   lineContrast: LineContrastMode;
   studHighContrast: StudHighContrastMode;
-  studLogo: StudLogoMode;
   showOldColors: ShowOldColorsMode;
   showStepRotationAnimations: StepAnimationMode;
 };
@@ -32,7 +28,6 @@ export type BuildGuideSettings = {
 export const DEFAULT_BUILD_GUIDE_SETTINGS: BuildGuideSettings = {
   lineContrast: 0,
   studHighContrast: 0,
-  studLogo: 0,
   showOldColors: 0,
   showStepRotationAnimations: 1,
 };
@@ -40,8 +35,8 @@ export const DEFAULT_BUILD_GUIDE_SETTINGS: BuildGuideSettings = {
 /** 切换后需重建 stud 几何并重载模型 */
 export function isGeometryOption(
   key: keyof BuildGuideSettings,
-): key is 'studHighContrast' | 'studLogo' {
-  return key === 'studHighContrast' || key === 'studLogo';
+): key is 'studHighContrast' {
+  return key === 'studHighContrast';
 }
 
 /** 切换后只需重刷材质外观 */

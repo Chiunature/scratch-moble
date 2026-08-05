@@ -38,7 +38,7 @@ export function syncLdrOptions(settings: BuildGuideSettings): void {
     lineContrast: settings.lineContrast,
     showOldColors: settings.showOldColors,
     studHighContrast: settings.studHighContrast,
-    studLogo: settings.studLogo,
+    studLogo: 0,
     oldColor: LDR.Options?.oldColor ?? 0xffff6f,
     lineColor: settings.lineContrast === 0 ? 0 : 0x333333,
   };

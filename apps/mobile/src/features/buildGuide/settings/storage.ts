@@ -7,7 +7,6 @@ import {
   type ShowOldColorsMode,
   type StepAnimationMode,
   type StudHighContrastMode,
-  type StudLogoMode,
 } from './types';
 
 const STORAGE_KEY = '@scratch-mobile/buildGuide/settings/v1';
@@ -37,7 +36,6 @@ export function normalizeBuildGuideSettings(
       [0, 1],
       base.studHighContrast,
     ),
-    studLogo: asMode<StudLogoMode>(raw.studLogo, [0, 1], base.studLogo),
     showOldColors: asMode<ShowOldColorsMode>(
       raw.showOldColors,
       [0, 1, 2, 3],

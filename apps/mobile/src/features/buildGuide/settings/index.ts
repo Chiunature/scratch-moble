@@ -4,7 +4,6 @@ export type {
   ShowOldColorsMode,
   StepAnimationMode,
   StudHighContrastMode,
-  StudLogoMode,
 } from './types';
 export {
   DEFAULT_BUILD_GUIDE_SETTINGS,

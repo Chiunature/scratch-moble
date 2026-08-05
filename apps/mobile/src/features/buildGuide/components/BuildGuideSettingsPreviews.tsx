@@ -57,29 +57,6 @@ export function StudHollowPreview({ selected }: PreviewProps) {
   );
 }
 
-export function StudPlainPreview({ selected }: PreviewProps) {
-  return (
-    <Svg width={56} height={44} viewBox="0 0 56 44">
-      <Circle cx={28} cy={22} r={14} fill="#e2e8f0" stroke={selected ? colors.primary : '#94a3b8'} strokeWidth={2} />
-    </Svg>
-  );
-}
-
-export function StudLogoPreview({ selected }: PreviewProps) {
-  return (
-    <Svg width={56} height={44} viewBox="0 0 56 44">
-      <Circle cx={28} cy={22} r={14} fill="#e2e8f0" stroke={selected ? colors.primary : '#94a3b8'} strokeWidth={2} />
-      <Path
-        d="M16 22h4M22 18v8M26 18h5c1.5 0 2.5 1 2.5 2.5S32.5 23 31 23h-5M26 23h5c1.5 0 2.5 1 2.5 2.5S32.5 28 31 28h-5M36 18v8M40 18h4"
-        stroke={selected ? colors.primary : '#334155'}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
 export function HighlightRedPreview({ selected }: PreviewProps) {
   return (
     <Svg width={56} height={44} viewBox="0 0 56 44">
