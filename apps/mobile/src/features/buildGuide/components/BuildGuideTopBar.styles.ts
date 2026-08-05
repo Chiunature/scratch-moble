@@ -5,8 +5,8 @@ import { colors, fontSize, fontWeight, spacing } from '../../../theme';
 export const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
-    borderBottomColor: '#e2e8f0',
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    // borderBottomColor: '#e2e8f0',
+    // borderBottomWidth: StyleSheet.hairlineWidth,
     paddingBottom: spacing.sm,
   },
   row: {
@@ -25,7 +25,6 @@ export const styles = StyleSheet.create({
   },
   modelName: {
     color: colors.textMuted,
-    flex: 1,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },

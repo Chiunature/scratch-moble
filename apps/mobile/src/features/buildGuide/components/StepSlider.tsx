@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { Animated, PanResponder, View } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 
 import {
   FILL_CAP_SIZE,
@@ -28,6 +29,8 @@ type StepSliderProps = {
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(value, max));
 
+const FRAME_WIDTH_EPSILON = 0.5;
+
 export function StepSlider({
   currentIndex,
   totalSteps,
@@ -49,9 +52,23 @@ export function StepSlider({
 
   //把手中心的可移动边界，初始为轨道内边距 + 把手半径
   const minX = THUMB_EDGE_INSET + THUMB_SIZE / 2;
-  //最大可移动边界，初始为轨道实际滑动宽度 - 轨道内边距 - 把手半径，确保把手边缘不越过轨道内壁。
-  const maxX = Math.max(frameWidth - THUMB_EDGE_INSET - THUMB_SIZE / 2, minX);
-  const range = maxX - minX;
+  const getMetricsForFrameWidth = useCallback(
+    (width: number) => {
+      const frameMaxX = Math.max(
+        width - THUMB_EDGE_INSET - THUMB_SIZE / 2,
+        minX,
+      );
+
+      return {
+        maxX: frameMaxX,
+        range: frameMaxX - minX,
+      };
+    },
+    [minX],
+  );
+
+  // 可滑动距离来自轨道实际宽度，用于步骤下标和拇指中心位置之间的换算。
+  const { range } = getMetricsForFrameWidth(frameWidth);
 
   const translateX = useRef(new Animated.Value(minX)).current;
   // 0% 时用 fill 自身伪造左侧圆，宽度必须等于 fill 的真实高度，即轨道扣掉上下边框后的内径。
@@ -62,40 +79,76 @@ export function StepSlider({
   const thumbXRef = useRef(minX);
   const draggingRef = useRef(false);
   const grantXRef = useRef(minX);
+  const grantPageXRef = useRef(0);
+  const pendingFrameWidthRef = useRef<number | null>(null);
 
   // 步骤下标 <-> 拇指中心位置 的换算；无步骤时靠左，只有一步时才居中。
   const xForIndex = useCallback(
-    (index: number) => {
+    (index: number, activeRange = range) => {
       if (hasNoSteps) {
         return minX;
       }
 
       if (hasSingleStep) {
-        return minX + range / 2;
+        return minX + activeRange / 2;
       }
 
-      return minX + (index / maxIndex) * range;
+      return minX + (index / maxIndex) * activeRange;
     },
     [hasNoSteps, hasSingleStep, maxIndex, minX, range],
   );
 
   const indexForX = useCallback(
-    (x: number) =>
-      maxIndex === 0 || range <= 0
+    (x: number, activeRange = range) =>
+      maxIndex === 0 || activeRange <= 0
         ? 0
-        : clamp(Math.round(((x - minX) / range) * maxIndex), 0, maxIndex),
+        : clamp(Math.round(((x - minX) / activeRange) * maxIndex), 0, maxIndex),
     [maxIndex, minX, range],
   );
 
   const snapTo = useCallback(
-    (index: number) => {
-      const x = xForIndex(index);
+    (index: number, activeRange = range) => {
+      const x = xForIndex(index, activeRange);
       thumbXRef.current = x;
       translateX.setValue(x);
       setDisplayIndex(index);
       onDisplayIndexChange?.(index);
     },
-    [onDisplayIndexChange, translateX, xForIndex],
+    [onDisplayIndexChange, range, translateX, xForIndex],
+  );
+
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const width = event.nativeEvent.layout.width;
+
+      if (draggingRef.current) {
+        pendingFrameWidthRef.current = width;
+        return;
+      }
+
+      if (Math.abs(width - frameWidth) <= FRAME_WIDTH_EPSILON) {
+        return;
+      }
+
+      setFrameWidth(width);
+    },
+    [frameWidth],
+  );
+
+  const flushPendingFrameWidth = useCallback(() => {
+    const width = pendingFrameWidthRef.current;
+    pendingFrameWidthRef.current = null;
+
+    if (width === null || Math.abs(width - frameWidth) <= FRAME_WIDTH_EPSILON) {
+      return;
+    }
+
+    setFrameWidth(width);
+  }, [frameWidth]);
+
+  const getActiveDragMetrics = useCallback(
+    () => getMetricsForFrameWidth(pendingFrameWidthRef.current ?? frameWidth),
+    [frameWidth, getMetricsForFrameWidth],
   );
 
   // 外部切步（上一步/下一步/无障碍操作）或轨道尺寸变化时同步拇指位置
@@ -111,34 +164,53 @@ export function StepSlider({
         onStartShouldSetPanResponder: () => true, //手指按下触发
         onMoveShouldSetPanResponder: () => true, //手指移动触发
         //初始化拖拽状态，记录起始位置,触发时机：手指按下
-        onPanResponderGrant: () => {
+        onPanResponderGrant: event => {
           draggingRef.current = true;
           setDragging(true);
           grantXRef.current = thumbXRef.current;
+          grantPageXRef.current = event.nativeEvent.pageX;
         },
-        onPanResponderMove: (_event, gesture) => {
-          const x = clamp(grantXRef.current + gesture.dx, minX, maxX);
+        onPanResponderMove: event => {
+          const { maxX: activeMaxX, range: activeRange } =
+            getActiveDragMetrics();
+          const pageDeltaX = event.nativeEvent.pageX - grantPageXRef.current;
+          const x = clamp(grantXRef.current + pageDeltaX, minX, activeMaxX);
           thumbXRef.current = x;
           translateX.setValue(x);
-          const index = indexForX(x);
+          const index = indexForX(x, activeRange);
           setDisplayIndex(index);
           onDisplayIndexChange?.(index);
         },
         onPanResponderRelease: () => {
-          const index = indexForX(thumbXRef.current);
+          const { range: activeRange } = getActiveDragMetrics();
+          const index = indexForX(thumbXRef.current, activeRange);
           draggingRef.current = false;
           setDragging(false);
-          snapTo(index);
+          flushPendingFrameWidth();
+          snapTo(index, activeRange);
           onSelectStep(index);
         },
+        onPanResponderTerminationRequest: () => false,
         onPanResponderTerminate: () => {
+          const { range: activeRange } = getActiveDragMetrics();
           // 手势被打断（来电、系统弹层等）：回退到已提交步骤，不触发切换
           draggingRef.current = false;
           setDragging(false);
-          snapTo(currentIndex);
+          flushPendingFrameWidth();
+          snapTo(currentIndex, activeRange);
         },
       }),
-    [currentIndex, indexForX, maxX, minX, onSelectStep, snapTo, translateX],
+    [
+      currentIndex,
+      flushPendingFrameWidth,
+      getActiveDragMetrics,
+      indexForX,
+      minX,
+      onDisplayIndexChange,
+      onSelectStep,
+      snapTo,
+      translateX,
+    ],
   );
 
   const handleAccessibilityAction = useCallback(
@@ -170,7 +242,7 @@ export function StepSlider({
     >
       <View
         style={styles.sliderFrame}
-        onLayout={event => setFrameWidth(event.nativeEvent.layout.width)}
+        onLayout={handleLayout}
       >
         <View style={styles.track}>
           <Animated.View

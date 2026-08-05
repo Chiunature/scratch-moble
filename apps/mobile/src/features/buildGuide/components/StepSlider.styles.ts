@@ -13,6 +13,7 @@ const TRACK_RADIUS = TRACK_HEIGHT / 2;
 
 export const styles = StyleSheet.create({
   container: {
+    flex: 1,
     height: TRACK_HEIGHT,
   },
   sliderFrame: {

@@ -75,6 +75,17 @@ export function BuildGuideTopBar({
           {t(modelNameKey)}
         </Text>
 
+        <StepSlider
+          currentIndex={currentIndex}
+          totalSteps={totalSteps}
+          onSelectStep={onSelectStep}
+          onDisplayIndexChange={setDisplayIndex}
+          accessibilityLabel={t('stepCounter', {
+            current: currentIndex + 1,
+            total: totalSteps,
+          })}
+        />
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={
@@ -106,17 +117,6 @@ export function BuildGuideTopBar({
           {displayIndex + 1} / {Math.max(totalSteps, 1)}
         </Text>
       </View>
-
-      <StepSlider
-        currentIndex={currentIndex}
-        totalSteps={totalSteps}
-        onSelectStep={onSelectStep}
-        onDisplayIndexChange={setDisplayIndex}
-        accessibilityLabel={t('stepCounter', {
-          current: currentIndex + 1,
-          total: totalSteps,
-        })}
-      />
     </View>
   );
 }
