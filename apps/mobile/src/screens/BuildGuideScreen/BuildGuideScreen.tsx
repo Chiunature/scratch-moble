@@ -10,7 +10,6 @@ import {
   BuildGuidePliSidePanel,
   BuildGuideRuntimeCanvas,
   BuildGuideSettingsModal,
-  BuildGuideStepPickerModal,
   BuildGuideTopBar,
 } from '../../features/buildGuide/components';
 import { getBuildGuideManifest } from '../../features/buildGuide/data/bundles';
@@ -29,7 +28,6 @@ export function BuildGuideScreen({ navigation, route }: Props) {
     [route.params.modelId],
   );
   const [pliVisible, setPliVisible] = useState(true);
-  const [stepPickerVisible, setStepPickerVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const {
     settings,
@@ -72,14 +70,6 @@ export function BuildGuideScreen({ navigation, route }: Props) {
     setPliVisible(visible => !visible);
   }, []);
 
-  const handleOpenStepPicker = useCallback(() => {
-    setStepPickerVisible(true);
-  }, []);
-
-  const handleCloseStepPicker = useCallback(() => {
-    setStepPickerVisible(false);
-  }, []);
-
   const handleOpenSettings = useCallback(() => {
     setSettingsVisible(true);
   }, []);
@@ -94,13 +84,12 @@ export function BuildGuideScreen({ navigation, route }: Props) {
         modelNameKey={bundle.manifest.nameKey}
         currentIndex={steps.currentIndex}
         totalSteps={steps.totalSteps}
-        progress={steps.progress}
         paddingTop={insets.top}
         paddingLeft={insets.left}
         paddingRight={insets.right}
         pliVisible={pliVisible}
         onBack={handleBack}
-        onOpenStepPicker={handleOpenStepPicker}
+        onSelectStep={steps.goToStep}
         onTogglePli={togglePliVisible}
         onOpenSettings={handleOpenSettings}
       />
@@ -133,16 +122,6 @@ export function BuildGuideScreen({ navigation, route }: Props) {
         onPrev={steps.goPrev}
         onNext={steps.goNext}
       />
-
-      {stepPickerVisible ? (
-        <BuildGuideStepPickerModal
-          visible={stepPickerVisible}
-          currentIndex={steps.currentIndex}
-          totalSteps={steps.totalSteps}
-          onSelectStep={steps.goToStep}
-          onClose={handleCloseStepPicker}
-        />
-      ) : null}
 
       {settingsVisible ? (
         <BuildGuideSettingsModal

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
@@ -7,19 +7,19 @@ import {
   ListIcon,
   SettingsIcon,
 } from './icons/BuildGuideIcons';
+import { StepSlider } from './StepSlider';
 import { styles } from './BuildGuideTopBar.styles';
 
 type BuildGuideTopBarProps = {
   modelNameKey: string;
   currentIndex: number;
   totalSteps: number;
-  progress: number;
   paddingTop: number;
   paddingLeft: number;
   paddingRight: number;
   pliVisible: boolean;
   onBack: () => void;
-  onOpenStepPicker: () => void;
+  onSelectStep: (index: number) => void;
   onTogglePli: () => void;
   onOpenSettings: () => void;
 };
@@ -28,18 +28,23 @@ export function BuildGuideTopBar({
   modelNameKey,
   currentIndex,
   totalSteps,
-  progress,
   paddingTop,
   paddingLeft,
   paddingRight,
   pliVisible,
   onBack,
-  onOpenStepPicker,
+  onSelectStep,
   onTogglePli,
   onOpenSettings,
 }: BuildGuideTopBarProps) {
   const { t } = useTranslation('buildGuide');
   const { t: tCommon } = useTranslation('common');
+  // 拖动中实时跟随手指，松手后由 currentIndex 兜底同步
+  const [displayIndex, setDisplayIndex] = useState(currentIndex);
+
+  useEffect(() => {
+    setDisplayIndex(currentIndex);
+  }, [currentIndex]);
 
   return (
     <View
@@ -72,20 +77,6 @@ export function BuildGuideTopBar({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('jumpToStep')}
-          onPress={onOpenStepPicker}
-          style={({ pressed }) => [
-            styles.stepCounterButton,
-            pressed && styles.stepCounterButtonPressed,
-          ]}
-        >
-          <Text style={styles.stepCounter}>
-            {t('stepCounter', { current: currentIndex + 1, total: totalSteps })}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
           accessibilityLabel={
             pliVisible ? t('hidePliPanel') : t('showPliPanel')
           }
@@ -110,12 +101,22 @@ export function BuildGuideTopBar({
         >
           <SettingsIcon size={20} color="#4f46e5" />
         </Pressable>
+
+        <Text style={styles.ratioText}>
+          {displayIndex + 1} / {Math.max(totalSteps, 1)}
+        </Text>
       </View>
 
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { flex: progress }]} />
-        <View style={{ flex: 1 - progress }} />
-      </View>
+      <StepSlider
+        currentIndex={currentIndex}
+        totalSteps={totalSteps}
+        onSelectStep={onSelectStep}
+        onDisplayIndexChange={setDisplayIndex}
+        accessibilityLabel={t('stepCounter', {
+          current: currentIndex + 1,
+          total: totalSteps,
+        })}
+      />
     </View>
   );
 }

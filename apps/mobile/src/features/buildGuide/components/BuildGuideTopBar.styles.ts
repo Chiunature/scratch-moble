@@ -29,23 +29,6 @@ export const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
-  stepCounterButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: '#dbeafe',
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  stepCounterButtonPressed: {
-    opacity: 0.85,
-  },
-  stepCounter: {
-    color: colors.primary,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.extraBold,
-  },
   iconButton: {
     alignItems: 'center',
     backgroundColor: colors.surface,
@@ -63,16 +46,9 @@ export const styles = StyleSheet.create({
   iconButtonPressed: {
     opacity: 0.85,
   },
-  progressTrack: {
-    backgroundColor: '#e2e8f0',
-    borderRadius: 999,
-    flexDirection: 'row',
-    height: 4,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    backgroundColor: colors.primary,
-    borderRadius: 999,
+  ratioText: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
   },
 });
