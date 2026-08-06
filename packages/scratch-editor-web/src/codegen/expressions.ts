@@ -32,7 +32,8 @@ function isPortDropdownBlockType(type: string): boolean {
   return (
     type === BLOCK_TYPES.common.portDropdown ||
     type === BLOCK_TYPES.common.motorPortDropdown ||
-    type === BLOCK_TYPES.common.portPairDropdown
+    type === BLOCK_TYPES.common.portPairDropdown ||
+    type === BLOCK_TYPES.common.motorPortPairDropdown
   );
 }
 

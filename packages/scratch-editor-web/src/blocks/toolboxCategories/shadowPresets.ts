@@ -19,13 +19,25 @@ export function motorPortShadow(port: string | number = '4') {
 }
 
 /**
- * toolbox 双端口阴影：普通下拉选项保存为 "0,1"。
+ * toolbox 传感器双端口阴影：复选下拉字段保存为 "0,1"。
  */
 export function portShadowMulti(
   ports: [string | number, string | number] = ['0', '1'],
 ) {
   return {
     type: BLOCK_TYPES.common.portPairDropdown,
+    fields: { PORT: ports.map(String).join(',') },
+  } as const;
+}
+
+/**
+ * toolbox 电机双端口阴影：复选下拉字段保存为 "4,5"。
+ */
+export function motorPortShadowMulti(
+  ports: [string | number, string | number] = ['4', '5'],
+) {
+  return {
+    type: BLOCK_TYPES.common.motorPortPairDropdown,
     fields: { PORT: ports.map(String).join(',') },
   } as const;
 }

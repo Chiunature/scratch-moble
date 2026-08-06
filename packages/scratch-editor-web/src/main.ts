@@ -24,6 +24,7 @@ import {
   patchFieldMatrixLight,
   patchFieldNotePicker,
   patchFieldHandleShankPicker,
+  patchFieldPortMulti,
   patchFlyoutGetWidthWhenHidden,
   patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
@@ -57,6 +58,7 @@ async function bootstrap(): Promise<void> {
   patchFieldMatrixLight();
   patchFieldNotePicker();
   patchFieldHandleShankPicker();
+  patchFieldPortMulti();
   patchScratchDraggerToolboxDelete();
 
   const host = document.getElementById('workspace');

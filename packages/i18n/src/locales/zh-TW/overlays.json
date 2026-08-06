@@ -25,7 +25,9 @@
   },
   "bubbleSlider": {
     "accessibilityLabel": "滑塊控制",
-    "accessibilityHint": "目前值 {{value}}，左右拖動調整數值"
+    "accessibilityHint": "目前值 {{value}}，左右拖動調整數值",
+    "decrementLabel": "減少",
+    "incrementLabel": "增加"
   },
   "notePicker": {
     "octave1Title": "第 1 八度",

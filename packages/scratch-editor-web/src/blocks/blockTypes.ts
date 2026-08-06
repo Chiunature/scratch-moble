@@ -8,8 +8,10 @@ export const BLOCK_TYPES = {
     portDropdown: 'port_dropdown',
     /** 电机单端口下拉报告块（Number），E-H（值 4-7） */
     motorPortDropdown: 'motor_port_dropdown',
-    /** 双端口下拉报告块（Number list），用于需要两个端口的 PORTS 输入槽 */
+    /** 传感器双端口复选下拉报告块（Number list），A-D 中选择两个，值 "0,1" */
     portPairDropdown: 'port_pair_dropdown',
+    /** 电机双端口复选下拉报告块（Number list），E-H 中选择两个，值 "4,5" */
+    motorPortPairDropdown: 'motor_port_pair_dropdown',
     /** 整数滑块阴影（precision=1） */
     integerSlider: 'number_slider_integer',
     /** 小数滑块阴影（默认 precision=0.1） */

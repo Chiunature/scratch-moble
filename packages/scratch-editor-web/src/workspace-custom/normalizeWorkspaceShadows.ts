@@ -5,6 +5,7 @@ export const DEFAULT_SHADOW_REPORTER_BLOCK_TYPES = [
   BLOCK_TYPES.common.portDropdown,
   BLOCK_TYPES.common.motorPortDropdown,
   BLOCK_TYPES.common.portPairDropdown,
+  BLOCK_TYPES.common.motorPortPairDropdown,
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,
   BLOCK_TYPES.common.positiveKeyboard,

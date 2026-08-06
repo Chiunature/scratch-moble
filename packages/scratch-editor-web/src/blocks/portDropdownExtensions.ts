@@ -15,6 +15,7 @@ const PORT_REPORTER_TYPES = new Set<string>([
   BLOCK_TYPES.common.portDropdown,
   BLOCK_TYPES.common.motorPortDropdown,
   BLOCK_TYPES.common.portPairDropdown,
+  BLOCK_TYPES.common.motorPortPairDropdown,
 ]);
 
 /** 使用 colours_from_parent 扩展的 reporter / shadow 块 */
@@ -22,6 +23,7 @@ export const COLOURS_FROM_PARENT_BLOCK_TYPES = new Set<string>([
   BLOCK_TYPES.common.portDropdown,
   BLOCK_TYPES.common.motorPortDropdown,
   BLOCK_TYPES.common.portPairDropdown,
+  BLOCK_TYPES.common.motorPortPairDropdown,
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,
   BLOCK_TYPES.common.positiveKeyboard,

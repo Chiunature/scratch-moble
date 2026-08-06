@@ -25,7 +25,9 @@
   },
   "bubbleSlider": {
     "accessibilityLabel": "Slider control",
-    "accessibilityHint": "Current value {{value}}, drag left or right to adjust"
+    "accessibilityHint": "Current value {{value}}, drag left or right to adjust",
+    "decrementLabel": "Decrease",
+    "incrementLabel": "Increase"
   },
   "notePicker": {
     "octave1Title": "Octave 1",

@@ -1,7 +1,7 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import {
-  portShadowMulti,
   integerSliderShadow,
+  motorPortShadowMulti,
   numberKeyboardShadow,
 } from './shadowPresets';
 import { buildToolboxCategory } from './buildCategory';
@@ -15,7 +15,7 @@ export function moveToolboxCategory() {
       kind: 'block',
       type: BLOCK_TYPES.move.pair,
       inputs: {
-        PORTS: { shadow: portShadowMulti(['0', '1']) },
+        PORTS: { shadow: motorPortShadowMulti(['4', '5']) },
       },
       fields: {
         DIRECTION: '3',

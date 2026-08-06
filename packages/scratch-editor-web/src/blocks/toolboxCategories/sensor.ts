@@ -41,7 +41,7 @@ export function sensorToolboxCategory() {
         type: BLOCK_TYPES.sensor.gray_sensor.setColorThresholdValue,
         inputs: {
           PORTS: { shadow: portShadow('0') },
-          VALUE: { shadow: numberKeyboardShadow(1000) },
+          VALUE: { shadow: numberKeyboardShadow(500) },
         },
       },
       {

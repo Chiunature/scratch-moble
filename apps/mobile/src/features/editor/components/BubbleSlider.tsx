@@ -7,11 +7,13 @@ import React, {
 } from 'react';
 import {
   PanResponder,
+  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
+  Text,
 } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
@@ -391,11 +393,38 @@ export function BubbleSlider({
     [disabled, minimumValue, maximumValue, renderValue, t],
   );
 
+  // ----- 加减按钮 -----
+  const stepDelta = step > 0 ? step : 1;
+
+  const stepBy = useCallback(
+    (delta: number) => {
+      if (disabled) {
+        return;
+      }
+      const base = currentValueRef.current;
+      const next = snapToStep(base + delta, minimumValue, maximumValue, step);
+      if (next === base) {
+        return;
+      }
+      currentValueRef.current = next;
+      onValueChange?.(next);
+      onSlidingComplete?.(next);
+    },
+    [
+      disabled,
+      currentValueRef,
+      minimumValue,
+      maximumValue,
+      step,
+      onValueChange,
+      onSlidingComplete,
+    ],
+  );
+
   // ==================== 渲染 ====================
 
   return (
     <View
-      ref={trackRef}
       style={[
         styles.root,
         {
@@ -404,49 +433,74 @@ export function BubbleSlider({
         },
         style,
       ]}
-      onLayout={handleLayout}
-      {...accessibilityConfig}
-      {...(disabled ? {} : panResponder.panHandlers)}
     >
-      {/* 轨道背景 */}
-      <View
-        style={[
-          styles.track,
-          {
-            height: trackHeight,
-            borderRadius: halfTrackHeight,
-            backgroundColor: maximumTrackTintColor,
-            top: trackTop,
-          },
-        ]}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('bubbleSlider.decrementLabel')}
+        disabled={disabled}
+        onPress={() => stepBy(-stepDelta)}
+        style={styles.stepperButton}
       >
-        {/* 已填充部分 */}
+        <Text style={styles.stepperText}>−</Text>
+      </Pressable>
+
+      <View
+        ref={trackRef}
+        style={[styles.trackContainer, { height: touchHeight }]}
+        onLayout={handleLayout}
+        {...accessibilityConfig}
+        {...(disabled ? {} : panResponder.panHandlers)}
+      >
+        {/* 轨道背景 */}
         <View
           style={[
-            styles.fill,
+            styles.track,
             {
-              width: fillWidth,
-              backgroundColor: minimumTrackTintColor,
+              height: trackHeight,
               borderRadius: halfTrackHeight,
+              backgroundColor: maximumTrackTintColor,
+              top: trackTop,
+            },
+          ]}
+        >
+          {/* 已填充部分 */}
+          <View
+            style={[
+              styles.fill,
+              {
+                width: fillWidth,
+                backgroundColor: minimumTrackTintColor,
+                borderRadius: halfTrackHeight,
+              },
+            ]}
+          />
+        </View>
+
+        {/* 滑块 */}
+        <View
+          style={[
+            styles.thumb,
+            {
+              width: thumbSize,
+              height: thumbSize,
+              borderRadius: halfThumbSize,
+              backgroundColor: thumbTintColor,
+              left: thumbLeft,
+              top: thumbTop,
             },
           ]}
         />
       </View>
 
-      {/* 滑块 */}
-      <View
-        style={[
-          styles.thumb,
-          {
-            width: thumbSize,
-            height: thumbSize,
-            borderRadius: halfThumbSize,
-            backgroundColor: thumbTintColor,
-            left: thumbLeft,
-            top: thumbTop,
-          },
-        ]}
-      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('bubbleSlider.incrementLabel')}
+        disabled={disabled}
+        onPress={() => stepBy(stepDelta)}
+        style={styles.stepperButton}
+      >
+        <Text style={styles.stepperText}>+</Text>
+      </Pressable>
     </View>
   );
 }
@@ -456,6 +510,11 @@ export function BubbleSlider({
 const styles = StyleSheet.create({
   root: {
     width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  trackContainer: {
+    flex: 1,
     justifyContent: 'center',
   },
   track: {
@@ -473,5 +532,20 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
+  },
+  stepperButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  stepperText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 20,
   },
 });

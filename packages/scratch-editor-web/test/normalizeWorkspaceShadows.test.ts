@@ -53,6 +53,30 @@ describe('normalizeWorkspaceShadows', () => {
     expect(state.inputs.PORTS.block).toBeUndefined();
   });
 
+  test('demotes motor pair port shadow reporter from block to shadow', () => {
+    const state = {
+      type: 'pair',
+      inputs: {
+        PORTS: {
+          block: {
+            type: 'motor_port_pair_dropdown',
+            fields: { PORT: '4,5' },
+          },
+        },
+      },
+    };
+
+    demoteMatchingBlocksToShadows(state, DEFAULT_SHADOW_REPORTER_TYPE_SET);
+
+    expect(state.inputs.PORTS).toEqual({
+      shadow: {
+        type: 'motor_port_pair_dropdown',
+        fields: { PORT: '4,5' },
+      },
+    });
+    expect(state.inputs.PORTS.block).toBeUndefined();
+  });
+
   test('does not demote non-default reporter blocks', () => {
     const state = {
       type: 'control_if',
