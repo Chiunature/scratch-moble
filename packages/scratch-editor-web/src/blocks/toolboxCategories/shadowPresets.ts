@@ -2,10 +2,18 @@ import { normalizeHandleShankKey } from '@scratch-mobile/shared';
 
 import { BLOCK_TYPES } from '../blockTypes';
 
-/** toolbox `inputs.<name>.shadow`：单选端口（0–7） */
+/** toolbox `inputs.<name>.shadow`：传感器单选端口（A-D，值 0-3） */
 export function portShadow(port: string | number = '0') {
   return {
     type: BLOCK_TYPES.common.portDropdown,
+    fields: { PORT: String(port) },
+  } as const;
+}
+
+/** toolbox `inputs.<name>.shadow`：电机单选端口（E-H，值 4-7） */
+export function motorPortShadow(port: string | number = '4') {
+  return {
+    type: BLOCK_TYPES.common.motorPortDropdown,
     fields: { PORT: String(port) },
   } as const;
 }

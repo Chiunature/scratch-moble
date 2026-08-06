@@ -13,12 +13,14 @@ import type { Workspace } from '../codegen/types';
 
 const PORT_REPORTER_TYPES = new Set<string>([
   BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.motorPortDropdown,
   BLOCK_TYPES.common.portPairDropdown,
 ]);
 
 /** 使用 colours_from_parent 扩展的 reporter / shadow 块 */
 export const COLOURS_FROM_PARENT_BLOCK_TYPES = new Set<string>([
   BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.motorPortDropdown,
   BLOCK_TYPES.common.portPairDropdown,
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,
@@ -60,7 +62,9 @@ export function syncColourFromParent(block: ColouredBlock): void {
 }
 
 /** workspace.load 在 Events.disable 下不会触发 BLOCK_MOVE，须在加载后手动刷新配色。 */
-export function refreshColoursFromParentInWorkspace(workspace: Workspace): void {
+export function refreshColoursFromParentInWorkspace(
+  workspace: Workspace,
+): void {
   for (const block of workspace.getAllBlocks(false)) {
     if (!COLOURS_FROM_PARENT_BLOCK_TYPES.has(block.type)) {
       continue;

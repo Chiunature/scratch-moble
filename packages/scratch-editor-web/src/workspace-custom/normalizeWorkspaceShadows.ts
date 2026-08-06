@@ -3,6 +3,7 @@ import { BLOCK_TYPES } from '../blocks/blockTypes';
 /** toolbox 默认 shadow reporter 类型；槽内仅字段、无用户拖入的独立逻辑块 */
 export const DEFAULT_SHADOW_REPORTER_BLOCK_TYPES = [
   BLOCK_TYPES.common.portDropdown,
+  BLOCK_TYPES.common.motorPortDropdown,
   BLOCK_TYPES.common.portPairDropdown,
   BLOCK_TYPES.common.integerSlider,
   BLOCK_TYPES.common.decimalSlider,

@@ -1,7 +1,7 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import {
   integerSliderShadow,
-  portShadow,
+  motorPortShadow,
   numberKeyboardShadow,
 } from './shadowPresets';
 import { buildToolboxCategory } from './buildCategory';
@@ -16,7 +16,7 @@ export function motorToolboxCategory() {
       kind: 'block',
       type: BLOCK_TYPES.motor.runForPowerSeconds,
       inputs: {
-        PORTS: { shadow: portShadow('0') },
+        PORTS: { shadow: motorPortShadow('4') },
         POWER: { shadow: integerSliderShadow(50) },
         SECONDS: { shadow: numberKeyboardShadow(2) },
       },
@@ -25,7 +25,7 @@ export function motorToolboxCategory() {
       kind: 'block',
       type: BLOCK_TYPES.motor.runPower,
       inputs: {
-        PORTS: { shadow: portShadow('0') },
+        PORTS: { shadow: motorPortShadow('4') },
         POWER: { shadow: integerSliderShadow(50) },
       },
     },
@@ -33,14 +33,14 @@ export function motorToolboxCategory() {
       kind: 'block',
       type: BLOCK_TYPES.motor.stop,
       inputs: {
-        PORTS: { shadow: portShadow('0') },
+        PORTS: { shadow: motorPortShadow('4') },
       },
     },
     {
       kind: 'block',
       type: BLOCK_TYPES.motor.stopModule,
       inputs: {
-        PORTS: { shadow: portShadow('0') },
+        PORTS: { shadow: motorPortShadow('4') },
       },
       fields: { MODE: '0' },
     },

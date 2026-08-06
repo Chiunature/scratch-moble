@@ -28,6 +28,14 @@ const NUMERIC_LITERAL_BLOCK_TYPES = new Set([
   ...CUSTOM_NUMERIC_LITERAL_TYPES,
 ]);
 
+function isPortDropdownBlockType(type: string): boolean {
+  return (
+    type === BLOCK_TYPES.common.portDropdown ||
+    type === BLOCK_TYPES.common.motorPortDropdown ||
+    type === BLOCK_TYPES.common.portPairDropdown
+  );
+}
+
 function inputExpressionToPython(
   block: ScratchBlock,
   inputName: string,
@@ -42,10 +50,7 @@ export function expressionBlockToPython(block: ScratchBlock): string {
     return getFieldValue(block, 'NUM') ?? '0';
   }
 
-  if (
-    block.type === BLOCK_TYPES.common.portDropdown ||
-    block.type === BLOCK_TYPES.common.portPairDropdown
-  ) {
+  if (isPortDropdownBlockType(block.type)) {
     const raw = getFieldValue(block, 'PORT') ?? '0';
     const ports = parsePortFieldValue(raw);
     if (ports.length === 1) {
@@ -401,10 +406,7 @@ export function multiPortsInputToPythonArgs(
     return parsePortFieldValue(fallback);
   }
 
-  if (
-    targetBlock.type === BLOCK_TYPES.common.portDropdown ||
-    targetBlock.type === BLOCK_TYPES.common.portPairDropdown
-  ) {
+  if (isPortDropdownBlockType(targetBlock.type)) {
     const raw = getFieldValue(targetBlock, 'PORT') ?? fallback;
     return parsePortFieldValue(raw);
   }

@@ -1,14 +1,14 @@
-import { TOOLBOX_AT_RIGHT } from "scratch-blocks";
-
 /**
  * 所有积木的 type ID 集中在这里管理。
  * 新增积木时先在此处注册，再在 blockDefinitions/<分类>.ts、toolbox.ts、generators.ts 补充实现。
  */
 export const BLOCK_TYPES = {
   common: {
-    /** 通用单端口下拉报告块（Number），可作为 PORT/PORTS 输入槽的默认阴影 */
+    /** 传感器单端口下拉报告块（Number），A-D（值 0-3） */
     portDropdown: 'port_dropdown',
-    /** 通用双端口下拉报告块（Number list），用于需要两个端口的 PORTS 输入槽 */
+    /** 电机单端口下拉报告块（Number），E-H（值 4-7） */
+    motorPortDropdown: 'motor_port_dropdown',
+    /** 双端口下拉报告块（Number list），用于需要两个端口的 PORTS 输入槽 */
     portPairDropdown: 'port_pair_dropdown',
     /** 整数滑块阴影（precision=1） */
     integerSlider: 'number_slider_integer',
