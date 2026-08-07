@@ -1,6 +1,6 @@
 import { BLOCK_TYPES } from '../blockTypes';
 import { buildToolboxCategory } from './buildCategory';
-import { numberKeyboardShadow } from './shadowPresets';
+import { integerKeyboardShadow, numberKeyboardShadow } from './shadowPresets';
 
 export function controlToolboxCategory() {
   return buildToolboxCategory({
@@ -21,7 +21,7 @@ export function controlToolboxCategory() {
       kind: 'block',
       type: BLOCK_TYPES.control.whileTimes,
       inputs: {
-        TIMES: { shadow: numberKeyboardShadow(10) },
+        TIMES: { shadow: integerKeyboardShadow(10) },
       },
     },
     {

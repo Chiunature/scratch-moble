@@ -77,6 +77,30 @@ describe('normalizeWorkspaceShadows', () => {
     expect(state.inputs.PORTS.block).toBeUndefined();
   });
 
+  test('demotes built-in integer keyboard shadow from block to shadow', () => {
+    const state = {
+      type: 'control_repeat_times',
+      inputs: {
+        TIMES: {
+          block: {
+            type: 'math_integer',
+            fields: { NUM: 10 },
+          },
+        },
+      },
+    };
+
+    demoteMatchingBlocksToShadows(state, DEFAULT_SHADOW_REPORTER_TYPE_SET);
+
+    expect(state.inputs.TIMES).toEqual({
+      shadow: {
+        type: 'math_integer',
+        fields: { NUM: 10 },
+      },
+    });
+    expect(state.inputs.TIMES.block).toBeUndefined();
+  });
+
   test('does not demote non-default reporter blocks', () => {
     const state = {
       type: 'control_if',

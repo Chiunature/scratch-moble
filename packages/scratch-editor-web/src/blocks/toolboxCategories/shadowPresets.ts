@@ -42,28 +42,37 @@ export function motorPortShadowMulti(
   } as const;
 }
 
-/** toolbox `inputs.<name>.shadow`：整数滑块（范围/步长在 numberShadowReporters 定义） */
-export function integerSliderShadow(num: number) {
+type NumericShadowType =
+  | typeof BLOCK_TYPES.common.integerSlider
+  | typeof BLOCK_TYPES.common.decimalSlider
+  | typeof BLOCK_TYPES.common.positiveKeyboard
+  | 'math_integer';
+
+function numericShadow(type: NumericShadowType, num: number) {
   return {
-    type: BLOCK_TYPES.common.integerSlider,
+    type,
     fields: { NUM: num },
   } as const;
+}
+
+/** toolbox `inputs.<name>.shadow`：整数滑块（范围/步长在 numberShadowReporters 定义） */
+export function integerSliderShadow(num: number) {
+  return numericShadow(BLOCK_TYPES.common.integerSlider, num);
 }
 
 /** toolbox `inputs.<name>.shadow`：小数滑块 */
 export function decimalSliderShadow(num: number) {
-  return {
-    type: BLOCK_TYPES.common.decimalSlider,
-    fields: { NUM: num },
-  } as const;
+  return numericShadow(BLOCK_TYPES.common.decimalSlider, num);
 }
 
 /** toolbox `inputs.<name>.shadow`：键盘输入任意数字（含负数、小数） */
 export function numberKeyboardShadow(num: number) {
-  return {
-    type: BLOCK_TYPES.common.positiveKeyboard,
-    fields: { NUM: num },
-  } as const;
+  return numericShadow(BLOCK_TYPES.common.positiveKeyboard, num);
+}
+
+/** toolbox `inputs.<name>.shadow`：键盘输入整数 */
+export function integerKeyboardShadow(num: number) {
+  return numericShadow('math_integer', num);
 }
 
 /** toolbox `inputs.<name>.shadow`：字符串（Scratch 内置 text reporter） */

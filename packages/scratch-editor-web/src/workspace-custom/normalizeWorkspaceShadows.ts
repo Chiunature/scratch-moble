@@ -13,6 +13,7 @@ export const DEFAULT_SHADOW_REPORTER_BLOCK_TYPES = [
   BLOCK_TYPES.common.basicDropdownNumRow,
   BLOCK_TYPES.common.notePicker,
   BLOCK_TYPES.common.handleShankPicker,
+  'math_integer',
   'text',
 ] as const;
 
