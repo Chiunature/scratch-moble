@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
+    "@scratch-mobile/shared": "0.0.1",
     "i18next": "^26.3.2",
     "react-i18next": "^17.0.8"
   },

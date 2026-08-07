@@ -1,3 +1,4 @@
+import { SCRATCH_BLOCKS_VERSION } from '../constants/app';
 import type { ProjectSchemaVersion } from '../schemas/project';
 
 export type ProjectId = string;
@@ -14,7 +15,7 @@ export type ScratchProjectSummary = {
 };
 
 export type ScratchProjectEditorMeta = {
-  scratchBlocksVersion: '2.1.19';
+  scratchBlocksVersion: typeof SCRATCH_BLOCKS_VERSION;
 };
 
 export type ScratchProjectDocument = {

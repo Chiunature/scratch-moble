@@ -1,5 +1,6 @@
 import {
   CURRENT_PROJECT_SCHEMA_VERSION,
+  SCRATCH_BLOCKS_VERSION,
   type ScratchProjectDocument,
 } from '@scratch-mobile/shared';
 
@@ -40,10 +41,10 @@ function readEditorMeta(record: Record<string, unknown>): ScratchProjectDocument
   if (!isRecord(editor)) {
     throw new ProjectDocumentParseError('Missing or invalid "editor"');
   }
-  if (editor.scratchBlocksVersion !== '2.1.19') {
+  if (editor.scratchBlocksVersion !== SCRATCH_BLOCKS_VERSION) {
     throw new ProjectDocumentParseError('Unsupported scratchBlocksVersion');
   }
-  return { scratchBlocksVersion: '2.1.19' };
+  return { scratchBlocksVersion: SCRATCH_BLOCKS_VERSION };
 }
 
 function readWorkspace(record: Record<string, unknown>): ScratchProjectDocument['workspace'] {

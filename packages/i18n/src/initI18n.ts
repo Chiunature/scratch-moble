@@ -1,6 +1,12 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+import {
+  EDITOR_APP_LOCALES,
+  isEditorAppLocale,
+  type EditorAppLocale,
+} from '@scratch-mobile/shared';
+
 import enBle from './locales/en/ble.json';
 import enBuildGuide from './locales/en/buildGuide.json';
 import enCommon from './locales/en/common.json';
@@ -49,9 +55,10 @@ export const I18N_NAMESPACES = [
   'buildGuide',
 ] as const;
 
-export const APP_LOCALES = ['zh-CN', 'zh-TW', 'en'] as const;
+/** 与编辑器 locale 单一来源对齐（packages/shared editorLocale） */
+export const APP_LOCALES = EDITOR_APP_LOCALES;
 
-export type AppLocale = (typeof APP_LOCALES)[number];
+export type AppLocale = EditorAppLocale;
 
 export const LOCALE_LABEL_KEY: Record<AppLocale, string> = {
   'zh-CN': 'languageOptions.simplifiedChinese',
@@ -102,7 +109,7 @@ const resources = {
 };
 
 export function isAppLocale(value: string | null | undefined): value is AppLocale {
-  return APP_LOCALES.includes(value as AppLocale);
+  return isEditorAppLocale(value);
 }
 
 export function getCurrentAppLocale(): AppLocale {
