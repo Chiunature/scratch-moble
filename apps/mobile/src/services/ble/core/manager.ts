@@ -331,38 +331,63 @@ export class BleDeviceManager {
       throw new Error(`蓝牙未开启（${state}）`);
     }
 
-    this.disconnectCallback = onDisconnected ?? null;
-    this.disconnectHandled = false;
-    this.connectedDevice = await this.bleManager.connectToDevice(deviceId, {
-      requestMTU: BLE_REQUEST_MTU,
-    });
-    await this.connectedDevice.discoverAllServicesAndCharacteristics();
+    let connectedDevice: Device | null = null;
 
-    const services = await this.connectedDevice.services();
-    const targetService = services.find(
-      s => normalizeUuid(s.uuid) === normalizeUuid(SERVICE_UUID),
-    );
-    if (!targetService) {
-      throw new Error(`未找到服务: ${SERVICE_UUID}`);
+    try {
+      this.disconnectCallback = onDisconnected ?? null;
+      this.disconnectHandled = false;
+      connectedDevice = await this.bleManager.connectToDevice(deviceId, {
+        requestMTU: BLE_REQUEST_MTU,
+      });
+      this.connectedDevice = connectedDevice;
+      await this.connectedDevice.discoverAllServicesAndCharacteristics();
+
+      const services = await this.connectedDevice.services();
+      const targetService = services.find(
+        s => normalizeUuid(s.uuid) === normalizeUuid(SERVICE_UUID),
+      );
+      if (!targetService) {
+        throw new Error(`未找到服务: ${SERVICE_UUID}`);
+      }
+
+      const characteristics = await targetService.characteristics();
+      const targetCharacteristic = characteristics.find(
+        c => normalizeUuid(c.uuid) === normalizeUuid(CHARACTERISTIC_UUID),
+      );
+      if (!targetCharacteristic) {
+        throw new Error(`未找到特征值: ${CHARACTERISTIC_UUID}`);
+      }
+
+      this.characteristic = targetCharacteristic;
+      this.resetReceiveBuffers();
+      this.subscribeToNotifications();
+
+      this.connectedDevice.onDisconnected(() => {
+        this.handleDisconnected('设备断开');
+      });
+
+      bleLog.info('蓝牙连接成功', deviceId);
+    } catch (error) {
+      const connectedDeviceId = connectedDevice?.id ?? this.connectedDevice?.id;
+      this.disconnectHandled = true;
+      this.connectedDevice = null;
+      this.characteristic = null;
+      this.disconnectCallback = null;
+      this.resetReceiveBuffers();
+      this.clearWatchThrottle();
+
+      if (connectedDeviceId) {
+        try {
+          await this.bleManager.cancelDeviceConnection(connectedDeviceId);
+        } catch (disconnectError) {
+          if (!isBleDisconnectError(disconnectError)) {
+            bleLog.warn('连接失败后断开设备失败', disconnectError);
+          }
+        }
+      }
+
+      throw error;
     }
-
-    const characteristics = await targetService.characteristics();
-    const targetCharacteristic = characteristics.find(
-      c => normalizeUuid(c.uuid) === normalizeUuid(CHARACTERISTIC_UUID),
-    );
-    if (!targetCharacteristic) {
-      throw new Error(`未找到特征值: ${CHARACTERISTIC_UUID}`);
-    }
-
-    this.characteristic = targetCharacteristic;
-    this.resetReceiveBuffers();
-    this.subscribeToNotifications();
-
-    this.connectedDevice.onDisconnected(() => {
-      this.handleDisconnected('设备断开');
-    });
-
-    bleLog.info('蓝牙连接成功', deviceId);
   }
 
   async disconnect(): Promise<void> {

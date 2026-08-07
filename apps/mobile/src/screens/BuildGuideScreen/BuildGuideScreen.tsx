@@ -12,7 +12,10 @@ import {
   BuildGuideSettingsModal,
   BuildGuideTopBar,
 } from '../../features/buildGuide/components';
-import { getBuildGuideManifest } from '../../features/buildGuide/data/bundles';
+import {
+  getBuildGuideManifest,
+  isBuildGuideModelId,
+} from '../../features/buildGuide/data/bundles';
 import { useBuildGuideSteps } from '../../features/buildGuide/hooks/useBuildGuideSteps';
 import { useLdrModel } from '../../features/buildGuide/hooks/useLdrModel';
 import { useBuildGuideSettings } from '../../features/buildGuide/settings';
@@ -21,11 +24,20 @@ import { styles } from './BuildGuideScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BuildGuidePlayer'>;
 
+const FALLBACK_BUILD_GUIDE_MODEL_ID = 'container-demo'; 
+
 export function BuildGuideScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const requestedModelId = route.params?.modelId;
+  const hasValidModelId =
+    typeof requestedModelId === 'string' &&
+    isBuildGuideModelId(requestedModelId);
+  const modelId = hasValidModelId
+    ? requestedModelId
+    : FALLBACK_BUILD_GUIDE_MODEL_ID;
   const manifest = useMemo(
-    () => getBuildGuideManifest(route.params.modelId),
-    [route.params.modelId],
+    () => getBuildGuideManifest(modelId),
+    [modelId],
   );
   const [pliVisible, setPliVisible] = useState(true);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -36,6 +48,12 @@ export function BuildGuideScreen({ navigation, route }: Props) {
     appearanceRevision,
     geometryRevision,
   } = useBuildGuideSettings();
+
+  useEffect(() => {
+    if (!hasValidModelId) {
+      navigation.replace('BuildGuide');
+    }
+  }, [hasValidModelId, navigation]);
 
   // 等设置 sync 到 LDR.Options 后再加载，避免 stud 选项闪默认值再重载
   const ldr = useLdrModel(settingsReady ? manifest : null);

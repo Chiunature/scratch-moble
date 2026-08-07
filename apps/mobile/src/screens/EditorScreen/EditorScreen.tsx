@@ -105,6 +105,8 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
   const { width: screenWidth } = useWindowDimensions();
   const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
   const webViewRef = useRef<WebView>(null);
+  const allowNavigationAfterFlushRef = useRef(false);
+  const isFlushingBeforeRemoveRef = useRef(false);
   const lastCodeRef = useRef({ code: '', blockCount: 0 });
   //存储当前激活的数字滑块会话
   const [rnSliderSession, setRnSliderSession] =
@@ -124,7 +126,7 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     t('loading.codePlaceholder'),
   );
   //存储积木数量
-  const [blockCount, setBlockCount] = useState(0);
+  const [, setBlockCount] = useState(0);
   //存储代码面板是否打开
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
   const [isSlotPickerVisible, setIsSlotPickerVisible] = useState(false);
@@ -229,14 +231,15 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
     ? t(`persistence.${projectErrorKey}`)
     : null;
   const displayProjectName = resolveProjectDisplayName(projectName);
+  const currentAppLocale = getCurrentAppLocale();
 
   // bootstrap 首帧前写入 App 语言，避免 WebView 用 navigator 语言渲染飞栏后再闪一下。
   const editorEmbeddedLocaleScript = useMemo(
     () =>
       `window.${EDITOR_EMBEDDED_LOCALE_GLOBAL}=${JSON.stringify(
-        getCurrentAppLocale(),
+        currentAppLocale,
       )};true;`,
-    [i18n.language],
+    [currentAppLocale],
   );
 
   useEffect(() => {
@@ -251,7 +254,41 @@ function EditorScreenContent({ projectId }: EditorScreenContentProps) {
 
   const handleNavigateBack = useCallback(async () => {
     await handleBackPress();
+    allowNavigationAfterFlushRef.current = true;
     navigation.goBack();
+    setTimeout(() => {
+      allowNavigationAfterFlushRef.current = false;
+    }, 0);
+  }, [handleBackPress, navigation]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', event => {
+      if (allowNavigationAfterFlushRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (isFlushingBeforeRemoveRef.current) {
+        return;
+      }
+
+      isFlushingBeforeRemoveRef.current = true;
+      void (async () => {
+        try {
+          await handleBackPress();
+          allowNavigationAfterFlushRef.current = true;
+          navigation.dispatch(event.data.action);
+          setTimeout(() => {
+            allowNavigationAfterFlushRef.current = false;
+          }, 0);
+        } finally {
+          isFlushingBeforeRemoveRef.current = false;
+        }
+      })();
+    });
+
+    return unsubscribe;
   }, [handleBackPress, navigation]);
 
   //处理WebView发送的消息

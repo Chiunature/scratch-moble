@@ -15,6 +15,7 @@ import {
 import { useProjectStore } from '../../store/useProjectStore';
 
 const FLUSH_TIMEOUT_MS = 2500;
+const WORKSPACE_SAVE_DEBOUNCE_MS = 500;
 
 type ProjectPersistenceErrorKey = 'loadCorrupt' | 'loadFailed' | 'saveFailed';
 
@@ -28,6 +29,14 @@ export function useEditorProjectPersistence({
   projectId,
 }: Options) {
   const loadRevisionRef = useRef(0);
+  const lastAcceptedRevisionRef = useRef(0);
+  const pendingWorkspaceChangeRef = useRef<RnWorkspaceChangedMessage | null>(
+    null,
+  );
+  const saveDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const activeSaveRef = useRef<Promise<void> | null>(null);
   const pendingFlushRef = useRef<(() => void) | null>(null);
   const lastSaveSucceededRef = useRef(true);
   const upsertSummary = useProjectStore(state => state.upsertSummary);
@@ -43,6 +52,7 @@ export function useEditorProjectPersistence({
   const injectLoad = useCallback(
     (workspace: unknown | null) => {
       loadRevisionRef.current += 1;
+      lastAcceptedRevisionRef.current = loadRevisionRef.current;
       forceInjectEditorMessage(webViewRef.current, {
         type: 'editor.workspace.load',
         projectId,
@@ -81,12 +91,16 @@ export function useEditorProjectPersistence({
     [projectId],
   );
 
-  const handleWorkspaceChanged = useCallback(
-    async (message: RnWorkspaceChangedMessage) => {
-      if (message.projectId !== projectId) {
-        return;
-      }
+  const clearSaveDebounceTimer = useCallback(() => {
+    if (saveDebounceTimerRef.current == null) {
+      return;
+    }
+    clearTimeout(saveDebounceTimerRef.current);
+    saveDebounceTimerRef.current = null;
+  }, []);
 
+  const persistWorkspaceChange = useCallback(
+    async (message: RnWorkspaceChangedMessage) => {
       try {
         const summary = await saveProjectWorkspace({
           projectId,
@@ -108,7 +122,60 @@ export function useEditorProjectPersistence({
     [projectId, upsertSummary],
   );
 
+  const drainWorkspaceSaveQueue = useCallback(async () => {
+    if (activeSaveRef.current) {
+      return activeSaveRef.current;
+    }
+
+    const savePromise = (async () => {
+      while (pendingWorkspaceChangeRef.current) {
+        const message = pendingWorkspaceChangeRef.current;
+        pendingWorkspaceChangeRef.current = null;
+        await persistWorkspaceChange(message);
+      }
+    })().finally(() => {
+      activeSaveRef.current = null;
+    });
+
+    activeSaveRef.current = savePromise;
+    return savePromise;
+  }, [persistWorkspaceChange]);
+
+  const flushPendingWorkspaceChange = useCallback(async () => {
+    clearSaveDebounceTimer();
+    await drainWorkspaceSaveQueue();
+  }, [clearSaveDebounceTimer, drainWorkspaceSaveQueue]);
+
+  const handleWorkspaceChanged = useCallback(
+    (message: RnWorkspaceChangedMessage) => {
+      if (message.projectId !== projectId) {
+        return;
+      }
+
+      if (message.revision < lastAcceptedRevisionRef.current) {
+        return;
+      }
+
+      lastAcceptedRevisionRef.current = message.revision;
+      pendingWorkspaceChangeRef.current = message;
+
+      if (pendingFlushRef.current) {
+        clearSaveDebounceTimer();
+        void drainWorkspaceSaveQueue();
+        return;
+      }
+
+      clearSaveDebounceTimer();
+      saveDebounceTimerRef.current = setTimeout(() => {
+        saveDebounceTimerRef.current = null;
+        void drainWorkspaceSaveQueue();
+      }, WORKSPACE_SAVE_DEBOUNCE_MS);
+    },
+    [clearSaveDebounceTimer, drainWorkspaceSaveQueue, projectId],
+  );
+
   const flushAndWait = useCallback(async () => {
+    await flushPendingWorkspaceChange();
     await waitForPendingProjectSaves(projectId);
 
     await new Promise<void>(resolve => {
@@ -131,12 +198,13 @@ export function useEditorProjectPersistence({
       setTimeout(finish, FLUSH_TIMEOUT_MS);
     });
 
+    await flushPendingWorkspaceChange();
     await waitForPendingProjectSaves(projectId);
 
     if (!lastSaveSucceededRef.current) {
       setSaveError('saveFailed');
     }
-  }, [projectId, webViewRef]);
+  }, [flushPendingWorkspaceChange, projectId, webViewRef]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextState => {
@@ -149,6 +217,12 @@ export function useEditorProjectPersistence({
       subscription.remove();
     };
   }, [flushAndWait]);
+
+  useEffect(() => {
+    return () => {
+      clearSaveDebounceTimer();
+    };
+  }, [clearSaveDebounceTimer]);
 
   const handleBackPress = useCallback(async () => {
     await flushAndWait();
