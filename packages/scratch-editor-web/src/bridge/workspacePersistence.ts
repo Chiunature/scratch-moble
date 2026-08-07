@@ -7,6 +7,7 @@ import { insertStartHatBlockIfMissing } from '../workspace-custom/ensureStartHat
 import { normalizeDefaultShadowReportersInWorkspaceState } from '../workspace-custom/normalizeWorkspaceShadows';
 import { refreshColoursFromParentInWorkspace } from '../blocks/portDropdownExtensions';
 import { notifyCodeGenerationNeeded } from './codeGenNotify';
+import { clearWorkspaceHistory } from './workspaceHistory';
 
 const WORKSPACE_SAVE_DEBOUNCE_MS = 1500;
 
@@ -137,6 +138,7 @@ function handleWorkspaceLoad(
   loadWorkspaceState(workspaceRef, message.workspace);
   insertStartHatBlockIfMissing(workspaceRef);
   refreshColoursFromParentInWorkspace(workspaceRef);
+  clearWorkspaceHistory();
   workspaceRef.resize?.();
   notifyCodeGenerationNeeded();
 

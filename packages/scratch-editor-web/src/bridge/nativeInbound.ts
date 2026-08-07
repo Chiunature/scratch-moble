@@ -6,6 +6,7 @@ import { handleNotePickerInbound } from '../workspace-custom/fields/notePickerEd
 import { handleHandleShankInbound } from '../workspace-custom/fields/handleShankPickerEditor';
 import { handleVariablePromptInbound } from '../workspace-custom/variablePromptBridge';
 import { handleWorkspacePersistenceInbound } from './workspacePersistence';
+import { handleWorkspaceHistoryInbound } from './workspaceHistory';
 
 export function handleMessageFromNative(message: EditorInMessage): void {
   if (handleEditorLocaleInbound(message)) {
@@ -13,6 +14,10 @@ export function handleMessageFromNative(message: EditorInMessage): void {
   }
 
   if (handleWorkspacePersistenceInbound(message)) {
+    return;
+  }
+
+  if (handleWorkspaceHistoryInbound(message)) {
     return;
   }
 

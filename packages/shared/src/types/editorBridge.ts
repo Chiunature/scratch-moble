@@ -79,6 +79,11 @@ export type EditorOutMessage =
       workspace: unknown;
       blockCount: number;
       revision: number;
+    }
+  | {
+      type: 'editor.workspace.history';
+      canUndo: boolean;
+      canRedo: boolean;
     };
 
 /** React Native → WebView（injectJavaScript） */
@@ -143,6 +148,12 @@ export type EditorInMessage =
       projectId: string;
     }
   | {
+      type: 'editor.workspace.undo';
+    }
+  | {
+      type: 'editor.workspace.redo';
+    }
+  | {
       type: 'editor.locale.set';
       locale: EditorAppLocale;
     };
@@ -160,6 +171,11 @@ export type RnWorkspaceChangedMessage = Extract<
 export type RnWorkspaceLoadedMessage = Extract<
   EditorOutMessage,
   { type: 'editor.workspace.loaded' }
+>;
+
+export type RnWorkspaceHistoryMessage = Extract<
+  EditorOutMessage,
+  { type: 'editor.workspace.history' }
 >;
 
 export type RnNumberSliderOpenMessage = Extract<

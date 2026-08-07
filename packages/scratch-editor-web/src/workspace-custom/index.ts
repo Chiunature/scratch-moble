@@ -5,7 +5,7 @@
  * - fields：数字字段编辑器（滑块 / 键盘）、矩阵灯、音符、手柄按键
  * - flyout：飞出栏布局补丁
  * - toolbox：工具箱 DOM / 图标 / 交互
- * - zoom：缩放控件补丁
+ * - controls：工作区浮动按钮（撤销、重做、缩放）
  * - procedureDrag：自制积木拖动与拼接预览
  */
 export {
@@ -24,9 +24,9 @@ export {
   setupToolboxDoubleClickHideFlyout,
 } from './toolbox';
 export {
-  ensureScratchZoomControlsIfMissing,
-  patchScratchZoomControlImages,
-} from './zoom';
+  setupWorkspaceFloatingControls,
+  updateWorkspaceFloatingHistoryState,
+} from './controls';
 export {
   setupDynamicToolboxCategories,
   setupDynamicToolboxCategoriesAndRefreshFlyout,

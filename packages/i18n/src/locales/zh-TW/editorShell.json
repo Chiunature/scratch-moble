@@ -7,6 +7,8 @@
     "runOnHost": "編譯並在主機運行",
     "pauseHost": "暫停主機程序",
     "downloadToHost": "編譯並上傳到主機",
+    "undo": "上一步",
+    "redo": "下一步",
     "programSlot": "目前程序槽 {{slot}}，點擊選擇",
     "sensorStatus": "感測器狀態",
     "codePreview": "程式碼示例"

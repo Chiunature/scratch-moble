@@ -9,6 +9,7 @@ import { BLOCK_TYPES } from './blocks/blockTypes';
 import { getToolboxJson } from './blocks/toolbox';
 import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
 import { registerCodeGenerationFlush } from './bridge/codeGenNotify';
+import { setupWorkspaceHistory } from './bridge/workspaceHistory';
 import { setupWorkspacePersistence } from './bridge/workspacePersistence';
 import { registerNativeInboundBridge } from './bridge/index';
 import type { Workspace } from './codegen/types';
@@ -19,7 +20,6 @@ import {
 } from './locale/applyEditorLocale';
 import { editorTheme } from './theme';
 import {
-  ensureScratchZoomControlsIfMissing,
   patchFieldNumberEditor,
   patchMathNumberField,
   patchFieldMatrixLight,
@@ -27,7 +27,6 @@ import {
   patchFieldHandleShankPicker,
   patchFieldPortMulti,
   patchFlyoutGetWidthWhenHidden,
-  patchScratchZoomControlImages,
   patchToolboxCategoryIcons,
   patchScratchDraggerToolboxDelete,
   patchToolboxDeleteWhenFlyoutHidden,
@@ -41,9 +40,7 @@ import {
   patchContextMenuMissingTextGuard,
 } from './workspace-custom';
 
-/** 缩放条图、分类图标、滚动条：inject / resize 后 Blockly 可能重绘 DOM，需统一再跑一遍 */
 function refreshToolboxDomAfterLayout(workspace: Workspace): void {
-  patchScratchZoomControlImages(workspace);
   patchToolboxCategoryIcons(workspace);
 }
 
@@ -76,7 +73,7 @@ async function bootstrap(): Promise<void> {
       wheel: true,
     },
     zoom: {
-      controls: true,
+      controls: false,
       startScale: 0.8,
       maxScale: 1.6,
       minScale: 0.45,
@@ -95,7 +92,7 @@ async function bootstrap(): Promise<void> {
       [BLOCK_TYPES.event.whenFlagClicked]: 1,
     },
     theme: editorTheme,
-    sounds: false,
+    sounds: true,
     toolbox: getToolboxJson(),
     modalInputs: false,
   });
@@ -104,7 +101,6 @@ async function bootstrap(): Promise<void> {
   setupDynamicToolboxCategoriesAndRefreshFlyout(workspace);
   installProcedureDragDebug(workspace);
 
-  ensureScratchZoomControlsIfMissing(workspace);
   patchFlyoutGetWidthWhenHidden(workspace);
   patchToolboxDeleteWhenFlyoutHidden(workspace);
   workspace.resize?.();
@@ -120,6 +116,7 @@ async function bootstrap(): Promise<void> {
     createCodeGenerationPublisher(workspace);
 
   registerCodeGenerationFlush(flushCodePublish);
+  setupWorkspaceHistory(workspace);
   setupWorkspacePersistence(workspace);
   workspace.addChangeListener(() => scheduleCodePublish());
   flushCodePublish();

@@ -7,6 +7,8 @@
     "runOnHost": "Compile and run on host",
     "pauseHost": "Pause host program",
     "downloadToHost": "Compile and upload to host",
+    "undo": "Undo",
+    "redo": "Redo",
     "programSlot": "Program slot {{slot}}, tap to select",
     "sensorStatus": "Sensor status",
     "codePreview": "Code preview"
