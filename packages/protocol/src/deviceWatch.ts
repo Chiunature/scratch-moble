@@ -1,9 +1,13 @@
+/**
+ * 主机 deviceWatch JSON 解析与设备判别（对应电脑端 common.js）。
+ * 纯 TS，无 RN 依赖。
+ */
 import {
   DEVICE_ID_KEYS,
   DEVICE_ID_MAP,
   type DeviceIdKey,
   type SensingDeviceType,
-} from '../constants/deviceIdMap';
+} from './constants';
 
 export type WatchDeviceItem = Record<string, unknown> & {
   port?: number;

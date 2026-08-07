@@ -1,4 +1,4 @@
-import { formatPortLabel } from '../../constants/ports';
+import { formatPortLabel } from '@scratch-mobile/shared';
 
 export {
   formatDeviceKindLabel,

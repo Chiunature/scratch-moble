@@ -1,4 +1,8 @@
-import { buildInstructFrame, stringToHex } from './bleProtocol';
+/**
+ * 遥控指令帧构建（对应电脑端 motorChange / matrixChange）。
+ * 纯 TS，无 RN 依赖。
+ */
+import { buildInstructFrame, stringToHex } from './frames';
 
 export type MotorControlPayload =
   | { type: 'speed'; obj: { port: number; speed: number } }

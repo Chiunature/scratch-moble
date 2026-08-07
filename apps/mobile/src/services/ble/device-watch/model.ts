@@ -1,11 +1,15 @@
-import type { DeviceIdKey, SensingDeviceType } from '../../../constants/deviceIdMap';
-import { isSensorPort, SENSOR_PORT_COUNT } from '../../../constants/ports';
+import { readHostWillAiState } from '@scratch-mobile/protocol';
 import type {
+  DeviceIdKey,
   DeviceWatchPayload,
   HostWillAiState,
+  SensingDeviceType,
   WatchDeviceItem,
-} from '../../../utils/bleDeviceParser';
-import { readHostWillAiState } from '../../../utils/bleDeviceParser';
+} from '@scratch-mobile/protocol';
+import {
+  SENSOR_PORT_COUNT,
+  isSensorPort,
+} from '@scratch-mobile/shared';
 
 /** 触摸传感器快照 */
 export type TouchSensorSnapshot = {

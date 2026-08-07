@@ -5,29 +5,18 @@ import {
   BLE_REQUEST_MTU,
   BLE_UPLOAD_CHUNK_SIZE,
   BLE_UPLOAD_TIMEOUT_MS,
-  COMMANDS,
-  CHARACTERISTIC_UUID,
-  FUNCTION_CODES,
-  SERVICE_UUID,
   TARGET_DEVICE_NAME,
 } from '../../../constants/bleCommand';
-import { BLE_SIGN, type BleSign } from '../../../constants/bleSign';
 import {
-  distinguishDevice,
-  drainDeviceWatchJsonBuffer,
-  parseDeviceData,
-  readHostWillAiState,
-  type DeviceWatchPayload,
-} from '../../../utils/bleDeviceParser';
-import {
-  buildMatrixCommand,
-  buildMotorCommand,
-  type MatrixControlPayload,
-  type MotorControlPayload,
-} from '../../../utils/bleRemoteControl';
-import {
+  BLE_SIGN,
+  CHARACTERISTIC_UUID,
+  COMMANDS,
+  FUNCTION_CODES,
+  SERVICE_UUID,
   base64ToBytes,
   buildCommand,
+  buildMatrixCommand,
+  buildMotorCommand,
   buildUploadFrames,
   bytesToBase64,
   catchData,
@@ -35,11 +24,19 @@ import {
   consumeFrame,
   decodeFileListPayload,
   delay,
+  distinguishDevice,
+  drainDeviceWatchJsonBuffer,
   hexToString,
+  parseDeviceData,
+  readHostWillAiState,
   stringToHex,
   verifyBootFrame,
+  type BleSign,
+  type DeviceWatchPayload,
+  type MatrixControlPayload,
+  type MotorControlPayload,
   type ParsedFrame,
-} from '../../../utils/bleProtocol';
+} from '@scratch-mobile/protocol';
 import { bleLog, isBleDisconnectError } from './logger';
 import { isDeviceWatchDebugEnabled } from './debug';
 import { requestBlePermissions } from './permissions';
@@ -817,6 +814,6 @@ export type {
   WatchDeviceItem,
 } from '../types';
 
-export type { DeviceWatchPayload } from '../../../utils/bleDeviceParser';
+export type { DeviceWatchPayload } from '@scratch-mobile/protocol';
 
-export { BLE_SIGN } from '../../../constants/bleSign';
+export { BLE_SIGN } from '@scratch-mobile/protocol';

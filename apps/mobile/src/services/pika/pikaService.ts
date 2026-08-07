@@ -18,7 +18,7 @@ import {
   type PikaResult,
 } from 'react-native-pika';
 
-import { base64ToBytes } from '../../utils/bleProtocol';
+import { base64ToBytes } from '@scratch-mobile/protocol';
 
 /** PikaScript 字节码 magic：0x0f + "pyo"，合法 .py.o 文件必须以这 4 字节开头 */
 const PIKA_BYTECODE_MAGIC = [0x0f, 0x70, 0x79, 0x6f] as const;

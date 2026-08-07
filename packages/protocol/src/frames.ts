@@ -1,3 +1,8 @@
+/**
+ * BLE 指令帧编解码（对应电脑端 common.js）。
+ * 纯字节逻辑，无 RN 依赖；帧头 0x5a 0x97 0x98，帧尾校验和 + 0xa5。
+ */
+
 export type ParsedFrame = {
   /** 完整帧字节 */
   data: number[];

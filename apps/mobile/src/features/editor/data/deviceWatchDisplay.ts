@@ -1,4 +1,4 @@
-import type { SensingDeviceType } from '../../../constants/deviceIdMap';
+import type { SensingDeviceType } from '@scratch-mobile/protocol';
 import type { ParsedWatchPort } from '../../../services/ble';
 import { tDeviceWatch } from '../i18n/deviceWatchI18n';
 

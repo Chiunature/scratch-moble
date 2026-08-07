@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { useBleStore } from '../../../store/useBleStore';
-import type { DeviceWatchPayload } from '../../../utils/bleDeviceParser';
+import type { DeviceWatchPayload } from '@scratch-mobile/protocol';
 import {
   getWatchPort,
   isWatchPortConnected,

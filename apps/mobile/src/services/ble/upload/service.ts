@@ -8,7 +8,7 @@
  * 上传协议对齐 EST-link：FILE_NAME(0xda) 传文件名 → 分包 FILE_DATA(0xaa) 停等 ACK
  * → 末包 LAST_DATA(0xbb) 或 LAST_DATA_RUN(0xbc，上传后运行)。
  */
-import { FUNCTION_CODES } from '../../../constants/bleCommand';
+import { FUNCTION_CODES } from '@scratch-mobile/protocol';
 import { i18n } from '@scratch-mobile/i18n';
 import { readBytecodeFile } from '../../pika/pikaService';
 import { bleDeviceManager } from '../core/manager';

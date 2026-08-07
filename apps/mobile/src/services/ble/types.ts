@@ -27,10 +27,7 @@ export type DeleteFileOptions = {
 
 export type {
   DeviceWatchPayload,
-  WatchDeviceItem,
-} from '../../utils/bleDeviceParser';
-
-export type {
   MatrixControlPayload,
   MotorControlPayload,
-} from '../../utils/bleRemoteControl';
+  WatchDeviceItem,
+} from '@scratch-mobile/protocol';
