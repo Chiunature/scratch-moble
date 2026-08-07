@@ -8,7 +8,14 @@
  * - zoom：缩放控件补丁
  * - procedureDrag：自制积木拖动与拼接预览
  */
-export { patchFieldNumberEditor, patchFieldMatrixLight, patchFieldNotePicker, patchFieldHandleShankPicker, patchFieldPortMulti } from './fields';
+export {
+  patchFieldNumberEditor,
+  patchFieldMatrixLight,
+  patchFieldNotePicker,
+  patchFieldHandleShankPicker,
+  patchFieldPortMulti,
+  patchMathNumberField,
+} from './fields';
 export { patchFlyoutGetWidthWhenHidden, setupFlyoutWidthClamp } from './flyout';
 export {
   patchToolboxCategoryIcons,

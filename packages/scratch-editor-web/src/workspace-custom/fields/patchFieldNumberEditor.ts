@@ -1,6 +1,9 @@
 import { FieldNumber, fieldRegistry } from 'scratch-blocks';
 
-import { openNumberSliderEditor, type ScratchNumberField } from './numberSliderEditor';
+import {
+  openNumberSliderEditor,
+  type ScratchNumberField,
+} from './numberSliderEditor';
 import {
   openScratchNumberKeyboardEditor,
   tuneKeyboardFieldInput,

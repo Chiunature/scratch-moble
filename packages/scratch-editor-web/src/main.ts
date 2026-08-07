@@ -21,6 +21,7 @@ import { editorTheme } from './theme';
 import {
   ensureScratchZoomControlsIfMissing,
   patchFieldNumberEditor,
+  patchMathNumberField,
   patchFieldMatrixLight,
   patchFieldNotePicker,
   patchFieldHandleShankPicker,
@@ -55,6 +56,7 @@ async function bootstrap(): Promise<void> {
   patchDataVariableReporterOutput();
   ensureProcedureEditorModalDom();
   patchFieldNumberEditor();
+  patchMathNumberField();
   patchFieldMatrixLight();
   patchFieldNotePicker();
   patchFieldHandleShankPicker();
