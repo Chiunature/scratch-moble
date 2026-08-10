@@ -5,10 +5,10 @@ import {
   HOST_PROGRAM_SLOT_DEFAULT,
   stopHostApp,
   uploadBytecodeToHost,
-} from '../../services/ble';
-import { useBleStore } from '../../store/useBleStore';
-import { compileGeneratedCode } from '../../services/pika';
-import type { PikaWorkflowModalState } from './PikaWorkflowModal';
+} from '../../../services/ble';
+import { useBleStore } from '../../../store/useBleStore';
+import { compileGeneratedCode } from '../../../services/pika';
+import type { PikaWorkflowModalState } from '../components/PikaWorkflowModal';
 
 /**
  * 编辑器 PikaScript 工作流（轨道 A 编译 + 轨道 B BLE 上传）。
@@ -16,7 +16,7 @@ import type { PikaWorkflowModalState } from './PikaWorkflowModal';
 
 export type PikaActionState = 'idle' | 'compiling' | 'running' | 'uploading';
 
-export type { PikaWorkflowModalState } from './PikaWorkflowModal';
+export type { PikaWorkflowModalState } from '../components/PikaWorkflowModal';
 
 type HostToolbarAction = 'run' | 'download' | 'pause';
 

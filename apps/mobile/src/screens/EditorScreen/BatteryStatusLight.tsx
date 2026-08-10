@@ -6,7 +6,7 @@ import { colors, fontSize, fontWeight } from '../../theme';
 import {
   getBatteryStatusColor,
   parseBatteryPercent,
-} from './deviceWatchDisplay';
+} from '../../features/editor/data/deviceWatchDisplay';
 
 export function BatteryStatusLight() {
   const { t } = useTranslation('editorShell');

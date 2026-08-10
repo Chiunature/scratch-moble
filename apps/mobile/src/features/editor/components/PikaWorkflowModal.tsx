@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
-import { mapBleUploadErrorMessage } from '../../services/ble';
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { mapBleUploadErrorMessage } from '../../../services/ble';
+import { colors, fontSize, fontWeight, spacing } from '../../../theme';
 
 export type PikaWorkflowModalKind = 'progress' | 'success' | 'error';
 

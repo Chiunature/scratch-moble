@@ -6,13 +6,13 @@ import { ScrollablePanel } from '../../components/ScrollablePanel';
 import { useDeviceWatch, type ParsedWatchPort } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { formatPortLabel } from '@scratch-mobile/shared';
 import {
   formatDeviceKindLabel,
-  formatPortLabel,
   formatPortReading,
   getBatteryStatusColor,
   parseBatteryPercent,
-} from './deviceWatchDisplay';
+} from '../../features/editor/data/deviceWatchDisplay';
 
 type Props = {
   onClose: () => void;

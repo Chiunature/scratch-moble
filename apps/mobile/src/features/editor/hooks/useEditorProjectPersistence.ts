@@ -5,14 +5,14 @@ import type { WebView } from 'react-native-webview';
 import { getDefaultProjectName } from '@scratch-mobile/i18n';
 import type { RnWorkspaceChangedMessage } from '@scratch-mobile/shared';
 
-import { forceInjectEditorMessage } from '../../features/editor';
+import { forceInjectEditorMessage } from '../bridge/injectEditorMessage';
 import {
   loadProject,
   ProjectDocumentParseError,
   saveProjectWorkspace,
   waitForPendingProjectSaves,
-} from '../../services/projects';
-import { useProjectStore } from '../../store/useProjectStore';
+} from '../../../services/projects';
+import { useProjectStore } from '../../../store/useProjectStore';
 
 const FLUSH_TIMEOUT_MS = 2500;
 const WORKSPACE_SAVE_DEBOUNCE_MS = 500;
