@@ -7,9 +7,24 @@ import {
   RemoteShoulderButtons,
   useRemoteControlController,
 } from '../../features/remoteControl';
+import { bleDeviceManager, bleLog } from '../../services/ble';
+import { useBleStore } from '../../store/useBleStore';
 import { styles } from '../../features/remoteControl/remoteControl.styles';
 
+/** 发送遥控键值帧；失败仅告警，不打断操作 */
+function sendRemoteFrame(frame: number[]): void {
+  void bleDeviceManager.sendCommand(frame).catch(error => {
+    bleLog.warn(
+      '遥控指令发送失败',
+      error instanceof Error ? error.message : error,
+    );
+  });
+}
+
 export function RemoteControlScreen() {
+  const isConnected =
+    useBleStore(state => state.connectionStatus) === 'connected';
+
   const {
     controlState,
     setDirection,
@@ -17,7 +32,9 @@ export function RemoteControlScreen() {
     releaseButton,
     pressShoulder,
     releaseShoulder,
-  } = useRemoteControlController();
+  } = useRemoteControlController({
+    send: isConnected ? sendRemoteFrame : undefined,
+  });
 
   return (
     <View style={styles.container}>

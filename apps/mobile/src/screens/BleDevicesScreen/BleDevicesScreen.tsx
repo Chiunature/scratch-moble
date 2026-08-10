@@ -16,7 +16,7 @@ import { useTranslation } from '@scratch-mobile/i18n';
 
 import backIcon from '../../../assets/bleDevicesScreen/back.png';
 import {
-  bleDeviceManager,
+  bleConnectionController,
   type BleDevice,
   bleLog,
   loadPairedDevices,
@@ -24,9 +24,6 @@ import {
   normalizeBleDeviceId,
   type PairedBleDevice,
   removePairedDevice,
-  savePairedDevice,
-  startScan,
-  stopScan,
   TARGET_DEVICE_NAME,
 } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
@@ -89,10 +86,10 @@ export function BleDevicesScreen() {
   const bluetoothState = useBleStore(state => state.bluetoothState);
   const connectionStatus = useBleStore(state => state.connectionStatus);
   const connectedDevice = useBleStore(state => state.connectedDevice);
+  const isScanning = useBleStore(state => state.isScanning);
   const connectedDeviceId = connectedDevice?.id ?? null;
   const isConnecting = connectionStatus === 'connecting';
 
-  const [isScanning, setIsScanning] = useState(false);
   const [devices, setDevices] = useState<BleDevice[]>([]);
   const [pairedDevices, setPairedDevices] = useState<PairedBleDevice[]>([]);
   const [isPaired, setIsPaired] = useState(false);
@@ -111,10 +108,6 @@ export function BleDevicesScreen() {
     },
     [t],
   );
-
-  const resetConnection = useCallback(() => {
-    useBleStore.getState().resetConnection();
-  }, []);
 
   const isConnectedToDevice = useCallback(
     (deviceId: string) =>
@@ -146,21 +139,12 @@ export function BleDevicesScreen() {
     setErrorMessage(null);
 
     try {
-      if (bleDeviceManager.isConnected()) {
-        try {
-          await bleDeviceManager.stopDeviceWatch();
-        } catch {
-          // 监控可能未开启或连接已不稳定，继续尝试断开
-        }
-        await bleDeviceManager.disconnect();
-      }
-      resetConnection();
+      await bleConnectionController.disconnect();
       bleLog.info('已主动断开连接');
     } catch (error) {
-      resetConnection();
       handleError(error, 'errors.disconnectFailed');
     }
-  }, [handleError, resetConnection]);
+  }, [handleError]);
 
   const handleConnect = useCallback(
     async (device: BleDevice) => {
@@ -169,58 +153,29 @@ export function BleDevicesScreen() {
       }
 
       setErrorMessage(null);
-      const { setConnectionStatus, setConnectedDevice } =
-        useBleStore.getState();
       const normalizedDevice = normalizeBleDevice(device);
 
       try {
-        if (isScanning) {
-          stopScan();
-          setIsScanning(false);
-        }
-
-        setConnectionStatus('connecting');
-
-        if (
-          bleDeviceManager.isConnected() &&
-          !isConnectedToDevice(normalizedDevice.id)
-        ) {
-          await bleDeviceManager.disconnect().catch(() => undefined);
-          resetConnection();
-        }
-
-        await bleDeviceManager.connect(normalizedDevice.id, () => {
-          bleLog.info('设备已断开', normalizedDevice.id);
-          resetConnection();
-        });
-
-        const pairedList = await savePairedDevice(normalizedDevice);
-        setPairedDevices(pairedList);
-        setConnectedDevice(normalizedDevice);
-        setConnectionStatus('connected');
+        const result = await bleConnectionController.connect(normalizedDevice);
+        setPairedDevices(result.pairedDevices);
         bleLog.info('已连接并加入已配对列表', normalizedDevice.id);
 
-        try {
-          await bleDeviceManager.startDeviceWatch();
-        } catch (watchError) {
-          bleLog.warn(
-            '设备监控开启失败',
-            watchError instanceof Error ? watchError.message : watchError,
-          );
+        if (result.watchError) {
+          const message =
+            result.watchError instanceof Error
+              ? result.watchError.message
+              : '';
           setErrorMessage(
-            watchError instanceof Error
-              ? t('errors.connectedWatchFailedWithMessage', {
-                  message: watchError.message,
-                })
+            message
+              ? t('errors.connectedWatchFailedWithMessage', { message })
               : t('errors.connectedWatchFailed'),
           );
         }
       } catch (error) {
         handleError(error, 'errors.connectFailed');
-        resetConnection();
       }
     },
-    [handleError, isConnectedToDevice, isScanning, resetConnection, t],
+    [handleError, t],
   );
 
   const handleDevicePress = useCallback(
@@ -286,8 +241,7 @@ export function BleDevicesScreen() {
     }
 
     if (isScanning) {
-      stopScan();
-      setIsScanning(false);
+      bleConnectionController.stopScan();
       return;
     }
 
@@ -297,11 +251,9 @@ export function BleDevicesScreen() {
     }
 
     try {
-      await startScan(upsertDevice);
-      setIsScanning(true);
+      await bleConnectionController.startScan(upsertDevice);
     } catch (error) {
       handleError(error, 'errors.scanFailed');
-      setIsScanning(false);
     }
   }, [bluetoothState, handleError, isPaired, isScanning, t, upsertDevice]);
 
@@ -364,7 +316,7 @@ export function BleDevicesScreen() {
     ],
   );
 
-  useEffect(() => () => stopScan(), []);
+  useEffect(() => () => bleConnectionController.stopScan(), []);
 
   useFocusEffect(
     useCallback(() => {
@@ -377,8 +329,7 @@ export function BleDevicesScreen() {
       return;
     }
 
-    stopScan();
-    setIsScanning(false);
+    bleConnectionController.stopScan();
     setDevices([]);
 
     setErrorMessage(
