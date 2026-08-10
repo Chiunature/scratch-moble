@@ -1,8 +1,5 @@
 import { Asset } from 'expo-asset';
-import {
-  parseMpdManifest,
-  toManifestViewModel,
-} from '@scratch-mobile/build-guide';
+import { parseMpdManifest } from '@scratch-mobile/build-guide';
 
 import catalogJson from '../../../../assets/buildGuide/catalog.json';
 import containerDemoManifest from '../../../../assets/buildGuide/models/container-demo/manifest.json';
@@ -68,9 +65,7 @@ export const BUILD_GUIDE_CATALOG: BuildGuideCatalogEntry[] =
 export function getBuildGuideManifest(
   modelId: BuildGuideModelId,
 ): BuildGuideManifest {
-  return toManifestViewModel(
-    parseMpdManifest(BUILD_GUIDE_MODELS[modelId].manifest),
-  );
+  return parseMpdManifest(BUILD_GUIDE_MODELS[modelId].manifest);
 }
 
 /**

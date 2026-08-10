@@ -6,10 +6,10 @@ import {
   type LdrStepHandlerFacade,
 } from '@scratch-mobile/ldr-engine';
 
-import type { BuildGuideStep } from '../types';
+import type { MpdCamera } from '@scratch-mobile/build-guide';
 
 type ViewportSize = { width: number; height: number };
-type StepCamera = NonNullable<BuildGuideStep['camera']>;
+type StepCamera = MpdCamera;
 
 const _defaultMatrix = new THREE.Matrix4();
 const _rotationMatrix = new THREE.Matrix4();
@@ -123,8 +123,8 @@ function applyPreviewStepToScene(
 export function applyStepToScene(
   camera: THREE.Camera,
   root: THREE.Object3D,
-  step: BuildGuideStep | undefined,
   stepIndex: number,
+  stepCamera?: MpdCamera,
   stepHandler?: LdrStepHandlerFacade | null,
   viewport?: ViewportSize,
   mode: LdrDisplayMode = 'instruction',
@@ -139,12 +139,12 @@ export function applyStepToScene(
     // Instruction camera looks at the world origin (legacy OrbitControls target).
     return new THREE.Vector3(0, 0, 0);
   }
-  if (step?.camera) {
-    applyStepCamera(camera, step.camera, viewport);
+  if (stepCamera) {
+    applyStepCamera(camera, stepCamera, viewport);
     return new THREE.Vector3(
-      step.camera.target[0],
-      step.camera.target[1],
-      step.camera.target[2],
+      stepCamera.target[0],
+      stepCamera.target[1],
+      stepCamera.target[2],
     );
   }
 

@@ -1,16 +1,11 @@
-import type {
-  BuildGuideManifestViewModel,
-  BuildGuideStepViewModel,
-} from '@scratch-mobile/build-guide';
+import type { MpdManifest } from '@scratch-mobile/build-guide';
 import type {
   LdrPartsBuilderFacade,
   LdrStepHandlerFacade,
   LoadedLdrModel,
 } from '@scratch-mobile/ldr-engine';
 
-export type BuildGuideStep = BuildGuideStepViewModel;
-
-export type BuildGuideManifest = BuildGuideManifestViewModel;
+export type BuildGuideManifest = MpdManifest;
 
 export type BuildGuideBundle = {
   manifest: BuildGuideManifest;

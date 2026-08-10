@@ -15,7 +15,7 @@ import {
 import { GLView, type ExpoWebGLRenderingContext } from 'expo-gl';
 import * as THREE from 'three';
 
-import { resolveStepViewModel } from '@scratch-mobile/build-guide';
+import { resolveStepCamera } from '@scratch-mobile/build-guide';
 import type { LdrDisplayMode } from '@scratch-mobile/ldr-engine';
 
 import type { StepAnimationMode } from '../settings';
@@ -71,13 +71,12 @@ export function BuildGuideExpoGlCanvas({
   appearanceRevision,
 }: BuildGuideExpoGlCanvasProps) {
   const mode = resolveDisplayMode(bundle);
-  const totalSteps = bundle.stepHandler?.getTotalSteps() ?? 0;
-  const step = useMemo(
+  const stepCamera = useMemo(
     () =>
       bundle.stepHandler
-        ? resolveStepViewModel(bundle.manifest, stepIndex, totalSteps)
+        ? resolveStepCamera(bundle.manifest, stepIndex)
         : undefined,
-    [bundle.manifest, bundle.stepHandler, stepIndex, totalSteps],
+    [bundle.manifest, bundle.stepHandler, stepIndex],
   );
   const camera = useMemo(() => createBuildGuideCamera(mode), [mode]);
   const cameraRef = useRef<BuildGuideCamera>(camera);
@@ -219,7 +218,7 @@ export function BuildGuideExpoGlCanvas({
 
   useExpoGlStepScene({
     bundle,
-    step,
+    stepCamera,
     stepIndex,
     mode,
     camera,

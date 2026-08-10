@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { resolveStepViewModel } from '@scratch-mobile/build-guide';
 import type { LdrStepHandlerFacade } from '@scratch-mobile/ldr-engine';
 
 import { markStepNavigation } from '../runtime/stepNavigationSignal';
-import type { BuildGuideManifest, BuildGuideStep } from '../types';
 
 type UseBuildGuideStepsResult = {
   currentIndex: number;
-  currentStep: BuildGuideStep;
   totalSteps: number;
   isLastStep: boolean;
   canGoPrev: boolean;
@@ -20,7 +17,6 @@ type UseBuildGuideStepsResult = {
 };
 
 export function useBuildGuideSteps(
-  manifest: BuildGuideManifest,
   stepHandler: LdrStepHandlerFacade | null,
 ): UseBuildGuideStepsResult {
   const totalSteps = stepHandler?.getTotalSteps() ?? 0;
@@ -71,15 +67,9 @@ export function useBuildGuideSteps(
     [applyStepIndex],
   );
 
-  const currentStep = useMemo(
-    () => resolveStepViewModel(manifest, currentIndex, totalSteps),
-    [currentIndex, manifest, totalSteps],
-  );
-
   return useMemo(
     () => ({
       currentIndex,
-      currentStep,
       totalSteps,
       isLastStep: totalSteps > 0 && currentIndex === totalSteps - 1,
       canGoPrev: currentIndex > 0,
@@ -89,6 +79,6 @@ export function useBuildGuideSteps(
       goNext,
       goToStep,
     }),
-    [currentIndex, currentStep, totalSteps, goPrev, goNext, goToStep],
+    [currentIndex, totalSteps, goPrev, goNext, goToStep],
   );
 }

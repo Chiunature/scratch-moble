@@ -58,7 +58,7 @@ export function BuildGuideScreen({ navigation, route }: Props) {
   // 等设置 sync 到 LDR.Options 后再加载，避免 stud 选项闪默认值再重载
   const ldr = useLdrModel(settingsReady ? manifest : null);
   const reloadLdrModel = ldr.reload;
-  const steps = useBuildGuideSteps(manifest, ldr.stepHandler);
+  const steps = useBuildGuideSteps(ldr.stepHandler);
 
   const bundle = useMemo<BuildGuideBundle>(
     () => ({

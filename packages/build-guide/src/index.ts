@@ -6,10 +6,4 @@ export {
   type RuntimeStepOverride,
 } from './schema';
 export { parseMpdManifest } from './parseManifest';
-export {
-  toManifestViewModel,
-  resolveStepViewModel,
-  type BuildGuideManifestViewModel,
-  type BuildGuidePartViewModel,
-  type BuildGuideStepViewModel,
-} from './toStepViewModel';
+export { resolveStepCamera } from './resolveStepCamera';

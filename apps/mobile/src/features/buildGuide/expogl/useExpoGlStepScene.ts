@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+import type { MpdCamera } from '@scratch-mobile/build-guide';
 import type { LdrDisplayMode } from '@scratch-mobile/ldr-engine';
 
 import {
@@ -15,7 +16,7 @@ import {
 } from '../runtime/applyStepToScene';
 import { getLastStepNavigationAt } from '../runtime/stepNavigationSignal';
 import type { StepAnimationMode } from '../settings';
-import type { BuildGuideBundle, BuildGuideStep } from '../types';
+import type { BuildGuideBundle } from '../types';
 import {
   disposeUploadedFrame,
   resolveRenderSize,
@@ -97,7 +98,7 @@ function cancelScheduledPrewarmTimeout(
 
 type UseExpoGlStepSceneParams = {
   bundle: BuildGuideBundle;
-  step: BuildGuideStep | undefined;
+  stepCamera?: MpdCamera;
   stepIndex: number;
   mode: LdrDisplayMode;
   camera: BuildGuideCamera;
@@ -120,7 +121,7 @@ type UseExpoGlStepSceneParams = {
 
 export function useExpoGlStepScene({
   bundle,
-  step,
+  stepCamera,
   stepIndex,
   mode,
   camera,
@@ -513,8 +514,8 @@ export function useExpoGlStepScene({
       const orbitTarget = applyStepToScene(
         camera,
         root,
-        step,
         stepIndex,
+        stepCamera,
         stepHandler,
         layoutSize,
         mode,
@@ -553,7 +554,7 @@ export function useExpoGlStepScene({
     resetGesture,
     rootRef,
     setRenderError,
-    step,
+    stepCamera,
     stepIndex,
     stopOrbitLoop,
     uploadedFrameRef,
@@ -657,6 +658,6 @@ export function useExpoGlStepScene({
       releaseRuntimeDrawCallCacheRef(drawCallCacheRef, glRef.current);
       uploadedSceneRef.current = null;
     },
-    [],
+    [glRef],
   );
 }
