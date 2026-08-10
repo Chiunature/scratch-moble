@@ -1,10 +1,17 @@
 export {
   bleDeviceManager,
   BleDeviceManager,
-  startScan,
-  stopScan,
   subscribeBluetoothState,
 } from './core/manager';
+
+export { bleConnectionController } from './core/connectionController';
+
+export {
+  ConnectionPhaseMachine,
+  type BleConnectionPhase,
+} from './core/phaseMachine';
+
+export { destroySharedBleManager } from './core/singleton';
 
 export {
   HOST_PROGRAM_SLOTS,

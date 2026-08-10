@@ -1,4 +1,9 @@
-import { Device, type Characteristic, type State } from 'react-native-ble-plx';
+import {
+  Device,
+  type BleManager,
+  type Characteristic,
+  type State,
+} from 'react-native-ble-plx';
 
 import {
   BLE_FILE_LIST_DELAY_MS,
@@ -39,6 +44,7 @@ import {
 } from '@scratch-mobile/protocol';
 import { bleLog, isBleDisconnectError } from './logger';
 import { isDeviceWatchDebugEnabled } from './debug';
+import { ConnectionPhaseMachine, type BleConnectionPhase } from './phaseMachine';
 import { requestBlePermissions } from './permissions';
 import { getSharedBleManager } from './singleton';
 import type {
@@ -59,11 +65,12 @@ function getDeviceDisplayName(device: Device): string {
 }
 
 export class BleDeviceManager {
-  private bleManager = getSharedBleManager();
+  private bleManager: BleManager | null = null;
+  /** 连接相位机：唯一事实源，store 经 onPhaseChange 投影 */
+  private readonly machine = new ConnectionPhaseMachine();
   private connectedDevice: Device | null = null;
   private characteristic: Characteristic | null = null;
   private isDeviceScanning = false;
-  private disconnectCallback: (() => void) | null = null;
 
   private sign: BleSign = null;
   private binaryReceiveBuffer: number[] = [];
@@ -91,8 +98,39 @@ export class BleDeviceManager {
   private watchThrottleTimer: ReturnType<typeof setTimeout> | null = null;
   private disconnectHandled = false;
 
-  getManager() {
+  /** 解析共享 BleManager（destroySharedBleManager 后可重建，不能持有过期实例） */
+  private resolveManager(): BleManager {
+    this.bleManager = getSharedBleManager();
     return this.bleManager;
+  }
+
+  getManager() {
+    return this.resolveManager();
+  }
+
+  getPhase() {
+    return this.machine.getPhase();
+  }
+
+  /** 订阅连接相位变化（store 投影用）；返回退订函数 */
+  onPhaseChange(listener: (phase: BleConnectionPhase) => void): () => void {
+    return this.machine.onPhaseChange(listener);
+  }
+
+  isScanning(): boolean {
+    return this.isDeviceScanning;
+  }
+
+  /** 当前已连接设备的展示信息（store 投影用） */
+  getConnectedDevice(): BleDevice | null {
+    if (!this.connectedDevice) {
+      return null;
+    }
+    return {
+      id: this.connectedDevice.id,
+      name: getDeviceDisplayName(this.connectedDevice),
+      rssi: this.connectedDevice.rssi ?? null,
+    };
   }
 
   setDeviceStatusCallback(
@@ -293,6 +331,7 @@ export class BleDeviceManager {
     this.uploadFileName = fileName;
     this.uploadOnProgress = onProgress ?? null;
     this.sign = BLE_SIGN.BOOT_BIN;
+    this.machine.transition('uploading');
 
     bleLog.info(`上传分包数: ${this.uploadTotalFrames}`);
 
@@ -311,29 +350,30 @@ export class BleDeviceManager {
     await this.sendCommand(checkFileName(fileName, functionCode));
   }
 
-  async connect(deviceId: string, onDisconnected?: () => void): Promise<void> {
+  async connect(deviceId: string): Promise<void> {
     if (this.isDeviceScanning) {
       this.stopScan();
     }
 
     bleLog.info('连接设备', deviceId);
 
+    // 前置校验先做，通过后才进入 connecting（避免失败路径残留在 connecting 态）
     const hasPermission = await requestBlePermissions();
     if (!hasPermission) {
       throw new Error('蓝牙权限未授予');
     }
 
-    const state = await this.bleManager.state();
+    const state = await this.resolveManager().state();
     if (state !== 'PoweredOn') {
       throw new Error(`蓝牙未开启（${state}）`);
     }
 
+    this.machine.transition('connecting');
     let connectedDevice: Device | null = null;
 
     try {
-      this.disconnectCallback = onDisconnected ?? null;
       this.disconnectHandled = false;
-      connectedDevice = await this.bleManager.connectToDevice(deviceId, {
+      connectedDevice = await this.resolveManager().connectToDevice(deviceId, {
         requestMTU: BLE_REQUEST_MTU,
       });
       this.connectedDevice = connectedDevice;
@@ -363,19 +403,19 @@ export class BleDeviceManager {
         this.handleDisconnected('设备断开');
       });
 
+      this.machine.transition('connected');
       bleLog.info('蓝牙连接成功', deviceId);
     } catch (error) {
       const connectedDeviceId = connectedDevice?.id ?? this.connectedDevice?.id;
       this.disconnectHandled = true;
       this.connectedDevice = null;
       this.characteristic = null;
-      this.disconnectCallback = null;
       this.resetReceiveBuffers();
       this.clearWatchThrottle();
 
       if (connectedDeviceId) {
         try {
-          await this.bleManager.cancelDeviceConnection(connectedDeviceId);
+          await this.resolveManager().cancelDeviceConnection(connectedDeviceId);
         } catch (disconnectError) {
           if (!isBleDisconnectError(disconnectError)) {
             bleLog.warn('连接失败后断开设备失败', disconnectError);
@@ -383,6 +423,7 @@ export class BleDeviceManager {
         }
       }
 
+      this.machine.transition('disconnected');
       throw error;
     }
   }
@@ -396,7 +437,9 @@ export class BleDeviceManager {
     bleLog.info('主动断开连接', deviceId);
 
     try {
-      await this.bleManager.cancelDeviceConnection(deviceId);
+      await this.resolveManager().cancelDeviceConnection(deviceId);
+      // 部分平台 cancel 成功但不回调 onDisconnected，显式收尾（disconnectHandled 防重入）
+      this.handleDisconnected('主动断开');
     } catch (error) {
       if (isBleDisconnectError(error)) {
         this.handleDisconnected('主动断开');
@@ -416,14 +459,15 @@ export class BleDeviceManager {
       throw new Error('蓝牙权限未授予');
     }
 
-    const state = await this.bleManager.state();
+    const state = await this.resolveManager().state();
     if (state !== 'PoweredOn') {
       throw new Error(`蓝牙未开启（${state}）`);
     }
 
     bleLog.info('开始扫描', TARGET_DEVICE_NAME);
     this.isDeviceScanning = true;
-    this.bleManager.startDeviceScan(null, null, (error, device) => {
+    this.machine.transition('scanning');
+    this.resolveManager().startDeviceScan(null, null, (error, device) => {
       if (error) {
         bleLog.warn('扫描错误', error.message);
         return;
@@ -453,8 +497,10 @@ export class BleDeviceManager {
     }
 
     bleLog.info('停止扫描');
-    this.bleManager.stopDeviceScan();
+    this.resolveManager().stopDeviceScan();
     this.isDeviceScanning = false;
+    // 已连接时停扫回 connected（切换设备场景：连接保留）；否则回 idle
+    this.machine.transition(this.connectedDevice ? 'connected' : 'idle');
   }
 
   /** 系统蓝牙开关变化（PoweredOff 等） */
@@ -466,7 +512,7 @@ export class BleDeviceManager {
     bleLog.info('系统蓝牙不可用，停止扫描并清理连接', state);
 
     try {
-      this.bleManager.stopDeviceScan();
+      this.resolveManager().stopDeviceScan();
     } catch {
       // 适配器已关闭时 stopDeviceScan 可能失败，仍重置本地扫描状态
     }
@@ -476,6 +522,11 @@ export class BleDeviceManager {
       this.handleDisconnected(
         state === 'PoweredOff' ? '蓝牙已关闭' : `蓝牙不可用（${state}）`,
       );
+      return;
+    }
+
+    if (this.machine.getPhase() === 'scanning') {
+      this.machine.transition('idle');
     }
   }
 
@@ -486,6 +537,7 @@ export class BleDeviceManager {
     this.clearPendingBinary(new Error('bleManagerDestroyed'));
     this.clearWatchThrottle();
     void this.disconnect();
+    this.machine.transition('disconnected');
   }
 
   private subscribeToNotifications(): void {
@@ -698,6 +750,9 @@ export class BleDeviceManager {
     this.sign = null;
     this.uploadFrames = [];
     this.uploadOnProgress = null;
+    if (this.connectedDevice) {
+      this.machine.transition('connected');
+    }
     const resolve = this.uploadResolve;
     this.uploadResolve = null;
     this.uploadReject = null;
@@ -722,6 +777,9 @@ export class BleDeviceManager {
       bleLog.info('上传因断开而中断');
     } else {
       bleLog.warn('上传取消', error.message);
+    }
+    if (this.connectedDevice) {
+      this.machine.transition('connected');
     }
     reject?.(error);
   }
@@ -768,6 +826,16 @@ export class BleDeviceManager {
     }
     this.disconnectHandled = true;
 
+    // 已连接时扫描中被动断开：同步停扫，避免残留扫描态
+    if (this.isDeviceScanning) {
+      try {
+        this.resolveManager().stopDeviceScan();
+      } catch {
+        // 适配器已异常时忽略
+      }
+      this.isDeviceScanning = false;
+    }
+
     const deviceId = this.connectedDevice?.id;
     bleLog.info('连接已结束', reason, deviceId ?? '');
 
@@ -777,8 +845,7 @@ export class BleDeviceManager {
     this.clearWatchThrottle();
     this.cancelUpload(new Error('deviceDisconnected'));
     this.clearPendingBinary(new Error('deviceDisconnected'));
-    this.disconnectCallback?.();
-    this.disconnectCallback = null;
+    this.machine.transition('disconnected');
   }
 }
 
@@ -792,16 +859,6 @@ export function subscribeBluetoothState(
     onStateChange(state);
   }, true);
   return () => subscription.remove();
-}
-
-export async function startScan(
-  onDeviceFound: (device: BleDevice) => void,
-): Promise<void> {
-  await bleDeviceManager.startScan(onDeviceFound);
-}
-
-export function stopScan(): void {
-  bleDeviceManager.stopScan();
 }
 
 export type {
