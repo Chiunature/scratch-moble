@@ -1,6 +1,8 @@
 import {
+  createSchemaReader,
   CURRENT_PROJECT_SCHEMA_VERSION,
   SCRATCH_BLOCKS_VERSION,
+  type SchemaRecord,
   type ScratchProjectDocument,
 } from '@scratch-mobile/shared';
 
@@ -13,41 +15,29 @@ export class ProjectDocumentParseError extends Error {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+const schema = createSchemaReader(message => new ProjectDocumentParseError(message));
+
+function readRequiredString(record: SchemaRecord, key: string): string {
+  return schema.nonEmptyString(record, key, `Missing or invalid "${key}"`);
 }
 
-function readRequiredString(
-  record: Record<string, unknown>,
-  key: string,
-): string {
-  const value = record[key];
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new ProjectDocumentParseError(`Missing or invalid "${key}"`);
-  }
-  return value;
+function readSchemaVersion(record: SchemaRecord): number {
+  return schema.integer(
+    record,
+    'schemaVersion',
+    'Missing or invalid "schemaVersion"',
+  );
 }
 
-function readSchemaVersion(record: Record<string, unknown>): number {
-  const value = record.schemaVersion;
-  if (typeof value !== 'number' || !Number.isInteger(value)) {
-    throw new ProjectDocumentParseError('Missing or invalid "schemaVersion"');
-  }
-  return value;
-}
-
-function readEditorMeta(record: Record<string, unknown>): ScratchProjectDocument['editor'] {
-  const editor = record.editor;
-  if (!isRecord(editor)) {
-    throw new ProjectDocumentParseError('Missing or invalid "editor"');
-  }
+function readEditorMeta(record: SchemaRecord): ScratchProjectDocument['editor'] {
+  const editor = schema.record(record.editor, 'Missing or invalid "editor"');
   if (editor.scratchBlocksVersion !== SCRATCH_BLOCKS_VERSION) {
     throw new ProjectDocumentParseError('Unsupported scratchBlocksVersion');
   }
   return { scratchBlocksVersion: SCRATCH_BLOCKS_VERSION };
 }
 
-function readWorkspace(record: Record<string, unknown>): ScratchProjectDocument['workspace'] {
+function readWorkspace(record: SchemaRecord): ScratchProjectDocument['workspace'] {
   if (!('workspace' in record)) {
     throw new ProjectDocumentParseError('Missing "workspace"');
   }
@@ -69,11 +59,12 @@ export function parseProjectDocumentJson(raw: string): ScratchProjectDocument {
     throw new ProjectDocumentParseError('Invalid JSON');
   }
 
-  if (!isRecord(parsed)) {
-    throw new ProjectDocumentParseError('Project document must be an object');
-  }
+  const parsedRecord = schema.record(
+    parsed,
+    'Project document must be an object',
+  );
 
-  const schemaVersion = readSchemaVersion(parsed);
+  const schemaVersion = readSchemaVersion(parsedRecord);
   if (schemaVersion > CURRENT_PROJECT_SCHEMA_VERSION) {
     throw new ProjectDocumentParseError(
       `Unsupported schemaVersion ${schemaVersion}`,
@@ -82,12 +73,12 @@ export function parseProjectDocumentJson(raw: string): ScratchProjectDocument {
 
   const draft: ScratchProjectDocument = {
     schemaVersion: schemaVersion as ScratchProjectDocument['schemaVersion'],
-    id: readRequiredString(parsed, 'id'),
-    name: readRequiredString(parsed, 'name'),
-    createdAt: readRequiredString(parsed, 'createdAt'),
-    updatedAt: readRequiredString(parsed, 'updatedAt'),
-    editor: readEditorMeta(parsed),
-    workspace: readWorkspace(parsed),
+    id: readRequiredString(parsedRecord, 'id'),
+    name: readRequiredString(parsedRecord, 'name'),
+    createdAt: readRequiredString(parsedRecord, 'createdAt'),
+    updatedAt: readRequiredString(parsedRecord, 'updatedAt'),
+    editor: readEditorMeta(parsedRecord),
+    workspace: readWorkspace(parsedRecord),
   };
 
   return migrateProjectDocument(draft);

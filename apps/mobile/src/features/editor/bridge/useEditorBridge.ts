@@ -18,6 +18,7 @@ import type {
 
 import { loadEditorBundleHtml } from '../loadEditorBundleHtml';
 import { injectEditorLocale } from '../injectEditorLocale';
+import { parseEditorOutMessage } from './parseEditorMessage';
 import {
   injectEditorMessage,
   invalidateEditorMessageSession,
@@ -45,14 +46,6 @@ type BridgeOptions = {
   onWorkspaceLoaded: (projectId: string) => void;
   onWorkspaceChanged: (message: RnWorkspaceChangedMessage) => void;
 };
-
-function parseEditorOutMessage(raw: string): EditorOutMessage | null {
-  try {
-    return JSON.parse(raw) as EditorOutMessage;
-  } catch {
-    return null;
-  }
-}
 
 const SESSION_TYPE_TO_KEY: Partial<
   Record<EditorInMessage['type'], keyof EditorSessions>
@@ -224,12 +217,7 @@ export function useEditorBridge({
       const message = parseEditorOutMessage(event.nativeEvent.data);
       if (message) {
         handleEditorMessage(message);
-        return;
       }
-
-      // 兼容早期 editor 直接 post 代码字符串的调试路径。
-      setGeneratedCode(event.nativeEvent.data);
-      setBlockCount(0);
     },
     [handleEditorMessage],
   );

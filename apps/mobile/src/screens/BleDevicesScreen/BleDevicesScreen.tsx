@@ -6,8 +6,6 @@ import {
   Pressable,
   Text,
   View,
-  Linking,
-  Platform,
   type ListRenderItemInfo,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -22,6 +20,7 @@ import {
   loadPairedDevices,
   normalizeBleDevice,
   normalizeBleDeviceId,
+  openBluetoothSettings,
   type PairedBleDevice,
   removePairedDevice,
   TARGET_DEVICE_NAME,
@@ -262,19 +261,11 @@ export function BleDevicesScreen() {
   }, []);
 
   const openSettings = useCallback(async () => {
-    try {
-      if (Platform.OS === 'android') {
-        Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS');
-        return;
-      }
-      if (Platform.OS === 'ios') {
-        Linking.openURL('app-settings:');
-        return;
-      }
-    } catch (error) {
+    const opened = await openBluetoothSettings();
+    if (!opened) {
       Alert.alert(
         t('errors.openSettingsFailed'),
-        error instanceof Error ? error.message : t('errors.openSettingsFailed'),
+        t('errors.openSettingsFailed'),
       );
     }
   }, [t]);

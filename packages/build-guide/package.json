@@ -8,6 +8,9 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "@scratch-mobile/shared": "0.0.1"
+  },
   "devDependencies": {
     "typescript": "~6.0.3"
   }

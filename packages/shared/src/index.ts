@@ -2,6 +2,7 @@ export * from './constants/app';
 export * from './constants/handleShank';
 export * from './constants/ports';
 export * from './schemas/project';
+export * from './schemas/validation';
 export * from './types/editorBridge';
 export * from './types/editorLocale';
 export * from './types/project';

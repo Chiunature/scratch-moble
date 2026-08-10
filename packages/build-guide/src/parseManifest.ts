@@ -1,3 +1,5 @@
+import { createSchemaReader, type SchemaRecord } from '@scratch-mobile/shared';
+
 import {
   MPD_MANIFEST_VERSION,
   type MpdCamera,
@@ -5,142 +7,113 @@ import {
   type RuntimeStepOverride,
 } from './schema';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+const schema = createSchemaReader();
+
+function readString(record: SchemaRecord, key: string): string {
+  return schema.nonEmptyString(
+    record,
+    key,
+    `manifest.${key} must be a non-empty string`,
+  );
 }
 
-function readString(record: Record<string, unknown>, key: string): string {
-  const value = record[key];
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`manifest.${key} must be a non-empty string`);
-  }
-  return value;
+function readNumber(record: SchemaRecord, key: string): number {
+  return schema.number(record, key, `manifest.${key} must be a number`);
 }
 
-function readNumber(record: Record<string, unknown>, key: string): number {
-  const value = record[key];
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    throw new Error(`manifest.${key} must be a number`);
-  }
-  return value;
-}
-
-function readTuple3(record: Record<string, unknown>, key: string): [number, number, number] {
-  const value = record[key];
-  if (
-    !Array.isArray(value) ||
-    value.length !== 3 ||
-    value.some(item => typeof item !== 'number')
-  ) {
-    throw new Error(`manifest.${key} must be a 3-number tuple`);
-  }
-  return [value[0], value[1], value[2]];
+function readTuple3(record: SchemaRecord, key: string): [number, number, number] {
+  return schema.tuple3(record, key, `manifest.${key} must be a 3-number tuple`);
 }
 
 function parseCamera(raw: unknown, path: string): MpdCamera {
-  if (!isRecord(raw)) {
-    throw new Error(`${path} must be an object`);
-  }
+  const camera = schema.record(raw, `${path} must be an object`);
 
   return {
-    position: readTuple3(raw, 'position'),
-    target: readTuple3(raw, 'target'),
+    position: readTuple3(camera, 'position'),
+    target: readTuple3(camera, 'target'),
   };
-}
-
-function isDisplayMode(
-  value: unknown,
-): value is Exclude<MpdManifest['mode'], undefined> {
-  return value === 'instruction' || value === 'preview';
 }
 
 function parseStepOverride(raw: unknown, index: number): RuntimeStepOverride {
   const path = `manifest.steps[${index}]`;
-  if (!isRecord(raw)) {
-    throw new Error(`${path} must be an object`);
-  }
+  const step = schema.record(raw, `${path} must be an object`);
 
-  const stepIndex = readNumber(raw, 'index');
+  const stepIndex = readNumber(step, 'index');
   if (stepIndex !== index) {
     throw new Error(`${path}.index must equal ${index}`);
   }
 
   const override: RuntimeStepOverride = { index: stepIndex };
 
-  if (raw.titleKey !== undefined) {
-    override.titleKey = readString(raw, 'titleKey');
+  if (step.titleKey !== undefined) {
+    override.titleKey = readString(step, 'titleKey');
   }
-  if (raw.descriptionKey !== undefined) {
-    override.descriptionKey = readString(raw, 'descriptionKey');
+  if (step.descriptionKey !== undefined) {
+    override.descriptionKey = readString(step, 'descriptionKey');
   }
-  if (raw.camera !== undefined) {
-    override.camera = parseCamera(raw.camera, `${path}.camera`);
+  if (step.camera !== undefined) {
+    override.camera = parseCamera(step.camera, `${path}.camera`);
   }
-  if (raw.displayScale !== undefined) {
-    if (typeof raw.displayScale !== 'number' || raw.displayScale <= 0) {
-      throw new Error(`${path}.displayScale must be a positive number`);
-    }
-    override.displayScale = raw.displayScale;
+  if (step.displayScale !== undefined) {
+    override.displayScale = schema.positiveNumber(
+      step,
+      'displayScale',
+      `${path}.displayScale must be a positive number`,
+    );
   }
 
   return override;
 }
 
 export function parseMpdManifest(raw: unknown): MpdManifest {
-  if (!isRecord(raw)) {
-    throw new Error('manifest must be an object');
-  }
+  const manifestRecord = schema.record(raw, 'manifest must be an object');
 
-  const version = raw.version;
+  const version = manifestRecord.version;
   if (version !== MPD_MANIFEST_VERSION) {
     throw new Error(`unsupported manifest version: ${String(version)}`);
   }
 
   const manifest: MpdManifest = {
     version: MPD_MANIFEST_VERSION,
-    id: readString(raw, 'id'),
-    nameKey: readString(raw, 'nameKey'),
-    mpdUri: readString(raw, 'mpdUri'),
-    mainModelId: readString(raw, 'mainModelId'),
+    id: readString(manifestRecord, 'id'),
+    nameKey: readString(manifestRecord, 'nameKey'),
+    mpdUri: readString(manifestRecord, 'mpdUri'),
+    mainModelId: readString(manifestRecord, 'mainModelId'),
   };
 
-  if (raw.partsSource !== undefined) {
-    const partsSource = raw.partsSource;
-    if (
-      partsSource !== 'local' &&
-      partsSource !== 'remote' &&
-      partsSource !== 'local-then-remote'
-    ) {
-      throw new Error('manifest.partsSource must be local, remote, or local-then-remote');
-    }
+  if (manifestRecord.partsSource !== undefined) {
+    const partsSource = schema.oneOf(
+      manifestRecord.partsSource,
+      ['local', 'remote', 'local-then-remote'] as const,
+      'manifest.partsSource must be local, remote, or local-then-remote',
+    );
     manifest.partsSource = partsSource;
   }
 
-  if (raw.partsBaseUrl !== undefined) {
-    manifest.partsBaseUrl = readString(raw, 'partsBaseUrl');
+  if (manifestRecord.partsBaseUrl !== undefined) {
+    manifest.partsBaseUrl = readString(manifestRecord, 'partsBaseUrl');
   }
 
-  if (raw.mainModelColor !== undefined) {
-    manifest.mainModelColor = readNumber(raw, 'mainModelColor');
+  if (manifestRecord.mainModelColor !== undefined) {
+    manifest.mainModelColor = readNumber(manifestRecord, 'mainModelColor');
   }
-  if (raw.mode !== undefined) {
-    if (!isDisplayMode(raw.mode)) {
-      throw new Error('manifest.mode must be instruction or preview');
-    }
-    manifest.mode = raw.mode;
+  if (manifestRecord.mode !== undefined) {
+    manifest.mode = schema.oneOf(
+      manifestRecord.mode,
+      ['instruction', 'preview'] as const,
+      'manifest.mode must be instruction or preview',
+    );
   }
-  if (raw.displayScale !== undefined) {
-    manifest.displayScale = readNumber(raw, 'displayScale');
+  if (manifestRecord.displayScale !== undefined) {
+    manifest.displayScale = readNumber(manifestRecord, 'displayScale');
   }
-  if (raw.cameraDefault !== undefined) {
-    manifest.cameraDefault = parseCamera(raw.cameraDefault, 'manifest.cameraDefault');
+  if (manifestRecord.cameraDefault !== undefined) {
+    manifest.cameraDefault = parseCamera(manifestRecord.cameraDefault, 'manifest.cameraDefault');
   }
 
-  if (raw.steps !== undefined) {
-    if (!Array.isArray(raw.steps)) {
-      throw new Error('manifest.steps must be an array');
-    }
-    manifest.steps = raw.steps.map((step, index) => parseStepOverride(step, index));
+  if (manifestRecord.steps !== undefined) {
+    const steps = schema.array(manifestRecord.steps, 'manifest.steps must be an array');
+    manifest.steps = steps.map((step, index) => parseStepOverride(step, index));
   }
 
   return manifest;

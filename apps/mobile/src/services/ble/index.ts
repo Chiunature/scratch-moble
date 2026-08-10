@@ -43,6 +43,11 @@ export { bleLog } from './core/logger';
 export { BLE_DEVICE_WATCH_DEBUG } from './core/debug';
 
 export {
+  openBluetoothSettings,
+  requestBlePermissions,
+} from './core/permissions';
+
+export {
   BLE_UPLOAD_CHUNK_SIZE,
   TARGET_DEVICE_NAME,
 } from '../../constants/bleCommand';
