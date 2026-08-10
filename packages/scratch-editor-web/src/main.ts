@@ -7,11 +7,8 @@ import * as ScratchBlocks from 'scratch-blocks';
 
 import { BLOCK_TYPES } from './blocks/blockTypes';
 import { getToolboxJson } from './blocks/toolbox';
-import { createCodeGenerationPublisher } from './bridge/codeGenerationPublisher';
-import { registerCodeGenerationFlush } from './bridge/codeGenNotify';
-import { setupWorkspaceHistory } from './bridge/workspaceHistory';
-import { setupWorkspacePersistence } from './bridge/workspacePersistence';
-import { registerNativeInboundBridge } from './bridge/index';
+import { createWorkspaceController, type WorkspaceController } from './bridge/index';
+import type { EditorInMessage } from '@scratch-mobile/shared';
 import type { Workspace } from './codegen/types';
 import {
   applyEditorLocale,
@@ -48,7 +45,6 @@ async function bootstrap(): Promise<void> {
   await applyEditorLocale(detectInitialEditorAppLocale());
   patchContextMenuMissingTextGuard();
 
-  registerNativeInboundBridge();
   patchProcedureWorkspaceBehavior();
   patchDataVariableReporterOutput();
   ensureProcedureEditorModalDom();
@@ -112,14 +108,22 @@ async function bootstrap(): Promise<void> {
     setupFlyoutWidthClamp(workspace);
   });
 
-  const { schedule: scheduleCodePublish, flush: flushCodePublish } =
-    createCodeGenerationPublisher(workspace);
+  const controller = createWorkspaceController(workspace);
+  controllerRef = controller;
+  (
+    window as typeof window & {
+      __scratchEditorReceiveFromNative?: (message: EditorInMessage) => void;
+    }
+  ).__scratchEditorReceiveFromNative = controller.handleMessageFromNative;
+  controller.flushCodeGeneration();
+}
 
-  registerCodeGenerationFlush(flushCodePublish);
-  setupWorkspaceHistory(workspace);
-  setupWorkspacePersistence(workspace);
-  workspace.addChangeListener(() => scheduleCodePublish());
-  flushCodePublish();
+let controllerRef: WorkspaceController | null = null;
+
+/** 页面卸载时释放桥监听与定时器 */
+export function disposeEditorBridge(): void {
+  controllerRef?.dispose();
+  controllerRef = null;
 }
 
 void bootstrap();

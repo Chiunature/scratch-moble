@@ -1,8 +1,6 @@
 export type { EditorInMessage, EditorOutMessage } from '@scratch-mobile/shared';
-export {
-  handleMessageFromNative,
-  registerNativeInboundBridge,
-} from './nativeInbound';
+export { createWorkspaceController } from './workspaceController';
+export type { WorkspaceController } from './workspaceController';
 
 interface RNWindow {
   ReactNativeWebView?: { postMessage: (raw: string) => void };

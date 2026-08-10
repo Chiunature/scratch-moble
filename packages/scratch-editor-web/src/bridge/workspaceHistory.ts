@@ -1,8 +1,5 @@
 import * as ScratchBlocks from 'scratch-blocks';
 
-import type { EditorInMessage } from '@scratch-mobile/shared';
-import { postToReactNative } from './index';
-import { notifyCodeGenerationNeeded } from './codeGenNotify';
 import type { Workspace } from '../codegen/types';
 import {
   setupWorkspaceFloatingControls,
@@ -21,109 +18,103 @@ type WorkspaceHistoryState = {
   canRedo: boolean;
 };
 
-let workspaceRef: WorkspaceWithHistory | null = null;
-let lastPublishedState: WorkspaceHistoryState | null = null;
-let publishTimer: ReturnType<typeof setTimeout> | null = null;
+type HistoryDeps = {
+  /** undo/redo 后立即触发 codegen，避免仅靠 change 监听漏刷 */
+  onCodeGenerationNeeded: () => void;
+};
 
-function readWorkspaceHistoryState(
-  workspace: WorkspaceWithHistory,
-): WorkspaceHistoryState {
-  return {
-    canUndo: (workspace.getUndoStack?.().length ?? 0) > 0,
-    canRedo: (workspace.getRedoStack?.().length ?? 0) > 0,
-  };
-}
+export type WorkspaceHistory = {
+  clear: () => void;
+  schedulePublish: () => void;
+  dispose: () => void;
+};
 
-function isSameHistoryState(
-  left: WorkspaceHistoryState | null,
-  right: WorkspaceHistoryState,
-): boolean {
-  return left?.canUndo === right.canUndo && left.canRedo === right.canRedo;
-}
+export function createWorkspaceHistory(
+  workspace: Workspace,
+  deps: HistoryDeps,
+): WorkspaceHistory {
+  const workspaceWithHistory = workspace as WorkspaceWithHistory;
+  let lastPublishedState: WorkspaceHistoryState | null = null;
+  let publishTimer: ReturnType<typeof setTimeout> | null = null;
 
-function hideBlocklyChaff(): void {
-  (ScratchBlocks as unknown as { hideChaff?: () => void }).hideChaff?.();
-}
-
-function runWorkspaceHistory(redo: boolean): void {
-  if (!workspaceRef?.undo) {
-    return;
+  function readWorkspaceHistoryState(
+    ws: WorkspaceWithHistory,
+  ): WorkspaceHistoryState {
+    return {
+      canUndo: (ws.getUndoStack?.().length ?? 0) > 0,
+      canRedo: (ws.getRedoStack?.().length ?? 0) > 0,
+    };
   }
 
-  const state = readWorkspaceHistoryState(workspaceRef);
-  const canRun = redo ? state.canRedo : state.canUndo;
-  if (!canRun) {
+  function isSameHistoryState(
+    left: WorkspaceHistoryState | null,
+    right: WorkspaceHistoryState,
+  ): boolean {
+    return left?.canUndo === right.canUndo && left.canRedo === right.canRedo;
+  }
+
+  function hideBlocklyChaff(): void {
+    (ScratchBlocks as unknown as { hideChaff?: () => void }).hideChaff?.();
+  }
+
+  function publishWorkspaceHistory(force = false): void {
+    const nextState = readWorkspaceHistoryState(workspaceWithHistory);
+    updateWorkspaceFloatingHistoryState(nextState);
+    if (!force && isSameHistoryState(lastPublishedState, nextState)) {
+      return;
+    }
+    lastPublishedState = nextState;
+  }
+
+  function runWorkspaceHistory(redo: boolean): void {
+    if (!workspaceWithHistory.undo) {
+      return;
+    }
+
+    const state = readWorkspaceHistoryState(workspaceWithHistory);
+    const canRun = redo ? state.canRedo : state.canUndo;
+    if (!canRun) {
+      publishWorkspaceHistory(true);
+      return;
+    }
+
+    hideBlocklyChaff();
+    workspaceWithHistory.undo(redo);
+    deps.onCodeGenerationNeeded();
     publishWorkspaceHistory(true);
-    return;
   }
 
-  hideBlocklyChaff();
-  workspaceRef.undo(redo);
-  notifyCodeGenerationNeeded();
-  publishWorkspaceHistory(true);
-}
-
-export function publishWorkspaceHistory(force = false): void {
-  if (!workspaceRef) {
-    return;
+  function scheduleWorkspaceHistoryPublish(): void {
+    if (publishTimer != null) {
+      return;
+    }
+    publishTimer = setTimeout(() => {
+      publishTimer = null;
+      publishWorkspaceHistory(false);
+    }, 0);
   }
 
-  const nextState = readWorkspaceHistoryState(workspaceRef);
-  updateWorkspaceFloatingHistoryState(nextState);
-  if (!force && isSameHistoryState(lastPublishedState, nextState)) {
-    return;
+  function clear(): void {
+    workspaceWithHistory.clearUndo?.();
+    publishWorkspaceHistory(true);
   }
 
-  lastPublishedState = nextState;
-  postToReactNative({
-    type: 'editor.workspace.history',
-    ...nextState,
-  });
-}
-
-function scheduleWorkspaceHistoryPublish(): void {
-  if (publishTimer != null) {
-    return;
-  }
-
-  publishTimer = setTimeout(() => {
-    publishTimer = null;
-    publishWorkspaceHistory(false);
-  }, 0);
-}
-
-export function clearWorkspaceHistory(): void {
-  workspaceRef?.clearUndo?.();
-  publishWorkspaceHistory(true);
-}
-
-export function handleWorkspaceHistoryInbound(message: EditorInMessage): boolean {
-  switch (message.type) {
-    case 'editor.workspace.undo':
-      runWorkspaceHistory(false);
-      return true;
-    case 'editor.workspace.redo':
-      runWorkspaceHistory(true);
-      return true;
-    default:
-      return false;
-  }
-}
-
-export function setupWorkspaceHistory(workspace: Workspace): void {
-  workspaceRef = workspace;
-  lastPublishedState = null;
-  if (publishTimer != null) {
-    clearTimeout(publishTimer);
-    publishTimer = null;
+  function dispose(): void {
+    if (publishTimer != null) {
+      clearTimeout(publishTimer);
+      publishTimer = null;
+    }
   }
 
   setupWorkspaceFloatingControls(workspace, {
     onUndo: () => runWorkspaceHistory(false),
     onRedo: () => runWorkspaceHistory(true),
   });
-  workspace.addChangeListener(() => {
-    scheduleWorkspaceHistoryPublish();
-  });
   publishWorkspaceHistory(true);
+
+  return {
+    clear,
+    schedulePublish: scheduleWorkspaceHistoryPublish,
+    dispose,
+  };
 }

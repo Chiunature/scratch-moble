@@ -17,7 +17,11 @@ type PublisherOptions = {
 export function createCodeGenerationPublisher(
   workspace: Workspace,
   options?: PublisherOptions,
-): { schedule: () => void; flush: () => void } {
+): {
+  schedule: () => void;
+  flush: () => void;
+  dispose: () => void;
+} {
   const debounceMs = options?.debounceMs ?? DEFAULT_DEBOUNCE_MS;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let lastSentCode = '';
@@ -53,5 +57,12 @@ export function createCodeGenerationPublisher(
     debounceTimer = setTimeout(flush, debounceMs);
   };
 
-  return { schedule, flush };
+  const dispose = (): void => {
+    if (debounceTimer != null) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+  };
+
+  return { schedule, flush, dispose };
 }

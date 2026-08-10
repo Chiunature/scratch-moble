@@ -2,7 +2,6 @@ import { renderManagement } from 'scratch-blocks';
 
 import { serializeMatrixLightRows } from '@scratch-mobile/shared';
 
-import { notifyCodeGenerationNeeded } from '../../bridge/codeGenNotify';
 import {
   isReactNativeHost,
   postToReactNative,
@@ -81,7 +80,11 @@ function refreshMatrixFieldDisplay(field: ScratchMatrixLightField): void {
   renderManagement.triggerQueuedRenders();
 }
 
-function commitSession(sessionId: string, rows: string): void {
+function commitSession(
+  sessionId: string,
+  rows: string,
+  notifyCodeGenerationNeeded: () => void,
+): void {
   const session = sessions.get(sessionId);
   if (!session) {
     return;
@@ -96,7 +99,10 @@ function closeSession(sessionId: string): void {
   sessions.delete(sessionId);
 }
 
-export function handleMatrixLightInbound(message: EditorInMessage): void {
+export function handleMatrixLightInbound(
+  message: EditorInMessage,
+  notifyCodeGenerationNeeded: () => void,
+): void {
   if (
     message.type !== 'editor.matrixLight.commit' &&
     message.type !== 'editor.matrixLight.close'
@@ -105,7 +111,7 @@ export function handleMatrixLightInbound(message: EditorInMessage): void {
   }
 
   if (message.type === 'editor.matrixLight.commit') {
-    commitSession(message.sessionId, message.rows);
+    commitSession(message.sessionId, message.rows, notifyCodeGenerationNeeded);
     return;
   }
 
