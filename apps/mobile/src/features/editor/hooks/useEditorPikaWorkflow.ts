@@ -7,14 +7,19 @@ import {
   uploadBytecodeToHost,
 } from '../../../services/ble';
 import { useBleStore } from '../../../store/useBleStore';
+import {
+  pikaWorkflow,
+  useRuntimeStore,
+} from '../../../store/useRuntimeStore';
 import { compileGeneratedCode } from '../../../services/pika';
 import type { PikaWorkflowModalState } from '../components/PikaWorkflowModal';
 
 /**
  * 编辑器 PikaScript 工作流（轨道 A 编译 + 轨道 B BLE 上传）。
+ * 流程相位由全局状态机（pikaWorkflow）持有，store 投影给 UI。
  */
 
-export type PikaActionState = 'idle' | 'compiling' | 'running' | 'uploading';
+export type { PikaWorkflowPhase as PikaActionState } from '@scratch-mobile/core';
 
 export type { PikaWorkflowModalState } from '../components/PikaWorkflowModal';
 
@@ -31,13 +36,10 @@ export function useEditorPikaWorkflow(generatedCode: string) {
   const connectionStatus = useBleStore(state => state.connectionStatus);
   const isBleConnected = connectionStatus === 'connected';
 
-  const [pikaAction, setPikaAction] = useState<PikaActionState>('idle');
+  const pikaAction = useRuntimeStore(state => state.workflowPhase);
   const [workflowModal, setWorkflowModal] = useState<PikaWorkflowModalState>(
     CLOSED_WORKFLOW_MODAL,
   );
-  const [bytecodePath, setBytecodePath] = useState<string | null>(null);
-  const [bytecodeSize, setBytecodeSize] = useState<number | null>(null);
-  const [bytecodeHexPreview, setBytecodeHexPreview] = useState('');
   const [programSlot, setProgramSlot] = useState(HOST_PROGRAM_SLOT_DEFAULT);
   const [activeHostAction, setActiveHostAction] =
     useState<HostToolbarAction | null>(null);
@@ -108,9 +110,6 @@ export function useEditorPikaWorkflow(generatedCode: string) {
   );
 
   useEffect(() => {
-    setBytecodePath(null);
-    setBytecodeSize(null);
-    setBytecodeHexPreview('');
     setWorkflowModal(CLOSED_WORKFLOW_MODAL);
   }, [generatedCode]);
 
@@ -126,7 +125,7 @@ export function useEditorPikaWorkflow(generatedCode: string) {
       const hostFileName = buildHostBytecodeFileName(programSlot);
       setActiveHostAction(runAfterUpload ? 'run' : 'download');
 
-      setPikaAction('compiling');
+      pikaWorkflow.transition('compiling');
       showProgressModal('pika.compilingTitle', 'pika.compilingMessage');
 
       try {
@@ -139,11 +138,7 @@ export function useEditorPikaWorkflow(generatedCode: string) {
           return;
         }
 
-        setBytecodePath(outcome.bytecodePath);
-        setBytecodeSize(outcome.bytecodeSize);
-        setBytecodeHexPreview(outcome.hexPreview);
-
-        setPikaAction('uploading');
+        pikaWorkflow.transition('uploading');
         const transferOptions = {
           bytecodeSize: outcome.bytecodeSize,
           hexPreview: outcome.hexPreview,
@@ -185,7 +180,7 @@ export function useEditorPikaWorkflow(generatedCode: string) {
           },
         );
       } finally {
-        setPikaAction('idle');
+        pikaWorkflow.transition('idle');
         setActiveHostAction(null);
       }
     },
@@ -216,7 +211,7 @@ export function useEditorPikaWorkflow(generatedCode: string) {
       });
       return;
     }
-    setPikaAction('running');
+    pikaWorkflow.transition('running');
     setActiveHostAction('pause');
     showProgressModal('pika.pausingTitle', 'pika.pausingMessage');
 
@@ -230,7 +225,7 @@ export function useEditorPikaWorkflow(generatedCode: string) {
           error instanceof Error ? error.message : undefined,
       });
     } finally {
-      setPikaAction('idle');
+      pikaWorkflow.transition('idle');
       setActiveHostAction(null);
     }
   }, [isBleConnected, showErrorModal, showProgressModal, showSuccessModal]);

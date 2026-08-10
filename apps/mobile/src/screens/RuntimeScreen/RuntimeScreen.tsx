@@ -1,22 +1,15 @@
 import React from 'react';
-import { Button, Text, View } from 'react-native';
-import { formatRuntimeTicks } from '@scratch-mobile/core';
+import { Text, View } from 'react-native';
 
 import { useRuntimeStore } from '../../store/useRuntimeStore';
 import { styles } from './RuntimeScreen.styles';
 
 export function RuntimeScreen() {
-  const ticks = useRuntimeStore(state => state.ticks);
-  const increment = useRuntimeStore(state => state.increment);
-  const reset = useRuntimeStore(state => state.reset);
+  const workflowPhase = useRuntimeStore(state => state.workflowPhase);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{formatRuntimeTicks(ticks)}</Text>
-      <View style={styles.actions}>
-        <Button title="Tick" onPress={increment} />
-        <Button title="Reset" onPress={reset} />
-      </View>
+      <Text style={styles.title}>Pika workflow: {workflowPhase}</Text>
     </View>
   );
 }

@@ -1,8 +1,14 @@
-import { useRuntimeStore } from '../src/store/useRuntimeStore';
+import {
+  pikaWorkflow,
+  useRuntimeStore,
+} from '../src/store/useRuntimeStore';
 
-test('increments runtime ticks', () => {
-  useRuntimeStore.getState().reset();
-  useRuntimeStore.getState().increment();
+test('useRuntimeStore 投影 pika 工作流相位', () => {
+  expect(useRuntimeStore.getState().workflowPhase).toBe('idle');
 
-  expect(useRuntimeStore.getState().ticks).toBe(1);
+  pikaWorkflow.transition('compiling');
+
+  expect(useRuntimeStore.getState().workflowPhase).toBe('compiling');
+
+  pikaWorkflow.transition('idle');
 });

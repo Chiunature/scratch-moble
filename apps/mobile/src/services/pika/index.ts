@@ -4,6 +4,5 @@ export {
   runCompiledBytecode,
   runGeneratedCode,
   getDefaultBytecodePath,
-  type PikaCompileOutcome,
-  type PikaRunOutcome,
 } from './pikaService';
+export type { PikaCompileOutcome, PikaRunOutcome } from '@scratch-mobile/core';
