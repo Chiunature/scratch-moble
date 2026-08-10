@@ -23,6 +23,7 @@ import {
 } from '../storage/LdrStorage';
 import type { LdrDisplayMode, LdrLoaderOptions } from '../types';
 import '../registerVendor';
+import { applyStudGenerators } from '../options';
 
 function normalizeLdrModelId(id: string): string {
   return id.replace(/\\/g, '/').toLowerCase();
@@ -206,27 +207,7 @@ export function loadMpdFromText(
     let loader: LdrLoaderInstance;
 
     // 按当前 Options 注册 stud 生成器（高对比 / logo）
-    const studs = (
-      globalThis as typeof globalThis & {
-        LDR?: {
-          Studs?: {
-            makeGenerators: (
-              force: string,
-              highContrast: boolean,
-              logoType: number,
-            ) => void;
-          };
-          Options?: { studHighContrast?: number; studLogo?: number };
-        };
-      }
-    ).LDR;
-    if (studs?.Studs?.makeGenerators) {
-      studs.Studs.makeGenerators(
-        '',
-        studs.Options?.studHighContrast === 1,
-        studs.Options?.studLogo ?? 0,
-      );
-    }
+    applyStudGenerators();
 
     const handleError = (issue: { message: string; subModel?: string }) => {
       onError?.(issue);

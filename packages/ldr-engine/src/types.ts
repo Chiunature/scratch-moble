@@ -126,6 +126,29 @@ export type LdrLoaderInstance = {
 /** instruction: 步骤说明书，保持 LDraw 原始坐标；preview: 静态预览，缩放居中 */
 export type LdrDisplayMode = 'instruction' | 'preview';
 
+/**
+ * LDR 运行时外观选项，写入 `globalThis.LDR.Options` 的唯一类型面。
+ * 字段与 vendor（LDRLoader / LDRColorMaterials / applyRuntimeMaterials）
+ * 读取的命名保持一致；showEditor 为可选 ghost 显示开关。
+ */
+export type LdrOptions = {
+  lineContrast: number;
+  showOldColors: number;
+  studHighContrast: number;
+  studLogo: number;
+  oldColor: number;
+  lineColor: number;
+  showEditor?: number;
+};
+
+export type LdrStudsFacade = {
+  makeGenerators: (
+    force: string,
+    highContrast: boolean,
+    logoType: number,
+  ) => void;
+};
+
 export type LoadedLdrModel = {
   loader: LdrLoaderInstance;
   mainModelId: string;
@@ -222,6 +245,8 @@ export type LdrMeasurerInstance = {
 };
 
 export type LdrGlobalNamespace = {
+  Options?: Partial<LdrOptions>;
+  Studs?: LdrStudsFacade;
   Colors: Record<number, LdrColorInfo> & LdrColorInfo[];
   Generator?: {
     make: (id: string) => LdrPartType | null;

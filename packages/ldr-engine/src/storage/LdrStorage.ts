@@ -1,4 +1,5 @@
 import type { LdrLoaderInstance, LdrStorage } from '../types';
+import { getLdrOptions } from '../options';
 import { resolveGeneratedParts, createFallbackPart } from '../loader/resolveGeneratedParts';
 
 export function defaultFetchText(url: string): Promise<string> {
@@ -52,15 +53,14 @@ async function resolveFromStorage(
 }
 
 function shouldPreferGeneratedStud(id: string): boolean {
-  const options = (
-    globalThis as typeof globalThis & {
-      LDR?: { Options?: { studHighContrast?: number; studLogo?: number } };
-    }
-  ).LDR?.Options;
+  const options = getLdrOptions();
   if (!options) {
     return false;
   }
-  if (options.studHighContrast !== 1 && !(options.studLogo && options.studLogo > 0)) {
+  if (
+    options.studHighContrast !== 1 &&
+    !(options.studLogo > 0)
+  ) {
     return false;
   }
   const base = id.replace(/\\/g, '/').toLowerCase();

@@ -7,6 +7,12 @@ export {
   type LoadMpdOptions,
 } from './loader/loadMpdModel';
 export {
+  setLdrOptions,
+  getLdrOptions,
+  applyStudGenerators,
+  DEFAULT_LDR_OLD_COLOR,
+} from './options';
+export {
   MemoryLdrStorage,
   createCachingStorageBackend,
   defaultFetchText,
@@ -39,10 +45,12 @@ export type {
   LdrMeasurerInstance,
   LdrMeasuringLine,
   LdrMeasuringLinePoint,
+  LdrOptions,
   LdrPartsBuilderFacade,
   LdrStepHandlerFacade,
   LdrStorage,
   LdrStorageBackend,
+  LdrStudsFacade,
   LoadedLdrModel,
   PartAndColor,
   LdrDisplayMode,
