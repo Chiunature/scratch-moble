@@ -6,9 +6,7 @@ import { styles } from '../remoteControl.styles';
 
 const SHOULDER_BUTTONS: Array<{
   label: ShoulderButton;
-  dockStyle:
-    | typeof styles.shoulderDockLeft
-    | typeof styles.shoulderDockRight;
+  dockStyle: typeof styles.shoulderDockLeft | typeof styles.shoulderDockRight;
 }> = [
   { label: 'L', dockStyle: styles.shoulderDockLeft },
   { label: 'R', dockStyle: styles.shoulderDockRight },
