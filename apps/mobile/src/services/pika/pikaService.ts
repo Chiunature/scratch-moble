@@ -11,8 +11,6 @@
  */
 import {
   compile,
-  execute,
-  executeBytecode,
   getDefaultBytecodePath,
   getPikaErrorName,
   isPikaSuccess,
@@ -32,7 +30,6 @@ import {
   mapPikaOutcomeBase,
   type PikaCompileOutcome,
   type PikaDiagnosticInput,
-  type PikaRunOutcome,
   type ResolvedPikaErrorName,
 } from '@scratch-mobile/core';
 
@@ -80,25 +77,6 @@ export async function compileGeneratedCode(
     bytecodeSize: getBytecodeSize(result.data, result.dataEncoding),
     hexPreview: ok ? hexPreview(result.data, result.dataEncoding) : '',
   };
-}
-
-export async function runGeneratedCode(source: string): Promise<PikaRunOutcome> {
-  const trimmed = source.trim();
-  if (!isCompilablePythonSource(trimmed)) {
-    return { ok: false, message: '暂无有效 Python 代码' };
-  }
-
-  return mapPikaOutcomeBase(toDiagnosticInput(await execute(trimmed)));
-}
-
-export async function runCompiledBytecode(
-  bytecodePath: string,
-): Promise<PikaRunOutcome> {
-  if (!bytecodePath) {
-    return { ok: false, message: '请先编译生成字节码' };
-  }
-
-  return mapPikaOutcomeBase(toDiagnosticInput(await executeBytecode(bytecodePath)));
 }
 
 /**

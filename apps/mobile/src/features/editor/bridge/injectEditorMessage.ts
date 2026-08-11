@@ -1,4 +1,7 @@
-import type { EditorInMessage } from '@scratch-mobile/shared';
+import {
+  EDITOR_RECEIVE_FROM_NATIVE_GLOBAL,
+  type EditorInMessage,
+} from '@scratch-mobile/shared';
 import type { WebView } from 'react-native-webview';
 
 export type MessageDeduper = {
@@ -30,7 +33,7 @@ export function createMessageDeduper(): MessageDeduper {
     }
     lastInjectedPayload = payload;
     webView.injectJavaScript(
-      `window.__scratchEditorReceiveFromNative?.(${payload});true;`,
+      `window.${EDITOR_RECEIVE_FROM_NATIVE_GLOBAL}?.(${payload});true;`,
     );
   };
 
@@ -44,7 +47,7 @@ export function createMessageDeduper(): MessageDeduper {
     const payload = payloadOf(message);
     lastInjectedPayload = payload;
     webView.injectJavaScript(
-      `window.__scratchEditorReceiveFromNative?.(${payload});true;`,
+      `window.${EDITOR_RECEIVE_FROM_NATIVE_GLOBAL}?.(${payload});true;`,
     );
   };
 

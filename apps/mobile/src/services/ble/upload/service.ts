@@ -10,7 +10,7 @@
  */
 import { FUNCTION_CODES } from '@scratch-mobile/protocol';
 import { i18n } from '@scratch-mobile/i18n';
-import { readBytecodeFile } from '../../pika/pikaService';
+import { readBytecodeFile } from '../../pika';
 import { bleDeviceManager } from '../core/manager';
 
 /** 主机程序槽位范围；上传文件名为 `{slot}.o`（如 0.o） */

@@ -8,7 +8,10 @@ import * as ScratchBlocks from 'scratch-blocks';
 import { BLOCK_TYPES } from './blocks/blockTypes';
 import { getToolboxJson } from './blocks/toolbox';
 import { createWorkspaceController, type WorkspaceController } from './bridge/index';
-import type { EditorInMessage } from '@scratch-mobile/shared';
+import {
+  EDITOR_RECEIVE_FROM_NATIVE_GLOBAL,
+  type EditorInMessage,
+} from '@scratch-mobile/shared';
 import type { Workspace } from './codegen/types';
 import {
   applyEditorLocale,
@@ -112,9 +115,9 @@ async function bootstrap(): Promise<void> {
   controllerRef = controller;
   (
     window as typeof window & {
-      __scratchEditorReceiveFromNative?: (message: EditorInMessage) => void;
+      [EDITOR_RECEIVE_FROM_NATIVE_GLOBAL]?: (message: EditorInMessage) => void;
     }
-  ).__scratchEditorReceiveFromNative = controller.handleMessageFromNative;
+  )[EDITOR_RECEIVE_FROM_NATIVE_GLOBAL] = controller.handleMessageFromNative;
   controller.flushCodeGeneration();
 }
 

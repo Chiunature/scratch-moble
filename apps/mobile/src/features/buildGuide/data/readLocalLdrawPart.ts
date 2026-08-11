@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
 import { buildLocalPartCandidates } from '@scratch-mobile/ldr-engine';
+import { readTextFile } from '../../../utils/blobFs';
 
 const LOCAL_ROOTS =
   Platform.OS === 'android'
@@ -11,11 +12,10 @@ const LOCAL_ROOTS =
 async function readCandidate(path: string): Promise<string | null> {
   try {
     if (Platform.OS === 'android') {
-      const assetUri = ReactNativeBlobUtil.fs.asset(path);
-      return await ReactNativeBlobUtil.fs.readFile(assetUri, 'utf8');
+      return await readTextFile(ReactNativeBlobUtil.fs.asset(path));
     }
 
-    return await ReactNativeBlobUtil.fs.readFile(path, 'utf8');
+    return await readTextFile(path);
   } catch {
     return null;
   }

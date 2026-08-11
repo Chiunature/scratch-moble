@@ -139,10 +139,7 @@ await executeBytecode(path);
 ```typescript
 import {
   compileGeneratedCode,
-  runGeneratedCode,
-  runCompiledBytecode,
   type PikaCompileOutcome,
-  type PikaRunOutcome,
 } from '../../services/pika';
 ```
 
@@ -152,14 +149,9 @@ import {
 type PikaCompileOutcome = {
   ok: boolean;
   message: string;
-  bytecodePath: string | null;  // 成功时为绝对路径，可供 executeBytecode 使用
+  bytecodePath: string | null;  // 成功时为绝对路径，供 BLE 上传使用
   bytecodeSize: number;       // 字节码字节数
   hexPreview: string;         // 前 16 字节的 hex，用于快速校验 magic
-};
-
-type PikaRunOutcome = {
-  ok: boolean;
-  message: string;
 };
 ```
 
@@ -182,24 +174,9 @@ type PikaRunOutcome = {
 | 返回值字段 | 说明 |
 |------------|------|
 | `ok` | `result.code === 0` |
-| `bytecodePath` | 成功时保留路径，供后续 `runCompiledBytecode` |
+| `bytecodePath` | 成功时保留路径，供 BLE 上传使用 |
 | `bytecodeSize` | 从 `PikaResult.data`（hex）解码后的长度 |
 | `hexPreview` | 前 16 字节 hex，正常应以 `0f70796f` 开头 |
-
-#### `runGeneratedCode(source)`
-
-不编译，直接在手机 VM 执行源码。
-
-| 前置校验 | 同 `compileGeneratedCode` |
-| 成功 | `ok: true`，`message` 通常为 `'ok'` |
-| 失败 | `ok: false`，`message` 为 PikaScript 错误描述 |
-
-#### `runCompiledBytecode(bytecodePath)`
-
-执行已编译的 `.py.o` 文件。
-
-| 前置校验 | `bytecodePath` 为空 → `ok: false`，`'请先编译生成字节码'` |
-| 典型用法 | 先 `compileGeneratedCode`，再传入返回的 `bytecodePath` |
 
 ### 使用示例
 
@@ -212,16 +189,6 @@ if (!compiled.ok) {
   return;
 }
 console.log(`字节码 ${compiled.bytecodeSize} B，前缀 ${compiled.hexPreview}`);
-
-const runSrc = await runGeneratedCode(source);
-if (!runSrc.ok) {
-  console.warn(runSrc.message);
-}
-
-const runBc = await runCompiledBytecode(compiled.bytecodePath!);
-if (!runBc.ok) {
-  console.warn(runBc.message);
-}
 ```
 
 ---
@@ -230,13 +197,11 @@ if (!runBc.ok) {
 
 路径：`apps/mobile/src/screens/EditorScreen/EditorScreen.tsx`
 
-代码面板（右上角代码图标打开）提供三个按钮：
+代码面板（右上角代码图标打开）为只读代码查看器；编译与 BLE 下发由编辑器头部「运行 / 下载」按钮触发（Pika 工作流弹窗展示进度与结果，见 `useEditorPikaWorkflow`）：
 
 | 按钮 | 调用 | 用户可见反馈 |
 |------|------|--------------|
-| **编译** | `compileGeneratedCode(generatedCode)` | 绿色「编译成功：N 字节，前缀 0f70796f…」 |
-| **运行源码** | `runGeneratedCode(generatedCode)` | 绿色「源码运行完成（print 输出见终端 logcat）」或红色错误 |
-| **运行字节码** | `runCompiledBytecode(bytecodePath)` | 需先编译成功；反馈同上 |
+| **运行 / 下载** | `compileGeneratedCode(generatedCode)` → `uploadBytecodeToHost` | 弹窗显示「编译成功：N 字节，前缀 0f70796f…」及上传进度 |
 
 `generatedCode` 变化时会重置编译状态（需重新编译）。
 
@@ -251,9 +216,9 @@ Codegen 生成的 Python 使用固件模块（`_motor`、`_key`、`_matrix` 等�
 | 操作 | 含硬件 API 的脚本 |
 |------|-------------------|
 | **编译** | 通常可成功（编译器做语法级处理） |
-| **运行源码 / 运行字节码** | 大概率失败（VM 无 `_motor` 等绑定） |
+| **BLE 下发** | 在主机固件上执行，含硬件 API 的脚本可正常运行 |
 
-含硬件调用的程序，最终应在**主机固件**上执行；轨道 B 将通过 BLE 下发 `.py.o`。
+含硬件调用的程序，最终应在**主机固件**上执行；轨道 B 通过 BLE 下发 `.py.o`（见 `uploadBytecodeToHost`）。
 
 ### `print` 输出不在 App 界面
 

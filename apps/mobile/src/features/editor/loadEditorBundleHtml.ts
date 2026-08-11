@@ -1,7 +1,7 @@
 import { Asset } from 'expo-asset';
-import ReactNativeBlobUtil from 'react-native-blob-util';
 
 import editorHtmlModule from '../../../assets/editor/editorBundle.html';
+import { readTextFile } from '../../utils/blobFs';
 
 /**
  * Metro packs the editor HTML as a raw asset. Load it only when the editor
@@ -9,10 +9,6 @@ import editorHtmlModule from '../../../assets/editor/editorBundle.html';
  */
 let cachedHtml: string | null = null;
 let loadPromise: Promise<string> | null = null;
-
-function toFilesystemPath(uri: string): string {
-  return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
-}
 
 export async function loadEditorBundleHtml(): Promise<string> {
   if (cachedHtml != null) {
@@ -28,10 +24,7 @@ export async function loadEditorBundleHtml(): Promise<string> {
     if (asset.localUri == null) {
       throw new Error('Failed to materialize editor bundle HTML asset');
     }
-    const html = await ReactNativeBlobUtil.fs.readFile(
-      toFilesystemPath(asset.localUri),
-      'utf8',
-    );
+    const html = await readTextFile(asset.localUri);
     cachedHtml = html;
     return html;
   })();

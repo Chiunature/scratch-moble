@@ -186,3 +186,32 @@ export type RnVariablePromptOpenMessage = Extract<
   EditorOutMessage,
   { type: 'editor.variablePrompt.open' }
 >;
+
+/** WebView 全局桥函数名：RN 注入调用入口，mobile 与 scratch-editor-web 必须一致。 */
+export const EDITOR_RECEIVE_FROM_NATIVE_GLOBAL =
+  '__scratchEditorReceiveFromNative';
+
+/**
+ * WebView → RN 协议外消息允许清单，由 `EditorOutMessage` 联合类型派生：
+ * Record 键约束强制枚举全部消息类型（缺项或多余均编译错误），消除手工清单漂移。
+ */
+const EDITOR_OUT_MESSAGE_TYPE_FLAGS = {
+  'editor.code.generated': true,
+  'editor.numberSlider.open': true,
+  'editor.numberSlider.close': true,
+  'editor.matrixLight.open': true,
+  'editor.matrixLight.close': true,
+  'editor.notePicker.open': true,
+  'editor.notePicker.close': true,
+  'editor.handleShank.open': true,
+  'editor.handleShank.close': true,
+  'editor.variablePrompt.open': true,
+  'editor.variablePrompt.close': true,
+  'editor.workspace.ready': true,
+  'editor.workspace.loaded': true,
+  'editor.workspace.changed': true,
+} satisfies Record<EditorOutMessage['type'], true>;
+
+export const EDITOR_OUT_MESSAGE_TYPES = Object.keys(
+  EDITOR_OUT_MESSAGE_TYPE_FLAGS,
+) as EditorOutMessage['type'][];

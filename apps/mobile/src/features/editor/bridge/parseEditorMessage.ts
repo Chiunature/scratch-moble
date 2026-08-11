@@ -1,21 +1,11 @@
-import type { EditorOutMessage } from '@scratch-mobile/shared';
+import {
+  EDITOR_OUT_MESSAGE_TYPES,
+  type EditorOutMessage,
+} from '@scratch-mobile/shared';
 
-const EDITOR_OUT_MESSAGE_TYPES = new Set<EditorOutMessage['type']>([
-  'editor.code.generated',
-  'editor.numberSlider.open',
-  'editor.numberSlider.close',
-  'editor.matrixLight.open',
-  'editor.matrixLight.close',
-  'editor.notePicker.open',
-  'editor.notePicker.close',
-  'editor.handleShank.open',
-  'editor.handleShank.close',
-  'editor.variablePrompt.open',
-  'editor.variablePrompt.close',
-  'editor.workspace.ready',
-  'editor.workspace.loaded',
-  'editor.workspace.changed',
-]);
+const EDITOR_OUT_MESSAGE_TYPE_SET = new Set<EditorOutMessage['type']>(
+  EDITOR_OUT_MESSAGE_TYPES,
+);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -31,7 +21,7 @@ export function parseEditorOutMessage(raw: string): EditorOutMessage | null {
     if (!isRecord(parsed) || typeof parsed.type !== 'string') {
       return null;
     }
-    if (!EDITOR_OUT_MESSAGE_TYPES.has(parsed.type as EditorOutMessage['type'])) {
+    if (!EDITOR_OUT_MESSAGE_TYPE_SET.has(parsed.type as EditorOutMessage['type'])) {
       return null;
     }
     return parsed as EditorOutMessage;
