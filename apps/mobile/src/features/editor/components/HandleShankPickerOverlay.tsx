@@ -27,7 +27,6 @@ type Props = {
 
 const SHEET_HEIGHT_RATIO = 0.62;
 const SHEET_BG = '#1a1a2e';
-const ACCENT = '#64b5f6';
 
 export function HandleShankPickerOverlay({ session, onCommit, onClose }: Props) {
   const { t } = useTranslation('overlays');

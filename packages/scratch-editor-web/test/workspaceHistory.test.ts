@@ -115,7 +115,7 @@ describe('createWorkspaceHistory', () => {
   it('undo 回调：可撤销时执行 undo、触发 codegen 并发布状态', () => {
     const workspace = makeWorkspace(1);
     const onCodeGenerationNeeded = jest.fn();
-    const history = createWorkspaceHistory(workspace, { onCodeGenerationNeeded });
+    createWorkspaceHistory(workspace, { onCodeGenerationNeeded });
     mockUpdateHistory.mockClear();
 
     const { onUndo } = lastHandlers();

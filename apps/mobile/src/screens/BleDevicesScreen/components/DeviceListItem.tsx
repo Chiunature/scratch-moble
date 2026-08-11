@@ -1,6 +1,5 @@
 import React, { memo, useRef } from 'react';
 import { Animated, Image, Pressable, Text, View } from 'react-native';
-import { useTranslation } from '@scratch-mobile/i18n';
 
 import type { BleDevice } from '../../../services/ble';
 import bleDeviceImage from '../../../../assets/bleDevicesScreen/bluetooth-black.png';
@@ -29,14 +28,11 @@ type Props = {
 export const DeviceListItem = memo(function DeviceListItem({
   item,
   isConnected,
-  isPairedTab,
-  isOnline,
   scanned,
   disabled = false,
   onPress,
   onLongPress,
 }: Props) {
-  const { t } = useTranslation('ble');
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 

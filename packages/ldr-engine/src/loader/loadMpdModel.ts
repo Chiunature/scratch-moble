@@ -186,7 +186,6 @@ export function loadMpdFromText(
     displayScale = 1,
     mode = 'instruction',
     onProgress,
-    onWarning,
     onError,
     fetchText = defaultFetchText,
   } = options;

@@ -1,7 +1,7 @@
 import { BLOCK_TYPES } from '../../../blocks/blockTypes';
 import { moduleCall, PYTHON_MODULES } from '../../moduleCall';
 import type { StatementGenerator } from '../../types';
-import { valueToPython, multiPortsInputToPythonArgs } from '../../expressions';
+import { valueToPython } from '../../expressions';
 export const remoteControlSensor: Record<string, StatementGenerator> = {
   [BLOCK_TYPES.sensor.remote_control_sensor.movSetAdvanceOffset](
     block,

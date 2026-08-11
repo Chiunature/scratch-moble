@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, Easing } from 'react-native';
+import { Animated, Easing } from 'react-native';
 
 const BreathingDot = ({ size = 20, color = '#4CAF50', duration = 1500 }) => {
   const opacityAnim = useRef(new Animated.Value(0.3)).current;

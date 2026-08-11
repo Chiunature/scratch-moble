@@ -71,7 +71,7 @@ export function PikaWorkflowModal({
   progress,
   onClose,
 }: Props) {
-  const { t, i18n } = useTranslation('editorShell');
+  const { t } = useTranslation('editorShell');
   const { height: windowHeight } = useWindowDimensions();
   const isProgress = kind === 'progress';
   const canDismiss = !isProgress;
@@ -92,7 +92,7 @@ export function PikaWorkflowModal({
       return resolveTransferMessage(t, messageOptions);
     }
     return t(messageKey, messageOptions);
-  }, [bleErrorCode, i18n.language, messageKey, messageOptions, messageText, t]);
+  }, [bleErrorCode, messageKey, messageOptions, messageText, t]);
 
   return (
     <Modal

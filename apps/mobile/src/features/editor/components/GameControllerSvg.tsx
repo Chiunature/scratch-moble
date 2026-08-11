@@ -31,8 +31,6 @@ type Props = {
 const VIEW_W = 460;
 const VIEW_H = 220;
 
-const BODY_R = 72;
-const BODY_TOP_Y = 45;
 const BODY_LEFT_X = 72;
 const BODY_RIGHT_X = 369;
 

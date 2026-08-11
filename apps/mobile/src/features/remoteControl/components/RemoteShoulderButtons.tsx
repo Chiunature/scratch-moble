@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Animated, Text, Vibration, View } from 'react-native';
+import { Animated, Text, Vibration } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 import type { ShoulderButton } from '../type';
 import { styles } from '../remoteControl.styles';
