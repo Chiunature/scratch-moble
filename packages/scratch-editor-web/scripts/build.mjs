@@ -305,7 +305,7 @@ await build({
   target: ['chrome100', 'safari15'],
   minify: false,
   plugins: [toolboxSvgTextPlugin],
-  loader: { '.svg': 'dataurl', '.png': 'dataurl' },
+  loader: { '.svg': 'dataurl', '.png': 'dataurl', '.mp3': 'base64' },
   alias: {
     '@scratch-mobile/shared': sharedEntry,
     '@scratch-mobile/i18n': path.join(

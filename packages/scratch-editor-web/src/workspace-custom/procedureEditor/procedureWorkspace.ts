@@ -1,5 +1,6 @@
 import * as ScratchBlocks from 'scratch-blocks';
 
+import { MEDIA_BASE_URL } from '../../media/constants';
 import type { Workspace } from '../../codegen/types';
 import { getCurrentScratchBlocksLocale } from '../../locale/applyEditorLocale';
 import { editorTheme } from '../../theme';
@@ -53,7 +54,7 @@ export function createProcedureEditorWorkspace(
       colour: 'rgba(15, 23, 42, 0.10)',
       snap: true,
     },
-    media: 'https://unpkg.com/scratch-blocks@2.1.19/media/',
+    media: MEDIA_BASE_URL,
     sounds: false,
     theme: editorTheme,
     modalInputs: false,

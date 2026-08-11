@@ -13,6 +13,8 @@ import {
   type EditorInMessage,
 } from '@scratch-mobile/shared';
 import type { Workspace } from './codegen/types';
+import { MEDIA_BASE_URL } from './media/constants';
+import { patchMediaFetch } from './media/patchMediaFetch';
 import {
   applyEditorLocale,
   detectInitialEditorAppLocale,
@@ -39,6 +41,8 @@ import {
   patchDataVariableReporterOutput,
   patchContextMenuMissingTextGuard,
 } from './workspace-custom';
+
+patchMediaFetch();
 
 function refreshToolboxDomAfterLayout(workspace: Workspace): void {
   patchToolboxCategoryIcons(workspace);
@@ -85,7 +89,7 @@ async function bootstrap(): Promise<void> {
       colour: 'rgba(15, 23, 42, 0.12)',
       snap: true,
     },
-    media: 'https://unpkg.com/scratch-blocks@2.1.19/media/',
+    media: MEDIA_BASE_URL,
     trashcan: false,
     maxInstances: {
       [BLOCK_TYPES.event.whenFlagClicked]: 1,

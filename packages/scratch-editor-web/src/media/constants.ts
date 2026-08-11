@@ -1,0 +1,1 @@
+export const MEDIA_BASE_URL = 'https://unpkg.com/scratch-blocks@2.1.19/media/';
