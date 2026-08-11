@@ -29,9 +29,10 @@ export function collectWorkspaceVariables(
   };
 
   const ws = workspace as WorkspaceWithVariables;
+  // getVariableMap 优先：blockly v12 已弃用 Workspace.getAllVariables，调用即告警
   const models =
-    ws.getAllVariables?.() ??
     ws.getVariableMap?.()?.getAllVariables?.() ??
+    ws.getAllVariables?.() ??
     [];
 
   return models

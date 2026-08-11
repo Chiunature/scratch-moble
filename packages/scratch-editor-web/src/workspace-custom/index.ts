@@ -31,7 +31,9 @@ export {
   setupDynamicToolboxCategories,
   setupDynamicToolboxCategoriesAndRefreshFlyout,
   rebuildContinuousFlyout,
+  patchContinuousToolboxBeforeInject,
 } from './dynamicToolbox';
+export { patchWorkspaceVariableDeprecations } from './patchWorkspaceVariableDeprecations';
 export {
   patchProcedureWorkspaceBehavior,
   installProcedureDragDebug,

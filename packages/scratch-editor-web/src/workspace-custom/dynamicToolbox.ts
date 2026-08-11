@@ -22,6 +22,87 @@ type ContinuousToolboxLike = {
 };
 
 /**
+ * ContinuousToolbox.init 在 inject 内部就同步 show(getInitialFlyoutContents())，
+ * 此刻 VARIABLE/PROCEDURE 分类回调尚未注册，会触发两类告警：
+ * - blockly 默认 VARIABLE 回调提示 "There are no variable blocks..."
+ * - createFlyoutInfo 对 {kind:'CATEGORY'} 项查不到 category flyout inflater
+ * 两处补丁都必须在 ScratchBlocks.inject() 之前调用：
+ * 1. 注册空 category inflater：custom 内容已由 createFlyoutInfo 的 custom 分支就地展开，
+ *    category 项本身无需渲染，避免 rebuild 时反复告警；
+ * 2. 首次 getInitialFlyoutContents() 过滤 custom 分类项：初始内容由 inject 后的
+ *    setupDynamicToolboxCategoriesAndRefreshFlyout 的 rAF rebuild 统一渲染。
+ */
+const CATEGORY_INFLATER_NAME = 'category';
+
+function registerNoopCategoryFlyoutInflater(): void {
+  const registry = ScratchBlocks.registry;
+  const inflaterType = registry.Type.FLYOUT_INFLATER;
+  if (registry.hasItem(inflaterType, CATEGORY_INFLATER_NAME)) {
+    return;
+  }
+  registry.register(
+    inflaterType,
+    CATEGORY_INFLATER_NAME,
+    class CategoryFlyoutInflater {
+      load(): ScratchBlocks.FlyoutItem {
+        // 0 间距 separator 不可见；custom 内容已由 createFlyoutInfo 的 custom 分支展开
+        return new ScratchBlocks.FlyoutItem(
+          // SeparatorAxis 是 blockly 内部 const enum（'x' | 'y'），未从包根导出
+          new ScratchBlocks.FlyoutSeparator(0, 'y' as never),
+          CATEGORY_INFLATER_NAME,
+        );
+      }
+      gapForItem(): number {
+        return 0;
+      }
+      disposeItem(): void {}
+      getType(): string {
+        return CATEGORY_INFLATER_NAME;
+      }
+    },
+  );
+}
+
+type FlyoutItemInfo = {
+  kind?: string;
+  custom?: string;
+};
+
+type ContinuousToolboxProto = {
+  getInitialFlyoutContents?: () => FlyoutItemInfo[];
+};
+
+function deferCustomCategoriesPastInitialShow(): void {
+  const toolboxCtor = ScratchBlocks.registry.getClass(
+    ScratchBlocks.registry.Type.TOOLBOX,
+    'ContinuousToolbox',
+  );
+  const proto = (
+    toolboxCtor as unknown as { prototype?: ContinuousToolboxProto } | null
+  )?.prototype;
+  const orig = proto?.getInitialFlyoutContents;
+  if (!proto || typeof orig !== 'function') {
+    return;
+  }
+  const shownInstances = new WeakSet<object>();
+  proto.getInitialFlyoutContents = function (this: object): FlyoutItemInfo[] {
+    const contents = orig.call(this);
+    if (shownInstances.has(this)) {
+      return contents;
+    }
+    shownInstances.add(this);
+    // 首次渲染时 VARIABLE/PROCEDURE 回调尚未注册（blockly 默认回调会告警），
+    // 跳过 custom 分类项，其内容由 inject 后的 rebuild 展示。
+    return contents.filter((item) => !(item && 'custom' in item));
+  };
+}
+
+export function patchContinuousToolboxBeforeInject(): void {
+  registerNoopCategoryFlyoutInflater();
+  deferCustomCategoriesPastInitialShow();
+}
+
+/**
  * Continuous Flyout 的 block 回收（RecyclableBlockFlyoutInflater）按 type 复用 BlockSvg。
  * 切语言后 message0 已变，但复用实例不会重跑 init，飞栏仍显示旧文案。
  * 仅在 applyEditorLocale 路径传入 invalidateFlyoutBlocks 时临时关闭回收。

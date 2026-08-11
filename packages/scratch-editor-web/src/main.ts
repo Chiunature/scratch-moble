@@ -35,6 +35,8 @@ import {
   setupFlyoutWidthClamp,
   setupToolboxDoubleClickHideFlyout,
   setupDynamicToolboxCategoriesAndRefreshFlyout,
+  patchContinuousToolboxBeforeInject,
+  patchWorkspaceVariableDeprecations,
   ensureProcedureEditorModalDom,
   patchProcedureWorkspaceBehavior,
   installProcedureDragDebug,
@@ -52,6 +54,8 @@ async function bootstrap(): Promise<void> {
   await applyEditorLocale(detectInitialEditorAppLocale());
   patchContextMenuMissingTextGuard();
 
+  patchWorkspaceVariableDeprecations();
+  patchContinuousToolboxBeforeInject();
   patchProcedureWorkspaceBehavior();
   patchDataVariableReporterOutput();
   ensureProcedureEditorModalDom();

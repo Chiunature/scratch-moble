@@ -38,6 +38,9 @@ function registerMatrixLightField(): void {
   fieldsRegistered = true;
 
   class FieldMatrixLight extends Field {
+    /** 可编辑自定义字段必须声明 SERIALIZABLE，否则 blockly v12 序列化时告警 */
+    SERIALIZABLE = true;
+
     ledThumbNodes_: SVGRectElement[] = [];
     matrixSvg_: SVGSVGElement | null = null;
     /** 同一次触摸只触发一次 open，避免 pointerdown + showEditor_ 重复 */

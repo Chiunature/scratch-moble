@@ -30,5 +30,15 @@ export function getEditorBlockDefinitions() {
 
 export function registerEditorBlocks(): void {
   registerPortDropdownExtensions();
-  ScratchBlocks.defineBlocksWithJsonArray(getEditorBlockDefinitions());
+  const definitions = getEditorBlockDefinitions();
+  // 幂等注册：先移除同名定义再 defineBlocksWithJsonArray。
+  // 否则 control_wait/control_if 等与 scratch-blocks 内置 type 重名（覆盖为项目语义），
+  // 且切语言 re-register 时也会重复触发 "overwrites previous definition" 告警。
+  for (const def of definitions) {
+    const type = def?.type;
+    if (type && type in ScratchBlocks.Blocks) {
+      delete ScratchBlocks.Blocks[type];
+    }
+  }
+  ScratchBlocks.defineBlocksWithJsonArray(definitions);
 }
