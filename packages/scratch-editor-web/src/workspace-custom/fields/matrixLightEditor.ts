@@ -7,6 +7,10 @@ import {
   postToReactNative,
   type EditorInMessage,
 } from '../../bridge/index';
+import {
+  createFieldSessionRegistry,
+  createRnOpenSuppressor,
+} from './sessionRegistry';
 
 type RenderableBlock = {
   rendered?: boolean;
@@ -31,38 +35,17 @@ type MatrixLightSession = {
   field: ScratchMatrixLightField;
 };
 
-const sessions = new Map<string, MatrixLightSession>();
+const sessions = createFieldSessionRegistry<MatrixLightSession>({
+  createSessionId,
+});
 
 /** 400ms 内同一 field 只 post 一次 open（含 pointerdown / showEditor_ / reopen） */
-const RN_OPEN_SUPPRESS_MS = 400;
-const rnLastOpenAt = new WeakMap<ScratchMatrixLightField, number>();
-
-function shouldSuppressDuplicateRnOpen(
-  field: ScratchMatrixLightField,
-): boolean {
-  const now = performance.now();
-  const last = rnLastOpenAt.get(field) ?? 0;
-  if (now - last < RN_OPEN_SUPPRESS_MS) {
-    return true;
-  }
-  rnLastOpenAt.set(field, now);
-  return false;
-}
+const shouldSuppressDuplicateRnOpen =
+  createRnOpenSuppressor<ScratchMatrixLightField>();
 
 function createSessionId(field: ScratchMatrixLightField): string {
   const id = (field as unknown as { id_?: string }).id_;
   return id ? `field-${id}` : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function findSessionEntryForField(
-  field: ScratchMatrixLightField,
-): [string, MatrixLightSession] | null {
-  for (const [sessionId, session] of sessions) {
-    if (session.field === field) {
-      return [sessionId, session];
-    }
-  }
-  return null;
 }
 
 function refreshMatrixFieldDisplay(field: ScratchMatrixLightField): void {
@@ -137,9 +120,9 @@ export function openMatrixLightEditor(
   }
 
   const rows = field.getValue();
-  const existing = findSessionEntryForField(field);
+  const existing = sessions.findByField(field);
   if (existing) {
-    const [sessionId] = existing;
+    const { sessionId } = existing;
     // 首次 open 可能 RN 未挂上浮层；再次点击须重发 postMessage，不能静默 return
     postToReactNative({
       type: 'editor.matrixLight.open',
@@ -149,8 +132,7 @@ export function openMatrixLightEditor(
     return;
   }
 
-  const sessionId = createSessionId(field);
-  sessions.set(sessionId, { field });
+  const sessionId = sessions.create({ field });
   postToReactNative({
     type: 'editor.matrixLight.open',
     sessionId,

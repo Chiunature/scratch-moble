@@ -6,6 +6,10 @@ import {
   postToReactNative,
   type EditorInMessage,
 } from '../../bridge/index';
+import {
+  createFieldSessionRegistry,
+  createRnOpenSuppressor,
+} from './sessionRegistry';
 
 type RenderableBlock = {
   rendered?: boolean;
@@ -28,39 +32,19 @@ type HandleShankSession = {
   valueWhenOpened: string | null;
 };
 
-const sessions = new Map<string, HandleShankSession>();
+const sessions = createFieldSessionRegistry<HandleShankSession>({
+  createSessionId,
+});
 
-const RN_OPEN_SUPPRESS_MS = 400;
-const rnLastOpenAt = new WeakMap<ScratchHandleShankField, number>();
-
-function shouldSuppressDuplicateRnOpen(
-  field: ScratchHandleShankField,
-): boolean {
-  const now = performance.now();
-  const last = rnLastOpenAt.get(field) ?? 0;
-  if (now - last < RN_OPEN_SUPPRESS_MS) {
-    return true;
-  }
-  rnLastOpenAt.set(field, now);
-  return false;
-}
+/** 400ms 内同一 field 只 post 一次 open（含 pointerdown / showEditor_ / reopen） */
+const shouldSuppressDuplicateRnOpen =
+  createRnOpenSuppressor<ScratchHandleShankField>();
 
 function createSessionId(field: ScratchHandleShankField): string {
   const id = (field as unknown as { id_?: string }).id_;
   return id
     ? `field-${id}`
     : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function findSessionEntryForField(
-  field: ScratchHandleShankField,
-): [string, HandleShankSession] | null {
-  for (const [sessionId, session] of sessions) {
-    if (session.field === field) {
-      return [sessionId, session];
-    }
-  }
-  return null;
 }
 
 function refreshHandleShankFieldDisplay(field: ScratchHandleShankField): void {
@@ -153,9 +137,9 @@ export function openHandleShankPickerEditor(
   const rawValue = field.getValue();
   const value = normalizeHandleShankKey(rawValue);
 
-  const existing = findSessionEntryForField(field);
+  const existing = sessions.findByField(field);
   if (existing) {
-    const [sessionId] = existing;
+    const { sessionId } = existing;
     postToReactNative({
       type: 'editor.handleShank.open',
       sessionId,
@@ -164,8 +148,7 @@ export function openHandleShankPickerEditor(
     return true;
   }
 
-  const sessionId = createSessionId(field);
-  sessions.set(sessionId, { field, valueWhenOpened: rawValue });
+  const sessionId = sessions.create({ field, valueWhenOpened: rawValue });
 
   postToReactNative({
     type: 'editor.handleShank.open',

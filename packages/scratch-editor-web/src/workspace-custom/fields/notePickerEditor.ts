@@ -7,6 +7,10 @@ import {
   postToReactNative,
   type EditorInMessage,
 } from '../../bridge/index';
+import {
+  createFieldSessionRegistry,
+  createRnOpenSuppressor,
+} from './sessionRegistry';
 
 type RenderableBlock = {
   rendered?: boolean;
@@ -29,40 +33,19 @@ type NotePickerSession = {
   valueWhenOpened: string | null;
 };
 
-const sessions = new Map<string, NotePickerSession>();
+const sessions = createFieldSessionRegistry<NotePickerSession>({
+  createSessionId,
+});
 
 /** 400ms 内同一 field 只 post 一次 open（含 pointerdown / showEditor_ / reopen） */
-const RN_OPEN_SUPPRESS_MS = 400;
-const rnLastOpenAt = new WeakMap<ScratchNotePickerField, number>();
-
-function shouldSuppressDuplicateRnOpen(
-  field: ScratchNotePickerField,
-): boolean {
-  const now = performance.now();
-  const last = rnLastOpenAt.get(field) ?? 0;
-  if (now - last < RN_OPEN_SUPPRESS_MS) {
-    return true;
-  }
-  rnLastOpenAt.set(field, now);
-  return false;
-}
+const shouldSuppressDuplicateRnOpen =
+  createRnOpenSuppressor<ScratchNotePickerField>();
 
 function createSessionId(field: ScratchNotePickerField): string {
   const id = (field as unknown as { id_?: string }).id_;
   return id
     ? `field-${id}`
     : `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function findSessionEntryForField(
-  field: ScratchNotePickerField,
-): [string, NotePickerSession] | null {
-  for (const [sessionId, session] of sessions) {
-    if (session.field === field) {
-      return [sessionId, session];
-    }
-  }
-  return null;
 }
 
 function refreshNoteFieldDisplay(field: ScratchNotePickerField): void {
@@ -157,9 +140,9 @@ export function openNotePickerEditor(
   const rawValue = field.getValue();
   const pitch = clampNotePitch(Number(rawValue));
 
-  const existing = findSessionEntryForField(field);
+  const existing = sessions.findByField(field);
   if (existing) {
-    const [sessionId] = existing;
+    const { sessionId } = existing;
     // 首次 open 可能 RN 未挂上浮层；再次点击须重发 postMessage，不能静默 return
     postToReactNative({
       type: 'editor.notePicker.open',
@@ -169,8 +152,7 @@ export function openNotePickerEditor(
     return;
   }
 
-  const sessionId = createSessionId(field);
-  sessions.set(sessionId, { field, valueWhenOpened: rawValue });
+  const sessionId = sessions.create({ field, valueWhenOpened: rawValue });
 
   postToReactNative({
     type: 'editor.notePicker.open',

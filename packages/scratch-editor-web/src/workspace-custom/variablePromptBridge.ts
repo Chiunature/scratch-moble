@@ -1,6 +1,7 @@
 import type { EditorInMessage } from '@scratch-mobile/shared';
 
 import { isReactNativeHost, postToReactNative } from '../bridge/index';
+import { createFieldSessionRegistry } from './fields/sessionRegistry';
 
 type VariablePromptCallback = (
   variableName: string,
@@ -9,18 +10,21 @@ type VariablePromptCallback = (
 ) => void;
 
 type VariablePromptSession = {
+  /** 变量弹窗会话无 field 维度；声明以满足注册表统一签名 */
+  field?: never;
   callback: VariablePromptCallback;
 };
 
-const sessions = new Map<string, VariablePromptSession>();
-
-function createSessionId(): string {
+function createSessionId(_field: undefined): string {
   return `variable-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const sessions = createFieldSessionRegistry<VariablePromptSession>({
+  createSessionId,
+});
+
 function closeSession(sessionId: string): VariablePromptSession | null {
-  const session = sessions.get(sessionId) ?? null;
-  sessions.delete(sessionId);
+  const session = sessions.delete(sessionId) ?? null;
   postToReactNative({ type: 'editor.variablePrompt.close', sessionId });
   return session;
 }
@@ -115,9 +119,8 @@ export function openVariablePrompt({
   title?: string;
   varType?: string;
 }): void {
-  const sessionId = createSessionId();
+  const sessionId = sessions.create({ callback });
   const promptTitle = title || (varType === 'list' ? '建立列表' : '建立变量');
-  sessions.set(sessionId, { callback });
 
   if (isReactNativeHost()) {
     postToReactNative({

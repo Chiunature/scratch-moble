@@ -5,6 +5,7 @@ import {
   postToReactNative,
   type EditorInMessage,
 } from '../../bridge/index';
+import { createFieldSessionRegistry } from './sessionRegistry';
 
 type RenderableBlock = {
   rendered?: boolean;
@@ -35,7 +36,7 @@ type SliderSession = {
   valueWhenOpened: string | number | null;
 };
 
-const sessions = new Map<string, SliderSession>();
+const sessions = createFieldSessionRegistry<SliderSession>({ createSessionId });
 
 function createSessionId(field: ScratchNumberField): string {
   const id = (field as unknown as { id_?: string }).id_;
@@ -132,18 +133,15 @@ export function openNumberSliderEditor(
     return;
   }
 
-  for (const [, session] of sessions) {
-    if (session.field === field) {
-      return;
-    }
+  if (sessions.findByField(field)) {
+    return;
   }
 
   if (!field.getSourceBlock()) {
     return;
   }
 
-  const sessionId = createSessionId(field);
-  sessions.set(sessionId, {
+  const sessionId = sessions.create({
     field,
     valueWhenOpened: field.getValue(),
   });
