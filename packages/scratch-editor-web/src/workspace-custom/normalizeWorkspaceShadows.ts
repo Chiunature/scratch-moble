@@ -21,6 +21,15 @@ export const DEFAULT_SHADOW_REPORTER_TYPE_SET = new Set<string>(
   DEFAULT_SHADOW_REPORTER_BLOCK_TYPES,
 );
 
+const PROCEDURE_PROTOTYPE_BLOCK_TYPE = 'procedures_prototype';
+const ARGUMENT_REPORTER_BLOCK_TYPES = [
+  'argument_reporter_string_number',
+  'argument_reporter_boolean',
+] as const;
+const ARGUMENT_REPORTER_BLOCK_TYPE_SET = new Set<string>(
+  ARGUMENT_REPORTER_BLOCK_TYPES,
+);
+
 export type SerializedInputState = {
   block?: SerializedBlockState;
   shadow?: SerializedBlockState;
@@ -117,7 +126,60 @@ function migrateLegacyPortPairReporter(block: SerializedBlockState): void {
   }
 }
 
-/** 规范化 Blockly workspace 序列化 JSON，避免默认 shadow 以 block 存盘/加载后出现白底 reporter。 */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isArgumentReporterBlock(
+  block: SerializedBlockState | undefined,
+): boolean {
+  return Boolean(block?.type && ARGUMENT_REPORTER_BLOCK_TYPE_SET.has(block.type));
+}
+
+function removeDerivedProcedurePrototypeInputs(
+  block: SerializedBlockState,
+): void {
+  if (block.type !== PROCEDURE_PROTOTYPE_BLOCK_TYPE || !block.inputs) {
+    return;
+  }
+
+  for (const [inputName, input] of Object.entries(block.inputs)) {
+    if (isArgumentReporterBlock(input.block)) {
+      delete input.block;
+    }
+    if (isArgumentReporterBlock(input.shadow)) {
+      delete input.shadow;
+    }
+    if (!input.block && !input.shadow) {
+      delete block.inputs[inputName];
+    }
+  }
+
+  if (Object.keys(block.inputs).length === 0) {
+    delete block.inputs;
+  }
+}
+
+function removeTopLevelOrphanArgumentReporters(state: unknown): void {
+  if (!isRecord(state) || !isRecord(state.blocks)) {
+    return;
+  }
+
+  const rootBlocks = state.blocks.blocks;
+  if (!Array.isArray(rootBlocks)) {
+    return;
+  }
+
+  state.blocks.blocks = rootBlocks.filter(
+    block => !isArgumentReporterBlock(block as SerializedBlockState),
+  );
+}
+
+/**
+ * 规范化 Blockly workspace 序列化 JSON：
+ * - 默认 shadow reporter 降回 shadow，避免加载后出现白底 reporter；
+ * - 自制积木 prototype 的参数 reporter 由 mutation 派生，不落盘，避免重载后重复生成。
+ */
 export function normalizeDefaultShadowReportersInWorkspaceState(
   state: unknown,
 ): unknown {
@@ -127,8 +189,10 @@ export function normalizeDefaultShadowReportersInWorkspaceState(
 
   walkSerializedBlockTree(state, block => {
     migrateLegacyPortPairReporter(block);
+    removeDerivedProcedurePrototypeInputs(block);
     demoteMatchingBlocksToShadows(block, DEFAULT_SHADOW_REPORTER_TYPE_SET);
   });
+  removeTopLevelOrphanArgumentReporters(state);
 
   return state;
 }
