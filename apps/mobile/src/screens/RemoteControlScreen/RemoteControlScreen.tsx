@@ -11,8 +11,12 @@ import { bleDeviceManager, bleLog } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
 import { styles } from '../../features/remoteControl/remoteControl.styles';
 
-/** 发送遥控键值帧；失败仅告警，不打断操作 */
+/** 发送遥控键值帧；发送前二次校验链路是否真的还在（UI 状态可能滞后），失败仅告警不打断操作 */
 function sendRemoteFrame(frame: number[]): void {
+  if (!bleDeviceManager.isConnected()) {
+    bleLog.warn('遥控指令发送被拦截：蓝牙未连接');
+    return;
+  }
   void bleDeviceManager.sendCommand(frame).catch(error => {
     bleLog.warn(
       '遥控指令发送失败',

@@ -9,6 +9,25 @@ export type PairedBleDevice = BleDevice & {
   pairedAt: number;
 };
 
+/** 配对列表变更订阅：store 投影依赖此事件与持久化保持一致 */
+type PairedDevicesListener = (list: PairedBleDevice[]) => void;
+const pairedDevicesListeners = new Set<PairedDevicesListener>();
+
+export function subscribePairedDevices(
+  listener: PairedDevicesListener,
+): () => void {
+  pairedDevicesListeners.add(listener);
+  return () => {
+    pairedDevicesListeners.delete(listener);
+  };
+}
+
+function emitPairedDevices(list: PairedBleDevice[]): void {
+  for (const listener of pairedDevicesListeners) {
+    listener(list);
+  }
+}
+
 export function normalizeBleDeviceId(id: string): string {
   return id.toUpperCase();
 }
@@ -41,7 +60,8 @@ function upsertPairedList(
   return updated;
 }
 
-export async function loadPairedDevices(): Promise<PairedBleDevice[]> {
+/** 内部读取：不通知订阅者（save/remove 会随后 emit 最终列表） */
+async function readPairedDevices(): Promise<PairedBleDevice[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -62,13 +82,21 @@ export async function loadPairedDevices(): Promise<PairedBleDevice[]> {
   }
 }
 
+export async function loadPairedDevices(): Promise<PairedBleDevice[]> {
+  const list = await readPairedDevices();
+  // 读取即重同步订阅者（初始化 / 屏幕聚焦刷新时 store 投影随之更新）
+  emitPairedDevices(list);
+  return list;
+}
+
 export async function savePairedDevice(
   device: BleDevice,
 ): Promise<PairedBleDevice[]> {
-  const current = await loadPairedDevices();
+  const current = await readPairedDevices();
   const next = upsertPairedList(current, device);
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   bleLog.info('已保存配对设备', device.id, device.name);
+  emitPairedDevices(next);
   return next;
 }
 
@@ -76,12 +104,13 @@ export async function removePairedDevice(
   deviceId: string,
 ): Promise<PairedBleDevice[]> {
   const normalizedId = normalizeBleDeviceId(deviceId);
-  const current = await loadPairedDevices();
+  const current = await readPairedDevices();
   const next = current.filter(
     item => normalizeBleDeviceId(item.id) !== normalizedId,
   );
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   bleLog.info('已移除配对设备', normalizedId);
+  emitPairedDevices(next);
   return next;
 }
 

@@ -1,28 +1,32 @@
 import { create } from 'zustand';
 import type { State } from 'react-native-ble-plx';
 
-import type { BleDevice, DeviceWatchPayload } from '../services/ble';
+import type {
+  BleDevice,
+  DeviceWatchPayload,
+  PairedBleDevice,
+} from '../services/ble';
 
 export type BleConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
 /**
- * BLE 状态 store：连接相位机的投影（唯一写入方是 BleStoreBootstrap）。
+ * BLE 状态 store：连接相位机 + 配对设备持久化的只读投影。
+ * 唯一写入入口是 applySnapshot（实际调用方为 BleStoreBootstrap）。
  * UI 不得直接改写连接状态，只能通过 services/ble 的动作触发。
  */
-type BleStore = {
+export type BleStoreSnapshot = {
   bluetoothState: State | null;
   connectionStatus: BleConnectionStatus;
   connectedDevice: BleDevice | null;
   /** 扫描活动标志（投影自相位机） */
   isScanning: boolean;
   deviceWatch: DeviceWatchPayload | null;
+  /** 已配对设备列表（投影自 pairedDevices 持久化） */
+  pairedDevices: PairedBleDevice[];
+};
 
-  setBluetoothState: (state: State) => void;
-  setConnectionStatus: (status: BleConnectionStatus) => void;
-  setConnectedDevice: (device: BleDevice | null) => void;
-  setScanning: (scanning: boolean) => void;
-  setDeviceWatch: (payload: DeviceWatchPayload) => void;
-  clearDeviceWatch: () => void;
+type BleStore = BleStoreSnapshot & {
+  applySnapshot: (partial: Partial<BleStoreSnapshot>) => void;
 };
 
 export const useBleStore = create<BleStore>(set => ({
@@ -31,11 +35,7 @@ export const useBleStore = create<BleStore>(set => ({
   connectedDevice: null,
   isScanning: false,
   deviceWatch: null,
+  pairedDevices: [],
 
-  setBluetoothState: state => set({ bluetoothState: state }),
-  setConnectionStatus: status => set({ connectionStatus: status }),
-  setConnectedDevice: device => set({ connectedDevice: device }),
-  setScanning: scanning => set({ isScanning: scanning }),
-  setDeviceWatch: payload => set({ deviceWatch: payload }),
-  clearDeviceWatch: () => set({ deviceWatch: null }),
+  applySnapshot: partial => set(partial),
 }));

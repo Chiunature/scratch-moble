@@ -86,11 +86,11 @@ export function BleDevicesScreen() {
   const connectionStatus = useBleStore(state => state.connectionStatus);
   const connectedDevice = useBleStore(state => state.connectedDevice);
   const isScanning = useBleStore(state => state.isScanning);
+  const pairedDevices = useBleStore(state => state.pairedDevices);
   const connectedDeviceId = connectedDevice?.id ?? null;
   const isConnecting = connectionStatus === 'connecting';
 
   const [devices, setDevices] = useState<BleDevice[]>([]);
-  const [pairedDevices, setPairedDevices] = useState<PairedBleDevice[]>([]);
   const [isPaired, setIsPaired] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -129,9 +129,9 @@ export function BleDevicesScreen() {
     });
   }, []);
 
-  const refreshPairedDevices = useCallback(async () => {
-    const list = await loadPairedDevices();
-    setPairedDevices(list);
+  /** 聚焦时重读持久化配对列表；store 投影通过 pairedDevices 订阅自动更新 */
+  const refreshPairedDevices = useCallback(() => {
+    void loadPairedDevices();
   }, []);
 
   const handleDisconnect = useCallback(async () => {
@@ -156,7 +156,6 @@ export function BleDevicesScreen() {
 
       try {
         const result = await bleConnectionController.connect(normalizedDevice);
-        setPairedDevices(result.pairedDevices);
         bleLog.info('已连接并加入已配对列表', normalizedDevice.id);
 
         if (result.watchError) {
@@ -221,8 +220,7 @@ export function BleDevicesScreen() {
               if (isConnectedToDevice(device.id)) {
                 await handleDisconnect();
               }
-              const next = await removePairedDevice(device.id);
-              setPairedDevices(next);
+              await removePairedDevice(device.id);
             } catch (error) {
               handleError(error, 'errors.removePairedFailed');
             }
@@ -311,7 +309,7 @@ export function BleDevicesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void refreshPairedDevices();
+      refreshPairedDevices();
     }, [refreshPairedDevices]),
   );
 
