@@ -8,8 +8,6 @@ import {
 import {
   BLE_FILE_LIST_DELAY_MS,
   BLE_REQUEST_MTU,
-  BLE_UPLOAD_CHUNK_SIZE,
-  BLE_UPLOAD_TIMEOUT_MS,
   TARGET_DEVICE_NAME,
 } from '../../../constants/bleCommand';
 import {
@@ -22,7 +20,6 @@ import {
   buildCommand,
   buildMatrixCommand,
   buildMotorCommand,
-  buildUploadFrames,
   bytesToBase64,
   catchData,
   checkFileName,
@@ -35,7 +32,6 @@ import {
   parseDeviceData,
   readHostWillAiState,
   stringToHex,
-  verifyBootFrame,
   type BleSign,
   type DeviceWatchPayload,
   type MatrixControlPayload,
@@ -47,11 +43,11 @@ import { isDeviceWatchDebugEnabled } from './debug';
 import { ConnectionPhaseMachine, type BleConnectionPhase } from './phaseMachine';
 import { requestBlePermissions } from './permissions';
 import { getSharedBleManager } from './singleton';
+import { UploadSession } from './uploadSession';
 import type {
   BleDevice,
   DeleteFileOptions,
   UploadFileOptions,
-  UploadProgress,
 } from '../types';
 
 const DEVICE_WATCH_THROTTLE_MS = 100;
@@ -76,14 +72,23 @@ export class BleDeviceManager {
   private binaryReceiveBuffer: number[] = [];
   private textReceiveBuffer = '';
 
-  private uploadFrames: number[][] = [];
-  private uploadFrameIndex = 0;
-  private uploadTotalFrames = 0;
-  private uploadFileName = '';
-  private uploadOnProgress: ((progress: UploadProgress) => void) | null = null;
-  private uploadResolve: (() => void) | null = null;
-  private uploadReject: ((error: Error) => void) | null = null;
-  private uploadTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * 上传会话：帧队列 / 进度 / 结算 / 定时器全部收归 uploadSession，
+   * manager 只做薄委托（GATT 写入原语与相位转换仍由 manager 提供）。
+   */
+  private readonly uploadSession = new UploadSession({
+    writeUploadFrame: command => this.writeUploadFrame(command),
+    transition: phase => {
+      if (phase === 'uploading') {
+        this.machine.transition('uploading');
+      } else if (this.connectedDevice) {
+        this.machine.transition('connected');
+      }
+    },
+    resetBootSign: () => {
+      this.sign = null;
+    },
+  });
 
   private pendingBinaryResolve: ((value: string) => void) | null = null;
   private pendingBinaryReject: ((error: Error) => void) | null = null;
@@ -300,46 +305,8 @@ export class BleDeviceManager {
   }
 
   async uploadFile(options: UploadFileOptions): Promise<void> {
-    if (this.uploadResolve) {
-      throw new Error('uploadInProgress');
-    }
-
-    const {
-      fileName,
-      fileData,
-      functionCode = FUNCTION_CODES.FILE_NAME,
-      chunkSize = BLE_UPLOAD_CHUNK_SIZE,
-      runAfterUpload = false,
-      onProgress,
-    } = options;
-
-    bleLog.info('开始上传文件', {
-      fileName,
-      bytes: fileData.length,
-      chunkSize,
-      runAfterUpload,
-    });
-
-    this.uploadFrames = buildUploadFrames(
-      fileName,
-      fileData,
-      functionCode,
-      chunkSize,
-      runAfterUpload,
-    );
-    this.uploadTotalFrames = this.uploadFrames.length;
-    this.uploadFileName = fileName;
-    this.uploadOnProgress = onProgress ?? null;
     this.sign = BLE_SIGN.BOOT_BIN;
-    this.machine.transition('uploading');
-
-    bleLog.info(`上传分包数: ${this.uploadTotalFrames}`);
-
-    return new Promise((resolve, reject) => {
-      this.uploadResolve = resolve;
-      this.uploadReject = reject;
-      void this.sendUploadFrameAt(0);
-    });
+    return this.uploadSession.start(options);
   }
 
   async deleteFile({
@@ -533,7 +500,7 @@ export class BleDeviceManager {
   destroy(): void {
     bleLog.info('销毁 BleDeviceManager');
     this.stopScan();
-    this.cancelUpload(new Error('bleManagerDestroyed'));
+    this.uploadSession.cancel(new Error('bleManagerDestroyed'));
     this.clearPendingBinary(new Error('bleManagerDestroyed'));
     this.clearWatchThrottle();
     void this.disconnect();
@@ -583,7 +550,7 @@ export class BleDeviceManager {
     return (
       this.sign === BLE_SIGN.BOOT_BIN ||
       this.sign === BLE_SIGN.EXE_FILES ||
-      this.uploadResolve !== null
+      this.uploadSession.isActive()
     );
   }
 
@@ -613,31 +580,8 @@ export class BleDeviceManager {
       return;
     }
 
-    if (this.sign === BLE_SIGN.BOOT_BIN && this.uploadResolve) {
-      if (!verifyBootFrame(frame.data)) {
-        bleLog.error('上传 ACK 校验失败');
-        this.cancelUpload(new Error('uploadError'));
-        return;
-      }
-
-      this.clearUploadTimeout();
-      const nextIndex = this.uploadFrameIndex + 1;
-      const progress = Math.ceil((nextIndex / this.uploadTotalFrames) * 100);
-      bleLog.info(
-        `上传进度 ${progress}% (${nextIndex}/${this.uploadTotalFrames})`,
-      );
-      this.uploadOnProgress?.({
-        fileName: this.uploadFileName,
-        progress,
-      });
-
-      if (nextIndex >= this.uploadTotalFrames) {
-        bleLog.info('上传完成', this.uploadFileName);
-        this.finishUpload();
-        return;
-      }
-
-      void this.sendUploadFrameAt(nextIndex);
+    if (this.sign === BLE_SIGN.BOOT_BIN && this.uploadSession.isActive()) {
+      this.uploadSession.handleAck(frame.data);
     }
   }
 
@@ -715,75 +659,6 @@ export class BleDeviceManager {
     this.pendingWatchPayload = null;
   }
 
-  private async sendUploadFrameAt(index: number): Promise<void> {
-    this.uploadFrameIndex = index;
-    this.resetUploadTimeout();
-    bleLog.info(`上传分包 ${index + 1}/${this.uploadTotalFrames}`);
-
-    try {
-      await this.writeUploadFrame(this.uploadFrames[index]);
-    } catch (error) {
-      bleLog.error('上传分包发送失败', error);
-      this.cancelUpload(
-        error instanceof Error ? error : new Error('uploadError'),
-      );
-    }
-  }
-
-  private resetUploadTimeout(): void {
-    this.clearUploadTimeout();
-    this.uploadTimeoutId = setTimeout(() => {
-      bleLog.warn('上传超时');
-      this.cancelUpload(new Error('uploadTimeout'));
-    }, BLE_UPLOAD_TIMEOUT_MS);
-  }
-
-  private clearUploadTimeout(): void {
-    if (this.uploadTimeoutId) {
-      clearTimeout(this.uploadTimeoutId);
-      this.uploadTimeoutId = null;
-    }
-  }
-
-  private finishUpload(): void {
-    this.clearUploadTimeout();
-    this.sign = null;
-    this.uploadFrames = [];
-    this.uploadOnProgress = null;
-    if (this.connectedDevice) {
-      this.machine.transition('connected');
-    }
-    const resolve = this.uploadResolve;
-    this.uploadResolve = null;
-    this.uploadReject = null;
-    resolve?.();
-  }
-
-  private cancelUpload(error: Error): void {
-    const hadActiveUpload = this.uploadReject !== null;
-    this.clearUploadTimeout();
-    this.sign = null;
-    this.uploadFrames = [];
-    this.uploadOnProgress = null;
-    const reject = this.uploadReject;
-    this.uploadResolve = null;
-    this.uploadReject = null;
-
-    if (!hadActiveUpload) {
-      return;
-    }
-
-    if (error.message === 'deviceDisconnected') {
-      bleLog.info('上传因断开而中断');
-    } else {
-      bleLog.warn('上传取消', error.message);
-    }
-    if (this.connectedDevice) {
-      this.machine.transition('connected');
-    }
-    reject?.(error);
-  }
-
   private clearPendingBinary(error?: Error, result?: string): void {
     if (this.pendingBinaryTimeoutId) {
       clearTimeout(this.pendingBinaryTimeoutId);
@@ -843,7 +718,7 @@ export class BleDeviceManager {
     this.characteristic = null;
     this.resetReceiveBuffers();
     this.clearWatchThrottle();
-    this.cancelUpload(new Error('deviceDisconnected'));
+    this.uploadSession.cancel(new Error('deviceDisconnected'));
     this.clearPendingBinary(new Error('deviceDisconnected'));
     this.machine.transition('disconnected');
   }
