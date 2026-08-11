@@ -12,7 +12,8 @@ import {
 
 type ProjectStore = {
   projects: ScratchProjectSummary[];
-  isLoading: boolean;
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  error?: string;
   loadProjects: () => Promise<void>;
   reconcileAndTrack: () => Promise<void>;
   createAndTrack: (name?: string) => Promise<ScratchProjectSummary>;
@@ -23,21 +24,24 @@ type ProjectStore = {
 
 export const useProjectStore = create<ProjectStore>(set => ({
   projects: [],
-  isLoading: false,
+  status: 'idle',
 
   loadProjects: async () => {
-    set({ isLoading: true });
+    set({ status: 'loading', error: undefined });
     try {
       const projects = await listProjects();
-      set({ projects, isLoading: false });
+      set({ projects, status: 'ready' });
       // Background reconcile keeps the index honest without blocking first paint.
       void reconcileProjects()
         .then(reconciled => {
           set({ projects: reconciled });
         })
         .catch(() => undefined);
-    } catch {
-      set({ isLoading: false });
+    } catch (error) {
+      set({
+        status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 

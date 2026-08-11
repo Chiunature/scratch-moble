@@ -96,10 +96,11 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
     handleDownloadToHost,
   } = useEditorPikaWorkflow(bridge.generatedCode);
 
-  const projectErrorKey = persistence.loadError ?? persistence.saveError;
-  const projectError = projectErrorKey
-    ? t(`persistence.${projectErrorKey}`)
-    : null;
+  const persistenceStatus = persistence.status;
+  const projectError =
+    persistenceStatus === 'loading' || persistenceStatus === 'ready'
+      ? null
+      : t(`persistence.${persistenceStatus}`);
   const displayProjectName = resolveProjectDisplayName(persistence.projectName);
 
   const toggleCodePanel = useCallback(() => {
@@ -162,7 +163,7 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
           onMessage={bridge.handleMessage}
           onLoadEnd={bridge.handleWebViewLoadEnd}
         />
-        {persistence.isProjectLoading ? (
+        {persistence.status === 'loading' ? (
           <View style={styles.projectLoadingOverlay} pointerEvents="auto">
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.projectLoadingText}>

@@ -17,7 +17,12 @@ import { useProjectStore } from '../../../store/useProjectStore';
 const FLUSH_TIMEOUT_MS = 2500;
 const WORKSPACE_SAVE_DEBOUNCE_MS = 500;
 
-type ProjectPersistenceErrorKey = 'loadCorrupt' | 'loadFailed' | 'saveFailed';
+type ProjectPersistenceStatus =
+  | 'loading'
+  | 'ready'
+  | 'loadCorrupt'
+  | 'loadFailed'
+  | 'saveFailed';
 
 type Options = {
   webViewRef: React.RefObject<WebView | null>;
@@ -41,13 +46,7 @@ export function useEditorProjectPersistence({
   const lastSaveSucceededRef = useRef(true);
   const upsertSummary = useProjectStore(state => state.upsertSummary);
   const [projectName, setProjectName] = useState(getDefaultProjectName);
-  const [loadError, setLoadError] = useState<ProjectPersistenceErrorKey | null>(
-    null,
-  );
-  const [saveError, setSaveError] = useState<ProjectPersistenceErrorKey | null>(
-    null,
-  );
-  const [isProjectLoading, setIsProjectLoading] = useState(true);
+  const [status, setStatus] = useState<ProjectPersistenceStatus>('loading');
 
   const injectLoad = useCallback(
     (workspace: unknown | null) => {
@@ -64,15 +63,13 @@ export function useEditorProjectPersistence({
   );
 
   const handleWorkspaceReady = useCallback(async () => {
-    setIsProjectLoading(true);
-    setLoadError(null);
-    setSaveError(null);
+    setStatus('loading');
     try {
       const document = await loadProject(projectId);
       setProjectName(document.name);
       injectLoad(document.workspace);
     } catch (error) {
-      setLoadError(
+      setStatus(
         error instanceof ProjectDocumentParseError
           ? 'loadCorrupt'
           : 'loadFailed',
@@ -86,7 +83,8 @@ export function useEditorProjectPersistence({
       if (loadedProjectId !== projectId) {
         return;
       }
-      setIsProjectLoading(false);
+      // 错误态保留，仅纯 loading 态在 workspace.loaded 后转为 ready。
+      setStatus(current => (current === 'loading' ? 'ready' : current));
     },
     [projectId],
   );
@@ -101,6 +99,8 @@ export function useEditorProjectPersistence({
 
   const persistWorkspaceChange = useCallback(
     async (message: RnWorkspaceChangedMessage) => {
+      // saveFailed 一次性：新一次保存开始即复位，错误提示不常驻。
+      setStatus(current => (current === 'saveFailed' ? 'ready' : current));
       try {
         const summary = await saveProjectWorkspace({
           projectId,
@@ -109,12 +109,16 @@ export function useEditorProjectPersistence({
         });
         setProjectName(summary.name);
         upsertSummary(summary);
-        setSaveError(null);
         lastSaveSucceededRef.current = true;
         pendingFlushRef.current?.();
       } catch {
         lastSaveSucceededRef.current = false;
-        setSaveError('saveFailed');
+        // 加载类错误优先级更高，saveFailed 不得覆盖 loadCorrupt/loadFailed。
+        setStatus(current =>
+          current === 'loadCorrupt' || current === 'loadFailed'
+            ? current
+            : 'saveFailed',
+        );
       } finally {
         pendingFlushRef.current = null;
       }
@@ -202,7 +206,11 @@ export function useEditorProjectPersistence({
     await waitForPendingProjectSaves(projectId);
 
     if (!lastSaveSucceededRef.current) {
-      setSaveError('saveFailed');
+      setStatus(current =>
+        current === 'loadCorrupt' || current === 'loadFailed'
+          ? current
+          : 'saveFailed',
+      );
     }
   }, [flushPendingWorkspaceChange, projectId, webViewRef]);
 
@@ -230,9 +238,7 @@ export function useEditorProjectPersistence({
 
   return {
     projectName,
-    loadError,
-    saveError,
-    isProjectLoading,
+    status,
     handleWorkspaceReady,
     handleWorkspaceLoaded,
     handleWorkspaceChanged,

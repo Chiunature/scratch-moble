@@ -67,7 +67,7 @@ export function ProjectsScreen({ navigation }: Props) {
   const { t } = useTranslation('projects');
   const { t: tCommon } = useTranslation('common');
   const projects = useProjectStore(state => state.projects);
-  const isLoading = useProjectStore(state => state.isLoading);
+  const loadStatus = useProjectStore(state => state.status);
   const loadProjects = useProjectStore(state => state.loadProjects);
   const createAndTrack = useProjectStore(state => state.createAndTrack);
   const rename = useProjectStore(state => state.rename);
@@ -340,7 +340,7 @@ export function ProjectsScreen({ navigation }: Props) {
     ],
   );
 
-  if (isLoading && projects.length === 0) {
+  if (loadStatus === 'loading' && projects.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
