@@ -1,8 +1,4 @@
-export {
-  injectEditorMessage,
-  forceInjectEditorMessage,
-  invalidateEditorMessageSession,
-} from './bridge/injectEditorMessage';
+export { editorMessageDeduper } from './bridge/injectEditorMessage';
 export { useEditorBridge } from './bridge/useEditorBridge';
 export type { EditorSessions } from './bridge/useEditorBridge';
 export { EditorBridgeView } from './bridge/EditorBridgeView';

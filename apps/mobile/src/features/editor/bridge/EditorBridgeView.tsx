@@ -14,6 +14,8 @@ type Props = {
   htmlError: string | null;
   embeddedLocaleScript: string;
   onMessage: (event: WebViewMessageEvent) => void;
+  /** WebView 加载完成（含重载）后回调，用于清空注入去重状态 */
+  onLoadEnd?: () => void;
 };
 
 /** 封装编辑器 WebView：加载 bundle、注入首帧语言脚本、转发 onMessage；未就绪时渲染 loading/错误覆盖层 */
@@ -23,6 +25,7 @@ export function EditorBridgeView({
   htmlError,
   embeddedLocaleScript,
   onMessage,
+  onLoadEnd,
 }: Props) {
   const { t } = useTranslation('editorShell');
 
@@ -50,6 +53,7 @@ export function EditorBridgeView({
       source={{ html }}
       injectedJavaScriptBeforeContentLoaded={embeddedLocaleScript}
       onMessage={onMessage}
+      onLoadEnd={onLoadEnd}
       javaScriptEnabled
       domStorageEnabled
     />

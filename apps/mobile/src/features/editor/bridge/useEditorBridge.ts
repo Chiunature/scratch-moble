@@ -19,11 +19,7 @@ import type {
 import { loadEditorBundleHtml } from '../loadEditorBundleHtml';
 import { injectEditorLocale } from '../injectEditorLocale';
 import { parseEditorOutMessage } from './parseEditorMessage';
-import {
-  injectEditorMessage,
-  invalidateEditorMessageSession,
-} from './injectEditorMessage';
-
+import { editorMessageDeduper } from './injectEditorMessage';
 export type EditorSessions = {
   slider: RnNumberSliderOpenMessage | null;
   matrixLight: RnMatrixLightOpenMessage | null;
@@ -84,10 +80,10 @@ export function useEditorBridge({
   const [editorHtml, setEditorHtml] = useState<string | null>(null);
   const [editorHtmlError, setEditorHtmlError] = useState<string | null>(null);
 
-  /** 发送桥消息；endSession 表示会话终结：清空对应 session 状态并失效该 sessionId 去重键 */
+  /** 发送桥消息；endSession 表示会话终结：清空对应 session 状态并重置去重状态 */
   const send = useCallback(
     (message: EditorInMessage, options?: { endSession?: boolean }) => {
-      injectEditorMessage(webViewRef.current, message);
+      editorMessageDeduper.inject(webViewRef.current, message);
       if (!options?.endSession) {
         return;
       }
@@ -101,11 +97,16 @@ export function useEditorBridge({
         );
       }
       if (sessionId) {
-        invalidateEditorMessageSession(sessionId);
+        editorMessageDeduper.clear();
       }
     },
     [],
   );
+
+  /** WebView 重载后清空注入去重状态，避免上一生命周期残留 payload 拦截首条消息 */
+  const handleWebViewLoadEnd = useCallback(() => {
+    editorMessageDeduper.clear();
+  }, []);
 
   // WebView → RN 消息：reducer 分发到 session 状态机 / 持久化 / 代码生成
   const handleEditorMessage = useCallback(
@@ -280,5 +281,6 @@ export function useEditorBridge({
     editorEmbeddedLocaleScript,
     handleMessage,
     send,
+    handleWebViewLoadEnd,
   };
 }

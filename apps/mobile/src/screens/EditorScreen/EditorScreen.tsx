@@ -152,6 +152,7 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
           htmlError={bridge.editorHtmlError}
           embeddedLocaleScript={bridge.editorEmbeddedLocaleScript}
           onMessage={bridge.handleMessage}
+          onLoadEnd={bridge.handleWebViewLoadEnd}
         />
         {persistence.isProjectLoading ? (
           <View style={styles.projectLoadingOverlay} pointerEvents="auto">

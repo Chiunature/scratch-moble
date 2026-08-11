@@ -5,7 +5,7 @@ import type { WebView } from 'react-native-webview';
 import { getDefaultProjectName } from '@scratch-mobile/i18n';
 import type { RnWorkspaceChangedMessage } from '@scratch-mobile/shared';
 
-import { forceInjectEditorMessage } from '../bridge/injectEditorMessage';
+import { editorMessageDeduper } from '../bridge/injectEditorMessage';
 import {
   loadProject,
   ProjectDocumentParseError,
@@ -53,7 +53,7 @@ export function useEditorProjectPersistence({
     (workspace: unknown | null) => {
       loadRevisionRef.current += 1;
       lastAcceptedRevisionRef.current = loadRevisionRef.current;
-      forceInjectEditorMessage(webViewRef.current, {
+      editorMessageDeduper.forceInject(webViewRef.current, {
         type: 'editor.workspace.load',
         projectId,
         workspace,
@@ -190,7 +190,7 @@ export function useEditorProjectPersistence({
       };
 
       pendingFlushRef.current = finish;
-      forceInjectEditorMessage(webViewRef.current, {
+      editorMessageDeduper.forceInject(webViewRef.current, {
         type: 'editor.workspace.flush',
         projectId,
       });
