@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { WebView } from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 
-import { getCurrentAppLocale, useTranslation } from '@scratch-mobile/i18n';
-import { EDITOR_EMBEDDED_LOCALE_GLOBAL } from '@scratch-mobile/shared';
 import type {
   EditorInMessage,
   EditorOutMessage,
@@ -16,10 +14,10 @@ import type {
   RnWorkspaceChangedMessage,
 } from '@scratch-mobile/shared';
 
-import { loadEditorBundleHtml } from '../loadEditorBundleHtml';
 import { injectEditorLocale } from '../injectEditorLocale';
 import { parseEditorOutMessage } from './parseEditorMessage';
 import { editorMessageDeduper } from './injectEditorMessage';
+
 export type EditorSessions = {
   slider: RnNumberSliderOpenMessage | null;
   matrixLight: RnMatrixLightOpenMessage | null;
@@ -36,8 +34,10 @@ const EMPTY_SESSIONS: EditorSessions = {
   variablePrompt: null,
 };
 
-type BridgeOptions = {
+type SessionManagerOptions = {
   webViewRef: RefObject<WebView | null>;
+  /** 来自 Shell 的加载占位文案（随语言切换更新） */
+  codePlaceholder: string;
   onWorkspaceReady: () => void | Promise<void>;
   onWorkspaceLoaded: (projectId: string) => void;
   onWorkspaceChanged: (message: RnWorkspaceChangedMessage) => void;
@@ -62,23 +62,23 @@ function sessionKeyOf(message: EditorInMessage): keyof EditorSessions | null {
   return SESSION_TYPE_TO_KEY[message.type] ?? null;
 }
 
-export function useEditorBridge({
+/**
+ * 桥会话与消息路由：sessions 状态机 + generatedCode/blockCount + 去重注入。
+ * WebView 生命周期/bundle/locale 由 useEditorBridgeShell 负责。
+ */
+export function useEditorSessionManager({
   webViewRef,
+  codePlaceholder,
   onWorkspaceReady,
   onWorkspaceLoaded,
   onWorkspaceChanged,
-}: BridgeOptions) {
-  const { t, i18n } = useTranslation('editorShell');
-  const codePlaceholderRef = useRef(t('loading.codePlaceholder'));
+}: SessionManagerOptions) {
+  const codePlaceholderRef = useRef(codePlaceholder);
   const lastCodeRef = useRef({ code: '', blockCount: 0 });
 
   const [sessions, setSessions] = useState<EditorSessions>(EMPTY_SESSIONS);
-  const [generatedCode, setGeneratedCode] = useState(() =>
-    t('loading.codePlaceholder'),
-  );
+  const [generatedCode, setGeneratedCode] = useState(codePlaceholder);
   const [blockCount, setBlockCount] = useState(0);
-  const [editorHtml, setEditorHtml] = useState<string | null>(null);
-  const [editorHtmlError, setEditorHtmlError] = useState<string | null>(null);
 
   /** 发送桥消息；endSession 表示会话终结：清空对应 session 状态并重置去重状态 */
   const send = useCallback(
@@ -100,13 +100,8 @@ export function useEditorBridge({
         editorMessageDeduper.clear();
       }
     },
-    [],
+    [webViewRef],
   );
-
-  /** WebView 重载后清空注入去重状态，避免上一生命周期残留 payload 拦截首条消息 */
-  const handleWebViewLoadEnd = useCallback(() => {
-    editorMessageDeduper.clear();
-  }, []);
 
   // WebView → RN 消息：reducer 分发到 session 状态机 / 持久化 / 代码生成
   const handleEditorMessage = useCallback(
@@ -210,7 +205,7 @@ export function useEditorBridge({
           return;
       }
     },
-    [onWorkspaceChanged, onWorkspaceLoaded, onWorkspaceReady],
+    [onWorkspaceChanged, onWorkspaceLoaded, onWorkspaceReady, webViewRef],
   );
 
   const handleMessage = useCallback(
@@ -223,64 +218,18 @@ export function useEditorBridge({
     [handleEditorMessage],
   );
 
-  // bootstrap 首帧前写入 App 语言，避免 WebView 用 navigator 语言渲染飞栏后再闪一下。
-  const currentAppLocale = getCurrentAppLocale();
-  const editorEmbeddedLocaleScript = useMemo(
-    () =>
-      `window.${EDITOR_EMBEDDED_LOCALE_GLOBAL}=${JSON.stringify(
-        currentAppLocale,
-      )};true;`,
-    [currentAppLocale],
-  );
-
   useEffect(() => {
-    let cancelled = false;
-    void loadEditorBundleHtml()
-      .then(html => {
-        if (!cancelled) {
-          setEditorHtml(html);
-          setEditorHtmlError(null);
-        }
-      })
-      .catch(error => {
-        if (!cancelled) {
-          setEditorHtmlError(
-            error instanceof Error ? error.message : String(error),
-          );
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    const nextPlaceholder = t('loading.codePlaceholder');
     setGeneratedCode(prev =>
-      prev === codePlaceholderRef.current ? nextPlaceholder : prev,
+      prev === codePlaceholderRef.current ? codePlaceholder : prev,
     );
-    codePlaceholderRef.current = nextPlaceholder;
-  }, [i18n.language, t]);
-
-  useEffect(() => {
-    const syncEditorLocale = () => {
-      injectEditorLocale(webViewRef.current);
-    };
-    i18n.on('languageChanged', syncEditorLocale);
-    return () => {
-      i18n.off('languageChanged', syncEditorLocale);
-    };
-  }, [i18n]);
+    codePlaceholderRef.current = codePlaceholder;
+  }, [codePlaceholder]);
 
   return {
     sessions,
     generatedCode,
     blockCount,
-    editorHtml,
-    editorHtmlError,
-    editorEmbeddedLocaleScript,
     handleMessage,
     send,
-    handleWebViewLoadEnd,
   };
 }

@@ -1,6 +1,7 @@
 export { editorMessageDeduper } from './bridge/injectEditorMessage';
-export { useEditorBridge } from './bridge/useEditorBridge';
-export type { EditorSessions } from './bridge/useEditorBridge';
+export { useEditorBridgeShell } from './bridge/useEditorBridgeShell';
+export { useEditorSessionManager } from './bridge/useEditorSessionManager';
+export type { EditorSessions } from './bridge/useEditorSessionManager';
 export { EditorBridgeView } from './bridge/EditorBridgeView';
 export { EditorSessionOverlays } from './bridge/EditorSessionOverlays';
 export { injectEditorLocale } from './injectEditorLocale';

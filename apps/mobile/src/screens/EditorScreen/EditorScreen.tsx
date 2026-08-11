@@ -18,7 +18,8 @@ import {
   EditorBridgeView,
   EditorSessionOverlays,
   PikaWorkflowModal,
-  useEditorBridge,
+  useEditorBridgeShell,
+  useEditorSessionManager,
   useEditorLeaveFlush,
   useEditorPikaWorkflow,
   useEditorProjectPersistence,
@@ -69,12 +70,19 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
     webViewRef,
     projectId,
   });
-  const bridge = useEditorBridge({
+  const bridgeShell = useEditorBridgeShell({ webViewRef });
+  const sessionManager = useEditorSessionManager({
     webViewRef,
+    codePlaceholder: bridgeShell.codePlaceholder,
     onWorkspaceReady: persistence.handleWorkspaceReady,
     onWorkspaceLoaded: persistence.handleWorkspaceLoaded,
     onWorkspaceChanged: persistence.handleWorkspaceChanged,
   });
+  // 组合 Shell + SessionManager，对外形状与拆分前一致（JSX 渲染结构不变）
+  const bridge = {
+    ...bridgeShell,
+    ...sessionManager,
+  };
   const {
     pikaAction,
     activeHostAction,

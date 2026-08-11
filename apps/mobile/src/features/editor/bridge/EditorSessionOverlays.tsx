@@ -1,6 +1,6 @@
 import type { EditorInMessage } from '@scratch-mobile/shared';
 
-import type { EditorSessions } from './useEditorBridge';
+import type { EditorSessions } from './useEditorSessionManager';
 import { NumberSliderOverlay } from '../components/NumberSliderOverlay';
 import { MatrixLightOverlay } from '../components/MatrixLightOverlay';
 import { NotePickerOverlay } from '../components/NotePickerOverlay';
