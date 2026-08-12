@@ -22,8 +22,19 @@ import {
   saveProjectIndex,
   upsertProjectSummary,
 } from './indexStorage';
+import {
+  deleteProjectThumbnail,
+  writeProjectThumbnail,
+} from './thumbnailStorage';
 
 const saveQueues = new Map<string, Promise<unknown>>();
+let thumbnailVersionSequence = 0;
+
+// RN Image 会按本地 URI 缓存；这里必须独立于每次进入编辑器都会重置的 workspace revision。
+function nextThumbnailVersion(revision: number): string {
+  thumbnailVersionSequence = (thumbnailVersionSequence + 1) % 100000;
+  return `${Date.now()}-${revision}-${thumbnailVersionSequence}`;
+}
 
 function enqueueProjectSave<T>(
   projectId: string,
@@ -103,8 +114,15 @@ async function reconcileProjectIndex(): Promise<ScratchProjectSummary[]> {
       continue;
     }
     const existing = indexById.get(entry.documentId);
+    const summary = summaryFromDocument(
+      entry.document,
+      existing?.blockCount ?? 0,
+    );
+    // thumbnailPath 只存索引不存 document，reconcile 时从旧索引补回
     next.push(
-      summaryFromDocument(entry.document, existing?.blockCount ?? 0),
+      existing?.thumbnailPath
+        ? { ...summary, thumbnailPath: existing.thumbnailPath }
+        : summary,
     );
   }
 
@@ -147,6 +165,9 @@ export type SaveProjectWorkspaceInput = {
   projectId: string;
   workspace: WorkspaceSnapshot;
   blockCount: number;
+  revision: number;
+  /** 积木截图 JPEG dataURL，缺省表示无截图（空 workspace 或生成失败） */
+  thumbnail?: string;
 };
 
 export async function saveProjectWorkspace(
@@ -156,6 +177,24 @@ export async function saveProjectWorkspace(
     const now = new Date().toISOString();
     const index = await loadProjectIndex();
     const existing = index.find(project => project.id === input.projectId);
+
+    // 缩略图落盘失败只降级封面（保留旧封面），不阻塞 workspace 保存
+    let thumbnailPath = existing?.thumbnailPath;
+    if (input.thumbnail) {
+      const thumbnailVersion = nextThumbnailVersion(input.revision);
+      try {
+        const writtenThumbnailPath = await writeProjectThumbnail(
+          input.projectId,
+          input.thumbnail,
+          {
+            version: thumbnailVersion,
+          },
+        );
+        thumbnailPath = writtenThumbnailPath ?? existing?.thumbnailPath;
+      } catch {
+        thumbnailPath = existing?.thumbnailPath;
+      }
+    }
 
     let document: ScratchProjectDocument;
     try {
@@ -190,6 +229,7 @@ export async function saveProjectWorkspace(
       createdAt: document.createdAt,
       updatedAt: now,
       blockCount: input.blockCount,
+      thumbnailPath,
     };
 
     await saveProjectIndex(upsertProjectSummary(index, summary));
@@ -232,6 +272,7 @@ export async function renameProject(
 
 export async function deleteProject(projectId: string): Promise<void> {
   await deleteProjectDocument(projectId);
+  await deleteProjectThumbnail(projectId).catch(() => undefined);
   const index = await loadProjectIndex();
   await saveProjectIndex(removeProjectSummary(index, projectId));
 }

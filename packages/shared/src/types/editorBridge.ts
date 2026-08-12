@@ -79,6 +79,8 @@ export type EditorOutMessage =
       workspace: unknown;
       blockCount: number;
       revision: number;
+      /** 工作区积木截图（JPEG dataURL），为空 workspace 或缺省时不下发 */
+      thumbnail?: string;
     };
 
 /** React Native → WebView（injectJavaScript） */

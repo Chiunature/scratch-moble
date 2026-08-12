@@ -52,6 +52,21 @@ export const styles = StyleSheet.create({
     padding: 8,
     paddingTop: 28,
   },
+  cardThumbnail: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+  },
+  cardTextWrap: {
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    backgroundColor: 'rgba(255,255,255,0.84)',
+  },
   cardShadow: {
     ...shadows.primarySm,
   },

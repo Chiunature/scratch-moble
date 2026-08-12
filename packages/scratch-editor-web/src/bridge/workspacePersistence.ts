@@ -5,9 +5,12 @@ import { postToReactNative } from './index';
 import type { Workspace } from '../codegen/types';
 import { insertStartHatBlockIfMissing } from '../workspace-custom/ensureStartHatBlock';
 import { normalizeDefaultShadowReportersInWorkspaceState } from '../workspace-custom/normalizeWorkspaceShadows';
+import { captureWorkspaceThumbnail } from '../workspace-custom/captureWorkspaceThumbnail';
 import { refreshColoursFromParentInWorkspace } from '../blocks/portDropdownExtensions';
 
 const WORKSPACE_SAVE_DEBOUNCE_MS = 1500;
+/** 截图超时兜底：缩略图失败不得阻塞 workspace 保存 */
+const THUMBNAIL_TIMEOUT_MS = 600;
 
 type SerializedWorkspaceState = ReturnType<
   typeof ScratchBlocks.serialization.workspaces.save
@@ -31,8 +34,8 @@ export function createWorkspacePersistence(
   let activeProjectId: string | null = null;
   let workspaceRevision = 0;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let lastSentRevision = -1;
-  let lastSentBlockCount = -1;
+  /** 上次发送的 workspace 序列化结果，用于内容级去重（区分“有事件”与“内容真的变了”） */
+  let lastSentWorkspaceJson: string | null = null;
   /** 收到 workspace.load 并完成 hydration 前为 false，避免 load 前/中的编辑被持久化或丢失。 */
   let isWorkspaceHydrated = false;
 
@@ -81,7 +84,7 @@ export function createWorkspacePersistence(
     }
   }
 
-  function flushWorkspaceChanged(force = false): void {
+  async function flushWorkspaceChanged(force = false): Promise<void> {
     clearDebounceTimer();
 
     if (!activeProjectId) {
@@ -92,29 +95,47 @@ export function createWorkspacePersistence(
       return;
     }
 
+    const serializedWorkspace = serializeWorkspace(workspace);
+    const serializedJson = JSON.stringify(serializedWorkspace);
+    // 内容级去重：workspace 未真正变化时不重复截图/发送。
+    // force（flush 流程）仍重发轻量消息保留“最新状态已落盘”语义，但跳过截图。
+    const contentUnchanged = serializedJson === lastSentWorkspaceJson;
+    if (contentUnchanged && !force) {
+      return;
+    }
+    lastSentWorkspaceJson = serializedJson;
+
     const blockCount = workspace.getAllBlocks(false).length;
     if (!force) {
       workspaceRevision += 1;
     }
     const revision = workspaceRevision;
 
-    if (
-      !force &&
-      revision === lastSentRevision &&
-      blockCount === lastSentBlockCount
-    ) {
-      return;
-    }
+    let thumbnail: string | undefined;
+    if (!contentUnchanged) {
+      let thumbnailTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+      const thumbnailTimeout = new Promise<undefined>(resolve => {
+        thumbnailTimeoutTimer = setTimeout(() => {
+          resolve(undefined);
+        }, THUMBNAIL_TIMEOUT_MS);
+      });
 
-    lastSentRevision = revision;
-    lastSentBlockCount = blockCount;
+      thumbnail = await Promise.race([
+        captureWorkspaceThumbnail(workspace).catch(() => undefined),
+        thumbnailTimeout,
+      ]);
+      if (thumbnailTimeoutTimer != null) {
+        clearTimeout(thumbnailTimeoutTimer);
+      }
+    }
 
     postToReactNative({
       type: 'editor.workspace.changed',
       projectId: activeProjectId,
-      workspace: serializeWorkspace(workspace),
+      workspace: serializedWorkspace,
       blockCount,
       revision,
+      thumbnail,
     });
   }
 
@@ -124,7 +145,7 @@ export function createWorkspacePersistence(
     }
     clearDebounceTimer();
     debounceTimer = setTimeout(() => {
-      flushWorkspaceChanged(false);
+      void flushWorkspaceChanged(false);
     }, WORKSPACE_SAVE_DEBOUNCE_MS);
   }
 
@@ -136,8 +157,7 @@ export function createWorkspacePersistence(
     clearDebounceTimer();
 
     activeProjectId = message.projectId;
-    lastSentRevision = -1;
-    lastSentBlockCount = -1;
+    lastSentWorkspaceJson = null;
     workspaceRevision = message.revision;
     loadWorkspaceState(workspace, message.workspace);
     insertStartHatBlockIfMissing(workspace);
@@ -160,7 +180,7 @@ export function createWorkspacePersistence(
     if (message.projectId !== activeProjectId) {
       return;
     }
-    flushWorkspaceChanged(true);
+    void flushWorkspaceChanged(true);
   }
 
   function handleInbound(message: EditorInMessage): boolean {

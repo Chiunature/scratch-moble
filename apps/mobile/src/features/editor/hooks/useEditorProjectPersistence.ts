@@ -106,6 +106,8 @@ export function useEditorProjectPersistence({
           projectId,
           workspace: message.workspace,
           blockCount: message.blockCount,
+          revision: message.revision,
+          thumbnail: message.thumbnail,
         });
         setProjectName(summary.name);
         upsertSummary(summary);
