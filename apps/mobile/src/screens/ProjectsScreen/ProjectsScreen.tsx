@@ -34,7 +34,7 @@ import {
   type ProjectDeletePayload,
   type ProjectRenamePayload,
 } from './ProjectActionModal';
-import { Toast, type ToastState } from '../../components/Toast';
+import { notify } from '../../services/notifications';
 import { styles } from './ProjectsScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
@@ -250,7 +250,6 @@ export function ProjectsScreen({ navigation }: Props) {
   const [actionTarget, setActionTarget] =
     useState<ScratchProjectSummary | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState>(null);
   const deleteAnim = useRef(new Animated.Value(1)).current;
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -312,22 +311,20 @@ export function ProjectsScreen({ navigation }: Props) {
     async ({ projectId, oldName, newName }: ProjectRenamePayload) => {
       try {
         await rename(projectId, newName);
-        setToast({
-          kind: 'success',
-          title: t('renameSuccessTitle'),
-          message: t('renameSuccessMessage', {
+        notify.success(
+          t('renameSuccessTitle'),
+          t('renameSuccessMessage', {
             oldName: resolveProjectDisplayName(oldName),
             newName: resolveProjectDisplayName(newName),
           }),
-        });
+        );
       } catch {
-        setToast({
-          kind: 'error',
-          title: t('renameFailedTitle'),
-          message: t('renameFailedMessage', {
+        notify.error(
+          t('renameFailedTitle'),
+          t('renameFailedMessage', {
             oldName: resolveProjectDisplayName(oldName),
           }),
-        });
+        );
         throw new Error('rename failed');
       }
     },
@@ -350,22 +347,20 @@ export function ProjectsScreen({ navigation }: Props) {
 
       try {
         await remove(projectId);
-        setToast({
-          kind: 'delete',
-          title: t('deleteSuccessTitle'),
-          message: t('deleteSuccessMessage', {
+        notify.deleted(
+          t('deleteSuccessTitle'),
+          t('deleteSuccessMessage', {
             projectName: resolveProjectDisplayName(projectName),
           }),
-        });
+        );
       } catch {
         deleteAnim.setValue(1);
-        setToast({
-          kind: 'error',
-          title: t('deleteFailedTitle'),
-          message: t('deleteFailedMessage', {
+        notify.error(
+          t('deleteFailedTitle'),
+          t('deleteFailedMessage', {
             projectName: resolveProjectDisplayName(projectName),
           }),
-        });
+        );
       } finally {
         setDeletingId(null);
       }
@@ -460,12 +455,6 @@ export function ProjectsScreen({ navigation }: Props) {
         onClose={() => setActionTarget(null)}
         onRename={handleRenameProject}
         onDelete={handleDeleteProject}
-      />
-
-      <Toast
-        toast={toast}
-        topInset={insets.top}
-        onHidden={() => setToast(null)}
       />
     </View>
   );

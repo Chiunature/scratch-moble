@@ -6,6 +6,7 @@ import { I18nextProvider, initI18n, i18n } from '@scratch-mobile/i18n';
 import { AppProviders } from './src/app/AppProviders';
 import { RootNavigator } from './src/app/navigation';
 import { loadSavedLocale } from './src/services/i18n/localeStorage';
+import { NotificationHost } from './src/services/notifications';
 
 function App() {
   const [i18nReady, setI18nReady] = useState(false);
@@ -27,6 +28,7 @@ function App() {
       <AppProviders>
         <StatusBar hidden />
         <RootNavigator />
+        <NotificationHost />
       </AppProviders>
     </I18nextProvider>
   );

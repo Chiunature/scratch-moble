@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
   View,
+  Image,
 } from 'react-native';
 import {
   resolveProjectDisplayName,
@@ -17,7 +18,8 @@ import {
 import type { ScratchProjectSummary } from '@scratch-mobile/shared';
 
 import { colors, fontSize, fontWeight, shadows, spacing } from '../../theme';
-
+import deleteWarningIcon from '../../../assets/notifications/deleteWarning.png';
+import deleteIcon from '../../../assets/notifications/delete.png';
 type ActionMode = 'select' | 'rename' | 'delete';
 
 export type ProjectRenamePayload = {
@@ -221,7 +223,7 @@ export function ProjectActionModal({
                 accessibilityRole="button"
                 accessibilityLabel={t('modal.close')}
               >
-                <Text style={styles.closeButtonText}>×</Text>
+                <Image source={deleteIcon} style={styles.closeButtonIcon} />
               </Pressable>
               <Text style={styles.headerTitle} numberOfLines={2}>
                 {title}
@@ -297,7 +299,10 @@ export function ProjectActionModal({
               {mode === 'delete' ? (
                 <View style={styles.deleteSection}>
                   <View style={styles.deleteWarning}>
-                    <Text style={styles.deleteWarningIcon}>⚠</Text>
+                    <Image
+                      source={deleteWarningIcon}
+                      style={styles.deleteWarningIcon}
+                    />
                     <View style={styles.deleteWarningTextBlock}>
                       <Text style={styles.deleteWarningTitle}>
                         {t('modal.deleteWarningTitle')}
@@ -380,12 +385,10 @@ const styles = StyleSheet.create({
   closeButtonPressed: {
     backgroundColor: 'rgba(255, 255, 255, 0.35)',
   },
-  closeButtonText: {
-    color: colors.surface,
-    fontSize: 20,
-    fontWeight: fontWeight.black,
-    lineHeight: 22,
-    marginTop: -1,
+  closeButtonIcon: {
+    width: 20,
+    height: 20,
+    tintColor: colors.surface,
   },
   headerTitle: {
     color: colors.surface,
@@ -466,6 +469,7 @@ const styles = StyleSheet.create({
   },
   deleteWarning: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     padding: spacing.md,
     borderRadius: 12,
@@ -474,10 +478,8 @@ const styles = StyleSheet.create({
     borderColor: '#fee2e2',
   },
   deleteWarningIcon: {
-    color: '#ef4444',
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.black,
-    marginTop: 2,
+    width: 24,
+    height: 24,
   },
   deleteWarningTextBlock: {
     flex: 1,
