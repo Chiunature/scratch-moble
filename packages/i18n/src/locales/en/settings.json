@@ -8,6 +8,7 @@
   },
   "versionSection": "Version",
   "versionLabel": "Version: V{{version}}",
+  "hardwareVersion":"Hardware Version",
   "infoSection": "About",
   "infoBody": "Scratch Mobile is a block-based programming app for young makers. It supports visual editing, Bluetooth device connection, and on-device program execution. Follow our official channels for updates."
 }

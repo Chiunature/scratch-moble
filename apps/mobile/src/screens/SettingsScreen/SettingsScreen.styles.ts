@@ -8,16 +8,32 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: spacing['2xl'],
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
-    paddingVertical: spacing.xs,
-    paddingRight: spacing.md,
+  scrollView: {
+    flex: 1,
+    borderRadius: 28,
   },
-  backButtonText: {
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  backButton: {
+    borderRadius: 28,
+    padding: 15,
+  },
+  backIcon: {
+    width: 28,
+    height: 20,
+    tintColor: colors.primary,
+  },
+  headerTitle: {
     color: colors.primary,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.extraBold,
+    fontSize: fontSize['2xl'],
+    fontWeight: fontWeight.black,
   },
   panel: {
     borderRadius: 28,
@@ -25,14 +41,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing['2xl'],
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
-    ...shadows.primaryMd,
-  },
-  panelTitle: {
-    color: colors.primary,
-    fontSize: fontSize['2xl'],
-    fontWeight: fontWeight.black,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
   },
   section: {
     flexDirection: 'row',

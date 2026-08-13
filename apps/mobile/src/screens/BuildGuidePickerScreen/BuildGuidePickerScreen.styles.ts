@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
-    ...shadows.primarySm,
+    ...shadows.primarySmall,
   },
   backButtonText: {
     color: colors.primary,
@@ -71,7 +71,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardShadow: {
-    ...shadows.primarySm,
+    ...shadows.primarySmall,
   },
   cardPressed: {
     opacity: 0.82,

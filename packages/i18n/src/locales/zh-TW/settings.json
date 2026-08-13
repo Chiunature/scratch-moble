@@ -8,6 +8,7 @@
   },
   "versionSection": "軟體版本",
   "versionLabel": "版本號：V{{version}}",
+  "hardwareVersion":"硬件版本",
   "infoSection": "軟體資訊",
   "infoBody": "Scratch Mobile 是一款面向青少年與創客的圖形化程式設計應用，支援積木編輯、藍牙裝置連線與程式執行。更多資訊請關注官方渠道。"
 }

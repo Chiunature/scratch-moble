@@ -1,6 +1,7 @@
 {
   "name": "@scratch-mobile/mobile",
   "version": "1.0.0",
+  "hardwareVersion": "110",
   "private": true,
   "main": "index.js",
   "scripts": {

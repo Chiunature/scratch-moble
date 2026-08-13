@@ -1,7 +1,7 @@
 import { colors } from './colors';
 
 export const shadows = {
-  primarySm: {
+  primarySmall: {
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,

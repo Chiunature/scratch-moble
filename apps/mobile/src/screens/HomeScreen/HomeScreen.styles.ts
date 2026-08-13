@@ -50,7 +50,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xs,
     backgroundColor: colors.surface,
-    ...shadows.primarySm,
+    ...shadows.primarySmall,
   },
   settingsText: {
     color: colors.primary,

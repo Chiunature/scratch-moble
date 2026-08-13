@@ -36,27 +36,21 @@ const KIND_CONFIG: Record<
   { icon: NotificationIcon; iconStyle: ViewStyle }
 > = {
   success: {
-    icon: { kind: 'image', source: SuccessIcon },
+    icon: { kind: 'image', source: SuccessIcon, tintColor: '#10b981' },
     iconStyle: {
       backgroundColor: 'transparent',
-      borderWidth: 2,
-      borderColor: '#dcfce7',
     },
   },
   delete: {
-    icon: { kind: 'image', source: DeleteIcon },
+    icon: { kind: 'image', source: DeleteIcon, tintColor: '#ef4444' },
     iconStyle: {
       backgroundColor: 'transparent',
-      borderWidth: 2,
-      borderColor: '#fee2e2',
     },
   },
   error: {
-    icon: { kind: 'image', source: ErrorIcon },
+    icon: { kind: 'image', source: ErrorIcon, tintColor: '#f97316' },
     iconStyle: {
       backgroundColor: 'transparent',
-      borderWidth: 2,
-      borderColor: '#ffedd5',
     },
   },
 };
@@ -144,8 +138,8 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.black,
   },
   iconImage: {
-    width: 22,
-    height: 22,
+    width: 30,
+    height: 30,
   },
   textBlock: {
     flex: 1,

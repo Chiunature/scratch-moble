@@ -213,10 +213,7 @@ export function ProjectActionModal({
             <View style={styles.header}>
               <View style={styles.headerOverlay} />
               <Pressable
-                style={({ pressed }) => [
-                  styles.closeButton,
-                  pressed && styles.closeButtonPressed,
-                ]}
+                style={styles.closeButton}
                 onPress={handleClose}
                 disabled={isSubmitting}
                 hitSlop={8}
@@ -377,18 +374,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
     width: 28,
     height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeButtonPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
-  },
   closeButtonIcon: {
-    width: 20,
-    height: 20,
-    tintColor: colors.surface,
+    width: 28,
+    height: 28,
   },
   headerTitle: {
     color: colors.surface,

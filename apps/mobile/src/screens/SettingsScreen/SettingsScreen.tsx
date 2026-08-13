@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -9,12 +9,12 @@ import {
   getCurrentAppLocale,
   useTranslation,
 } from '@scratch-mobile/i18n';
-import { APP_VERSION } from '../../constants/appVersion';
+import { APP_VERSION, HARDWARE_VERSION } from '../../constants/appVersion';
 
 import { type RootStackParamList } from '../../app/navigation';
 import { saveAppLocale } from '../../services/i18n/localeStorage';
 import { styles } from './SettingsScreen.styles';
-
+import backIcon from '../../../assets/settingScreen/back.png';
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 function LanguageOption({
@@ -64,55 +64,69 @@ export function SettingsScreen({ navigation }: Props) {
     <View
       style={[
         styles.container,
-        {
-          paddingTop: insets.top + 12,
-          paddingBottom: insets.bottom + 16,
-        },
+        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
       ]}
     >
-      <Pressable
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        accessibilityRole="button"
-        accessibilityLabel={tCommon('back')}
-      >
-        <Text style={styles.backButtonText}>←</Text>
-      </Pressable>
-
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>{t('title')}</Text>
-
-        <View style={[styles.section, styles.sectionFirst]}>
-          <Text style={styles.sectionLabel}>{t('languageSection')}</Text>
-          <View style={[styles.sectionContent, styles.languageRow]}>
-            {APP_LOCALES.map(locale => (
-              <LanguageOption
-                key={locale}
-                locale={locale}
-                selected={currentLocale === locale}
-                label={t(LOCALE_LABEL_KEY[locale])}
-                onSelect={handleSelectLocale}
-              />
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('versionSection')}</Text>
-          <View style={styles.sectionContent}>
-            <Text style={styles.versionText}>
-              {t('versionLabel', { version: APP_VERSION })}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('infoSection')}</Text>
-          <View style={styles.sectionContent}>
-            <Text style={styles.infoText}>{t('infoBody')}</Text>
-          </View>
-        </View>
+      <View style={styles.header}>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel={tCommon('back')}
+        >
+          <Image source={backIcon} style={styles.backIcon} />
+        </Pressable>
+        <Text style={styles.headerTitle}>{t('title')}</Text>
       </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.panel}>
+          <View style={[styles.section, styles.sectionFirst]}>
+            <Text style={styles.sectionLabel}>{t('languageSection')}</Text>
+            <View style={[styles.sectionContent, styles.languageRow]}>
+              {APP_LOCALES.map(locale => (
+                <LanguageOption
+                  key={locale}
+                  locale={locale}
+                  selected={currentLocale === locale}
+                  label={t(LOCALE_LABEL_KEY[locale])}
+                  onSelect={handleSelectLocale}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t('versionSection')}</Text>
+            <View style={styles.sectionContent}>
+              <Text style={styles.versionText}>
+                {t('versionLabel', { version: APP_VERSION })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t('hardwareVersion')}</Text>
+            <View style={styles.sectionContent}>
+              <Text style={styles.versionText}>
+                {t('versionLabel', { version: HARDWARE_VERSION })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t('infoSection')}</Text>
+            <View style={styles.sectionContent}>
+              <Text style={styles.infoText}>{t('infoBody')}</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
