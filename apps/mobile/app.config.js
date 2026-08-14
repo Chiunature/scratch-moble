@@ -37,6 +37,7 @@ const config = {
   plugins: [
     './plugins/withExpoModuleGradlePlugin.js',
     'expo-dev-client',
+    'expo-asset',
     [
       'expo-navigation-bar',
       {

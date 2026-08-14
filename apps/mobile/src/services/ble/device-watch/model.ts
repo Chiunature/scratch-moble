@@ -6,10 +6,7 @@ import type {
   SensingDeviceType,
   WatchDeviceItem,
 } from '@scratch-mobile/protocol';
-import {
-  SENSOR_PORT_COUNT,
-  isSensorPort,
-} from '@scratch-mobile/shared';
+import { SENSOR_PORT_COUNT, isSensorPort } from '@scratch-mobile/shared';
 
 /** 触摸传感器快照 */
 export type TouchSensorSnapshot = {
@@ -52,7 +49,9 @@ export type GrayscaleSensorKind = (typeof GRAYSCALE_SENSOR_KINDS)[number];
 export function isGrayscaleSensorKind(
   kind: SensingDeviceType,
 ): kind is GrayscaleSensorKind {
-  return (GRAYSCALE_SENSOR_KINDS as readonly SensingDeviceType[]).includes(kind);
+  return (GRAYSCALE_SENSOR_KINDS as readonly SensingDeviceType[]).includes(
+    kind,
+  );
 }
 
 /** 拆解后的单端口视图 */
@@ -176,7 +175,10 @@ function parseUltrasonicSensor(
 }
 
 /** 拆解单个端口条目 */
-export function parseWatchPort(item: WatchDeviceItem, index: number): ParsedWatchPort {
+export function parseWatchPort(
+  item: WatchDeviceItem,
+  index: number,
+): ParsedWatchPort {
   const port = typeof item.port === 'number' ? item.port : index;
   const kind: SensingDeviceType = item.sensing_device ?? 'noDevice';
   const isEmpty = kind === 'noDevice';
@@ -244,8 +246,12 @@ export function parseWatchPort(item: WatchDeviceItem, index: number): ParsedWatc
 }
 
 /** 拆解完整 deviceWatch 载荷 */
-export function parseDeviceWatch(payload: DeviceWatchPayload): ParsedDeviceWatch {
-  const ports = payload.deviceList.map((item, index) => parseWatchPort(item, index));
+export function parseDeviceWatch(
+  payload: DeviceWatchPayload,
+): ParsedDeviceWatch {
+  const ports = payload.deviceList.map((item, index) =>
+    parseWatchPort(item, index),
+  );
   const willAiState = readHostWillAiState(payload);
   const sensorPorts = ports.filter(port => isSensorPort(port.port));
 

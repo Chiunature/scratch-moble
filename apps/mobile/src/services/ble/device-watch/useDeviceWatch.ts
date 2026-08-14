@@ -17,6 +17,7 @@ export type DeviceWatchHookState = {
   /** 拆解后的视图；无数据时为 null */
   watch: ParsedDeviceWatch | null;
   isAvailable: boolean;
+  battery: string | null;
 
   portCount: number;
   ports: ParsedWatchPort[];
@@ -25,6 +26,7 @@ export type DeviceWatchHookState = {
   sensorPorts: ParsedWatchPort[];
   sensorConnectedPorts: ParsedWatchPort[];
   sensorPortCount: number;
+  hostVersion: number | null;
 
   getPort: (port: number) => ParsedWatchPort | undefined;
   isPortConnected: (port: number) => boolean;
@@ -44,6 +46,7 @@ export function useDeviceWatch(): DeviceWatchHookState {
       raw,
       watch,
       isAvailable: watch !== null,
+      battery: watch?.battery ?? null,
       portCount: watch?.portCount ?? 0,
       ports: watch?.ports ?? [],
       connectedPorts: watch?.connectedPorts ?? [],
@@ -51,6 +54,7 @@ export function useDeviceWatch(): DeviceWatchHookState {
       sensorPorts: watch?.sensorPorts ?? [],
       sensorConnectedPorts: watch?.sensorConnectedPorts ?? [],
       sensorPortCount: watch?.sensorPortCount ?? 4,
+      hostVersion: watch?.version ?? null,
       getPort: (port: number) => getWatchPort(watch, port),
       isPortConnected: (port: number) => isWatchPortConnected(watch, port),
       isPortEmpty: (port: number) => isWatchPortEmpty(watch, port),

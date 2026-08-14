@@ -10,11 +10,12 @@ import {
   useTranslation,
 } from '@scratch-mobile/i18n';
 import { APP_VERSION, HARDWARE_VERSION } from '../../constants/appVersion';
-
 import { type RootStackParamList } from '../../app/navigation';
+import { useDeviceWatch } from '../../services/ble';
 import { saveAppLocale } from '../../services/i18n/localeStorage';
 import { styles } from './SettingsScreen.styles';
 import backIcon from '../../../assets/settingScreen/back.png';
+import helpIcon from '../../../assets/settingScreen/help.png';
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 function LanguageOption({
@@ -52,14 +53,24 @@ export function SettingsScreen({ navigation }: Props) {
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
   const currentLocale = getCurrentAppLocale();
-
+  const { hostVersion } = useDeviceWatch();
   const handleSelectLocale = useCallback(async (locale: AppLocale) => {
     if (locale === getCurrentAppLocale()) {
       return;
     }
     await saveAppLocale(locale);
   }, []);
-
+  const compareVersion = useCallback(
+    (version: string) => {
+      const currentVersion = Number(version);
+      return (
+        hostVersion !== null &&
+        Number.isFinite(currentVersion) &&
+        currentVersion < hostVersion
+      );
+    },
+    [hostVersion],
+  );
   return (
     <View
       style={[
@@ -112,10 +123,18 @@ export function SettingsScreen({ navigation }: Props) {
 
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('hardwareVersion')}</Text>
+
             <View style={styles.sectionContent}>
               <Text style={styles.versionText}>
                 {t('versionLabel', { version: HARDWARE_VERSION })}
               </Text>
+              {compareVersion(HARDWARE_VERSION) && (
+                <Image
+                  source={helpIcon}
+                  style={styles.helpIcon}
+                  tintColor="#d81e06"
+                />
+              )}
             </View>
           </View>
 

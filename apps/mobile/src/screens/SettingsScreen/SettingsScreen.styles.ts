@@ -63,6 +63,10 @@ export const styles = StyleSheet.create({
   },
   sectionContent: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: spacing.xs,
   },
   languageRow: {
     flexDirection: 'row',
@@ -113,5 +117,9 @@ export const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
     lineHeight: 22,
+  },
+  helpIcon: {
+    width: 16,
+    height: 16,
   },
 });

@@ -6,7 +6,6 @@ import type {
   DeviceWatchPayload,
   PairedBleDevice,
 } from '../services/ble';
-
 export type BleConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
 /**
@@ -36,6 +35,5 @@ export const useBleStore = create<BleStore>(set => ({
   isScanning: false,
   deviceWatch: null,
   pairedDevices: [],
-
   applySnapshot: partial => set(partial),
 }));

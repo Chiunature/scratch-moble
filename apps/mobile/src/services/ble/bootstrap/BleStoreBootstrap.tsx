@@ -65,7 +65,7 @@ export function BleStoreBootstrap() {
     const unsubscribePhase = bleDeviceManager.onPhaseChange(projectPhase);
     // 初始同步：模块级单例可能在导入期已建立连接；配对列表来自持久化
     projectPhase(bleDeviceManager.getPhase());
-    void loadPairedDevices();
+    loadPairedDevices().catch(() => undefined);
 
     return () => {
       unsubscribeState();
