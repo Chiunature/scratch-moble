@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { saveAppLocale } from '../../services/i18n/localeStorage';
 import { styles } from './SettingsScreen.styles';
 import backIcon from '../../../assets/settingScreen/back.png';
 import helpIcon from '../../../assets/settingScreen/help.png';
+import { UpdateAvailableModalContainer } from './container';
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 function LanguageOption({
@@ -54,23 +55,25 @@ export function SettingsScreen({ navigation }: Props) {
   const { t: tCommon } = useTranslation('common');
   const currentLocale = getCurrentAppLocale();
   const { hostVersion } = useDeviceWatch();
+  const [updateCheckRequestId, setUpdateCheckRequestId] = useState(0);
   const handleSelectLocale = useCallback(async (locale: AppLocale) => {
     if (locale === getCurrentAppLocale()) {
       return;
     }
     await saveAppLocale(locale);
   }, []);
-  const compareVersion = useCallback(
-    (version: string) => {
-      const currentVersion = Number(version);
-      return (
-        hostVersion !== null &&
-        Number.isFinite(currentVersion) &&
-        currentVersion < hostVersion
-      );
-    },
-    [hostVersion],
-  );
+  const hardwareVersion = Number(HARDWARE_VERSION);
+  const hardwareUpdateAvailable = true;
+  // hostVersion !== null &&
+  // Number.isFinite(hardwareVersion) &&
+  // hardwareVersion < hostVersion;
+  const handleOpenUpdateModal = useCallback(() => {
+    if (!hardwareUpdateAvailable) {
+      return;
+    }
+    setUpdateCheckRequestId(requestId => requestId + 1);
+  }, [hardwareUpdateAvailable]);
+
   return (
     <View
       style={[
@@ -124,18 +127,33 @@ export function SettingsScreen({ navigation }: Props) {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('hardwareVersion')}</Text>
 
-            <View style={styles.sectionContent}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.sectionContent,
+                hardwareUpdateAvailable ? styles.updateEntry : null,
+                pressed && hardwareUpdateAvailable
+                  ? styles.updateEntryPressed
+                  : null,
+              ]}
+              onPress={handleOpenUpdateModal}
+              disabled={!hardwareUpdateAvailable}
+              hitSlop={8}
+              accessibilityRole={hardwareUpdateAvailable ? 'button' : undefined}
+              accessibilityLabel={
+                hardwareUpdateAvailable ? t('updateModal.open') : undefined
+              }
+            >
               <Text style={styles.versionText}>
                 {t('versionLabel', { version: HARDWARE_VERSION })}
               </Text>
-              {compareVersion(HARDWARE_VERSION) && (
+              {hardwareUpdateAvailable && (
                 <Image
                   source={helpIcon}
                   style={styles.helpIcon}
                   tintColor="#d81e06"
                 />
               )}
-            </View>
+            </Pressable>
           </View>
 
           <View style={styles.section}>
@@ -146,6 +164,7 @@ export function SettingsScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
+      <UpdateAvailableModalContainer checkRequestId={updateCheckRequestId} />
     </View>
   );
 }

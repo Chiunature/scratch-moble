@@ -118,6 +118,12 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     lineHeight: 22,
   },
+  updateEntry: {
+    borderRadius: 16,
+  },
+  updateEntryPressed: {
+    opacity: 0.6,
+  },
   helpIcon: {
     width: 16,
     height: 16,

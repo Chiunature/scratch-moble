@@ -1,0 +1,1 @@
+export { UpdateAvailableModalContainer } from './UpdateAvailableModalContainer';
