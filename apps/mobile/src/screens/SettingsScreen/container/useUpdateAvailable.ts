@@ -1,21 +1,19 @@
 import { useCallback, useRef, useState } from 'react';
 
-import type { AppUpdateInfo, UpdateCheckService } from '../../../services/update';
+import type { AppUpdateInfo, DownloadFirmware } from '../../../services/update';
 
 export type UpdatePhase =
   | { phase: 'idle' }
-  | { phase: 'checking' }
   | { phase: 'available'; update: AppUpdateInfo }
-  | { phase: 'downloading'; update: AppUpdateInfo; progress: number | null }
+  | { phase: 'downloading'; update: AppUpdateInfo }
   | { phase: 'ready'; update: AppUpdateInfo }
   | { phase: 'failed'; message: string; update?: AppUpdateInfo }
   | { phase: 'dismissed' };
 
 export type UpdateAvailableHookState = {
   phase: UpdatePhase;
-  check: () => Promise<void>;
+  open: () => void;
   startDownload: () => Promise<void>;
-  retry: () => void;
   dismiss: () => void;
 };
 
@@ -24,29 +22,27 @@ function toErrorMessage(error: unknown): string {
 }
 
 /**
- * 更新可用性状态机：业务数据只存在于 phase 中，UI view 由容器层派生。
- * 数据源通过 service 注入，本 hook 不感知具体来源（远程 API / BLE 固件 / mock）。
+ * 更新可用性状态机：可用更新由调用方（容器）根据设备版本同步算好后注入。
+ * 本 hook 只负责「展示可用更新」与「异步下载」的状态流转，不感知版本比较与数据来源。
  */
 export function useUpdateAvailable(
-  service: UpdateCheckService,
+  update: AppUpdateInfo | null,
+  downloadFirmware: DownloadFirmware,
 ): UpdateAvailableHookState {
   const [phase, setPhase] = useState<UpdatePhase>({ phase: 'idle' });
 
-  const serviceRef = useRef(service);
-  serviceRef.current = service;
+  const updateRef = useRef(update);
+  updateRef.current = update;
+  const downloadRef = useRef(downloadFirmware);
+  downloadRef.current = downloadFirmware;
   const phaseRef = useRef<UpdatePhase>({ phase: 'idle' });
   phaseRef.current = phase;
 
-  const check = useCallback(async () => {
-    setPhase({ phase: 'checking' });
-    try {
-      const update = await serviceRef.current.checkForUpdate();
-      setPhase(
-        update === null ? { phase: 'dismissed' } : { phase: 'available', update },
-      );
-    } catch (error) {
-      setPhase({ phase: 'failed', message: toErrorMessage(error) });
-    }
+  const open = useCallback(() => {
+    const current = updateRef.current;
+    setPhase(
+      current === null ? { phase: 'dismissed' } : { phase: 'available', update: current },
+    );
   }, []);
 
   const startDownload = useCallback(async () => {
@@ -55,19 +51,15 @@ export function useUpdateAvailable(
       return;
     }
 
-    const { update } = current;
-    setPhase({ phase: 'downloading', update, progress: null });
+    const { update: target } = current;
+    setPhase({ phase: 'downloading', update: target });
     try {
-      await serviceRef.current.downloadUpdate(update);
-      setPhase({ phase: 'ready', update });
+      await downloadRef.current(target);
+      setPhase({ phase: 'ready', update: target });
     } catch (error) {
-      setPhase({ phase: 'failed', message: toErrorMessage(error), update });
+      setPhase({ phase: 'failed', message: toErrorMessage(error), update: target });
     }
   }, []);
-
-  const retry = useCallback(() => {
-    void check();
-  }, [check]);
 
   const dismiss = useCallback(() => {
     setPhase({ phase: 'dismissed' });
@@ -75,9 +67,8 @@ export function useUpdateAvailable(
 
   return {
     phase,
-    check,
+    open,
     startDownload,
-    retry,
     dismiss,
   };
 }

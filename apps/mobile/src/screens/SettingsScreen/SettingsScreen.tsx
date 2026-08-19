@@ -12,6 +12,7 @@ import {
 import { APP_VERSION, HARDWARE_VERSION } from '../../constants/appVersion';
 import { type RootStackParamList } from '../../app/navigation';
 import { useDeviceWatch } from '../../services/ble';
+import { isFirmwareUpdateAvailable } from '../../services/update';
 import { saveAppLocale } from '../../services/i18n/localeStorage';
 import { styles } from './SettingsScreen.styles';
 import backIcon from '../../../assets/settingScreen/back.png';
@@ -62,11 +63,7 @@ export function SettingsScreen({ navigation }: Props) {
     }
     await saveAppLocale(locale);
   }, []);
-  const hardwareVersion = Number(HARDWARE_VERSION);
-  const hardwareUpdateAvailable = true;
-  // hostVersion !== null &&
-  // Number.isFinite(hardwareVersion) &&
-  // hardwareVersion < hostVersion;
+  const hardwareUpdateAvailable = isFirmwareUpdateAvailable(hostVersion);
   const handleOpenUpdateModal = useCallback(() => {
     if (!hardwareUpdateAvailable) {
       return;

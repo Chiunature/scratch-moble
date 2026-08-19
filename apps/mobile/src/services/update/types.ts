@@ -1,16 +1,12 @@
-/** 一次可用的更新信息（数据源产出，语义上区别于 UI 投影） */
+/** 一次可用的固件更新信息（打包静态数据 + 设备上报版本组合而成） */
 export type AppUpdateInfo = {
-  currentVersion: string;
-  latestVersion: string;
+  currentVersion: number;
+  latestVersion: number;
   changelog: string[];
 };
 
-/** 逻辑层投影给 UI 的只读视图；当前与 AppUpdateInfo 同构，将来可扩展进度等字段 */
+/** 逻辑层投影给 UI 的只读视图；当前与 AppUpdateInfo 同构 */
 export type UpdateAvailableView = AppUpdateInfo;
 
-/** 更新数据源契约：远程 API / BLE 固件 / mock 均可实现，UI 不感知具体来源 */
-export type UpdateCheckService = {
-  /** 返回 null 表示当前无可用更新 */
-  checkForUpdate(): Promise<AppUpdateInfo | null>;
-  downloadUpdate(info: AppUpdateInfo): Promise<void>;
-};
+/** 固件下载/刷写：真实异步操作（BLE 固件升级），失败可抛错 */
+export type DownloadFirmware = (info: AppUpdateInfo) => Promise<void>;

@@ -1,5 +1,5 @@
 export type UpdateAvailableModalView = {
-  currentVersion: string;
-  latestVersion: string;
+  currentVersion: number;
+  latestVersion: number;
   changelog: string[];
 };

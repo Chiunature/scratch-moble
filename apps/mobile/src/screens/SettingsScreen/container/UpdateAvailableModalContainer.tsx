@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 
-import { mockUpdateService } from '../../../services/update';
+import { useDeviceWatch } from '../../../services/ble';
+import { downloadFirmware, resolveFirmwareUpdate } from '../../../services/update';
 import { UpdateAvailableModal, type UpdateAvailableModalView } from '../update';
 import { useUpdateAvailable, type UpdatePhase } from './useUpdateAvailable';
 
 /**
  * 容器组件：负责"更新弹窗"的编排，不渲染具体业务 UI。
- * - 注入更新数据源（当前为 mock，替换真实远程 API / BLE 固件升级时只改这一处）
- * - 响应屏幕传入的显式检查请求，并把状态机 phase 派生为展示组件需要的 view props
+ * - 读取设备上报版本，用纯函数 resolveFirmwareUpdate 算出「是否可升级 + 升级内容」
+ * - 响应屏幕传入的显式请求打开弹窗，并把状态机 phase 派生为展示组件需要的 view props
  * 展示组件 UpdateAvailableModal 不感知数据来源与状态机，只消费 view 并回传用户操作。
  */
 const getModalView = (phase: UpdatePhase): UpdateAvailableModalView | null => {
@@ -26,9 +27,8 @@ const getModalView = (phase: UpdatePhase): UpdateAvailableModalView | null => {
         changelog: phase.update.changelog,
       };
     }
-    // idle/checking 阶段没有数据可展示；dismissed 已被用户关闭
+    // idle 阶段没有数据可展示；dismissed 已被用户关闭
     case 'idle':
-    case 'checking':
     case 'dismissed':
       return null;
   }
@@ -47,8 +47,12 @@ type Props = {
 };
 
 export const UpdateAvailableModalContainer = ({ checkRequestId }: Props) => {
-  const { phase, check, startDownload, dismiss } =
-    useUpdateAvailable(mockUpdateService);
+  const { hostVersion } = useDeviceWatch();
+  const update = resolveFirmwareUpdate(hostVersion);
+  const { phase, open, startDownload, dismiss } = useUpdateAvailable(
+    update,
+    downloadFirmware,
+  );
   const handledCheckRequestId = useRef(checkRequestId);
 
   // 响应屏幕的显式点击请求；不在进入设置页时自动弹出，避免打扰用户。
@@ -57,8 +61,8 @@ export const UpdateAvailableModalContainer = ({ checkRequestId }: Props) => {
       return;
     }
     handledCheckRequestId.current = checkRequestId;
-    void check();
-  }, [check, checkRequestId]);
+    open();
+  }, [open, checkRequestId]);
 
   return (
     <UpdateAvailableModal
