@@ -38,13 +38,15 @@ export const styles = StyleSheet.create({
     width: 72,
   },
   listContent: {
-    paddingHorizontal: spacing.md,
     paddingTop: spacing.xs,
   },
   listRow: {
     gap: spacing.sm,
     marginBottom: spacing.sm,
     justifyContent: 'flex-start',
+  },
+  itemSeparator: {
+    height: spacing.sm,
   },
   hint: {
     color: colors.textMuted,
@@ -66,8 +68,8 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardCover: {
-    width: BUILD_GUIDE_COVER_SIZE,
-    height: BUILD_GUIDE_COVER_SIZE,
+    width: '100%',
+    aspectRatio: 1,
     backgroundColor: colors.surface,
   },
   cardShadow: {
