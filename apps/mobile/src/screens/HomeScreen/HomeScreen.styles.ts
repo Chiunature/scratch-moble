@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { colors, fontSize, fontWeight, shadows, spacing } from '../../theme';
+import { colors, fontSize, fontWeight, spacing } from '../../theme';
 
 export const styles = StyleSheet.create({
   loadingContainer: {
@@ -23,8 +23,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing['3xl'],
-    backgroundColor: colors.background,
+    // 内边距在组件内根据安全区（刘海/状态栏/home 指示条）动态注入
   },
   header: {
     position: 'absolute',
@@ -33,57 +32,43 @@ export const styles = StyleSheet.create({
     right: spacing['2xl'],
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerRightView: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.xl,
-  },
-  logo: {
-    width: 76,
-    height: 76,
+    justifyContent: 'flex-end',
+
+    gap: 10,
   },
   settingsButton: {
-    borderRadius: 999,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
-    ...shadows.primarySmall,
+    padding: spacing.xs,
   },
-  settingsText: {
-    color: colors.primary,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.extraBold,
-  },
+  settingIcon: { width: 28, height: 28 },
   cardRow: {
+    width: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.lg,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: spacing.lg,
   },
   card: {
-    width: 170,
-    height: 132,
+    aspectRatio: 1,
     justifyContent: 'center',
-    borderRadius: 26,
-    padding: spacing.xl,
-    backgroundColor: colors.surface,
-    ...shadows.primaryMd,
   },
   cardPressed: {
     opacity: 0.78,
     transform: [{ scale: 0.98 }],
   },
+  cardBackground: {
+    flex: 1,
+    overflow: 'hidden',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    padding: spacing.xs,
+  },
   cardTitle: {
-    color: colors.ink,
+    color: colors.surface,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.black,
   },
   cardSubtitle: {
-    marginTop: spacing.xs,
-    color: colors.textSubtle,
+    color: colors.surface,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
@@ -95,14 +80,10 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   bluetoothButton: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.primarySoft,
-    borderRadius: '50%',
-    boxShadow: '0 0 3px 0 rgba(25, 51, 247, 0.52)',
+    padding: spacing.xs,
   },
   bluetoothIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
   },
 });
