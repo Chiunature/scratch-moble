@@ -61,6 +61,8 @@ export const styles = StyleSheet.create({
     marginTop: spacing['2xl'],
   },
   card: {
+    // borderWidth: 1,
+    // borderColor: 'red',
     width: BUILD_GUIDE_COVER_SIZE,
     borderRadius: 16,
     backgroundColor: colors.surface,
@@ -69,7 +71,7 @@ export const styles = StyleSheet.create({
   },
   cardCover: {
     width: '100%',
-    aspectRatio: 1,
+    height: BUILD_GUIDE_COVER_SIZE,
     backgroundColor: colors.surface,
   },
   cardShadow: {

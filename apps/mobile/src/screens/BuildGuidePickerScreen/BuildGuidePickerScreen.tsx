@@ -79,7 +79,7 @@ export function BuildGuidePickerScreen({ navigation }: Props) {
         <Image
           source={item.cover}
           style={styles.cardCover}
-          resizeMode="contain"
+          resizeMode="cover"
         />
         <Text style={styles.cardTitle} numberOfLines={2}>
           {t(item.nameKey)}
