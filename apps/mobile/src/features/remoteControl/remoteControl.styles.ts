@@ -34,7 +34,6 @@ export const JOYSTICK = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    experimental_backgroundImage: 'linear-gradient(145deg, #e6e8ec, #caccd4)',
   },
 
   /** 摇杆停靠：偏左下，留出方向图标外溢空间 */

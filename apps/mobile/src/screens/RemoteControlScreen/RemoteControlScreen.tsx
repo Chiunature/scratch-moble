@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, ImageBackground } from 'react-native';
 import {
   JoystickKnob,
   RemoteActionButtons,
@@ -10,7 +10,7 @@ import {
 import { bleDeviceManager, bleLog } from '../../services/ble';
 import { useBleStore } from '../../store/useBleStore';
 import { styles } from '../../features/remoteControl/remoteControl.styles';
-
+import bg from '../../../assets/background/remoteConatinerBG.png';
 /** 发送遥控键值帧；发送前二次校验链路是否真的还在（UI 状态可能滞后），失败仅告警不打断操作 */
 function sendRemoteFrame(frame: number[]): void {
   if (!bleDeviceManager.isConnected()) {
@@ -41,7 +41,7 @@ export function RemoteControlScreen() {
   });
 
   return (
-    <View style={styles.container}>
+    <ImageBackground style={styles.container} source={bg}>
       <RemoteShoulderButtons
         pressedShoulders={controlState.pressedShoulders}
         onPressIn={pressShoulder}
@@ -62,6 +62,6 @@ export function RemoteControlScreen() {
           onPressOut={releaseButton}
         />
       </View>
-    </View>
+    </ImageBackground>
   );
 }
