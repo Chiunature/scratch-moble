@@ -15,6 +15,8 @@ const PATCH_FLAG = '__scratchMobileRuntimeMaterialsApplied';
 
 const HIGHLIGHT_EDGE_RED = 0xcc0000;
 const HIGHLIGHT_EDGE_LIME = 0x20f000;
+/** collector 上置 true 时不套用新件红/绿描边，只用零件本色（PLI 缩略图） */
+const SKIP_NEW_PART_HIGHLIGHT_FLAG = 'ldrSkipNewPartHighlight';
 
 function resolveColorInfo(colors, colorId) {
   const resolvedId = colorId < 0 ? -colorId - 1 : colorId;
@@ -153,7 +155,10 @@ function setMeshShown(mesh, shown, parent) {
 
 function applyCollectorAppearance(collector, old) {
   const LDR = globalThis.LDR;
-  const mode = LDR?.Options?.showOldColors ?? 2;
+  const skipHighlight = collector[SKIP_NEW_PART_HIGHLIGHT_FLAG] === true;
+  const rawMode = LDR?.Options?.showOldColors ?? 2;
+  // 缩略图里所有零件都算“新件”，红/绿高亮会盖掉本色描边，这里降级为真实颜色
+  const mode = skipHighlight && (rawMode === 0 || rawMode === 1) ? 2 : rawMode;
   const oldFace = LDR?.Options?.oldColor ?? 0xffff6f;
   const oldEdge = 0xaaaa66;
 
@@ -364,4 +369,5 @@ module.exports = {
   applyRuntimeMaterials,
   TRANSPARENT_FLAG,
   OPACITY_KEY,
+  SKIP_NEW_PART_HIGHLIGHT_FLAG,
 };

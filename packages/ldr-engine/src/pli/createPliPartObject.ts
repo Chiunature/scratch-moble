@@ -5,6 +5,9 @@ import type { LdrLoaderInstance, LdrPartType } from '../types';
 type GeneratableLdrPartType = LdrPartType &
   Required<Pick<LdrPartType, 'generateThreePart'>>;
 
+/** 与 support/applyRuntimeMaterials.js 的同名标记保持一致 */
+const SKIP_NEW_PART_HIGHLIGHT_FLAG = 'ldrSkipNewPartHighlight';
+
 export type CreatePliPartObjectInput = {
   loader: LdrLoaderInstance;
   partID: string;
@@ -54,6 +57,10 @@ export function createPliPartObject({
     undefined,
     loader,
   );
+  // 零件预览图里每个零件都是“新件”，跳过新件红/绿高亮描边，只用零件本色
+  (meshCollector as unknown as Record<string, boolean>)[
+    SKIP_NEW_PART_HIGHLIGHT_FLAG
+  ] = true;
   const position = new THREE.Vector3();
   const rotation = new THREE.Matrix3().set(1, 0, 0, 0, -1, 0, 0, 0, -1);
 
