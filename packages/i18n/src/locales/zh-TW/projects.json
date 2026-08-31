@@ -5,6 +5,8 @@
   "newProject": "新建專案",
   "blankWorkspace": "建立空白工作區積木區",
   "noProjects": "還沒有作品，點擊上方卡片開始創作",
+  "searchProjectName": "輸入作品名",
+  "noSearchResults": "沒有搜索結果",
   "updatedOn": "更新於",
   "blockCount": "積木數量",
   "openProjectAccessibility": "打開作品 {{name}}",

@@ -5,6 +5,8 @@
   "newProject": "新建项目",
   "blankWorkspace": "创建空白工作区积木区",
   "noProjects": "还没有作品，点击上方卡片开始创作",
+  "searchProjectName": "请输入作品名",
+  "noSearchResults": "没有搜索结果",
   "updatedOn": "更新于",
   "blockCount": "积木数量",
   "openProjectAccessibility": "打开作品 {{name}}",

@@ -16,6 +16,7 @@ import {
   Text,
   useWindowDimensions,
   View,
+  TextInput,
 } from 'react-native';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +37,7 @@ import {
 } from './ProjectActionModal';
 import { notify } from '../../services/notifications';
 import { styles } from './ProjectsScreen.styles';
-
+import clearIcon from '../../../assets/notifications/delete.png';
 type Props = NativeStackScreenProps<RootStackParamList, 'Projects'>;
 
 type ProjectListItem =
@@ -49,9 +50,7 @@ const CREATE_PROJECT_KEY = 'create-project';
 
 /** 模块级稳定引用，避免 FlatList 因 keyExtractor 每次新建而重渲染 */
 const projectKeyExtractor = (item: ProjectListItem): string =>
-  item.kind === 'create'
-    ? CREATE_PROJECT_KEY
-    : `project-${item.project.id}`;
+  item.kind === 'create' ? CREATE_PROJECT_KEY : `project-${item.project.id}`;
 
 function resolveLocalImageUri(path: string): string {
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(path)) {
@@ -233,17 +232,40 @@ export function ProjectsScreen({ navigation }: Props) {
   const createAndTrack = useProjectStore(state => state.createAndTrack);
   const rename = useProjectStore(state => state.rename);
   const remove = useProjectStore(state => state.remove);
+  const [searchText, setSearchText] = useState('');
+
+  const filteredProjects = useMemo(() => {
+    const keywords = searchText
+      .replace(/[\u3000\u00A0\u2000-\u200A\u202F\u205F]+/g, ' ') // 全角/不间断等特殊空格统一为普通空格
+      .trim()
+      .toLocaleLowerCase();
+    if (!keywords) return projects;
+    return projects.filter(project => {
+      const displayName = resolveProjectDisplayName(project.name);
+      return (
+        project.name.toLocaleLowerCase().includes(keywords) ||
+        displayName.toLocaleLowerCase().includes(keywords)
+      );
+    });
+  }, [projects, searchText]);
+
+  // 未输入关键字时 filteredProjects 直接返回 projects（同一引用）；
+  // 有关键字时返回的是过滤后的新数组，因此可用引用不等判断“是否正在搜索”。
+  const noSearchResults =
+    filteredProjects !== projects && filteredProjects.length === 0;
+
   const listItems = useMemo<ProjectListItem[]>(
     () => [
       { kind: 'create' },
-      ...projects.map(project => ({ kind: 'project' as const, project })),
+      ...filteredProjects.map(project => ({
+        kind: 'project' as const,
+        project,
+      })),
     ],
-    [projects],
+    [filteredProjects],
   );
   const cardSize = Math.floor(
-    (windowWidth -
-      spacing.md * 2 -
-      spacing.sm * (GRID_COLUMN_COUNT - 1)) /
+    (windowWidth - spacing.md * 2 - spacing.sm * (GRID_COLUMN_COUNT - 1)) /
       GRID_COLUMN_COUNT,
   );
   const [isCreating, setIsCreating] = useState(false);
@@ -431,23 +453,40 @@ export function ProjectsScreen({ navigation }: Props) {
           <Text style={styles.backButtonText}>{tCommon('back')}</Text>
         </Pressable>
         <Text style={styles.title}>{t('title')}</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerSpacer}>
+          <TextInput
+            placeholder={t('searchProjectName')}
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Pressable onPress={() => setSearchText('')}>
+            <Image source={clearIcon} style={styles.clearIcon} />
+          </Pressable>
+        </View>
       </View>
 
-      <FlatList<ProjectListItem>
-        data={listItems}
-        keyExtractor={projectKeyExtractor}
-        renderItem={renderListItem}
-        numColumns={GRID_COLUMN_COUNT}
-        columnWrapperStyle={styles.listRow}
-        contentContainerStyle={listContentContainerStyle}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          projects.length === 0 ? (
-            <Text style={styles.emptyHint}>{t('noProjects')}</Text>
-          ) : null
-        }
-      />
+      {noSearchResults ? (
+        <View style={styles.emptyResultsContainer}>
+          <Text style={styles.emptyHint}>{t('noSearchResults')}</Text>
+        </View>
+      ) : (
+        <FlatList<ProjectListItem>
+          data={listItems}
+          keyExtractor={projectKeyExtractor}
+          renderItem={renderListItem}
+          numColumns={GRID_COLUMN_COUNT}
+          columnWrapperStyle={styles.listRow}
+          contentContainerStyle={listContentContainerStyle}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            projects.length === 0 ? (
+              <Text style={styles.emptyHint}>{t('noProjects')}</Text>
+            ) : null
+          }
+        />
+      )}
 
       <ProjectActionModal
         visible={actionTarget != null}

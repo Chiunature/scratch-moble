@@ -135,13 +135,30 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     marginTop: spacing.md,
   },
+  emptyResultsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
   headerSpacer: {
-    width: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'red',
+    // width: 64,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+  },
+  clearIcon: {
+    width: 26,
+    height: 26,
+    tintColor: colors.textSubtle,
   },
 });

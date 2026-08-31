@@ -5,6 +5,8 @@
   "newProject": "New Project",
   "blankWorkspace": "Create a blank workspace",
   "noProjects": "No projects yet. Tap the card above to get started.",
+  "searchProjectName": "Enter project name",
+  "noSearchResults": "No search results",
   "updatedOn": "Updated",
   "blockCount": "Blocks",
   "openProjectAccessibility": "Open project {{name}}",
