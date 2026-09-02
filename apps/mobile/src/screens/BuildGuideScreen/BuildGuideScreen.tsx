@@ -127,19 +127,18 @@ export function BuildGuideScreen({ navigation, route }: Props) {
             animationMode={settings.showStepRotationAnimations}
             appearanceRevision={appearanceRevision}
           />
+          <BuildGuideBottomBar
+            canGoPrev={steps.canGoPrev}
+            canGoNext={steps.canGoNext}
+            isLastStep={steps.isLastStep}
+            paddingBottom={insets.bottom}
+            paddingLeft={insets.left}
+            paddingRight={insets.right}
+            onPrev={steps.goPrev}
+            onNext={steps.goNext}
+          />
         </View>
       </View>
-
-      <BuildGuideBottomBar
-        canGoPrev={steps.canGoPrev}
-        canGoNext={steps.canGoNext}
-        isLastStep={steps.isLastStep}
-        paddingBottom={insets.bottom}
-        paddingLeft={insets.left}
-        paddingRight={insets.right}
-        onPrev={steps.goPrev}
-        onNext={steps.goNext}
-      />
 
       {settingsVisible ? (
         <BuildGuideSettingsModal

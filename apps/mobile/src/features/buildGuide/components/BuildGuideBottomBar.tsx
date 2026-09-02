@@ -55,7 +55,8 @@ export function BuildGuideBottomBar({
         ]}
       >
         <ChevronLeftIcon
-          size={28}
+          width={35}
+          height={28}
           color={canGoPrev ? '#4f46e5' : '#94a3b8'}
         />
       </Pressable>
@@ -74,7 +75,8 @@ export function BuildGuideBottomBar({
         ]}
       >
         <ChevronRightIcon
-          size={28}
+          width={35}
+          height={28}
           color={canPressNext ? '#4f46e5' : '#94a3b8'}
         />
       </Pressable>

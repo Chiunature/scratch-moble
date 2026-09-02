@@ -2,11 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from '@scratch-mobile/i18n';
 
-import {
-  ChevronLeftIcon,
-  ListIcon,
-  SettingsIcon,
-} from './icons/BuildGuideIcons';
+import { BackIcon, ListIcon, SettingsIcon } from './icons/BuildGuideIcons';
 import { StepSlider } from './StepSlider';
 import { styles } from './BuildGuideTopBar.styles';
 
@@ -68,7 +64,7 @@ export function BuildGuideTopBar({
             pressed && styles.backButtonPressed,
           ]}
         >
-          <ChevronLeftIcon size={22} color="#111827" />
+          <BackIcon width={28} height={28} color="#111827" />
         </Pressable>
 
         <Text style={styles.modelName} numberOfLines={1}>
@@ -98,7 +94,7 @@ export function BuildGuideTopBar({
             pressed && styles.iconButtonPressed,
           ]}
         >
-          <ListIcon size={20} color="#4f46e5" />
+          <ListIcon width={20} height={20} color="#4f46e5" />
         </Pressable>
 
         <Pressable
@@ -110,7 +106,7 @@ export function BuildGuideTopBar({
             pressed && styles.iconButtonPressed,
           ]}
         >
-          <SettingsIcon size={20} color="#4f46e5" />
+          <SettingsIcon width={20} height={20} color="#4f46e5" />
         </Pressable>
 
         <Text style={styles.ratioText}>
