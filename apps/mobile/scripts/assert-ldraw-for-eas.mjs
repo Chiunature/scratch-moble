@@ -19,6 +19,8 @@ const hasLegacy =
   existsSync(path.join(ldrawRoot, 'ldraw_parts')) ||
   existsSync(path.join(ldrawRoot, 'ldraw_unofficial'));
 
+const ldrawIndexPath = path.join(ldrawRoot, 'part-index.json');
+
 if (!hasOfficial && !hasLegacy) {
   console.error(`LDraw subset missing at ${ldrawRoot}.
 
@@ -29,6 +31,16 @@ Generate locally with:
 
 Note: with android/ios already in the repo, EAS skips config plugins.
 eas-build-post-install must run ldraw:sync after this assert.
+`);
+  process.exit(1);
+}
+
+if (!existsSync(ldrawIndexPath)) {
+  console.error(`LDraw part index missing at ${ldrawIndexPath}.
+
+Regenerate the committed subset with:
+  yarn workspace @scratch-mobile/mobile ldraw:subset
+  git add apps/mobile/assets/ldraw
 `);
   process.exit(1);
 }

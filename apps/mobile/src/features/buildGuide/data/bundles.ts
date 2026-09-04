@@ -67,14 +67,14 @@ export function getBuildGuideManifest(
 ): BuildGuideManifest {
   return parseMpdManifest(BUILD_GUIDE_MODELS[modelId].manifest);
 }
-
 /**
  * Resolve a fetchable URI for the MPD.
  *
  * On Android release, Metro packs non-image assets into `res/raw` and
- * `Image.resolveAssetSource()` returns a bare resource name (not a URL).
  * `expo-asset` materializes that raw resource into a real `file://` path.
  */
+const mpdUriCache = new Map<BuildGuideModelId, Promise<string>>();
+
 export async function resolveMpdUri(
   manifest: BuildGuideManifest,
 ): Promise<string> {
@@ -95,14 +95,34 @@ export async function resolveMpdUri(
     );
   }
 
-  const asset = Asset.fromModule(BUILD_GUIDE_MODELS[manifest.id].mpd);
-  await asset.downloadAsync();
-
-  if (asset.localUri == null) {
-    throw new Error(
-      `Failed to materialize MPD asset for build guide "${manifest.id}"`,
-    );
+  const cached = mpdUriCache.get(manifest.id);
+  if (cached) {
+    return cached;
   }
 
-  return asset.localUri;
+  const asset = Asset.fromModule(BUILD_GUIDE_MODELS[manifest.id].mpd);
+  const uriPromise = asset.downloadAsync().then(() => {
+    if (asset.localUri == null) {
+      throw new Error(
+        `Failed to materialize MPD asset for build guide "${manifest.id}"`,
+      );
+    }
+    return asset.localUri;
+  });
+  mpdUriCache.set(manifest.id, uriPromise);
+
+  try {
+    return await uriPromise;
+  } catch (error) {
+    mpdUriCache.delete(manifest.id);
+    throw error;
+  }
+}
+
+export function preloadBuildGuideMpdAssets(): Promise<void> {
+  return Promise.all(
+    BUILD_GUIDE_MODEL_IDS.map(modelId =>
+      resolveMpdUri(getBuildGuideManifest(modelId)),
+    ),
+  ).then(() => undefined);
 }

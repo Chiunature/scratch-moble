@@ -245,6 +245,46 @@ function writeSubset(sourceRoot, destRoot, needed) {
   }
 }
 
+function writePartIndex(destRoot, needed) {
+  const index = {};
+
+  // Keep the runtime lookup equivalent to localPartPaths.ts: official parts
+  // win over primitives when a library contains the same logical ID twice.
+  for (const relative of [...needed.keys()].sort()) {
+    let logicalID = null;
+    let priority = 0;
+
+    if (relative.startsWith('parts/')) {
+      logicalID = relative.slice('parts/'.length);
+      priority = 2;
+    } else if (relative.startsWith('p/')) {
+      logicalID = relative.slice('p/'.length);
+      priority = 1;
+    }
+
+    if (!logicalID) {
+      continue;
+    }
+
+    const existing = index[logicalID];
+    if (!existing || priority > existing.priority) {
+      index[logicalID] = { path: relative, priority };
+    }
+  }
+
+  const compactIndex = Object.fromEntries(
+    Object.entries(index)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([logicalID, entry]) => [logicalID, entry.path]),
+  );
+
+  writeFileSync(
+    path.join(destRoot, 'part-index.json'),
+    `${JSON.stringify(compactIndex, null, 2)}\n`,
+    'utf8',
+  );
+}
+
 function totalBytes(root) {
   let bytes = 0;
   const walk = dir => {
@@ -265,6 +305,7 @@ const sourceRoot = resolveLibrarySource();
 const { needed, unresolved } = collectClosure(BUILTIN_MPDS, sourceRoot);
 
 writeSubset(sourceRoot, defaultDestRoot, needed);
+writePartIndex(defaultDestRoot, needed);
 
 const fileCount = countFiles(defaultDestRoot);
 const byteCount = totalBytes(defaultDestRoot);

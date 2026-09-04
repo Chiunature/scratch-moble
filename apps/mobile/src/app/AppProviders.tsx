@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { preloadBuildGuideRuntime } from '../features/buildGuide/preloadBuildGuideRuntime';
 import {
   BleStoreBootstrap,
   bleDeviceManager,
@@ -11,9 +12,16 @@ import {
 
 export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
+    // HomeScreen has a short initial loading state; use that idle window to
+    // prepare the first build-guide navigation instead of doing it on tap.
+    const timer = setTimeout(() => {
+      preloadBuildGuideRuntime().catch(() => undefined);
+    }, 250);
+
     // 显式初始化共享 BleManager（模块级单例在首次 import 时已创建，此处明确生命周期起点）
     bleDeviceManager.getManager();
     return () => {
+      clearTimeout(timer);
       bleDeviceManager.destroy();
       destroySharedBleManager();
     };
