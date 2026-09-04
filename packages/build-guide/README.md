@@ -10,6 +10,7 @@ apps/mobile/assets/buildGuide/
       manifest.json            # MpdManifest（MPD URI、主模型 ID、摄像机等）
       build/export.mpd
       cover.png                # 可选的模型封面（任意本地图片名称；需在 bundles.ts 中注册）
+      starter-workspace.json   # 可选：点击模型后打开的「入门程序」scratch-blocks 工作区快照
 ```
 
 ## 使用流程

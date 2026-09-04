@@ -1,0 +1,37 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "event_when_flag_clicked",
+        "x": 40,
+        "y": 40,
+        "next": {
+          "block": {
+            "type": "show",
+            "fields": { "MATRIX": "0A,1F,1F,1F,0E,04,00" },
+            "next": {
+              "block": {
+                "type": "play_music",
+                "inputs": {
+                  "NOTE": {
+                    "shadow": {
+                      "type": "note_picker",
+                      "fields": { "NOTE": "12" }
+                    }
+                  },
+                  "DURATION": {
+                    "shadow": {
+                      "type": "math_positive_number_keyboard",
+                      "fields": { "NUM": 0.25 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

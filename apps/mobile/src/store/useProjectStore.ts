@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 
-import type { ScratchProjectSummary } from '@scratch-mobile/shared';
+import type {
+  ScratchProjectSummary,
+  WorkspaceSnapshot,
+} from '@scratch-mobile/shared';
 
 import {
   createProject as createProjectOnDisk,
   deleteProject as deleteProjectOnDisk,
+  ensureProjectWithWorkspace as ensureProjectWithWorkspaceOnDisk,
   listProjects,
   reconcileProjects,
   renameProject as renameProjectOnDisk,
@@ -17,6 +21,11 @@ type ProjectStore = {
   loadProjects: () => Promise<void>;
   reconcileAndTrack: () => Promise<void>;
   createAndTrack: (name?: string) => Promise<ScratchProjectSummary>;
+  ensureTrackedWithWorkspace: (input: {
+    id: string;
+    name?: string;
+    workspace: WorkspaceSnapshot;
+  }) => Promise<ScratchProjectSummary>;
   rename: (projectId: string, name: string) => Promise<void>;
   remove: (projectId: string) => Promise<void>;
   upsertSummary: (summary: ScratchProjectSummary) => void;
@@ -55,6 +64,24 @@ export const useProjectStore = create<ProjectStore>(set => ({
     set(state => ({
       projects: [summary, ...state.projects.filter(item => item.id !== summary.id)],
     }));
+    return summary;
+  },
+
+  ensureTrackedWithWorkspace: async input => {
+    const summary = await ensureProjectWithWorkspaceOnDisk(input);
+    set(state => {
+      const alreadyTracked = state.projects.some(
+        item => item.id === summary.id,
+      );
+      // 已存在则原地更新，保持列表顺序；不存在才置顶为新作品。
+      return {
+        projects: alreadyTracked
+          ? state.projects.map(item =>
+              item.id === summary.id ? summary : item,
+            )
+          : [summary, ...state.projects],
+      };
+    });
     return summary;
   },
 

@@ -1,10 +1,14 @@
 import { Asset } from 'expo-asset';
 import { parseMpdManifest } from '@scratch-mobile/build-guide';
+import type { WorkspaceSnapshot } from '@scratch-mobile/shared';
 
 import catalogJson from '../../../../assets/buildGuide/catalog.json';
 import containerDemoManifest from '../../../../assets/buildGuide/models/container-demo/manifest.json';
 import teslaModelSManifest from '../../../../assets/buildGuide/models/tesla-model-s/manifest.json';
 import mingGreenFigureManifest from '../../../../assets/buildGuide/models/testlbs/manifest.json';
+import containerDemoStarterWorkspace from '../../../../assets/buildGuide/models/container-demo/starter-workspace.json';
+import teslaModelSStarterWorkspace from '../../../../assets/buildGuide/models/tesla-model-s/starter-workspace.json';
+import mingGreenFigureStarterWorkspace from '../../../../assets/buildGuide/models/testlbs/starter-workspace.json';
 import type { BuildGuideManifest } from '../types';
 
 /**
@@ -16,20 +20,23 @@ const BUILD_GUIDE_MODELS = {
     manifest: containerDemoManifest,
     mpd: require('../../../../assets/buildGuide/models/container-demo/build/export.mpd'),
     cover: require('../../../../assets/buildGuide/models/container-demo/container.png'),
+    starterWorkspace: containerDemoStarterWorkspace,
   },
   'tesla-model-s': {
     manifest: teslaModelSManifest,
     mpd: require('../../../../assets/buildGuide/models/tesla-model-s/build/export.mpd'),
     cover: require('../../../../assets/buildGuide/models/tesla-model-s/teslaModelS.png'),
+    starterWorkspace: teslaModelSStarterWorkspace,
   },
   'ming-green-figure': {
     manifest: mingGreenFigureManifest,
     mpd: require('../../../../assets/buildGuide/models/testlbs/build/export.mpd'),
     cover: require('../../../../assets/buildGuide/models/testlbs/robot.png'),
+    starterWorkspace: mingGreenFigureStarterWorkspace,
   },
 } as const satisfies Record<
   string,
-  { manifest: unknown; mpd: number; cover: number }
+  { manifest: unknown; mpd: number; cover: number; starterWorkspace: unknown }
 >;
 
 export type BuildGuideModelId = keyof typeof BUILD_GUIDE_MODELS;
@@ -46,6 +53,14 @@ export const BUILD_GUIDE_MODEL_IDS = Object.keys(
 
 export function isBuildGuideModelId(id: string): id is BuildGuideModelId {
   return id in BUILD_GUIDE_MODELS;
+}
+
+/**
+ * 每个内置模型对应一个「随安装包固定」的项目 ID。
+ * 用固定前缀 + modelId，保证重复打开时命中同一份作品，而不是每次新建。
+ */
+export function getBuildGuideProjectId(modelId: BuildGuideModelId): string {
+  return `build-guide-${modelId}`;
 }
 
 export const BUILD_GUIDE_CATALOG: BuildGuideCatalogEntry[] =
@@ -66,6 +81,18 @@ export function getBuildGuideManifest(
   modelId: BuildGuideModelId,
 ): BuildGuideManifest {
   return parseMpdManifest(BUILD_GUIDE_MODELS[modelId].manifest);
+}
+
+/**
+ * 返回模型预设的「入门程序」工作区快照（scratch-blocks workspace JSON）。
+ * 每次深拷贝一份，避免编辑器/持久化链路在运行时改写模块级单例。
+ */
+export function getBuildGuideStarterWorkspace(
+  modelId: BuildGuideModelId,
+): WorkspaceSnapshot {
+  return JSON.parse(
+    JSON.stringify(BUILD_GUIDE_MODELS[modelId].starterWorkspace),
+  ) as WorkspaceSnapshot;
 }
 /**
  * Resolve a fetchable URI for the MPD.

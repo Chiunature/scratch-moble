@@ -1,0 +1,50 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "event_when_flag_clicked",
+        "x": 40,
+        "y": 40,
+        "next": {
+          "block": {
+            "type": "run_for_power_seconds",
+            "inputs": {
+              "PORTS": {
+                "shadow": {
+                  "type": "motor_port_dropdown",
+                  "fields": { "PORT": "4" }
+                }
+              },
+              "POWER": {
+                "shadow": {
+                  "type": "number_slider_integer",
+                  "fields": { "NUM": 50 }
+                }
+              },
+              "SECONDS": {
+                "shadow": {
+                  "type": "math_positive_number_keyboard",
+                  "fields": { "NUM": 2 }
+                }
+              }
+            },
+            "next": {
+              "block": {
+                "type": "stop",
+                "inputs": {
+                  "PORTS": {
+                    "shadow": {
+                      "type": "motor_port_dropdown",
+                      "fields": { "PORT": "4" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

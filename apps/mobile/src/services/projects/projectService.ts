@@ -1,6 +1,7 @@
 import {
   buildProjectDocument,
   createEmptyProjectDocument,
+  createProjectSummary,
 } from '@scratch-mobile/core';
 import { getDefaultProjectName } from '@scratch-mobile/i18n';
 import {
@@ -12,6 +13,7 @@ import {
 import {
   deleteProjectDocument,
   listProjectDocumentIds,
+  projectDocumentExists,
   ProjectDocumentParseError,
   readProjectDocument,
   writeProjectDocument,
@@ -153,6 +155,82 @@ export async function createProject(name?: string): Promise<ScratchProjectSummar
   const index = await loadProjectIndex();
   await saveProjectIndex(upsertProjectSummary(index, summary));
   return summary;
+}
+
+/** 统计序列化 workspace 中的积木数（含 shadow reporter，与编辑器 getAllBlocks 口径一致）。 */
+function countSerializedWorkspaceBlocks(value: unknown): number {
+  if (Array.isArray(value)) {
+    return value.reduce((sum, item) => sum + countSerializedWorkspaceBlocks(item), 0);
+  }
+  if (value != null && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    let count = typeof record.type === 'string' ? 1 : 0;
+    for (const nested of Object.values(record)) {
+      count += countSerializedWorkspaceBlocks(nested);
+    }
+    return count;
+  }
+  return 0;
+}
+
+/** 创建带初始「入门程序」工作区快照的项目（用于模型 → 积木页联动）。 */
+export async function createProjectWithWorkspace(
+  name: string | undefined,
+  workspace: WorkspaceSnapshot,
+): Promise<ScratchProjectSummary> {
+  const summary = createProjectSummary(name ?? getDefaultProjectName());
+  const document = buildProjectDocument({ summary, workspace });
+  await writeProjectDocument(document);
+  const result = summaryFromDocument(
+    document,
+    countSerializedWorkspaceBlocks(workspace),
+  );
+  const index = await loadProjectIndex();
+  await saveProjectIndex(upsertProjectSummary(index, result));
+  return result;
+}
+
+/**
+ * 幂等地补齐一个「固定 ID」的内置项目。
+ *
+ * - 若该 ID 的文档已存在（含用户后续的编辑/改名），直接返回其 summary，不覆盖。
+ * - 若不存在，则用给定的固定 ID + 初始 workspace 落盘并登记索引。
+ *
+ * 用于安装包内置模型：每个模型对应唯一项目，重复打开不会新增作品。
+ */
+export async function ensureProjectWithWorkspace(input: {
+  id: string;
+  name?: string;
+  workspace: WorkspaceSnapshot;
+}): Promise<ScratchProjectSummary> {
+  const { id, name, workspace } = input;
+
+  if (await projectDocumentExists(id)) {
+    const document = await readProjectDocument(id);
+    const index = await loadProjectIndex();
+    const existing = index.find(project => project.id === id);
+    if (existing) {
+      return existing;
+    }
+    // 文档在盘上但索引缺失（异常场景）：用文档补回索引条目。
+    const summary = summaryFromDocument(
+      document,
+      countSerializedWorkspaceBlocks(workspace),
+    );
+    await saveProjectIndex(upsertProjectSummary(index, summary));
+    return summary;
+  }
+
+  const summary = createProjectSummary(name ?? getDefaultProjectName(), { id });
+  const document = buildProjectDocument({ summary, workspace });
+  await writeProjectDocument(document);
+  const result = summaryFromDocument(
+    document,
+    countSerializedWorkspaceBlocks(workspace),
+  );
+  const index = await loadProjectIndex();
+  await saveProjectIndex(upsertProjectSummary(index, result));
+  return result;
 }
 
 export async function loadProject(

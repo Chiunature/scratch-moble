@@ -88,11 +88,41 @@ export const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  cardSubtitle: {
+  cardActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  actionButton: {
+    // Grow to fill available space; when both buttons' natural (single-line)
+    // widths exceed the row, flexWrap pushes the second onto a new line and
+    // each button then spans the full width — side-by-side by default,
+    // stacked vertically when the label text is too long.
+    flexGrow: 1,
+    flexBasis: 'auto',
+    borderRadius: 999,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+  },
+  actionButtonText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  actionButtonSecondary: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  actionButtonSecondaryText: {
     color: colors.primary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
-    marginTop: spacing.xs,
-    paddingHorizontal: spacing.md,
   },
 });

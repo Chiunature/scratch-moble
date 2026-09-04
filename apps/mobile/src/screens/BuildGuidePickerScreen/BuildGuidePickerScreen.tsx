@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -14,8 +14,12 @@ import { useTranslation } from '@scratch-mobile/i18n';
 import { type RootStackParamList } from '../../app/navigation';
 import {
   BUILD_GUIDE_CATALOG,
+  getBuildGuideProjectId,
+  getBuildGuideStarterWorkspace,
   type BuildGuideCatalogEntry,
 } from '../../features/buildGuide/data/bundles';
+import { notify } from '../../services/notifications';
+import { useProjectStore } from '../../store/useProjectStore';
 import { spacing } from '../../theme';
 import {
   BUILD_GUIDE_COVER_SIZE,
@@ -57,7 +61,35 @@ export function BuildGuidePickerScreen({ navigation }: Props) {
     ),
   );
 
-  const handleSelectModel = useCallback(
+  const ensureTrackedWithWorkspace = useProjectStore(
+    state => state.ensureTrackedWithWorkspace,
+  );
+  const [openingModelId, setOpeningModelId] = useState<string | null>(null);
+
+  const handleOpenProgram = useCallback(
+    async (entry: BuildGuideCatalogEntry) => {
+      if (openingModelId) {
+        return;
+      }
+      setOpeningModelId(entry.id);
+      try {
+        // 每个模型对应一个固定 ID 的内置项目：已存在则复用，不再新建作品。
+        const summary = await ensureTrackedWithWorkspace({
+          id: getBuildGuideProjectId(entry.id),
+          name: t(entry.nameKey),
+          workspace: getBuildGuideStarterWorkspace(entry.id),
+        });
+        navigation.navigate('Editor', { projectId: summary.id });
+      } catch {
+        notify.error(t('openProgramFailedTitle'), t('openProgramFailedMessage'));
+      } finally {
+        setOpeningModelId(null);
+      }
+    },
+    [ensureTrackedWithWorkspace, navigation, openingModelId, t],
+  );
+
+  const handleOpenGuide = useCallback(
     (entry: BuildGuideCatalogEntry) => {
       navigation.navigate('BuildGuidePlayer', { modelId: entry.id });
     },
@@ -66,16 +98,7 @@ export function BuildGuidePickerScreen({ navigation }: Props) {
 
   const renderItem = useCallback(
     ({ item }: { item: BuildGuideCatalogEntry }) => (
-      <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          styles.cardShadow,
-          pressed && styles.cardPressed,
-        ]}
-        onPress={() => handleSelectModel(item)}
-        accessibilityRole="button"
-        accessibilityLabel={t(item.nameKey)}
-      >
+      <View style={[styles.card, styles.cardShadow]}>
         <Image
           source={item.cover}
           style={styles.cardCover}
@@ -84,10 +107,38 @@ export function BuildGuidePickerScreen({ navigation }: Props) {
         <Text style={styles.cardTitle} numberOfLines={2}>
           {t(item.nameKey)}
         </Text>
-        <Text style={styles.cardSubtitle}>{t('openGuide')}</Text>
-      </Pressable>
+        <View style={styles.cardActions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.cardPressed,
+            ]}
+            onPress={() => handleOpenProgram(item)}
+            accessibilityRole="button"
+            accessibilityLabel={t('openProgram')}
+          >
+            <Text style={styles.actionButtonText} numberOfLines={1}>
+              {t('openProgram')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.actionButtonSecondary,
+              pressed && styles.cardPressed,
+            ]}
+            onPress={() => handleOpenGuide(item)}
+            accessibilityRole="button"
+            accessibilityLabel={t('openGuide')}
+          >
+            <Text style={styles.actionButtonSecondaryText} numberOfLines={1}>
+              {t('openGuide')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
     ),
-    [handleSelectModel, t],
+    [handleOpenGuide, handleOpenProgram, t],
   );
 
   return (

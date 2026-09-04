@@ -1,6 +1,8 @@
 export {
   createProject,
+  createProjectWithWorkspace,
   deleteProject,
+  ensureProjectWithWorkspace,
   listProjects,
   loadProject,
   reconcileProjects,

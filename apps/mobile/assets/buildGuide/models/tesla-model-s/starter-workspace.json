@@ -1,0 +1,37 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "event_when_flag_clicked",
+        "x": 40,
+        "y": 40,
+        "next": {
+          "block": {
+            "type": "mov_dir_power_seconds",
+            "fields": { "DIRECTION": "advance" },
+            "inputs": {
+              "POWER": {
+                "shadow": {
+                  "type": "number_slider_integer",
+                  "fields": { "NUM": 60 }
+                }
+              },
+              "SECONDS": {
+                "shadow": {
+                  "type": "math_positive_number_keyboard",
+                  "fields": { "NUM": 2 }
+                }
+              }
+            },
+            "next": {
+              "block": {
+                "type": "mov_stop"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
