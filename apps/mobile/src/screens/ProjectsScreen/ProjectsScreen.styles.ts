@@ -146,9 +146,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: 'red',
-    // width: 64,
+    borderBottomWidth: 1,
   },
   loadingContainer: {
     flex: 1,
