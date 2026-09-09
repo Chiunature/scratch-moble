@@ -14,9 +14,9 @@ export function createRemoteControlCommand(state: ControlState): number[] {
     left: state.direction === 'left',
     right: state.direction === 'right',
     a1: state.pressedButtons.includes('A'),
-    a2: state.pressedButtons.includes('B'),
-    b1: state.pressedButtons.includes('X'),
-    b2: state.pressedButtons.includes('Y'),
+    a2: state.pressedButtons.includes('Y'),
+    b1: state.pressedButtons.includes('B'),
+    b2: state.pressedButtons.includes('X'),
     leftShoulder: state.pressedShoulders.includes('L'),
     rightShoulder: state.pressedShoulders.includes('R'),
   });

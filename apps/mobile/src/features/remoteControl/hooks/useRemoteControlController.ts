@@ -75,6 +75,7 @@ export function useRemoteControlController(
   const pressButton = useCallback(
     (button: RemoteButton) => {
       const pressed = stateRef.current.pressedButtons;
+      console.log('pressButton', button, pressed);
       if (pressed.includes(button)) {
         return;
       }
