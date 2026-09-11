@@ -15,13 +15,14 @@ import {
  * 幂等，可安全重复调用（已存在的项目会保留用户后续的编辑与改名）。
  */
 export async function provisionBuildGuideProjects(): Promise<void> {
-  await Promise.all(
-    BUILD_GUIDE_CATALOG.map(entry =>
-      ensureProjectWithWorkspace({
-        id: getBuildGuideProjectId(entry.id),
-        name: i18n.t(entry.nameKey, { ns: 'buildGuide' }),
-        workspace: getBuildGuideStarterWorkspace(entry.id),
-      }),
-    ),
-  );
+  // ensureProjectWithWorkspace performs a read-modify-write on the shared
+  // project index. Run the entries serially so one model cannot overwrite a
+  // sibling model's freshly saved index entry.
+  for (const entry of BUILD_GUIDE_CATALOG) {
+    await ensureProjectWithWorkspace({
+      id: getBuildGuideProjectId(entry.id),
+      name: i18n.t(entry.nameKey, { ns: 'buildGuide' }),
+      workspace: getBuildGuideStarterWorkspace(entry.id),
+    });
+  }
 }
