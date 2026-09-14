@@ -1,7 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import type { BleDevice } from '../types';
 import { bleLog } from '../core/logger';
+import { kvStore } from '../../storage/kvStore';
 
 const STORAGE_KEY = '@scratch-mobile/paired-ble-devices';
 
@@ -63,7 +62,7 @@ function upsertPairedList(
 /** 内部读取：不通知订阅者（save/remove 会随后 emit 最终列表） */
 async function readPairedDevices(): Promise<PairedBleDevice[]> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await kvStore.getItem(STORAGE_KEY);
     if (!raw) {
       return [];
     }
@@ -94,7 +93,7 @@ export async function savePairedDevice(
 ): Promise<PairedBleDevice[]> {
   const current = await readPairedDevices();
   const next = upsertPairedList(current, device);
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await kvStore.setItem(STORAGE_KEY, JSON.stringify(next));
   bleLog.info('已保存配对设备', device.id, device.name);
   emitPairedDevices(next);
   return next;
@@ -108,7 +107,7 @@ export async function removePairedDevice(
   const next = current.filter(
     item => normalizeBleDeviceId(item.id) !== normalizedId,
   );
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await kvStore.setItem(STORAGE_KEY, JSON.stringify(next));
   bleLog.info('已移除配对设备', normalizedId);
   emitPairedDevices(next);
   return next;

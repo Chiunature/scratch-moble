@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { kvStore } from '../../../services/storage/kvStore';
 
 import {
   DEFAULT_BUILD_GUIDE_SETTINGS,
@@ -51,7 +51,7 @@ export function normalizeBuildGuideSettings(
 
 export async function loadBuildGuideSettings(): Promise<BuildGuideSettings> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await kvStore.getItem(STORAGE_KEY);
     if (!raw) {
       return { ...DEFAULT_BUILD_GUIDE_SETTINGS };
     }
@@ -66,5 +66,5 @@ export async function loadBuildGuideSettings(): Promise<BuildGuideSettings> {
 export async function saveBuildGuideSettings(
   settings: BuildGuideSettings,
 ): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  await kvStore.setItem(STORAGE_KEY, JSON.stringify(settings));
 }

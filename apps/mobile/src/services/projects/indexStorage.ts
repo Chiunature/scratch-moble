@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import type { ScratchProjectSummary } from '@scratch-mobile/shared';
+
+import { kvStore } from '../storage/kvStore';
 
 const STORAGE_KEY = '@scratch-mobile/projects-index';
 
@@ -14,7 +14,7 @@ function sortByUpdatedAtDesc(
 
 export async function loadProjectIndex(): Promise<ScratchProjectSummary[]> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await kvStore.getItem(STORAGE_KEY);
     if (!raw) {
       return [];
     }
@@ -40,7 +40,7 @@ export async function loadProjectIndex(): Promise<ScratchProjectSummary[]> {
 export async function saveProjectIndex(
   projects: ScratchProjectSummary[],
 ): Promise<void> {
-  await AsyncStorage.setItem(
+  await kvStore.setItem(
     STORAGE_KEY,
     JSON.stringify(sortByUpdatedAtDesc(projects)),
   );
