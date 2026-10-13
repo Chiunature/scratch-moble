@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   View,
   Text,
   useWindowDimensions,
@@ -13,7 +14,10 @@ import {
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { resolveProjectDisplayName, useTranslation } from '@scratch-mobile/i18n';
+import {
+  resolveProjectDisplayName,
+  useTranslation,
+} from '@scratch-mobile/i18n';
 import {
   EditorBridgeView,
   EditorSessionOverlays,
@@ -24,6 +28,9 @@ import {
   useEditorPikaWorkflow,
   useEditorProjectPersistence,
 } from '../../features/editor';
+import { AssistantPanel } from '../../features/assistant/AssistantPanel';
+import { AssistantConnectionSettings } from '../../features/assistant/AssistantConnectionSettings';
+import { useAssistantBridge } from '../../features/assistant/useAssistantBridge';
 import { GeneratedCodePanel } from './GeneratedCodePanel';
 import { EditorHeader } from './EditorHeader';
 import { type RootStackParamList } from '../../app/navigation';
@@ -52,16 +59,31 @@ export function EditorScreen() {
     );
   }
 
-  return <EditorScreenContent projectId={projectId} />;
+  return (
+    <EditorScreenContent
+      key={projectId}
+      projectId={projectId}
+      openAssistant={route.params?.assistant}
+    />
+  );
 }
 
-function EditorScreenContent({ projectId }: { projectId: string }) {
+function EditorScreenContent({
+  projectId,
+  openAssistant,
+}: {
+  projectId: string;
+  openAssistant?: boolean;
+}) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation('editorShell');
   const { width: screenWidth } = useWindowDimensions();
   const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
   const webViewRef = useRef<WebView>(null);
+  const assistantBridge = useAssistantBridge(webViewRef, projectId);
+  const [assistantOpen, setAssistantOpen] = useState(openAssistant === true);
+  const [assistantSettingsOpen, setAssistantSettingsOpen] = useState(false);
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
   const [isSlotPickerVisible, setIsSlotPickerVisible] = useState(false);
   const [isSensorPanelOpen, setIsSensorPanelOpen] = useState(false);
@@ -97,6 +119,8 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
   } = useEditorPikaWorkflow(bridge.generatedCode);
 
   const persistenceStatus = persistence.status;
+  const assistantAvailable =
+    persistenceStatus === 'ready' || persistenceStatus === 'saveFailed';
   const projectError =
     persistenceStatus === 'loading' || persistenceStatus === 'ready'
       ? null
@@ -147,6 +171,34 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
         onToggleCodePanel={toggleCodePanel}
         onToggleSensorPanel={toggleSensorPanel}
       />
+      <View style={styles.assistantActions}>
+        <Pressable
+          accessibilityRole="button"
+          disabled={!assistantAvailable}
+          onPress={() => setAssistantOpen(true)}
+        >
+          <Text style={{ color: colors.primary }}>积木助手</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setAssistantSettingsOpen(true)}
+        >
+          <Text style={{ color: colors.primary }}>模型配置</Text>
+        </Pressable>
+      </View>
+      <AssistantPanel
+        projectId={projectId}
+        visible={assistantOpen && assistantAvailable}
+        persistenceError={
+          persistenceStatus === 'saveFailed' ? projectError : null
+        }
+        request={assistantBridge.request}
+        onClose={() => setAssistantOpen(false)}
+      />
+      <AssistantConnectionSettings
+        visible={assistantSettingsOpen}
+        onClose={() => setAssistantSettingsOpen(false)}
+      />
       <ProgramSlotPickerModal
         visible={isSlotPickerVisible}
         selectedSlot={programSlot}
@@ -160,7 +212,10 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
           html={bridge.editorHtml}
           htmlError={bridge.editorHtmlError}
           embeddedLocaleScript={bridge.editorEmbeddedLocaleScript}
-          onMessage={bridge.handleMessage}
+          onMessage={event => {
+            assistantBridge.handleMessage(event);
+            bridge.handleMessage(event);
+          }}
           onLoadEnd={bridge.handleWebViewLoadEnd}
         />
         {persistence.status === 'loading' ? (
@@ -171,7 +226,10 @@ function EditorScreenContent({ projectId }: { projectId: string }) {
             </Text>
           </View>
         ) : null}
-        <EditorSessionOverlays sessions={bridge.sessions} onSend={bridge.send} />
+        <EditorSessionOverlays
+          sessions={bridge.sessions}
+          onSend={bridge.send}
+        />
         {isSensorPanelOpen ? (
           <View style={[styles.sidePanel, { width: sidePanelWidth }]}>
             <DeviceDetailsPanel onClose={() => setIsSensorPanelOpen(false)} />

@@ -107,6 +107,7 @@ function closeSession(sessionId: string, notifyNativeHost: boolean): void {
 }
 
 export function handleNumberSliderInbound(message: EditorInMessage): void {
+  if (message.type !== 'editor.numberSlider.value' && message.type !== 'editor.numberSlider.close') return;
   const session = sessions.get(message.sessionId);
   if (!session) {
     return;

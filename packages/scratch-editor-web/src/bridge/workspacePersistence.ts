@@ -22,6 +22,7 @@ type PersistenceDeps = {
 };
 
 export type WorkspacePersistence = {
+  getProjectId: () => string | null;
   scheduleChange: () => void;
   handleInbound: (message: EditorInMessage) => boolean;
   dispose: () => void;
@@ -207,6 +208,7 @@ export function createWorkspacePersistence(
   postToReactNative({ type: 'editor.workspace.ready' });
 
   return {
+    getProjectId: () => isWorkspaceHydrated ? activeProjectId : null,
     scheduleChange: scheduleWorkspaceChanged,
     handleInbound,
     dispose,

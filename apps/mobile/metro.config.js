@@ -7,6 +7,7 @@ const workspaceNodeModules = path.resolve(workspaceRoot, 'node_modules');
 const threePackagePath = path.resolve(workspaceNodeModules, 'three');
 
 const workspacePackages = {
+  '@scratch-mobile/assistant-contracts': path.resolve(packagesRoot, 'assistant-contracts/src'),
   '@scratch-mobile/build-guide': path.resolve(packagesRoot, 'build-guide/src'),
   '@scratch-mobile/core': path.resolve(packagesRoot, 'core/src'),
   '@scratch-mobile/i18n': path.resolve(packagesRoot, 'i18n/src'),

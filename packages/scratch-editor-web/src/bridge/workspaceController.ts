@@ -1,5 +1,7 @@
 import type { EditorInMessage } from '@scratch-mobile/shared';
 
+import { createAssistantController } from '../assistant/controller';
+import { postToReactNative } from './index';
 import type { Workspace } from '../codegen/types';
 import { handleEditorLocaleInbound } from './editorLocaleInbound';
 import { createCodeGenerationPublisher } from './codeGenerationPublisher';
@@ -38,6 +40,17 @@ export function createWorkspaceController(
     },
   });
 
+  const assistant = createAssistantController(workspace, {
+    post: postToReactNative,
+    getProjectId: persistence.getProjectId,
+    onApplied: () => {
+      // Explicit checkpoint restore replaces unreliable full-load undo events.
+      history.clear();
+      codegen.flush();
+      persistence.scheduleChange();
+    },
+  });
+
   const handleWorkspaceChange = (): void => {
     persistence.scheduleChange();
     codegen.schedule();
@@ -49,6 +62,9 @@ export function createWorkspaceController(
     if (handleEditorLocaleInbound(message)) {
       return;
     }
+
+    if (message.type === 'editor.workspace.load') assistant.reset();
+    if (assistant.handleInbound(message)) return;
 
     if (persistence.handleInbound(message)) {
       return;

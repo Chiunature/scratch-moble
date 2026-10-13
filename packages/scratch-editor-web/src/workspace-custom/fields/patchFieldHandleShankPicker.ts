@@ -35,7 +35,7 @@ function registerHandleShankPickerField(): void {
       } as never);
     }
 
-    showEditor_(e?: Event): void {
+    showEditor_(e?: MouseEvent): void {
       const handledByNative = openHandleShankPickerEditor(
         this as unknown as ScratchHandleShankField,
         e,

@@ -8,6 +8,7 @@
     "moduleResolution": "Bundler",
     "noEmit": true,
     "paths": {
+      "@scratch-mobile/assistant-contracts": ["./packages/assistant-contracts/src"],
       "@scratch-mobile/core": ["./packages/core/src"],
       "@scratch-mobile/protocol": ["./packages/protocol/src"],
       "@scratch-mobile/shared": ["./packages/shared/src"],

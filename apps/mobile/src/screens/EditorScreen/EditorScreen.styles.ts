@@ -7,6 +7,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  assistantActions: {
+    flexDirection: 'row',
+    gap: 16,
+    padding: 8,
+  },
   editorHeader: {
     flexDirection: 'row',
     alignItems: 'center',

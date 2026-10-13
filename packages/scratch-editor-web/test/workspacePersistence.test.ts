@@ -172,7 +172,7 @@ describe('createWorkspacePersistence', () => {
     expect(scratch.serialization.workspaces.save).not.toHaveBeenCalled();
   });
 
-  it('load 后按 debounce 合并 change，并从载入 revision 继续递增', () => {
+  it('load 后按 debounce 合并 change，并从载入 revision 继续递增', async () => {
     const savedWorkspace = {
       blocks: { languageVersion: 0, blocks: [{ type: 'motion_movesteps' }] },
     };
@@ -189,7 +189,7 @@ describe('createWorkspacePersistence', () => {
     jest.advanceTimersByTime(1499);
     expect(postMessage).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(1);
+    await jest.advanceTimersByTimeAsync(1);
 
     expect(postMessage).toHaveBeenCalledTimes(1);
     expect(latestPostedMessage()).toEqual({
@@ -201,7 +201,7 @@ describe('createWorkspacePersistence', () => {
     });
   });
 
-  it('flush 只处理当前 project，并使用当前 revision 做退出兜底保存', () => {
+  it('flush 只处理当前 project，并使用当前 revision 做退出兜底保存', async () => {
     const { workspace } = makeWorkspace([{ id: 'only-block' }]);
     const persistence = createWorkspacePersistence(workspace, {
       onWorkspaceLoaded: jest.fn(),
@@ -213,6 +213,7 @@ describe('createWorkspacePersistence', () => {
     expect(postMessage).not.toHaveBeenCalled();
 
     persistence.handleInbound(makeFlushMessage('project-1'));
+    await jest.advanceTimersByTimeAsync(0);
 
     expect(latestPostedMessage()).toMatchObject({
       type: 'editor.workspace.changed',

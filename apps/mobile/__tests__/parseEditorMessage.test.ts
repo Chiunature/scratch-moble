@@ -15,6 +15,12 @@ describe('parseEditorOutMessage', () => {
     });
   });
 
+  it('拒绝字段缺失或字段类型错误的助手消息', () => {
+    expect(parseEditorOutMessage(JSON.stringify({ type: 'editor.workspace.snapshot', requestId: 'r', projectId: 'p' }))).toBeNull();
+    expect(parseEditorOutMessage(JSON.stringify({ type: 'editor.workspace.candidate.ready', requestId: 'r', projectId: 'p', code: 42, blockCount: 0 }))).toBeNull();
+    expect(parseEditorOutMessage(JSON.stringify({ type: 'editor.workspace.candidate.rejected', requestId: 'r', projectId: 'p', reason: {} }))).toBeNull();
+  });
+
   it('非法 JSON 返回 null', () => {
     expect(parseEditorOutMessage('{not json')).toBeNull();
     expect(parseEditorOutMessage('')).toBeNull();

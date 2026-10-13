@@ -8,6 +8,10 @@ import { createWorkspaceHistory } from '../src/bridge/workspaceHistory';
 import { createWorkspacePersistence } from '../src/bridge/workspacePersistence';
 import { handleNumberSliderInbound } from '../src/workspace-custom/fields/numberSliderEditor';
 
+jest.mock('../src/assistant/controller', () => ({
+  createAssistantController: jest.fn(() => ({ handleInbound: jest.fn(() => false), reset: jest.fn() })),
+}));
+
 jest.mock('../src/bridge/editorLocaleInbound', () => ({
   handleEditorLocaleInbound: jest.fn(() => false),
 }));
@@ -88,6 +92,7 @@ describe('createWorkspaceController', () => {
       dispose: jest.fn(),
     });
     mockCreatePersistence.mockReturnValue({
+      getProjectId: jest.fn(() => 'project-1'),
       handleInbound: jest.fn(() => false),
       scheduleChange: jest.fn(),
       dispose: jest.fn(),

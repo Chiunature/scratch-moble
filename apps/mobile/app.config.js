@@ -38,6 +38,7 @@ const config = {
     './plugins/withExpoModuleGradlePlugin.js',
     'expo-dev-client',
     'expo-asset',
+    ['expo-secure-store', { faceIDPermission: false }],
     [
       'expo-navigation-bar',
       {

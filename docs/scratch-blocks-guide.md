@@ -2,6 +2,8 @@
 
 本文档说明本项目中 `scratch-blocks` 的推荐写法、开发流程和常见问题。
 
+如需理解积木与 Python 的对应关系，或为大模型提供项目上下文，请阅读 [积木到 Python 生成逻辑](./blocks-python-codegen.md)。该文档按当前源码梳理了积木字段与输入、工作区结构、完整生成映射、PikaScript 编译上传链路、示例及已知限制。
+
 ## 背景
 
 - 当前依赖：`scratch-blocks@2.1.19`

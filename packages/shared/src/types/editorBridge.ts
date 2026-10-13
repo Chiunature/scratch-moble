@@ -2,6 +2,10 @@
  * WebView 与 React Native 的编辑器桥接协议（跨端单一来源）。
  * mobile 与 scratch-editor-web 均从此模块导入，勿再维护副本。
  */
+import type {
+  AssistantBlockSummary,
+  AssistantProposal,
+} from '@scratch-mobile/assistant-contracts';
 import type { HandleShankKey } from '../constants/handleShank';
 import type { EditorAppLocale } from './editorLocale';
 
@@ -81,10 +85,83 @@ export type EditorOutMessage =
       revision: number;
       /** 工作区积木截图（JPEG dataURL），为空 workspace 或缺省时不下发 */
       thumbnail?: string;
+    }
+  | {
+      type: 'editor.workspace.snapshot';
+      sessionId: string;
+      catalogVersion: string;
+      blocks: AssistantBlockSummary[];
+      requestId: string;
+      projectId: string;
+      workspace: unknown;
+      workspaceHash: string;
+      code: string;
+      blockCount: number;
+      revision: number;
+    }
+  | {
+      type: 'editor.workspace.candidate.ready';
+      candidateId: string;
+      sessionId: string;
+      requestId: string;
+      projectId: string;
+      baseWorkspaceHash: string;
+      candidateWorkspaceHash: string;
+      workspace: unknown;
+      code: string;
+      blockCount: number;
+    }
+  | {
+      type: 'editor.workspace.candidate.rejected';
+      requestId: string;
+      projectId: string;
+      reason: string;
+    }
+  | {
+      type: 'editor.workspace.candidate.applied';
+      requestId: string;
+      projectId: string;
+      workspaceHash: string;
+      code: string;
+      blockCount: number;
     };
 
-/** React Native → WebView（injectJavaScript） */
+/** React Native → WebView (injectJavaScript) */
 export type EditorInMessage =
+  | {
+      type: 'editor.workspace.snapshot.request';
+      requestId: string;
+      projectId: string;
+    }
+  | {
+      type: 'editor.workspace.candidate.prepare';
+      requestId: string;
+      projectId: string;
+      sessionId: string;
+      catalogVersion: string;
+      baseWorkspaceHash: string;
+      proposal: AssistantProposal;
+    }
+  | {
+      type: 'editor.workspace.candidate.apply';
+      requestId: string;
+      projectId: string;
+      sessionId: string;
+      candidateId: string;
+    }
+  | {
+      type: 'editor.workspace.candidate.discard';
+      requestId: string;
+      projectId: string;
+      sessionId: string;
+      candidateId: string;
+    }
+  | {
+      type: 'editor.workspace.candidate.restore';
+      requestId: string;
+      projectId: string;
+      sessionId: string;
+    }
   | {
       type: 'editor.numberSlider.value';
       sessionId: string;
@@ -211,6 +288,10 @@ const EDITOR_OUT_MESSAGE_TYPE_FLAGS = {
   'editor.variablePrompt.close': true,
   'editor.workspace.ready': true,
   'editor.workspace.loaded': true,
+  'editor.workspace.snapshot': true,
+  'editor.workspace.candidate.ready': true,
+  'editor.workspace.candidate.rejected': true,
+  'editor.workspace.candidate.applied': true,
   'editor.workspace.changed': true,
 } satisfies Record<EditorOutMessage['type'], true>;
 

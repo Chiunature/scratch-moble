@@ -307,6 +307,7 @@ await build({
   plugins: [toolboxSvgTextPlugin],
   loader: { '.svg': 'dataurl', '.png': 'dataurl', '.mp3': 'base64' },
   alias: {
+    '@scratch-mobile/assistant-contracts': path.join(repoRoot, 'packages/assistant-contracts/src/index.ts'),
     '@scratch-mobile/shared': sharedEntry,
     '@scratch-mobile/i18n': path.join(
       repoRoot,

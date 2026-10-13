@@ -3,6 +3,7 @@ import * as BlocklyZhHans from 'blockly/msg/zh-hans';
 import * as ScratchBlocks from 'scratch-blocks';
 
 export type ScratchBlocksLocale = 'zh-cn' | 'en';
+let activeLocale: ScratchBlocksLocale = 'zh-cn';
 
 /**
  * 加载 Scratch 与 Blockly 文案。
@@ -12,6 +13,7 @@ export type ScratchBlocksLocale = 'zh-cn' | 'en';
  * undefined，渲染菜单会在 MenuItem.createDom 里触发 appendChild 报错。
  */
 export function initScratchLocale(locale: ScratchBlocksLocale): void {
+  activeLocale = locale;
   if (locale === 'en') {
     Object.assign(ScratchBlocks.Msg, BlocklyEn);
     ScratchBlocks.ScratchMsgs.setLocale('en');
@@ -23,5 +25,5 @@ export function initScratchLocale(locale: ScratchBlocksLocale): void {
 }
 
 export function getScratchBlocksLocale(): ScratchBlocksLocale {
-  return ScratchBlocks.ScratchMsgs.getLocale() === 'en' ? 'en' : 'zh-cn';
+  return activeLocale;
 }

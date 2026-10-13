@@ -35,7 +35,7 @@ const BuildGuideScreen = React.lazy(() =>
 export type RootStackParamList = {
   Home: undefined;
   Projects: undefined;
-  Editor: { projectId: string };
+  Editor: { projectId: string; assistant?: boolean };
   BuildGuide: undefined;
   BuildGuidePlayer: { modelId: BuildGuideModelId };
   RemoteControl: undefined;
