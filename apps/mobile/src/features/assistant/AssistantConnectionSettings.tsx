@@ -480,7 +480,7 @@ export function AssistantConnectionSettings({
                 <View style={styles.optionCopy}>
                   <Text style={styles.optionTitle}>严格 JSON Schema</Text>
                   <Text style={styles.optionHint}>
-                    关闭后仅要求 JSON 对象，不会自动修复模型响应。
+                    关闭后只要求返回 JSON 对象，不再约束字段结构。编辑器拒绝代码后仍会再生成，最多两次。
                   </Text>
                 </View>
                 <Switch

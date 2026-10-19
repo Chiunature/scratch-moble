@@ -768,7 +768,7 @@ export function AssistantPanel({
 
         <View style={styles.notice}>
           <Text style={styles.noticeText}>
-            发送时，当前代码、积木摘要、作品标识和最近对话会交给你配置的第三方模型服务。模型响应不会被自动修复。
+            发送时，当前代码、积木摘要、作品标识和最近对话会交给你配置的第三方模型服务。若生成的程序无法变成积木，会把错误发回模型再生成，最多两次。确认前不会应用，也不会连接蓝牙。
           </Text>
         </View>
 
