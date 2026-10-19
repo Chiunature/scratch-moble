@@ -169,7 +169,6 @@ function contextMessage(context: AssistantWorkspaceContext): string {
     projectId: context.projectId,
     workspaceHash: context.workspaceHash,
     generatedCode: context.generatedCode,
-    blocks: context.blocks,
   });
 }
 

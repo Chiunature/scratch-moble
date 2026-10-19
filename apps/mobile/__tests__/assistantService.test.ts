@@ -325,4 +325,62 @@ describe('assistant model client', () => {
     expect(body?.messages[1]?.content).toBe('old request');
     expect(body?.messages[2]?.content).toContain('new request');
   });
+
+  it('sends the current Python without the block inventory', async () => {
+    let content = '';
+    await generateAssistantProposal(
+      {
+        profile: {
+          id: 'developer',
+          baseUrl: 'https://api.example.com',
+          model: 'test-model',
+        },
+        apiKey: 'developer-key',
+        prompt: '改功率',
+        context: {
+          projectId: 'p',
+          workspaceHash: 'h',
+          generatedCode: '_motor.run_power(4, 30)',
+          blocks: [
+            {
+              id: 'block-secret-id',
+              type: 'run_power',
+              role: 'statement',
+              fields: {},
+              inputNames: ['PORTS', 'POWER'],
+            },
+          ],
+        },
+      },
+      {
+        fetch: async (_url, init) => {
+          const body = JSON.parse(String(init?.body)) as {
+            messages: Array<{ content: string }>;
+          };
+          content = body.messages[body.messages.length - 1]?.content ?? '';
+          return new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      schemaVersion: 1,
+                      intent: 'explain',
+                      summary: 'ok',
+                      operations: [],
+                    }),
+                  },
+                },
+              ],
+            }),
+            { status: 200 },
+          );
+        },
+      },
+    );
+
+    expect(content).toContain('_motor.run_power(4, 30)');
+    expect(content).not.toContain('block-secret-id');
+    expect(content).not.toContain('"blocks"');
+  });
 });
