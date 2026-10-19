@@ -19,8 +19,17 @@ export type Expr =
   | { kind: 'call'; callee: string; args: Expr[] }
   | { kind: 'attrCall'; target: string; method: string; args: Expr[] };
 
+export type CustomParamKind = 'n' | 'b' | 's';
+
+export type CustomParam = {
+  pythonName: string;
+  displayName: string;
+  kind: CustomParamKind;
+};
+
 export type Stmt =
   | { kind: 'call'; callee: string; args: Expr[]; line: number }
+  | { kind: 'procCall'; name: string; args: Expr[]; line: number }
   | {
       kind: 'method';
       target: string;
@@ -32,6 +41,15 @@ export type Stmt =
   | { kind: 'listInit'; name: string; line: number }
   | { kind: 'global'; line: number }
   | { kind: 'break'; line: number }
+  | { kind: 'pass'; line: number }
+  | {
+      kind: 'def';
+      name: string;
+      params: CustomParam[];
+      proccode: string;
+      body: Stmt[];
+      line: number;
+    }
   | { kind: 'whileTrue'; body: Stmt[]; line: number }
   | { kind: 'whileNot'; cond: Expr; body: Stmt[]; line: number }
   | { kind: 'forRange'; times: Expr; body: Stmt[]; line: number }

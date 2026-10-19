@@ -15,4 +15,13 @@ it('covers loops, variables, sensors and matrix lights', () => {
   expect(createDevelopmentCode('loop-var').python).toContain('while not');
   expect(createDevelopmentCode('sensor-matrix').python).toContain('_matrix.show');
   expect(createDevelopmentCode('sensor-matrix').python).toContain('_matrix.clear');
+  expect(createDevelopmentCode('custom-block').python).toContain(
+    '# @custom qianjin => 前进 %n %b',
+  );
+  expect(createDevelopmentCode('custom-block').python).toContain(
+    'def qianjin(bushu, kai):',
+  );
+  expect(createDevelopmentCode('custom-block').python).toContain(
+    'qianjin(40, not _touch.state(0))',
+  );
 });

@@ -1,5 +1,7 @@
 import {
   PythonDecompileError,
+  type CustomParam,
+  type CustomParamKind,
   type Expr,
   type ParsedProgram,
   type Stmt,
@@ -9,6 +11,11 @@ type Line = { number: number; indent: number; text: string };
 
 const MAPPING =
   /^#\s*@(var|list)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=>|=)\s*(.+?)\s*$/;
+const CUSTOM_ARG_MAPPING =
+  /^#\s*@(?:sparkai-custom-arg|custom-arg)\s+([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=>|=)\s*(.+?)\s*$/;
+const CUSTOM_MAPPING =
+  /^#\s*@(?:sparkai-custom|custom)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=>|=)\s*(.+?)\s*$/;
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 function fail(line: number, message: string): never {
   throw new PythonDecompileError(line, message);
@@ -256,20 +263,77 @@ function header(line: Line, pattern: RegExp): RegExpExecArray | null {
   return pattern.exec(line.text);
 }
 
+type CustomTemplate = { proccode: string; line: number };
+type CustomMaps = {
+  templates: Map<string, CustomTemplate>;
+  argumentNames: Map<string, Map<string, string>>;
+  procedureNames: Set<string>;
+};
+
+function customMappings(source: string): CustomMaps {
+  const templates = new Map<string, CustomTemplate>();
+  const argumentNames = new Map<string, Map<string, string>>();
+  const procedureNames = new Set<string>();
+  source.split(/\r?\n/).forEach((raw, index) => {
+    const line = index + 1;
+    const text = raw.trim();
+    const defined = /^def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/.exec(text);
+    if (defined) procedureNames.add(defined[1]!);
+    const argument = CUSTOM_ARG_MAPPING.exec(text);
+    if (argument) {
+      const names = argumentNames.get(argument[1]!) ?? new Map<string, string>();
+      if (names.has(argument[2]!)) {
+        fail(line, `参数 ${argument[1]}.${argument[2]} 的显示名重复`);
+      }
+      names.set(argument[2]!, argument[3]!);
+      argumentNames.set(argument[1]!, names);
+      return;
+    }
+    const template = CUSTOM_MAPPING.exec(text);
+    if (!template) return;
+    if (templates.has(template[1]!)) {
+      fail(line, `自制积木 ${template[1]} 的注释重复`);
+    }
+    templates.set(template[1]!, { proccode: template[2]!, line });
+  });
+  return { templates, argumentNames, procedureNames };
+}
+
 export function parsePythonProgram(source: string): ParsedProgram {
   const displayNames = new Map<string, { displayName: string; isList: boolean }>();
-  source.split(/\r?\n/).forEach((raw, index) => {
+  source.split(/\r?\n/).forEach(raw => {
     const match = MAPPING.exec(raw.trim());
     if (!match) return;
-    displayNames.set(match[2], {
-      displayName: match[3],
+    displayNames.set(match[2]!, {
+      displayName: match[3]!,
       isList: match[1] === 'list',
     });
   });
+  const custom = customMappings(source);
   const lines = logicalLines(source);
-  const parsed = parseBlock(lines, 0, 0);
+  const parsed = parseBlock(lines, 0, 0, custom);
   if (parsed.next < lines.length) {
     fail(lines[parsed.next]!.number, '无法解析后续语句');
+  }
+  const defined = new Set(
+    parsed.statements.flatMap(statement =>
+      statement.kind === 'def' ? [statement.name] : [],
+    ),
+  );
+  for (const [name, template] of custom.templates) {
+    if (!defined.has(name)) fail(template.line, `注释里的函数 ${name} 没有定义`);
+  }
+  for (const [name, argumentsByParam] of custom.argumentNames) {
+    if (!defined.has(name)) fail(1, `注释里的函数 ${name} 没有定义`);
+    const statement = parsed.statements.find(
+      (item): item is Extract<Stmt, { kind: 'def' }> =>
+        item.kind === 'def' && item.name === name,
+    );
+    for (const param of argumentsByParam.keys()) {
+      if (!statement?.params.some(item => item.pythonName === param)) {
+        fail(1, `注释里的参数 ${name}.${param} 不存在`);
+      }
+    }
   }
   return { statements: parsed.statements, displayNames };
 }
@@ -278,6 +342,7 @@ function parseBlock(
   lines: Line[],
   start: number,
   indent: number,
+  custom: CustomMaps,
 ): { statements: Stmt[]; next: number } {
   const statements: Stmt[] = [];
   let index = start;
@@ -291,21 +356,96 @@ function parseBlock(
       break;
     }
     index += 1;
-    statements.push(parseStatement(lines, line, index, parsed => {
-      index = parsed;
-    }));
+    statements.push(
+      parseStatement(lines, line, index, custom, parsed => {
+        index = parsed;
+      }),
+    );
   }
   return { statements, next: index };
+}
+
+function parseDefinition(
+  lines: Line[],
+  line: Line,
+  nextIndex: number,
+  custom: CustomMaps,
+  setIndex: (index: number) => void,
+): Stmt {
+  if (line.indent !== 0) fail(line.number, '自制积木只能写在最外层');
+  const headerMatch = /^def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*:$/.exec(
+    line.text,
+  );
+  if (!headerMatch) fail(line.number, '函数定义只能写成 def 名称(参数):');
+  const name = headerMatch[1]!;
+  const pythonNames = headerMatch[2]!
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+  if (pythonNames.some(item => !IDENTIFIER.test(item))) {
+    fail(line.number, '自制积木的参数必须是简单名称');
+  }
+  if (new Set(pythonNames).size !== pythonNames.length) {
+    fail(line.number, '自制积木的参数名重复');
+  }
+  const template = custom.templates.get(name);
+  const kinds = template ? procCodeKinds(template.proccode, line.number) : [];
+  if (template && kinds.length !== pythonNames.length) {
+    fail(
+      line.number,
+      `注释里有 ${kinds.length} 个孔，函数有 ${pythonNames.length} 个参数`,
+    );
+  }
+  const argumentNames = custom.argumentNames.get(name);
+  const params: CustomParam[] = pythonNames.map((pythonName, index) => ({
+    pythonName,
+    displayName: argumentNames?.get(pythonName) ?? pythonName,
+    kind: kinds[index] ?? 'n',
+  }));
+  const body = parseBlock(lines, nextIndex, line.indent + 4, custom);
+  setIndex(body.next);
+  return {
+    kind: 'def',
+    name,
+    params,
+    proccode: template?.proccode ?? defaultProcCode(name, params.length),
+    body: body.statements,
+    line: line.number,
+  };
+}
+
+function procCodeKinds(proccode: string, line: number): CustomParamKind[] {
+  const kinds: CustomParamKind[] = [];
+  const pattern = /%([nbs])/g;
+  let match = pattern.exec(proccode);
+  while (match) {
+    kinds.push(match[1] as CustomParamKind);
+    match = pattern.exec(proccode);
+  }
+  if (kinds.length === 0 && proccode.includes('%')) {
+    fail(line, '自制积木的孔只能是 %n 或 %b');
+  }
+  return kinds;
+}
+
+function defaultProcCode(name: string, count: number): string {
+  if (count === 0) return name;
+  return `${name}${Array.from({ length: count }, () => ' %n').join('')}`;
 }
 
 function parseStatement(
   lines: Line[],
   line: Line,
   nextIndex: number,
+  custom: CustomMaps,
   setIndex: (index: number) => void,
 ): Stmt {
   if (line.text === 'break') return { kind: 'break', line: line.number };
+  if (line.text === 'pass') return { kind: 'pass', line: line.number };
   if (/^global\s+/.test(line.text)) return { kind: 'global', line: line.number };
+  if (line.text.startsWith('def ')) {
+    return parseDefinition(lines, line, nextIndex, custom, setIndex);
+  }
 
   const listInit = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*PikaStdData\.List\(\)$/.exec(
     line.text,
@@ -340,7 +480,7 @@ function parseStatement(
   );
   const ifHeader = /^if (.*):$/.exec(line.text);
   if (whileTrue || whileNot || forRange || ifHeader) {
-    const body = parseBlock(lines, nextIndex, line.indent + 4);
+    const body = parseBlock(lines, nextIndex, line.indent + 4, custom);
     setIndex(body.next);
     if (whileTrue) return { kind: 'whileTrue', body: body.statements, line: line.number };
     if (whileNot) {
@@ -362,7 +502,7 @@ function parseStatement(
     let elseBody: Stmt[] = [];
     const next = lines[body.next];
     if (next && next.indent === line.indent && next.text === 'else:') {
-      const parsedElse = parseBlock(lines, body.next + 1, line.indent + 4);
+      const parsedElse = parseBlock(lines, body.next + 1, line.indent + 4, custom);
       elseBody = parsedElse.statements;
       setIndex(parsedElse.next);
     }
@@ -376,6 +516,14 @@ function parseStatement(
   }
 
   const expr = parseExpr(line.number, line.text);
+  if (expr.kind === 'call' && custom.procedureNames.has(expr.callee)) {
+    return {
+      kind: 'procCall',
+      name: expr.callee,
+      args: expr.args,
+      line: line.number,
+    };
+  }
   if (expr.kind !== 'attrCall') {
     fail(line.number, '只支持模块调用、赋值和控制流');
   }

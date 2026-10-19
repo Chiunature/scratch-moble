@@ -300,7 +300,9 @@ export function buildPythonCandidate(
     return cloneWorkspace(state);
   }
   const fragment = pythonToWorkspace(python, prefix);
-  if (!fragment.chain) throw new Error('没有可应用的积木。');
+  if (!fragment.chain && fragment.procedures.length === 0) {
+    throw new Error('没有可应用的积木。');
+  }
   const state = cloneWorkspace(base);
   state.blocks ??= { languageVersion: 0, blocks: [] };
   const roots = state.blocks.blocks!;
@@ -313,7 +315,14 @@ export function buildPythonCandidate(
     y: 48,
   };
   if (!hats.length) roots.push(hat);
-  hat.next = { block: fragment.chain as EmittedBlock as BlockState };
+  if (fragment.chain) hat.next = { block: fragment.chain as EmittedBlock as BlockState };
+  else delete hat.next;
+  if (fragment.procedures.length > 0) {
+    for (let index = roots.length - 1; index >= 0; index -= 1) {
+      if (roots[index]?.type === 'procedures_definition') roots.splice(index, 1);
+    }
+    roots.push(...(fragment.procedures as unknown as BlockState[]));
+  }
   const existing = Array.isArray(state.variables) ? state.variables : [];
   const seen = new Set(
     existing.map(variable =>

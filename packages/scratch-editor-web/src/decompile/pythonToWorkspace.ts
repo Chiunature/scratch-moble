@@ -7,6 +7,7 @@ import { BLOCK_TYPES } from '../blocks/blockTypes';
 import { displayNameToPythonIdentifier } from '../codegen/pythonIdentifier';
 import {
   PythonDecompileError,
+  type CustomParam,
   type Expr,
   type Stmt,
 } from './ast';
@@ -18,6 +19,9 @@ export type EmittedBlock = {
   fields?: Record<string, unknown>;
   inputs?: Record<string, { block?: EmittedBlock; shadow?: EmittedBlock }>;
   next?: { block: EmittedBlock };
+  extraState?: string;
+  x?: number;
+  y?: number;
 };
 
 export type EmittedVariable = {
@@ -28,8 +32,13 @@ export type EmittedVariable = {
 
 export type PythonWorkspaceFragment = {
   chain?: EmittedBlock;
+  procedures: EmittedBlock[];
   variables: EmittedVariable[];
 };
+
+type BoundParam = CustomParam & { id: string };
+type ProcedureInfo = { proccode: string; params: BoundParam[] };
+type ValueSlot = 'value' | 'boolean';
 
 const notePitch = new Map<string, number>();
 for (let pitch = 0; pitch <= NOTE_PITCH_MAX; pitch += 1) {
@@ -45,6 +54,8 @@ class Emitter {
     string,
     { id: string; isList: boolean; displayName: string }
   >();
+  private readonly procedures = new Map<string, ProcedureInfo>();
+  private parameters = new Map<string, BoundParam>();
 
   constructor(
     private readonly prefix: string,
@@ -56,9 +67,18 @@ class Emitter {
   }
 
   emit(statements: Stmt[]): PythonWorkspaceFragment {
-    const blocks = this.statements(statements);
+    const definitions = statements.filter(
+      (statement): statement is Extract<Stmt, { kind: 'def' }> =>
+        statement.kind === 'def',
+    );
+    this.prepareProcedures(definitions);
+    const procedures = definitions.map((statement, index) =>
+      this.procedureDefinition(statement, index),
+    );
+    const main = statements.filter(statement => statement.kind !== 'def');
     return {
-      chain: link(blocks),
+      chain: link(this.statements(main)),
+      procedures,
       variables: [...this.variables.values()].map(variable => ({
         id: variable.id,
         name: variable.displayName,
@@ -89,6 +109,26 @@ class Emitter {
     return id;
   }
 
+  private parameterValue(
+    param: BoundParam,
+    line: number,
+    slot: ValueSlot,
+  ): EmittedBlock {
+    if (slot === 'boolean' && param.kind !== 'b') {
+      throw new PythonDecompileError(
+        line,
+        `参数 ${param.displayName} 不是是否孔，不能当作条件`,
+      );
+    }
+    if (slot === 'value' && param.kind === 'b') {
+      throw new PythonDecompileError(
+        line,
+        `参数 ${param.displayName} 是是否孔，不能当作数字`,
+      );
+    }
+    return this.argumentReporter(param);
+  }
+
   private statements(statements: Stmt[]): EmittedBlock[] {
     return statements.flatMap(statement => {
       const block = this.statement(statement);
@@ -100,8 +140,13 @@ class Emitter {
     switch (statement.kind) {
       case 'global':
       case 'listInit':
+      case 'pass':
         if (statement.kind === 'listInit') this.ensureVariable(statement.name, true);
         return null;
+      case 'def':
+        throw new PythonDecompileError(statement.line, '自制积木只能写在最外层');
+      case 'procCall':
+        return this.procedureCall(statement);
       case 'break':
         return { id: this.id(), type: BLOCK_TYPES.control.break };
       case 'assign':
@@ -125,12 +170,12 @@ class Emitter {
       case 'whileNot':
         if (this.isWait(statement.body)) {
           return this.cBlock(BLOCK_TYPES.control.wait, {
-            CONDITION: this.value(statement.cond, statement.line),
+            CONDITION: this.value(statement.cond, statement.line, 'boolean'),
           });
         }
         return this.cBlock(
           BLOCK_TYPES.control.whileDo,
-          { CONDITION: this.value(statement.cond, statement.line) },
+          { CONDITION: this.value(statement.cond, statement.line, 'boolean') },
           this.withoutTick(statement.body),
         );
       case 'if':
@@ -138,7 +183,7 @@ class Emitter {
           statement.elseBody.length
             ? BLOCK_TYPES.control.ifElse
             : BLOCK_TYPES.control.if,
-          { CONDITION: this.value(statement.cond, statement.line) },
+          { CONDITION: this.value(statement.cond, statement.line, 'boolean') },
           statement.thenBody,
           statement.elseBody,
         );
@@ -182,7 +227,110 @@ class Emitter {
     return kept.length === 0;
   }
 
+  private prepareProcedures(
+    definitions: Extract<Stmt, { kind: 'def' }>[],
+  ): void {
+    for (const statement of definitions) {
+      if (this.procedures.has(statement.name)) {
+        throw new PythonDecompileError(statement.line, `函数 ${statement.name} 重复定义`);
+      }
+      this.procedures.set(statement.name, {
+        proccode: statement.proccode,
+        params: statement.params.map(param => ({ ...param, id: this.id() })),
+      });
+    }
+  }
+
+  private procedureDefinition(
+    statement: Extract<Stmt, { kind: 'def' }>,
+    index: number,
+  ): EmittedBlock {
+    const info = this.procedures.get(statement.name);
+    if (!info) {
+      throw new PythonDecompileError(statement.line, `函数 ${statement.name} 没有定义`);
+    }
+    this.parameters = new Map(info.params.map(param => [param.pythonName, param]));
+    let body: EmittedBlock | undefined;
+    try {
+      body = link(this.statements(statement.body));
+    } finally {
+      this.parameters = new Map();
+    }
+    const prototype: EmittedBlock = {
+      id: this.id(),
+      type: 'procedures_prototype',
+      extraState: mutationXml({
+        proccode: info.proccode,
+        argumentids: JSON.stringify(info.params.map(param => param.id)),
+        argumentnames: JSON.stringify(info.params.map(param => param.displayName)),
+        argumentdefaults: JSON.stringify(
+          info.params.map(param => (param.kind === 'b' ? 'false' : '')),
+        ),
+        warp: 'false',
+      }),
+    };
+    const definition: EmittedBlock = {
+      id: this.id(),
+      type: 'procedures_definition',
+      x: 360,
+      y: 48 + index * 200,
+      inputs: { custom_block: { block: prototype } },
+    };
+    if (body) definition.next = { block: body };
+    return definition;
+  }
+
+  private procedureCall(
+    statement: Extract<Stmt, { kind: 'procCall' }>,
+  ): EmittedBlock {
+    const info = this.procedures.get(statement.name);
+    if (!info) {
+      throw new PythonDecompileError(
+        statement.line,
+        `自制积木 ${statement.name} 没有定义`,
+      );
+    }
+    if (statement.args.length !== info.params.length) {
+      throw new PythonDecompileError(
+        statement.line,
+        `${statement.name} 需要 ${info.params.length} 个参数`,
+      );
+    }
+    const inputs: NonNullable<EmittedBlock['inputs']> = {};
+    info.params.forEach((param, index) => {
+      const arg = statement.args[index]!;
+      inputs[param.id] =
+        param.kind === 'b'
+          ? { block: this.expression(arg, statement.line, 'boolean') }
+          : this.value(arg, statement.line);
+    });
+    return {
+      id: this.id(),
+      type: 'procedures_call',
+      extraState: mutationXml({
+        proccode: info.proccode,
+        argumentids: JSON.stringify(info.params.map(param => param.id)),
+        warp: 'false',
+      }),
+      inputs,
+    };
+  }
+
+  private argumentReporter(param: BoundParam): EmittedBlock {
+    return {
+      id: this.id(),
+      type:
+        param.kind === 'b'
+          ? 'argument_reporter_boolean'
+          : 'argument_reporter_string_number',
+      fields: { VALUE: param.displayName },
+    };
+  }
+
   private assign(statement: Extract<Stmt, { kind: 'assign' }>): EmittedBlock {
+    if (this.parameters.has(statement.name)) {
+      throw new PythonDecompileError(statement.line, '不能给自制积木的参数赋值');
+    }
     const variableId = this.ensureVariable(statement.name, false);
     return {
       id: this.id(),
@@ -507,15 +655,27 @@ class Emitter {
   private value(
     expr: Expr,
     line: number,
+    slot: ValueSlot = 'value',
   ): { block?: EmittedBlock; shadow?: EmittedBlock } {
     if (expr.kind === 'number') {
+      if (slot === 'boolean') {
+        throw new PythonDecompileError(line, '条件需要是否积木');
+      }
       return { shadow: this.numberShadow(expr.value) };
     }
-    return { block: this.expression(expr, line) };
+    return { block: this.expression(expr, line, slot) };
   }
 
-  private expression(expr: Expr, line: number): EmittedBlock {
-    if (expr.kind === 'number') return this.numberShadow(expr.value);
+  private expression(expr: Expr, line: number, slot: ValueSlot = 'value'): EmittedBlock {
+    if (expr.kind === 'number') {
+      if (slot === 'boolean') {
+        throw new PythonDecompileError(line, '是否孔不能填数字');
+      }
+      return this.numberShadow(expr.value);
+    }
+    if (slot === 'boolean' && expr.kind === 'string') {
+      throw new PythonDecompileError(line, '是否孔不能填文字');
+    }
     if (expr.kind === 'string') {
       return {
         id: this.id(),
@@ -527,6 +687,8 @@ class Emitter {
       throw new PythonDecompileError(line, '布尔字面量不能单独作为积木值');
     }
     if (expr.kind === 'name') {
+      const param = this.parameters.get(expr.value);
+      if (param) return this.parameterValue(param, line, slot);
       const variableId = this.variables.get(expr.value)?.id;
       if (!variableId) {
         throw new PythonDecompileError(line, `未定义的变量 ${expr.value}`);
@@ -547,7 +709,7 @@ class Emitter {
       return {
         id: this.id(),
         type: 'operator_not',
-        inputs: { OPERAND: this.value(expr.inner, line) },
+        inputs: { OPERAND: this.value(expr.inner, line, 'boolean') },
       };
     }
     if (expr.kind === 'unary' && expr.op === '-') {
@@ -565,6 +727,9 @@ class Emitter {
     if (expr.kind === 'call' && expr.callee === 'str') {
       this.exact(expr.args, 1, line, 'str');
       return this.expression(expr.args[0]!, line);
+    }
+    if (expr.kind === 'call' && this.procedures.has(expr.callee)) {
+      throw new PythonDecompileError(line, '自制积木只能单独成一行，不能当作数值');
     }
     throw new PythonDecompileError(line, '不支持的表达式');
   }
@@ -589,13 +754,15 @@ class Emitter {
     if (!mapped) {
       throw new PythonDecompileError(line, `不支持的运算符 ${expr.op}`);
     }
+    const booleanOp = expr.op === 'and' || expr.op === 'or';
+    const operandSlot: ValueSlot = booleanOp ? 'boolean' : 'value';
     const [type, left, right] = mapped;
     return {
       id: this.id(),
       type,
       inputs: {
-        [left]: this.value(expr.left, line),
-        [right]: this.value(expr.right, line),
+        [left]: this.value(expr.left, line, operandSlot),
+        [right]: this.value(expr.right, line, operandSlot),
       },
     };
   }
@@ -894,6 +1061,13 @@ class Emitter {
   }
 }
 
+function mutationXml(attributes: Record<string, string>): string {
+  const parts = Object.entries(attributes).map(
+    ([name, value]) => `${name}="${escapeXml(value)}"`,
+  );
+  return `<mutation ${parts.join(' ')}></mutation>`;
+}
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -914,7 +1088,7 @@ export function pythonToWorkspace(
   prefix: string,
 ): PythonWorkspaceFragment {
   if (isEmptyAssistantPython(source)) {
-    return { variables: [] };
+    return { variables: [], procedures: [] };
   }
   const program = parsePythonProgram(source);
   if (!program.statements.some(statement => statement.kind !== 'global' && statement.kind !== 'listInit')) {

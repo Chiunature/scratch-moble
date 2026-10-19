@@ -17,6 +17,21 @@ import type { StatementChainFn } from './types';
 
 type BlockWithProcCode = ScratchBlock & { getProcCode?: () => string };
 
+function customBlockComments(
+  pythonName: string,
+  procCode: string,
+  displayNames: string[],
+  paramNames: string[],
+): string[] {
+  const comments = [`# @custom ${pythonName} => ${procCode}`];
+  paramNames.forEach((param, index) => {
+    const displayName = displayNames[index]?.trim();
+    if (!param || !displayName) return;
+    comments.push(`# @custom-arg ${pythonName} ${param} => ${displayName}`);
+  });
+  return comments;
+}
+
 function getProcCodeFromBlock(block: ScratchBlock): string {
   return (block as BlockWithProcCode).getProcCode?.() ?? '';
 }
@@ -62,9 +77,16 @@ export function createProcedureStatementGenerators(
               proto as ScratchBlock & { displayNames_?: string[] },
             )
           : procedureParamNamesFromProcCode(procCode));
+      const displayNames =
+        context.procedureArguments?.get(procCode)?.displayNames ?? [];
       const signature =
         params.length > 0 ? `def ${fn}(${params.join(', ')}):` : `def ${fn}():`;
-      return joinLines(line(context, signature), body);
+      const comments = procCode
+        ? customBlockComments(fn, procCode, displayNames, params).map(text =>
+            line(context, text),
+          )
+        : [];
+      return joinLines(...comments, line(context, signature), body);
     },
   };
 }

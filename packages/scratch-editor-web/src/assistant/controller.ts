@@ -31,6 +31,46 @@ type Checkpoint = {
 
 const CANDIDATE_TTL_MS = 10 * 60 * 1000;
 
+function omitDerivedProcedureInputs(state: WorkspaceState): WorkspaceState {
+  const copy = cloneWorkspace(state);
+  const derived = new Set([
+    'argument_reporter_string_number',
+    'argument_reporter_boolean',
+  ]);
+  const walk = (block: {
+    type?: string;
+    inputs?: Record<string, { block?: typeof block; shadow?: typeof block }>;
+    next?: { block?: typeof block };
+  } | undefined) => {
+    if (!block) return;
+    if (block.type === 'procedures_prototype' && block.inputs) {
+      for (const [name, input] of Object.entries(block.inputs)) {
+        const child = input?.block ?? input?.shadow;
+        if (child?.type && derived.has(child.type)) delete block.inputs[name];
+      }
+      if (Object.keys(block.inputs).length === 0) delete block.inputs;
+    }
+    for (const input of Object.values(block.inputs ?? {})) {
+      walk(input?.block);
+      walk(input?.shadow);
+    }
+    walk(block.next?.block);
+  };
+  for (const block of copy.blocks?.blocks ?? []) walk(block);
+  return copy;
+}
+
+function ensureHeadlessProcedureBlocks(): void {
+  const prototype = (
+    ScratchBlocks as unknown as {
+      Block: { prototype: Record<string, (() => void) | undefined> };
+    }
+  ).Block.prototype;
+  for (const name of ['setDragStrategy', 'showContextMenu', 'initSvg', 'render']) {
+    if (typeof prototype[name] !== 'function') prototype[name] = () => {};
+  }
+}
+
 export function createAssistantController(
   workspace: Workspace,
   options: Options,
@@ -122,6 +162,7 @@ export function createAssistantController(
     }
   }
   function validate(state: WorkspaceState) {
+    ensureHeadlessProcedureBlocks();
     // Headless workspace: no editor controller, persistence listener, bridge or BLE.
     const isolated = new ScratchBlocks.Workspace();
     ScratchBlocks.Events.disable();
@@ -132,7 +173,9 @@ export function createAssistantController(
         { recordUndo: false },
       );
       const actual = summarizeWorkspace(
-        cloneWorkspace(ScratchBlocks.serialization.workspaces.save(isolated)),
+        omitDerivedProcedureInputs(
+          cloneWorkspace(ScratchBlocks.serialization.workspaces.save(isolated)),
+        ),
       );
       for (const expected of summarizeWorkspace(state)) {
         const found = actual.find(b => b.id === expected.id);

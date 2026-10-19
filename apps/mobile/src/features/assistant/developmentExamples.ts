@@ -7,7 +7,8 @@ export type DevelopmentExampleId =
   | 'motor'
   | 'all-blocks'
   | 'loop-var'
-  | 'sensor-matrix';
+  | 'sensor-matrix'
+  | 'custom-block';
 
 export const DEVELOPMENT_EXAMPLES: readonly {
   id: DevelopmentExampleId;
@@ -17,6 +18,7 @@ export const DEVELOPMENT_EXAMPLES: readonly {
   { id: 'all-blocks', label: '全部 11 类积木' },
   { id: 'loop-var', label: '循环与变量示例' },
   { id: 'sensor-matrix', label: '传感器与矩阵灯示例' },
+  { id: 'custom-block', label: '数字孔和是否孔' },
 ];
 
 const PYTHON: Record<DevelopmentExampleId, string> = {
@@ -51,6 +53,15 @@ const PYTHON: Record<DevelopmentExampleId, string> = {
     '    _matrix.clear()',
     '_os.resetTimer()',
   ].join('\n'),
+  'custom-block': [
+    '# @custom qianjin => 前进 %n %b',
+    '# @custom-arg qianjin bushu => 步数',
+    '# @custom-arg qianjin kai => 开关',
+    'def qianjin(bushu, kai):',
+    '    if kai:',
+    "        _motor.mov_dir_power('advance', bushu)",
+    'qianjin(40, not _touch.state(0))',
+  ].join('\n'),
 };
 
 const SUMMARY: Record<DevelopmentExampleId, string> = {
@@ -58,6 +69,7 @@ const SUMMARY: Record<DevelopmentExampleId, string> = {
   'all-blocks': '本地固定示例：生成全部 11 类直线积木。',
   'loop-var': '本地固定示例：直到触碰传感器触发前前进，然后停车。',
   'sensor-matrix': '本地固定示例：灰度大于 50 时点亮矩阵，否则熄灭。',
+  'custom-block': '本地固定示例：自制积木「前进」带数字孔步数和是否孔开关。',
 };
 
 export function createDevelopmentCode(
