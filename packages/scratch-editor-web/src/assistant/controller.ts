@@ -4,14 +4,17 @@ import { ASSISTANT_CAPABILITY_CATALOG_VERSION } from '@scratch-mobile/assistant-
 import { renderPythonCode } from '../codegen/generators';
 import type { Workspace } from '../codegen/types';
 import { refreshColoursFromParentInWorkspace } from '../blocks/portDropdownExtensions';
+import { rebuildContinuousFlyout } from '../workspace-custom/dynamicToolbox';
 import {
   buildAssistantCandidate,
+  buildPythonCandidate,
   cloneWorkspace,
   stableWorkspaceJson,
   summarizeWorkspace,
   workspaceFingerprint,
   type WorkspaceState,
 } from './candidate';
+import { isEmptyAssistantPython, normalizeAssistantPython } from '../decompile';
 
 type Options = {
   post: (message: EditorOutMessage) => void;
@@ -83,6 +86,13 @@ export function createAssistantController(
         refreshColoursFromParentInWorkspace(workspace);
       } catch {
         // Cosmetic only: keep a successfully loaded workspace when repainting fails.
+      }
+      // Events are disabled during load, so var_create never reaches the toolbox
+      // listener. Rebuild the flyout or new variables stay hidden until re-entry.
+      try {
+        rebuildContinuousFlyout(workspace, { immediate: true });
+      } catch {
+        // The workspace blocks are already loaded; a stale flyout can be refreshed later.
       }
     }
   }
@@ -225,12 +235,33 @@ export function createAssistantController(
             throw new Error('作品内容已变化，请重新生成，原作品未修改。');
           }
           const id = ScratchBlocks.utils.idGenerator.genUid();
-          const state = buildAssistantCandidate(
-            baseline.state,
-            message.proposal,
-            `ai-${id}`,
-          );
+          const python =
+            message.source?.kind === 'python' ? message.source.python : null;
+          if (python == null && !message.proposal) {
+            throw new Error('候选缺少 Python 或结构化提案。');
+          }
+          if (python && python.length > 16_000) {
+            throw new Error('Python 过长，无法转换成积木。');
+          }
+          const state =
+            python != null
+              ? buildPythonCandidate(baseline.state, python, `ai-${id}`)
+              : buildAssistantCandidate(
+                  baseline.state,
+                  message.proposal,
+                  `ai-${id}`,
+                );
           const result = validate(state);
+          if (
+            python != null &&
+            !isEmptyAssistantPython(python) &&
+            normalizeAssistantPython(python) !==
+              normalizeAssistantPython(result.code)
+          ) {
+            throw new Error(
+              `反编译结果与原 Python 不一致。\n原程序：\n${normalizeAssistantPython(python)}\n生成结果：\n${normalizeAssistantPython(result.code)}`,
+            );
+          }
           candidate = {
             id,
             projectId,

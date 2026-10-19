@@ -1,5 +1,11 @@
 import { z } from 'zod/v4';
+
+import { AssistantContractError } from './contractError';
+
+export * from './contractError';
 export * from './evaluation';
+export * from './pythonEvaluation';
+export * from './pythonResponse';
 
 export const CURRENT_ASSISTANT_PROPOSAL_SCHEMA_VERSION = 1 as const;
 export type AssistantProposalSchemaVersion = 1;
@@ -90,14 +96,6 @@ export type AssistantProposal = Omit<
   explanation?: string;
   clarificationQuestion?: string;
 };
-export type AssistantValidationIssue = { path: string; message: string };
-export class AssistantContractError extends Error {
-  constructor(readonly issues: readonly AssistantValidationIssue[]) {
-    super(issues.map(issue => `${issue.path}: ${issue.message}`).join('; '));
-    this.name = 'AssistantContractError';
-  }
-}
-
 export function parseAssistantProposal(value: unknown): AssistantProposal {
   // Strict structured-output services encode absent patch fields as null.
   const normalized =

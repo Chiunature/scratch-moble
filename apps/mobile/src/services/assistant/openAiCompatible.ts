@@ -1,8 +1,12 @@
 import {
   ASSISTANT_CAPABILITIES,
   ASSISTANT_CAPABILITY_CATALOG_VERSION,
+  ASSISTANT_CODE_RESPONSE_JSON_SCHEMA,
   ASSISTANT_PROPOSAL_JSON_SCHEMA,
+  ASSISTANT_PYTHON_RULES,
+  parseAssistantCodeResponse,
   parseAssistantProposal,
+  type AssistantCodeResponse,
   type AssistantProposal,
   type AssistantWorkspaceContext,
 } from '@scratch-mobile/assistant-contracts';
@@ -11,6 +15,8 @@ import type {
   AssistantFetch,
   AssistantResponse,
   AssistantUsage,
+  GenerateAssistantCodeInput,
+  GenerateAssistantCodeResult,
   GenerateAssistantProposalInput,
   GenerateAssistantProposalResult,
 } from './types';
@@ -22,6 +28,7 @@ const MAX_CONVERSATION_MESSAGES = 12;
 const MAX_CONVERSATION_MESSAGE_LENGTH = 2_000;
 const MAX_RESPONSE_LENGTH = 256_000;
 const MAX_TOKENS = 1_024;
+const CODE_MAX_TOKENS = 4_096;
 
 type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
@@ -458,6 +465,149 @@ export async function generateAssistantProposal(
     return {
       proposal,
       assistantMessage: proposal.explanation ?? proposal.summary,
+      usage: parsed.usage,
+    };
+  } catch (error) {
+    if (error instanceof AssistantRequestError) throw error;
+    if (isAbortError(error)) {
+      throw new AssistantRequestError('模型请求已取消或超时。', 'network');
+    }
+    throw new AssistantRequestError(
+      '无法连接模型服务，请检查网络和接口地址。',
+      'network',
+    );
+  } finally {
+    clearTimeout(timeout);
+    timeoutController.abort();
+    input.signal?.removeEventListener('abort', abortListener);
+  }
+}
+
+function createPythonSystemPrompt(): string {
+  return [
+    ASSISTANT_PYTHON_RULES,
+    '若用户是在修改已有程序，请基于当前 Python 输出完整新程序，不要输出差异。',
+    'JSON Schema：',
+    JSON.stringify(ASSISTANT_CODE_RESPONSE_JSON_SCHEMA),
+  ].join('\n');
+}
+
+function buildPythonMessages(input: GenerateAssistantCodeInput): ChatMessage[] {
+  const conversation = (input.conversation ?? []).map(message => ({
+    role: message.role,
+    content: message.content.slice(0, MAX_CONVERSATION_MESSAGE_LENGTH),
+  }));
+  const repair = input.repair
+    ? [
+        '',
+        '上一次 Python 没有通过本地反编译，请修正后重新输出完整 JSON。',
+        `错误：${input.repair.error.slice(0, 2_000)}`,
+        '失败的 Python：',
+        input.repair.python.slice(0, MAX_CONTEXT_CODE_LENGTH),
+      ].join('\n')
+    : '';
+  return [
+    { role: 'system', content: createPythonSystemPrompt() },
+    ...conversation,
+    {
+      role: 'user',
+      content: [
+        '当前编辑器上下文如下：',
+        contextMessage(input.context),
+        '',
+        '请处理以下用户需求，并输出完整主程序：',
+        input.prompt,
+        repair,
+      ].join('\n'),
+    },
+  ];
+}
+
+export async function generateAssistantCode(
+  input: GenerateAssistantCodeInput,
+  options: {
+    fetch?: AssistantFetch;
+    timeoutMs?: number;
+  } = {},
+): Promise<GenerateAssistantCodeResult> {
+  assertInput(input);
+  if (input.signal?.aborted) {
+    throw new AssistantRequestError('模型请求已取消。', 'network');
+  }
+  const fetchImpl = options.fetch ?? defaultFetch();
+  const timeoutController = new AbortController();
+  const timeout = setTimeout(
+    () => timeoutController.abort(),
+    options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
+  );
+  const abortListener = () => timeoutController.abort();
+  input.signal?.addEventListener('abort', abortListener, { once: true });
+  try {
+    const response = await fetchImpl(
+      chatCompletionsUrl(input.profile.baseUrl),
+      {
+        method: 'POST',
+        redirect: 'error',
+        credentials: 'omit',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${input.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: input.profile.model,
+          temperature: 0.1,
+          max_tokens: CODE_MAX_TOKENS,
+          messages: buildPythonMessages(input),
+          response_format:
+            input.profile.supportsJsonSchema === false
+              ? { type: 'json_object' }
+              : {
+                  type: 'json_schema',
+                  json_schema: {
+                    name: 'scratch_mobile_assistant_python',
+                    strict: true,
+                    schema: ASSISTANT_CODE_RESPONSE_JSON_SCHEMA,
+                  },
+                },
+        }),
+        signal: timeoutController.signal,
+      },
+    );
+    if (response.redirected) {
+      throw new AssistantRequestError('模型服务重定向被拒绝。', 'network');
+    }
+    if (!response.ok) {
+      throw new AssistantRequestError(
+        errorMessage(response.status),
+        'http',
+        response.status,
+      );
+    }
+    const body = await readResponseText(response, timeoutController.signal);
+    if (body.length > MAX_RESPONSE_LENGTH) {
+      throw new AssistantRequestError('模型响应过大，已拒绝处理。', 'response');
+    }
+    let payload: unknown;
+    try {
+      payload = JSON.parse(body);
+    } catch {
+      throw new AssistantRequestError(
+        '模型服务返回的数据不是有效 JSON。',
+        'response',
+      );
+    }
+    const parsed = readAssistantResponse(payload);
+    let code: AssistantCodeResponse;
+    try {
+      code = parseAssistantCodeResponse(parseJsonContent(parsed.content));
+    } catch (error) {
+      if (error instanceof AssistantRequestError) throw error;
+      throw new AssistantRequestError('模型代码未通过安全校验。', 'contract');
+    }
+    return {
+      response: code,
+      assistantMessage: code.message,
       usage: parsed.usage,
     };
   } catch (error) {

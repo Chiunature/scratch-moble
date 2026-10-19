@@ -1,11 +1,13 @@
 import {
-  parseAssistantProposal,
-  type AssistantBlockSummary,
-  type AssistantProposal,
-  type AssistantStatement,
+  parseAssistantCodeResponse,
+  type AssistantCodeResponse,
 } from '@scratch-mobile/assistant-contracts';
 
-export type DevelopmentExampleId = 'motor' | 'all-blocks' | 'update-wait';
+export type DevelopmentExampleId =
+  | 'motor'
+  | 'all-blocks'
+  | 'loop-var'
+  | 'sensor-matrix';
 
 export const DEVELOPMENT_EXAMPLES: readonly {
   id: DevelopmentExampleId;
@@ -13,71 +15,60 @@ export const DEVELOPMENT_EXAMPLES: readonly {
 }[] = [
   { id: 'motor', label: '电机与等待示例' },
   { id: 'all-blocks', label: '全部 11 类积木' },
-  { id: 'update-wait', label: '将首个等待改为 3 秒' },
+  { id: 'loop-var', label: '循环与变量示例' },
+  { id: 'sensor-matrix', label: '传感器与矩阵灯示例' },
 ];
 
-// Available through development-only controls. These proposals use the same
-// candidate validation, native compilation and confirmation as model proposals.
-export function createDevelopmentProposal(
-  id: DevelopmentExampleId,
-  blocks: readonly AssistantBlockSummary[],
-): AssistantProposal {
-  if (id === 'update-wait') {
-    const wait = blocks.find(
-      block => block.statement?.kind === 'control.sleep',
-    );
-    if (!wait) {
-      throw new Error(
-        '当前作品没有可修改的等待积木。请先接受电机与等待示例，再测试参数修改。',
-      );
-    }
-    return parseAssistantProposal({
-      schemaVersion: 1,
-      intent: 'modify',
-      summary: '本地固定示例：将首个等待积木改为 3 秒，其余积木保持原样。',
-      operations: [
-        { kind: 'updateStatement', blockId: wait.id, patch: { seconds: 3 } },
-      ],
-    });
-  }
+const PYTHON: Record<DevelopmentExampleId, string> = {
+  motor: ['_motor.run_power(4, 30)', '_os.sleep_s(1)', '_motor.stop(4)'].join(
+    '\n',
+  ),
+  'all-blocks': [
+    '_motor.run_power(4, 30)',
+    '_motor.run_for_power_seconds(5, -20, 2)',
+    '_motor.stop(6)',
+    '_motor.stop_module(7, 1)',
+    "_motor.mov_dir_power('advance', 40)",
+    "_motor.mov_dir_power_seconds('retreat', 30, 1.5)",
+    '_motor.mov_power(50, 30)',
+    '_motor.mov_for_power_seconds(40, -40, 3)',
+    '_motor.mov_stop()',
+    '_os.sleep_s(1)',
+    "_beep.play_muic('C2', 0.25)",
+  ].join('\n'),
+  'loop-var': [
+    '# @var speed => 速度',
+    'speed = 40',
+    'while not (_touch.state(0)):',
+    '    _motor.mov_dir_power(\'advance\', speed)',
+    '    _os.sleep_s(0.2)',
+    '_motor.mov_stop()',
+  ].join('\n'),
+  'sensor-matrix': [
+    'if _color.cmp_lux(0, \'>\', 50):',
+    '    _matrix.show(0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F)',
+    'else:',
+    '    _matrix.clear()',
+    '_os.resetTimer()',
+  ].join('\n'),
+};
 
-  const statements: AssistantStatement[] =
-    id === 'motor'
-      ? [
-          { kind: 'motor.runPower', port: 4, power: 30 },
-          { kind: 'control.sleep', seconds: 1 },
-          { kind: 'motor.stop', port: 4 },
-        ]
-      : [
-          { kind: 'motor.runPower', port: 4, power: 30 },
-          { kind: 'motor.runForPowerSeconds', port: 5, power: -20, seconds: 2 },
-          { kind: 'motor.stop', port: 6 },
-          { kind: 'motor.stopModule', port: 7, mode: 'brake' },
-          { kind: 'move.directionPower', direction: 'advance', power: 40 },
-          {
-            kind: 'move.directionPowerSeconds',
-            direction: 'retreat',
-            power: 30,
-            seconds: 1.5,
-          },
-          { kind: 'move.differentialPower', leftPower: 50, rightPower: 30 },
-          {
-            kind: 'move.differentialPowerSeconds',
-            leftPower: 40,
-            rightPower: -40,
-            seconds: 3,
-          },
-          { kind: 'move.stop' },
-          { kind: 'control.sleep', seconds: 1 },
-          { kind: 'sound.playMusic', note: 36, duration: 0.25 },
-        ];
-  return parseAssistantProposal({
-    schemaVersion: 1,
-    intent: 'create',
-    summary:
-      id === 'motor'
-        ? '本地固定示例：E 口电机以 30% 功率运行，等待 1 秒后停止。接受后将替换主程序。'
-        : '本地固定示例：生成全部 11 类受支持积木，用于验证转换和编译。接受后将替换主程序。',
-    operations: [{ kind: 'replaceMainScript', statements }],
+const SUMMARY: Record<DevelopmentExampleId, string> = {
+  motor: '本地固定示例：E 口电机以 30% 功率运行，等待 1 秒后停止。',
+  'all-blocks': '本地固定示例：生成全部 11 类直线积木。',
+  'loop-var': '本地固定示例：直到触碰传感器触发前前进，然后停车。',
+  'sensor-matrix': '本地固定示例：灰度大于 50 时点亮矩阵，否则熄灭。',
+};
+
+export function createDevelopmentCode(
+  id: DevelopmentExampleId,
+): AssistantCodeResponse {
+  return parseAssistantCodeResponse({
+    type: 'code',
+    message: SUMMARY[id],
+    python: PYTHON[id],
+    assumptions: [],
+    questions: [],
+    hardware_config: {},
   });
 }

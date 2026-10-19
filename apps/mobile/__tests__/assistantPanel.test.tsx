@@ -12,17 +12,17 @@ jest.mock('react-native-blob-util', () => ({
 }));
 jest.mock('../src/services/assistant', () => ({
   getAssistantConnection: jest.fn(),
-  generateAssistantProposal: jest.fn(),
+  generateAssistantCode: jest.fn(),
 }));
 jest.mock('../src/services/pika', () => ({
   compileGeneratedCode: jest.fn(),
 }));
 
-const { getAssistantConnection, generateAssistantProposal } = jest.requireMock(
+const { getAssistantConnection, generateAssistantCode } = jest.requireMock(
   '../src/services/assistant',
 ) as {
   getAssistantConnection: jest.Mock;
-  generateAssistantProposal: jest.Mock;
+  generateAssistantCode: jest.Mock;
 };
 const { compileGeneratedCode } = jest.requireMock('../src/services/pika') as {
   compileGeneratedCode: jest.Mock;
@@ -99,13 +99,13 @@ const connection = {
 };
 const generated = {
   assistantMessage: 'generated',
-  proposal: {
-    schemaVersion: 1,
-    intent: 'modify',
-    summary: 'summary',
-    operations: [
-      { kind: 'appendToMainScript', statements: [{ kind: 'move.stop' }] },
-    ],
+  response: {
+    type: 'code' as const,
+    message: 'summary',
+    python: '_motor.mov_stop()',
+    assumptions: [],
+    questions: [],
+    hardware_config: {},
   },
 };
 
@@ -136,7 +136,7 @@ describe('AssistantPanel regressions', () => {
       .spyOn(AppState, 'addEventListener')
       .mockReturnValue({ remove: jest.fn() });
     getAssistantConnection.mockResolvedValue(connection);
-    generateAssistantProposal.mockResolvedValue(generated);
+    generateAssistantCode.mockResolvedValue(generated);
     compileGeneratedCode.mockResolvedValue({
       ok: true,
       bytecodeSize: 12,
@@ -389,10 +389,7 @@ describe('AssistantPanel regressions', () => {
       expect(prepare).toMatchObject({
         sessionId: 'session-1',
         baseWorkspaceHash: 'hash-1',
-        proposal: {
-          intent: 'create',
-          operations: [{ kind: 'replaceMainScript' }],
-        },
+        source: { kind: 'python', python: expect.stringContaining('_motor') },
       });
       await act(async () => {
         deferred
@@ -400,7 +397,7 @@ describe('AssistantPanel regressions', () => {
           .resolve(readyResponse(prepare.requestId, 'project-1'));
       });
       expect(getAssistantConnection).not.toHaveBeenCalled();
-      expect(generateAssistantProposal).not.toHaveBeenCalled();
+      expect(generateAssistantCode).not.toHaveBeenCalled();
       expect(compileGeneratedCode).toHaveBeenCalledWith(
         'new()',
         '/cache/assistant-project-1-candidate-1.py.o',
@@ -427,7 +424,7 @@ describe('AssistantPanel regressions', () => {
     },
   );
 
-  it('reports a missing wait block instead of making up a target for local modification', async () => {
+  it('prepares a loop example without calling the model', async () => {
     const { calls, deferred, request } = setupRequest();
     const renderer = renderPanel({
       projectId: 'project-1',
@@ -435,7 +432,7 @@ describe('AssistantPanel regressions', () => {
       onClose: jest.fn(),
     });
     await act(async () => {
-      findButton(renderer, '运行将首个等待改为 3 秒')!.props.onPress();
+      findButton(renderer, '运行循环与变量示例')!.props.onPress();
     });
     const snapshot = calls.find(
       m => m.type === 'editor.workspace.snapshot.request',
@@ -445,15 +442,28 @@ describe('AssistantPanel regressions', () => {
         .get(snapshot.requestId)!
         .resolve(snapshotResponse(snapshot.requestId, 'project-1'));
     });
-    expect(
-      findText(
-        renderer,
-        '当前作品没有可修改的等待积木。请先接受电机与等待示例，再测试参数修改。',
-      ),
-    ).toBe(true);
-    expect(calls).toHaveLength(1);
-    expect(compileGeneratedCode).not.toHaveBeenCalled();
-    expect(generateAssistantProposal).not.toHaveBeenCalled();
+    const prepare = calls.find(
+      m => m.type === 'editor.workspace.candidate.prepare',
+    )!;
+    expect(prepare).toMatchObject({
+      source: { kind: 'python', python: expect.stringContaining('while not') },
+    });
+    expect(generateAssistantCode).not.toHaveBeenCalled();
+    await act(async () => {
+      deferred.get(
+        (
+          prepare as Extract<
+            typeof prepare,
+            { requestId: string }
+          >
+        ).requestId,
+      )!.resolve({
+        type: 'editor.workspace.candidate.rejected',
+        requestId: (prepare as { requestId: string }).requestId,
+        projectId: 'project-1',
+        reason: 'stop',
+      });
+    });
     await act(async () => {
       renderer.unmount();
     });

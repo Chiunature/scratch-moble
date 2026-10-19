@@ -7,6 +7,11 @@ import {
 } from '@scratch-mobile/assistant-contracts';
 import { statementToBlock } from './buildWorkspaceSnapshot';
 import { BLOCK_TYPES } from '../blocks/blockTypes';
+import {
+  pythonToWorkspace,
+  isEmptyAssistantPython,
+  type EmittedBlock,
+} from '../decompile';
 
 export type BlockState = {
   id?: string;
@@ -279,5 +284,47 @@ export function buildAssistantCandidate(
       }
     }
   }
+  return cloneWorkspace(state);
+}
+
+/** Replaces the green-flag chain with blocks decompiled from restricted Python. */
+export function buildPythonCandidate(
+  base: unknown,
+  python: string,
+  prefix: string,
+): WorkspaceState {
+  if (isEmptyAssistantPython(python)) {
+    const state = cloneWorkspace(base);
+    state.blocks = { languageVersion: 0, blocks: [] };
+    state.variables = [];
+    return cloneWorkspace(state);
+  }
+  const fragment = pythonToWorkspace(python, prefix);
+  if (!fragment.chain) throw new Error('没有可应用的积木。');
+  const state = cloneWorkspace(base);
+  state.blocks ??= { languageVersion: 0, blocks: [] };
+  const roots = state.blocks.blocks!;
+  const hats = roots.filter(block => block.type === BLOCK_TYPES.event.whenFlagClicked);
+  if (hats.length > 1) fail();
+  const hat: BlockState = hats[0] ?? {
+    id: `${prefix}-hat`,
+    type: BLOCK_TYPES.event.whenFlagClicked,
+    x: 48,
+    y: 48,
+  };
+  if (!hats.length) roots.push(hat);
+  hat.next = { block: fragment.chain as EmittedBlock as BlockState };
+  const existing = Array.isArray(state.variables) ? state.variables : [];
+  const seen = new Set(
+    existing.map(variable =>
+      variable && typeof variable === 'object' && 'name' in variable
+        ? String((variable as { name?: unknown }).name)
+        : '',
+    ),
+  );
+  state.variables = [
+    ...existing,
+    ...fragment.variables.filter(variable => !seen.has(variable.name)),
+  ];
   return cloneWorkspace(state);
 }

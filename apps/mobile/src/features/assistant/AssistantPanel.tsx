@@ -17,15 +17,15 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import type { EditorInMessage, EditorOutMessage } from '@scratch-mobile/shared';
 import type {
   AssistantUsage,
-  GenerateAssistantProposalResult,
+  GenerateAssistantCodeResult,
 } from '../../services/assistant';
 import {
-  createDevelopmentProposal,
+  createDevelopmentCode,
   DEVELOPMENT_EXAMPLES,
   type DevelopmentExampleId,
 } from './developmentExamples';
 import {
-  generateAssistantProposal,
+  generateAssistantCode,
   getAssistantConnection,
 } from '../../services/assistant';
 import { compileGeneratedCode } from '../../services/pika';
@@ -88,17 +88,17 @@ function safeErrorMessage(error: unknown, apiKey = ''): string {
 
 function proposalText(input: {
   assistantMessage: string;
-  proposal: {
-    summary: string;
-    explanation?: string;
-    clarificationQuestion?: string;
+  response: {
+    message: string;
+    assumptions: string[];
+    questions: string[];
   };
 }): string {
   const values = [
-    input.proposal.summary,
-    input.proposal.explanation,
-    input.proposal.clarificationQuestion
-      ? `需要确认：${input.proposal.clarificationQuestion}`
+    input.response.message,
+    input.response.assumptions.join('\n'),
+    input.response.questions.length
+      ? `需要确认：${input.response.questions.join('\n')}`
       : undefined,
     input.assistantMessage,
   ].filter((value): value is string => Boolean(value?.trim()));
@@ -357,10 +357,10 @@ export function AssistantPanel({
         );
         if (!isCurrent(operation)) return;
 
-        let generated: GenerateAssistantProposalResult;
+        let generated: GenerateAssistantCodeResult;
         if (exampleId) {
           generated = {
-            proposal: createDevelopmentProposal(exampleId, snapshot.blocks),
+            response: createDevelopmentCode(exampleId),
             assistantMessage:
               '本地固定数据，不调用模型；仅预览和编译，不运行设备。',
           };
@@ -369,7 +369,7 @@ export function AssistantPanel({
           const controller = new AbortController();
           networkControllerRef.current = controller;
           setPhase('model');
-          generated = await generateAssistantProposal({
+          generated = await generateAssistantCode({
             profile: connection.profile,
             apiKey: connection.apiKey,
             prompt: trimmedPrompt,
@@ -392,33 +392,94 @@ export function AssistantPanel({
           content: proposalText(generated),
         });
 
-        if (generated.proposal.operations.length === 0) {
+        if (generated.response.type !== 'code') {
           busyRef.current = false;
           setPhase('idle');
           return;
         }
 
         setPhase('prepare');
-        const prepareRequestId = createRequestId();
-        const ready = assertCandidateReady(
-          await request({
+        let python = generated.response.python;
+        let ready: Extract<
+          EditorOutMessage,
+          { type: 'editor.workspace.candidate.ready' }
+        > | null = null;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const prepareRequestId = createRequestId();
+          const prepared = await request({
             type: 'editor.workspace.candidate.prepare',
             requestId: prepareRequestId,
             projectId,
-            proposal: generated.proposal,
+            source: { kind: 'python', python },
             sessionId: snapshot.sessionId,
             catalogVersion: snapshot.catalogVersion,
             baseWorkspaceHash: snapshot.workspaceHash,
-          }),
-          prepareRequestId,
-          projectId,
-        );
+          });
+          if (!isCurrent(operation)) {
+            if (prepared.type === 'editor.workspace.candidate.ready') {
+              discardCandidateSilently({
+                projectId,
+                candidateId: prepared.candidateId,
+                sessionId: prepared.sessionId,
+                summary: generated.response.message,
+                originalCode: snapshot.code,
+                code: prepared.code,
+                blockCount: prepared.blockCount,
+                usage: generated.usage,
+                compileOk: false,
+                compileMessage: '',
+              });
+            }
+            return;
+          }
+          if (prepared.type === 'editor.workspace.candidate.rejected') {
+            if (exampleId || attempt === 2) {
+              throw new Error(prepared.reason || '编辑器拒绝了该候选修改。');
+            }
+            if (!connection) throw new Error('模型配置不可用。');
+            const controller = new AbortController();
+            networkControllerRef.current = controller;
+            setPhase('model');
+            generated = await generateAssistantCode({
+              profile: connection.profile,
+              apiKey: connection.apiKey,
+              prompt: trimmedPrompt,
+              conversation: priorConversation,
+              context: {
+                projectId,
+                workspaceHash: snapshot.workspaceHash,
+                generatedCode: snapshot.code,
+                blocks: snapshot.blocks,
+              },
+              repair: { python, error: prepared.reason },
+              signal: controller.signal,
+            });
+            networkControllerRef.current = null;
+            if (!isCurrent(operation)) return;
+            if (generated.response.type !== 'code') {
+              appendMessage({
+                id: createRequestId(),
+                role: 'assistant',
+                content: proposalText(generated),
+              });
+              busyRef.current = false;
+              setPhase('idle');
+              return;
+            }
+            python = generated.response.python;
+            setPhase('prepare');
+            continue;
+          }
+          ready = assertCandidateReady(prepared, prepareRequestId, projectId);
+          break;
+        }
+        if (!ready) throw new Error('编辑器没有返回匹配的候选工作区。');
         if (!isCurrent(operation)) {
           discardCandidateSilently({
             projectId,
             candidateId: ready.candidateId,
             sessionId: ready.sessionId,
-            summary: generated.proposal.summary,
+            summary: generated.response.message,
             originalCode: snapshot.code,
             code: ready.code,
             blockCount: ready.blockCount,
@@ -449,6 +510,15 @@ export function AssistantPanel({
           compileMessage = outcome.ok
             ? `编译通过（${outcome.bytecodeSize} 字节）。这里只验证代码，不会连接或上传到蓝牙设备。`
             : outcome.message || '候选代码编译失败。';
+          if (
+            !compileOk &&
+            (ready.code.trim().length === 0 ||
+              ready.code.trim().startsWith('# 拖拽飞出栏积木后生成 Python 代码'))
+          ) {
+            compileOk = true;
+            compileMessage =
+              '工作区将被清空。确认后才会移除积木，不会连接或上传到蓝牙设备。';
+          }
         } catch (error) {
           compileMessage = `候选代码编译异常：${safeErrorMessage(error)}`;
         } finally {
@@ -463,7 +533,7 @@ export function AssistantPanel({
             projectId,
             candidateId: ready.candidateId,
             sessionId: ready.sessionId,
-            summary: generated.proposal.summary,
+            summary: generated.response.message,
             originalCode: snapshot.code,
             code: ready.code,
             blockCount: ready.blockCount,
@@ -478,7 +548,7 @@ export function AssistantPanel({
           projectId,
           candidateId: ready.candidateId,
           sessionId: ready.sessionId,
-          summary: generated.proposal.summary,
+          summary: generated.response.message,
           originalCode: snapshot.code,
           code: ready.code,
           blockCount: ready.blockCount,

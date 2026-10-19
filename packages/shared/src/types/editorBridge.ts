@@ -6,6 +6,11 @@ import type {
   AssistantBlockSummary,
   AssistantProposal,
 } from '@scratch-mobile/assistant-contracts';
+
+export type AssistantPythonSource = {
+  kind: 'python';
+  python: string;
+};
 import type { HandleShankKey } from '../constants/handleShank';
 import type { EditorAppLocale } from './editorLocale';
 
@@ -140,7 +145,9 @@ export type EditorInMessage =
       sessionId: string;
       catalogVersion: string;
       baseWorkspaceHash: string;
-      proposal: AssistantProposal;
+      proposal?: AssistantProposal;
+      /** 优先于 proposal：自然语言主链路输出的受限 Python。 */
+      source?: AssistantPythonSource;
     }
   | {
       type: 'editor.workspace.candidate.apply';

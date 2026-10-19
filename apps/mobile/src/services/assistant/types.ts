@@ -1,4 +1,5 @@
 import type {
+  AssistantCodeResponse,
   AssistantProposal,
   AssistantWorkspaceContext,
 } from '@scratch-mobile/assistant-contracts';
@@ -33,6 +34,16 @@ export type AssistantUsage = {
 
 export type GenerateAssistantProposalResult = {
   proposal: AssistantProposal;
+  assistantMessage: string;
+  usage?: AssistantUsage;
+};
+
+export type GenerateAssistantCodeInput = GenerateAssistantProposalInput & {
+  repair?: { python: string; error: string };
+};
+
+export type GenerateAssistantCodeResult = {
+  response: AssistantCodeResponse;
   assistantMessage: string;
   usage?: AssistantUsage;
 };

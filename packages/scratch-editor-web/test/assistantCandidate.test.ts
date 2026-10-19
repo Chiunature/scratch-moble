@@ -1,5 +1,6 @@
 import {
   buildAssistantCandidate,
+  buildPythonCandidate,
   readStatement,
 } from '../src/assistant/candidate';
 
@@ -146,5 +147,21 @@ describe('buildAssistantCandidate', () => {
         'candidate',
       ),
     ).toThrow('当前积木结构不支持此修改');
+  });
+
+  it('clears the workspace when python has no statements', () => {
+    const candidate = buildPythonCandidate(
+      {
+        variables: [{ id: 'variable-1', name: '速度' }],
+        blocks: {
+          languageVersion: 0,
+          blocks: [{ id: 'hat', type: 'event_when_flag_clicked' }],
+        },
+      },
+      '# 清空\n',
+      'ai',
+    );
+    expect(candidate.blocks.blocks).toEqual([]);
+    expect(candidate.variables).toEqual([]);
   });
 });
