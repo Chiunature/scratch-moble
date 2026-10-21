@@ -19,7 +19,7 @@ it('covers loops, variables, sensors and matrix lights', () => {
     '# @custom qianjin => 前进 %n %b',
   );
   expect(createDevelopmentCode('custom-block').python).toContain(
-    'def qianjin(bushu, kai):',
+    'def qianjin(bushu, kaiguan):',
   );
   expect(createDevelopmentCode('custom-block').python).toContain(
     'qianjin(40, not _touch.state(0))',

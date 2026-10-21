@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
+import { assessAssistantPythonOmission } from '@scratch-mobile/assistant-contracts';
 import type { EditorInMessage, EditorOutMessage } from '@scratch-mobile/shared';
 import type {
   AssistantUsage,
@@ -56,6 +57,9 @@ type CandidateState = {
   usage?: AssistantUsage;
   compileOk: boolean;
   compileMessage: string;
+  removedStatements: string[];
+  omissionBlocked: boolean;
+  omissionMessage: string | null;
 };
 
 type CheckpointState = {
@@ -428,6 +432,9 @@ export function AssistantPanel({
                 usage: generated.usage,
                 compileOk: false,
                 compileMessage: '',
+                removedStatements: [],
+                omissionBlocked: false,
+                omissionMessage: null,
               });
             }
             return;
@@ -471,6 +478,65 @@ export function AssistantPanel({
             continue;
           }
           ready = assertCandidateReady(prepared, prepareRequestId, projectId);
+          const omission = assessAssistantPythonOmission({
+            prompt: trimmedPrompt,
+            originalPython: snapshot.code,
+            candidatePython: ready.code,
+          });
+          if (omission.blockAccept && !exampleId && attempt < 2) {
+            discardCandidateSilently({
+              projectId,
+              candidateId: ready.candidateId,
+              sessionId: ready.sessionId,
+              summary: generated.response.message,
+              originalCode: snapshot.code,
+              code: ready.code,
+              blockCount: ready.blockCount,
+              usage: generated.usage,
+              compileOk: false,
+              compileMessage: '',
+              removedStatements: omission.removed,
+              omissionBlocked: true,
+              omissionMessage: omission.message,
+            });
+            ready = null;
+            if (!connection) throw new Error('模型配置不可用。');
+            const controller = new AbortController();
+            networkControllerRef.current = controller;
+            setPhase('model');
+            generated = await generateAssistantCode({
+              profile: connection.profile,
+              apiKey: connection.apiKey,
+              prompt: trimmedPrompt,
+              conversation: priorConversation,
+              context: {
+                projectId,
+                workspaceHash: snapshot.workspaceHash,
+                generatedCode: snapshot.code,
+                blocks: snapshot.blocks,
+              },
+              repair: {
+                python,
+                error: omission.message ?? '新程序疑似漏写原有语句。',
+              },
+              signal: controller.signal,
+            });
+            networkControllerRef.current = null;
+            if (!isCurrent(operation)) return;
+            if (generated.response.type !== 'code') {
+              appendMessage({
+                id: createRequestId(),
+                role: 'assistant',
+                content: proposalText(generated),
+              });
+              busyRef.current = false;
+              setPhase('idle');
+              return;
+            }
+            python = generated.response.python;
+            setPhase('prepare');
+            continue;
+          }
           break;
         }
         if (!ready) throw new Error('编辑器没有返回匹配的候选工作区。');
@@ -486,9 +552,18 @@ export function AssistantPanel({
             usage: generated.usage,
             compileOk: false,
             compileMessage: '',
+            removedStatements: [],
+            omissionBlocked: false,
+            omissionMessage: null,
           });
           return;
         }
+
+        const omission = assessAssistantPythonOmission({
+          prompt: trimmedPrompt,
+          originalPython: snapshot.code,
+          candidatePython: ready.code,
+        });
 
         setPhase('compile');
         let compileOk = false;
@@ -540,6 +615,9 @@ export function AssistantPanel({
             usage: generated.usage,
             compileOk,
             compileMessage,
+            removedStatements: omission.removed,
+            omissionBlocked: omission.blockAccept,
+            omissionMessage: omission.message,
           });
           return;
         }
@@ -555,6 +633,9 @@ export function AssistantPanel({
           usage: generated.usage,
           compileOk,
           compileMessage,
+          removedStatements: omission.removed,
+          omissionBlocked: omission.blockAccept,
+          omissionMessage: omission.message,
         });
         busyRef.current = false;
         setPhase('idle');
@@ -590,7 +671,13 @@ export function AssistantPanel({
 
   const handleApply = useCallback(async () => {
     const current = candidateRef.current;
-    if (!current?.compileOk || busyRef.current || phase !== 'idle') return;
+    if (
+      !current?.compileOk ||
+      current.omissionBlocked ||
+      busyRef.current ||
+      phase !== 'idle'
+    )
+      return;
     busyRef.current = true;
     const operation = ++operationRef.current;
     committingRef.current = true;
@@ -841,13 +928,35 @@ export function AssistantPanel({
               </Text>
               <CodePreview label="原代码" code={candidate.originalCode} />
               <CodePreview label="候选代码" code={candidate.code} />
+              {candidate.removedStatements.length > 0 ? (
+                <View style={styles.diffBox}>
+                  <Text style={styles.diffTitle}>
+                    将删除的语句（{candidate.removedStatements.length}）
+                  </Text>
+                  <Text selectable style={styles.diffText}>
+                    {candidate.removedStatements.slice(0, 12).join('\n')}
+                    {candidate.removedStatements.length > 12
+                      ? `\n… 另有 ${candidate.removedStatements.length - 12} 条`
+                      : ''}
+                  </Text>
+                  {candidate.omissionBlocked ? (
+                    <Text style={styles.diffWarning}>
+                      {candidate.omissionMessage ??
+                        '疑似漏写，已禁止接受。请拒绝后重试，或明确说要清空/删除。'}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
               <Text
                 style={[
                   styles.compileText,
-                  !candidate.compileOk && styles.compileError,
+                  (!candidate.compileOk || candidate.omissionBlocked) &&
+                    styles.compileError,
                 ]}
               >
-                {candidate.compileMessage}
+                {candidate.omissionBlocked
+                  ? candidate.omissionMessage ?? '疑似漏写，已禁止接受。'
+                  : candidate.compileMessage}
               </Text>
               <Text style={styles.meta}>
                 接受会清空原撤销历史；可在继续人工编辑前使用检查点恢复。离开作品或重载编辑器后，内存恢复点失效。
@@ -869,10 +978,17 @@ export function AssistantPanel({
                   style={({ pressed }) => [
                     styles.primaryButton,
                     pressed && styles.pressed,
-                    (!candidate.compileOk || busy) && styles.disabled,
+                    (!candidate.compileOk ||
+                      candidate.omissionBlocked ||
+                      busy) &&
+                      styles.disabled,
                   ]}
                   onPress={handleApply}
-                  disabled={!candidate.compileOk || busy}
+                  disabled={
+                    !candidate.compileOk ||
+                    candidate.omissionBlocked ||
+                    busy
+                  }
                   accessibilityRole="button"
                   accessibilityLabel="接受并应用候选修改"
                 >
@@ -1104,6 +1220,30 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   compileError: { color: '#b91c1c' },
+  diffBox: {
+    marginTop: spacing.xs,
+    borderRadius: 10,
+    backgroundColor: '#fef2f2',
+    padding: spacing.sm,
+    gap: 4,
+  },
+  diffTitle: {
+    color: '#991b1b',
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+  },
+  diffText: {
+    color: '#7f1d1d',
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
+  },
+  diffWarning: {
+    color: '#b91c1c',
+    fontSize: fontSize.xs,
+    lineHeight: 18,
+    marginTop: 4,
+  },
   candidateActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

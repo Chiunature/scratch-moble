@@ -434,6 +434,21 @@ class Emitter {
           fields: { MODE: String(this.intArg(args[1], line, 0, 1)) },
           inputs: { PORTS: this.motorPort(args[0], line) },
         };
+      case '_motor.pair':
+        this.exact(args, 3, line, callee);
+        return {
+          id,
+          type: BLOCK_TYPES.move.pair,
+          fields: { DIRECTION: String(this.intArg(args[2], line, 0, 3)) },
+          inputs: { PORTS: this.motorPortPair(args[0]!, args[1]!, line) },
+        };
+      case '_motor.mov_set_stop_module':
+        this.exact(args, 1, line, callee);
+        return {
+          id,
+          type: BLOCK_TYPES.move.moveSetStopModule,
+          fields: { MODE: String(this.intArg(args[0], line, 0, 1)) },
+        };
       case '_motor.mov_dir_power':
         return this.direction(id, BLOCK_TYPES.move.movDirPower, line, args, false);
       case '_motor.mov_dir_power_seconds':
@@ -457,6 +472,23 @@ class Emitter {
       case '_motor.mov_stop':
         this.exact(args, 0, line, callee);
         return { id, type: BLOCK_TYPES.move.movStop };
+      case '_motor.mov_find_line_init':
+        this.exact(args, 0, line, callee);
+        return { id, type: BLOCK_TYPES.move.movFindLineInit };
+      case '_motor.mov_find_line_run':
+        this.exact(args, 6, line, callee);
+        return {
+          id,
+          type: BLOCK_TYPES.move.movFindLineRun,
+          inputs: {
+            LEFT_SENSOR: this.value(args[0]!, line),
+            RIGHT_SENSOR: this.value(args[1]!, line),
+            LEFT_POWER: this.value(args[2]!, line),
+            RIGHT_POWER: this.value(args[3]!, line),
+            KP: this.value(args[4]!, line),
+            KD: this.value(args[5]!, line),
+          },
+        };
       case '_os.sleep_s':
         this.exact(args, 1, line, callee);
         return {
@@ -722,11 +754,20 @@ class Emitter {
         },
       };
     }
+    if (expr.kind === 'index') return this.indexExpression(expr, line);
     if (expr.kind === 'binary') return this.binary(expr, line);
     if (expr.kind === 'attrCall') return this.reporter(expr, line);
     if (expr.kind === 'call' && expr.callee === 'str') {
       this.exact(expr.args, 1, line, 'str');
       return this.expression(expr.args[0]!, line);
+    }
+    if (expr.kind === 'call' && expr.callee === 'len') {
+      this.exact(expr.args, 1, line, 'len');
+      return {
+        id: this.id(),
+        type: 'operator_length',
+        inputs: { STRING: this.value(expr.args[0]!, line) },
+      };
     }
     if (expr.kind === 'call' && this.procedures.has(expr.callee)) {
       throw new PythonDecompileError(line, '自制积木只能单独成一行，不能当作数值');
@@ -734,10 +775,99 @@ class Emitter {
     throw new PythonDecompileError(line, '不支持的表达式');
   }
 
+  private unwrapStr(expr: Expr): Expr | null {
+    if (expr.kind === 'call' && expr.callee === 'str' && expr.args.length === 1) {
+      return expr.args[0]!;
+    }
+    return null;
+  }
+
+  private unwrapInt(expr: Expr): Expr | null {
+    if (expr.kind === 'call' && expr.callee === 'int' && expr.args.length === 1) {
+      return expr.args[0]!;
+    }
+    return null;
+  }
+
+  private indexExpression(
+    expr: Extract<Expr, { kind: 'index' }>,
+    line: number,
+  ): EmittedBlock {
+    const letter = this.letterOfExpression(expr, line);
+    if (letter) return letter;
+    if (expr.target.kind !== 'name') {
+      throw new PythonDecompileError(line, '只支持列表名取某一项');
+    }
+    const variableId = this.ensureVariable(expr.target.value, true);
+    return {
+      id: this.id(),
+      type: 'data_itemoflist',
+      fields: { LIST: { id: variableId } },
+      inputs: { INDEX: this.value(expr.index, line) },
+    };
+  }
+
+  /** 对应手机：str(文字)[int(序号) - 1] → operator_letter_of */
+  private letterOfExpression(
+    expr: Extract<Expr, { kind: 'index' }>,
+    line: number,
+  ): EmittedBlock | null {
+    const text = this.unwrapStr(expr.target);
+    if (!text) return null;
+    const index = expr.index;
+    if (
+      index.kind !== 'binary' ||
+      index.op !== '-' ||
+      index.right.kind !== 'number' ||
+      index.right.value !== 1
+    ) {
+      return null;
+    }
+    const letter = this.unwrapInt(index.left);
+    if (!letter) return null;
+    return {
+      id: this.id(),
+      type: 'operator_letter_of',
+      inputs: {
+        LETTER: this.value(letter, line),
+        STRING: this.value(text, line),
+      },
+    };
+  }
+
   private binary(
     expr: Extract<Expr, { kind: 'binary' }>,
     line: number,
   ): EmittedBlock {
+    if (expr.op === 'in') {
+      const needle = this.unwrapStr(expr.left);
+      const haystack = this.unwrapStr(expr.right);
+      if (!needle || !haystack) {
+        throw new PythonDecompileError(line, '包含判断需要 str(...) in str(...)');
+      }
+      return {
+        id: this.id(),
+        type: 'operator_contains',
+        inputs: {
+          STRING1: this.value(haystack, line),
+          STRING2: this.value(needle, line),
+        },
+      };
+    }
+    if (expr.op === '+') {
+      const left = this.unwrapStr(expr.left);
+      const right = this.unwrapStr(expr.right);
+      if (left && right) {
+        return {
+          id: this.id(),
+          type: 'operator_join',
+          inputs: {
+            STRING1: this.value(left, line),
+            STRING2: this.value(right, line),
+          },
+        };
+      }
+    }
     const types: Record<string, [string, string, string]> = {
       '+': ['operator_add', 'NUM1', 'NUM2'],
       '-': ['operator_subtract', 'NUM1', 'NUM2'],
@@ -771,6 +901,8 @@ class Emitter {
     expr: Extract<Expr, { kind: 'attrCall' }>,
     line: number,
   ): EmittedBlock {
+    const math = this.mathOrRandom(expr, line);
+    if (math) return math;
     const callee = `${expr.target}.${expr.method}`;
     const id = this.id();
     switch (callee) {
@@ -900,10 +1032,109 @@ class Emitter {
         fields: { LIST: { id: variableId } },
       };
     }
+    if (expr.method === 'list_if_data') {
+      this.exact(expr.args, 1, line, 'list_if_data');
+      return {
+        id: this.id(),
+        type: 'data_listcontainsitem',
+        fields: { LIST: { id: variableId } },
+        inputs: { ITEM: this.value(expr.args[0]!, line) },
+      };
+    }
+    if (expr.method === 'dataToindex') {
+      this.exact(expr.args, 1, line, 'dataToindex');
+      return {
+        id: this.id(),
+        type: 'data_itemnumoflist',
+        fields: { LIST: { id: variableId } },
+        inputs: { ITEM: this.value(expr.args[0]!, line) },
+      };
+    }
     throw new PythonDecompileError(
       line,
       `不支持的列表表达式 ${expr.target}.${expr.method}`,
     );
+  }
+
+  private mathOrRandom(
+    expr: Extract<Expr, { kind: 'attrCall' }>,
+    line: number,
+  ): EmittedBlock | null {
+    if (expr.target === '_random' && expr.method === 'randint') {
+      this.exact(expr.args, 2, line, '_random.randint');
+      return {
+        id: this.id(),
+        type: 'operator_random',
+        inputs: {
+          FROM: this.value(expr.args[0]!, line),
+          TO: this.value(expr.args[1]!, line),
+        },
+      };
+    }
+    if (expr.target !== '_math') return null;
+    const arg0 = expr.args[0];
+    if (expr.method === 'round') {
+      this.exact(expr.args, 1, line, '_math.round');
+      return {
+        id: this.id(),
+        type: 'operator_round',
+        inputs: { NUM: this.value(arg0!, line) },
+      };
+    }
+    const simpleOps: Record<string, string> = {
+      abs: 'abs',
+      floor: 'floor',
+      ceil: 'ceiling',
+      sqrt: 'sqrt',
+      log: 'ln',
+      log10: 'log',
+      exp: 'e ^',
+    };
+    if (simpleOps[expr.method]) {
+      this.exact(expr.args, 1, line, `_math.${expr.method}`);
+      return this.mathOp(simpleOps[expr.method]!, arg0!, line);
+    }
+    if (
+      (expr.method === 'sin' ||
+        expr.method === 'cos' ||
+        expr.method === 'tan') &&
+      arg0?.kind === 'attrCall' &&
+      arg0.target === '_math' &&
+      arg0.method === 'radians' &&
+      arg0.args.length === 1
+    ) {
+      this.exact(expr.args, 1, line, `_math.${expr.method}`);
+      return this.mathOp(expr.method, arg0.args[0]!, line);
+    }
+    if (
+      expr.method === 'degrees' &&
+      arg0?.kind === 'attrCall' &&
+      arg0.target === '_math' &&
+      (arg0.method === 'asin' ||
+        arg0.method === 'acos' ||
+        arg0.method === 'atan') &&
+      arg0.args.length === 1
+    ) {
+      this.exact(expr.args, 1, line, '_math.degrees');
+      return this.mathOp(arg0.method, arg0.args[0]!, line);
+    }
+    if (expr.method === 'pow') {
+      this.exact(expr.args, 2, line, '_math.pow');
+      if (arg0?.kind === 'number' && arg0.value === 10) {
+        return this.mathOp('10 ^', expr.args[1]!, line);
+      }
+      throw new PythonDecompileError(line, '只支持 _math.pow(10, n)');
+    }
+    return null;
+  }
+
+  private mathOp(operator: string, num: Expr, line: number): EmittedBlock {
+    return {
+      id: this.id(),
+      type: 'operator_mathop',
+      fields: { OPERATOR: operator },
+      inputs: { NUM: this.value(num, line) },
+    };
   }
 
   private offsetRead(
@@ -1022,6 +1253,22 @@ class Emitter {
     };
   }
 
+  private motorPortPair(
+    left: Expr,
+    right: Expr,
+    line: number,
+  ): { shadow: EmittedBlock } {
+    const a = this.intArg(left, line, 4, 7);
+    const b = this.intArg(right, line, 4, 7);
+    return {
+      shadow: {
+        id: this.id(),
+        type: BLOCK_TYPES.common.motorPortPairDropdown,
+        fields: { PORT: `${a},${b}` },
+      },
+    };
+  }
+
   private numberShadow(value: number): EmittedBlock {
     return {
       id: this.id(),
@@ -1099,15 +1346,25 @@ export function pythonToWorkspace(
 
 const VARIABLE_MAPPING =
   /^#\s*@(?:var|list)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=>|=)\s*(.+?)\s*$/;
+const CUSTOM_ARG_ALIGN =
+  /^#\s*@(?:sparkai-custom-arg|custom-arg)\s+[A-Za-z_][A-Za-z0-9_]*\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=>|=)\s*(.+?)\s*$/;
 
-/** 代码生成会把变量显示名转成拼音，比较前把源码里的标识符对齐到该结果。 */
+/** 代码生成会把显示名转成拼音，比较前把源码里的标识符对齐到该结果。 */
 function alignVariableIdentifiers(source: string): string {
   const names = new Map<string, string>();
   for (const raw of source.split(/\r?\n/)) {
-    const match = VARIABLE_MAPPING.exec(raw.trim());
-    if (!match) continue;
-    const generated = displayNameToPythonIdentifier(match[2]!);
-    if (generated !== match[1]) names.set(match[1]!, generated);
+    const trimmed = raw.trim();
+    const variable = VARIABLE_MAPPING.exec(trimmed);
+    if (variable) {
+      const generated = displayNameToPythonIdentifier(variable[2]!);
+      if (generated !== variable[1]) names.set(variable[1]!, generated);
+      continue;
+    }
+    const customArg = CUSTOM_ARG_ALIGN.exec(trimmed);
+    if (customArg) {
+      const generated = displayNameToPythonIdentifier(customArg[2]!);
+      if (generated !== customArg[1]) names.set(customArg[1]!, generated);
+    }
   }
   if (names.size === 0) return source;
   let result = '';

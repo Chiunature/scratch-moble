@@ -43,6 +43,32 @@ describe('pythonToWorkspace', () => {
     ]);
   });
 
+  it('decompiles motor pair, stop module and line-follow blocks', () => {
+    const fragment = pythonToWorkspace(
+      [
+        '_motor.pair(4, 5, 3)',
+        '_motor.mov_set_stop_module(1)',
+        '_motor.mov_find_line_init()',
+        '_motor.mov_find_line_run(0, 1, 80, 80, 0.1, 0.6)',
+      ].join('\n'),
+      'ai',
+    );
+    const types: string[] = [];
+    let block = fragment.chain;
+    while (block) {
+      types.push(block.type);
+      block = block.next?.block;
+    }
+    expect(types).toEqual([
+      'pair',
+      'mov_set_stop_module',
+      'mov_find_line_init',
+      'mov_find_line_run',
+    ]);
+    expect(fragment.chain?.fields?.DIRECTION).toBe('3');
+    expect(fragment.chain?.inputs?.PORTS?.shadow?.fields?.PORT).toBe('4,5');
+  });
+
   it('decompiles loops, variables, sensors and matrix lights', () => {
     const fragment = pythonToWorkspace(
       [
@@ -104,9 +130,9 @@ describe('pythonToWorkspace', () => {
       [
         '# @custom qianjin => 前进 %n %b',
         '# @custom-arg qianjin bushu => 步数',
-        '# @custom-arg qianjin kai => 开关',
-        'def qianjin(bushu, kai):',
-        '    if kai:',
+        '# @custom-arg qianjin kaiguan => 开关',
+        'def qianjin(bushu, kaiguan):',
+        '    if kaiguan:',
         "        _motor.mov_dir_power('advance', bushu)",
         'qianjin(40, not _touch.state(0))',
       ].join('\n'),
@@ -166,6 +192,74 @@ describe('pythonToWorkspace', () => {
     ).toThrow('注释里有 2 个孔');
   });
 
+  it('folds elif into nested if-else blocks', () => {
+    const fragment = pythonToWorkspace(
+      [
+        'if (_touch.state(0)):',
+        '    _motor.mov_stop()',
+        'elif (_color.cmp_lux(0, ">", 50)):',
+        "    _matrix.show_roll(str('A'))",
+        'else:',
+        '    _motor.mov_dir_power("advance", 30)',
+      ].join('\n'),
+      'ai',
+    );
+    expect(fragment.chain?.type).toBe('control_if_else');
+    const nested = fragment.chain?.inputs?.SUBSTACK2?.block;
+    expect(nested?.type).toBe('control_if_else');
+    expect(nested?.inputs?.SUBSTACK?.block?.type).toBe('show_roll');
+    expect(nested?.inputs?.SUBSTACK2?.block?.type).toBe('mov_dir_power');
+  });
+
+  it('decompiles operators and list reporters used on the phone', () => {
+    const fragment = pythonToWorkspace(
+      [
+        '# @list marks => 分数',
+        '# @var n => 数',
+        'n = _random.randint(1, 10)',
+        'n = _math.round(n)',
+        'n = _math.abs(n)',
+        'marks.append(n)',
+        'n = marks[1]',
+        'n = marks.num()',
+        'n = marks.dataToindex(3)',
+        "n = len(str('ab'))",
+        "n = str('a') + str('b')",
+      ].join('\n'),
+      'ai',
+    );
+    const types: string[] = [];
+    let block = fragment.chain;
+    while (block) {
+      types.push(block.type);
+      block = block.next?.block;
+    }
+    expect(types).toEqual([
+      'data_setvariableto',
+      'data_setvariableto',
+      'data_setvariableto',
+      'data_addtolist',
+      'data_setvariableto',
+      'data_setvariableto',
+      'data_setvariableto',
+      'data_setvariableto',
+      'data_setvariableto',
+    ]);
+    expect(fragment.chain?.inputs?.VALUE?.block?.type).toBe('operator_random');
+    const contains = pythonToWorkspace(
+      "if (str('a') in str('ab')):\n    _motor.mov_stop()\n",
+      'ai',
+    );
+    expect(contains.chain?.inputs?.CONDITION?.block?.type).toBe(
+      'operator_contains',
+    );
+    const letter = pythonToWorkspace(
+      "n = (str('ab')[int(1) - 1])\n",
+      'ai',
+    );
+    expect(letter.chain?.inputs?.VALUE?.block?.type).toBe('operator_letter_of');
+  });
+
   it('treats quote style and Chinese variable display names as the same program', () => {
     expect(normalizeAssistantPython("_motor.mov_dir_power('advance', 40)")).toBe(
       normalizeAssistantPython('_motor.mov_dir_power("advance", 40)'),
@@ -173,6 +267,34 @@ describe('pythonToWorkspace', () => {
     expect(
       normalizeAssistantPython('# @var speed => 速度\nspeed = 40'),
     ).toBe(normalizeAssistantPython('sudu = 40'));
+  });
+
+  it('treats custom-arg python names as the display-name pinyin', () => {
+    expect(
+      normalizeAssistantPython(
+        [
+          '# @custom qianjin => 前进 %n %b',
+          '# @custom-arg qianjin bushu => 步数',
+          '# @custom-arg qianjin kai => 开关',
+          'def qianjin(bushu, kai):',
+          '    if kai:',
+          "        _motor.mov_dir_power('advance', bushu)",
+          'qianjin(40, not _touch.state(0))',
+        ].join('\n'),
+      ),
+    ).toBe(
+      normalizeAssistantPython(
+        [
+          '# @custom qianjin => 前进 %n %b',
+          '# @custom-arg qianjin bushu => 步数',
+          '# @custom-arg qianjin kaiguan => 开关',
+          'def qianjin(bushu, kaiguan):',
+          '    if kaiguan:',
+          '_motor.mov_dir_power("advance", bushu)',
+          'qianjin(40, not (_touch.state(0)))',
+        ].join('\n'),
+      ),
+    );
   });
 
   it('normalizes editor-inserted globals and loop ticks', () => {

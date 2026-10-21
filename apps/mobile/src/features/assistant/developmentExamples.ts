@@ -56,9 +56,9 @@ const PYTHON: Record<DevelopmentExampleId, string> = {
   'custom-block': [
     '# @custom qianjin => 前进 %n %b',
     '# @custom-arg qianjin bushu => 步数',
-    '# @custom-arg qianjin kai => 开关',
-    'def qianjin(bushu, kai):',
-    '    if kai:',
+    '# @custom-arg qianjin kaiguan => 开关',
+    'def qianjin(bushu, kaiguan):',
+    '    if kaiguan:',
     "        _motor.mov_dir_power('advance', bushu)",
     'qianjin(40, not _touch.state(0))',
   ].join('\n'),

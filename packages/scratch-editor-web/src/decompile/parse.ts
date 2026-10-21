@@ -80,6 +80,9 @@ class ExprParser {
 
   private parseComparison(): Expr {
     let left = this.parseSum();
+    if (this.consumeWord('in')) {
+      return { kind: 'binary', op: 'in', left, right: this.parseSum() };
+    }
     const op = this.consumeOp(['==', '!=', '<=', '>=', '<', '>']);
     if (!op) return left;
     return { kind: 'binary', op, left, right: this.parseSum() };
@@ -111,7 +114,21 @@ class ExprParser {
       if (inner.kind === 'number') return { kind: 'number', value: -inner.value };
       return { kind: 'unary', op: '-', inner };
     }
-    return this.parsePrimary();
+    return this.parsePostfix(this.parsePrimary());
+  }
+
+  private parsePostfix(expr: Expr): Expr {
+    this.skip();
+    while (this.text[this.index] === '[') {
+      this.index += 1;
+      const index = this.parseOr();
+      this.skip();
+      if (this.text[this.index] !== ']') fail(this.line, '缺少右中括号');
+      this.index += 1;
+      expr = { kind: 'index', target: expr, index };
+      this.skip();
+    }
+    return expr;
   }
 
   private parsePrimary(): Expr {
@@ -261,6 +278,42 @@ function parseExpr(line: number, text: string): Expr {
 
 function header(line: Line, pattern: RegExp): RegExpExecArray | null {
   return pattern.exec(line.text);
+}
+
+/** 把 elif / else 链收成手机上的嵌套 if-else。 */
+function parseElifChain(
+  lines: Line[],
+  index: number,
+  indent: number,
+  custom: CustomMaps,
+): { statement: Extract<Stmt, { kind: 'if' }>; next: number } {
+  const line = lines[index];
+  if (!line) fail(1, 'elif 不完整');
+  const elifHeader = /^elif (.*):$/.exec(line.text);
+  if (!elifHeader) fail(line.number, '期望 elif');
+  const body = parseBlock(lines, index + 1, indent + 4, custom);
+  let elseBody: Stmt[] = [];
+  let nextIndex = body.next;
+  const following = lines[nextIndex];
+  if (following && following.indent === indent && following.text === 'else:') {
+    const parsedElse = parseBlock(lines, nextIndex + 1, indent + 4, custom);
+    elseBody = parsedElse.statements;
+    nextIndex = parsedElse.next;
+  } else if (following && following.indent === indent && /^elif /.test(following.text)) {
+    const nested = parseElifChain(lines, nextIndex, indent, custom);
+    elseBody = [nested.statement];
+    nextIndex = nested.next;
+  }
+  return {
+    statement: {
+      kind: 'if',
+      cond: parseExpr(line.number, elifHeader[1]!),
+      thenBody: body.statements,
+      elseBody,
+      line: line.number,
+    },
+    next: nextIndex,
+  };
 }
 
 type CustomTemplate = { proccode: string; line: number };
@@ -505,6 +558,10 @@ function parseStatement(
       const parsedElse = parseBlock(lines, body.next + 1, line.indent + 4, custom);
       elseBody = parsedElse.statements;
       setIndex(parsedElse.next);
+    } else if (next && next.indent === line.indent && /^elif /.test(next.text)) {
+      const nested = parseElifChain(lines, body.next, line.indent, custom);
+      elseBody = [nested.statement];
+      setIndex(nested.next);
     }
     return {
       kind: 'if',

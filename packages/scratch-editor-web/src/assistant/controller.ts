@@ -329,12 +329,12 @@ export function createAssistantController(
         }
         case 'editor.workspace.candidate.discard':
           // A late cancelled request must never discard a newer preview.
+          // Keep baseline so a repair retry can prepare against the same snapshot.
           if (
             candidate?.id === message.candidateId &&
             candidate.projectId === projectId
           ) {
             candidate = null;
-            baseline = null;
           }
           break;
         case 'editor.workspace.candidate.apply': {

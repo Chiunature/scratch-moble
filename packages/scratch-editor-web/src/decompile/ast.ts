@@ -16,6 +16,7 @@ export type Expr =
   | { kind: 'list'; items: Expr[] }
   | { kind: 'unary'; op: '-' | 'not'; inner: Expr }
   | { kind: 'binary'; op: string; left: Expr; right: Expr }
+  | { kind: 'index'; target: Expr; index: Expr }
   | { kind: 'call'; callee: string; args: Expr[] }
   | { kind: 'attrCall'; target: string; method: string; args: Expr[] };
 

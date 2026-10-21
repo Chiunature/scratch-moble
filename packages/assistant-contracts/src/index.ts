@@ -5,6 +5,7 @@ import { AssistantContractError } from './contractError';
 export * from './contractError';
 export * from './evaluation';
 export * from './pythonEvaluation';
+export * from './pythonProgramDiff';
 export * from './pythonResponse';
 
 export const CURRENT_ASSISTANT_PROPOSAL_SCHEMA_VERSION = 1 as const;
