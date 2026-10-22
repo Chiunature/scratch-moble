@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveProjectDisplayName } from '@scratch-mobile/i18n';
 
 import { type RootStackParamList } from '../../app/navigation';
-import { AssistantConnectionSettings } from '../../features/assistant/AssistantConnectionSettings';
 import { useProjectStore } from '../../store/useProjectStore';
 import { colors, spacing } from '../../theme';
 import { styles } from './AiChatScreen.styles';
@@ -26,7 +25,6 @@ export function AiChatScreen({ navigation }: Props) {
   const status = useProjectStore(state => state.status);
   const error = useProjectStore(state => state.error);
   const loadProjects = useProjectStore(state => state.loadProjects);
-  const [settingsVisible, setSettingsVisible] = useState(false);
 
   useEffect(() => {
     loadProjects().catch(() => undefined);
@@ -66,22 +64,18 @@ export function AiChatScreen({ navigation }: Props) {
         </Pressable>
         <View style={styles.heading}>
           <Text style={styles.title}>积木助手</Text>
-          <Text style={styles.subtitle}>选择一个作品，在编辑器内审阅助手生成的修改</Text>
+          <Text style={styles.subtitle}>
+            选择一个作品，在编辑器内审阅助手生成的修改
+          </Text>
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
-          onPress={() => setSettingsVisible(true)}
-          accessibilityRole="button"
-          accessibilityLabel="打开模型配置"
-        >
-          <Text style={styles.settingsButtonText}>模型配置</Text>
-        </Pressable>
+        <View style={styles.headerButton} />
       </View>
 
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>先选择作品</Text>
         <Text style={styles.infoText}>
-          助手会在编辑器打开后读取实时工作区，并在发送前提示哪些上下文会交给第三方模型服务。候选代码会先编译验证，不会自动连接蓝牙或保存作品。
+          助手会在编辑器打开后读取实时工作区，并在发送前提示哪些上下文会交给第三方模型服务。候选代码会先编译验证，不会自动连接蓝牙或保存作品。模型接口请到首页左上角
+          AI 图标中配置。
         </Text>
       </View>
 
@@ -109,7 +103,10 @@ export function AiChatScreen({ navigation }: Props) {
               <Text style={styles.errorTitle}>作品载入失败</Text>
               <Text style={styles.errorText}>{error || '请稍后重试。'}</Text>
               <Pressable
-                style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.retryButton,
+                  pressed && styles.pressed,
+                ]}
                 onPress={() => loadProjects().catch(() => undefined)}
               >
                 <Text style={styles.retryText}>重试</Text>
@@ -120,14 +117,19 @@ export function AiChatScreen({ navigation }: Props) {
           {status !== 'error' && projects.length === 0 ? (
             <View style={styles.centerState}>
               <Text style={styles.emptyTitle}>还没有可用作品</Text>
-              <Text style={styles.centerText}>请先返回作品页创建并保存一个作品，再使用积木助手。</Text>
+              <Text style={styles.centerText}>
+                请先返回作品页创建并保存一个作品，再使用积木助手。
+              </Text>
             </View>
           ) : null}
 
           {projects.map(project => (
             <Pressable
               key={project.id}
-              style={({ pressed }) => [styles.projectCard, pressed && styles.projectCardPressed]}
+              style={({ pressed }) => [
+                styles.projectCard,
+                pressed && styles.projectCardPressed,
+              ]}
               onPress={() => handleSelectProject(project.id)}
               accessibilityRole="button"
               accessibilityLabel={`使用积木助手打开${resolveProjectDisplayName(project.name)}`}
@@ -139,18 +141,15 @@ export function AiChatScreen({ navigation }: Props) {
                 <Text style={styles.projectName} numberOfLines={2}>
                   {resolveProjectDisplayName(project.name)}
                 </Text>
-                <Text style={styles.projectMeta}>{project.blockCount ?? 0} 个积木</Text>
+                <Text style={styles.projectMeta}>
+                  {project.blockCount ?? 0} 个积木
+                </Text>
               </View>
               <Text style={styles.projectArrow}>›</Text>
             </Pressable>
           ))}
         </ScrollView>
       )}
-
-      <AssistantConnectionSettings
-        visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
-      />
     </View>
   );
 }

@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
+  BackHandler,
   View,
   Text,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { WebView } from 'react-native-webview';
 import {
   useNavigation,
@@ -29,7 +30,6 @@ import {
   useEditorProjectPersistence,
 } from '../../features/editor';
 import { AssistantPanel } from '../../features/assistant/AssistantPanel';
-import { AssistantConnectionSettings } from '../../features/assistant/AssistantConnectionSettings';
 import { useAssistantBridge } from '../../features/assistant/useAssistantBridge';
 import { GeneratedCodePanel } from './GeneratedCodePanel';
 import { EditorHeader } from './EditorHeader';
@@ -78,12 +78,13 @@ function EditorScreenContent({
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation('editorShell');
+  const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const sidePanelWidth = Math.min(280, Math.round(screenWidth * 0.72));
   const webViewRef = useRef<WebView>(null);
   const assistantBridge = useAssistantBridge(webViewRef, projectId);
   const [assistantOpen, setAssistantOpen] = useState(openAssistant === true);
-  const [assistantSettingsOpen, setAssistantSettingsOpen] = useState(false);
+  const [assistantBusy, setAssistantBusy] = useState(false);
   const [isCodePanelOpen, setIsCodePanelOpen] = useState(false);
   const [isSlotPickerVisible, setIsSlotPickerVisible] = useState(false);
   const [isSensorPanelOpen, setIsSensorPanelOpen] = useState(false);
@@ -131,24 +132,53 @@ function EditorScreenContent({
     setIsCodePanelOpen(open => {
       if (!open) {
         setIsSensorPanelOpen(false);
+        if (!assistantBusy) setAssistantOpen(false);
       }
       return !open;
     });
-  }, []);
+  }, [assistantBusy]);
 
   const toggleSensorPanel = useCallback(() => {
     setIsSensorPanelOpen(open => {
       if (!open) {
         setIsCodePanelOpen(false);
+        if (!assistantBusy) setAssistantOpen(false);
       }
       return !open;
     });
+  }, [assistantBusy]);
+
+  const toggleAssistant = useCallback(() => {
+    if (assistantOpen) {
+      if (!assistantBusy) setAssistantOpen(false);
+      return;
+    }
+    setIsCodePanelOpen(false);
+    setIsSensorPanelOpen(false);
+    setAssistantOpen(true);
+  }, [assistantBusy, assistantOpen]);
+
+  const handleAssistantBusyChange = useCallback((busy: boolean) => {
+    setAssistantBusy(busy);
   }, []);
 
   const { handleNavigateBack } = useEditorLeaveFlush(
     navigation,
     persistence.handleBackPress,
   );
+  const assistantShown = assistantOpen && assistantAvailable;
+
+  useEffect(() => {
+    if (!assistantShown) return;
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (!assistantBusy) setAssistantOpen(false);
+        return true;
+      },
+    );
+    return () => subscription.remove();
+  }, [assistantBusy, assistantShown]);
 
   return (
     <View style={styles.root}>
@@ -168,36 +198,12 @@ function EditorScreenContent({
         onPauseHost={handlePauseHost}
         onDownloadToHost={handleDownloadToHost}
         onOpenSlotPicker={() => setIsSlotPickerVisible(true)}
+        isAssistantOpen={assistantShown}
+        assistantAvailable={assistantAvailable}
+        assistantBusy={assistantBusy}
         onToggleCodePanel={toggleCodePanel}
         onToggleSensorPanel={toggleSensorPanel}
-      />
-      <View style={styles.assistantActions}>
-        <Pressable
-          accessibilityRole="button"
-          disabled={!assistantAvailable}
-          onPress={() => setAssistantOpen(true)}
-        >
-          <Text style={{ color: colors.primary }}>积木助手</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setAssistantSettingsOpen(true)}
-        >
-          <Text style={{ color: colors.primary }}>模型配置</Text>
-        </Pressable>
-      </View>
-      <AssistantPanel
-        projectId={projectId}
-        visible={assistantOpen && assistantAvailable}
-        persistenceError={
-          persistenceStatus === 'saveFailed' ? projectError : null
-        }
-        request={assistantBridge.request}
-        onClose={() => setAssistantOpen(false)}
-      />
-      <AssistantConnectionSettings
-        visible={assistantSettingsOpen}
-        onClose={() => setAssistantSettingsOpen(false)}
+        onToggleAssistant={toggleAssistant}
       />
       <ProgramSlotPickerModal
         visible={isSlotPickerVisible}
@@ -240,6 +246,32 @@ function EditorScreenContent({
             <GeneratedCodePanel code={bridge.generatedCode} />
           </View>
         ) : null}
+        <View
+          pointerEvents={assistantShown ? 'auto' : 'none'}
+          accessibilityElementsHidden={!assistantShown}
+          importantForAccessibility={
+            assistantShown ? 'auto' : 'no-hide-descendants'
+          }
+          style={[
+            styles.assistantDrawer,
+            {
+              paddingBottom: insets.bottom,
+              paddingRight: insets.right,
+            },
+            !assistantShown && styles.assistantDrawerHidden,
+          ]}
+        >
+          <AssistantPanel
+            projectId={projectId}
+            visible={assistantShown}
+            persistenceError={
+              persistenceStatus === 'saveFailed' ? projectError : null
+            }
+            request={assistantBridge.request}
+            onClose={() => setAssistantOpen(false)}
+            onBusyChange={handleAssistantBusyChange}
+          />
+        </View>
       </View>
     </View>
   );

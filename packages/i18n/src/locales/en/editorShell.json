@@ -11,7 +11,9 @@
     "redo": "Redo",
     "programSlot": "Program slot {{slot}}, tap to select",
     "sensorStatus": "Sensor status",
-    "codePreview": "Code preview"
+    "codePreview": "Code preview",
+    "openAssistant": "Open block assistant",
+    "closeAssistant": "Close block assistant"
   },
   "loading": {
     "project": "Loading project…",

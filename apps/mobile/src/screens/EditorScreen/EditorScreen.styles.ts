@@ -7,11 +7,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  assistantActions: {
-    flexDirection: 'row',
-    gap: 16,
-    padding: 8,
-  },
   editorHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -47,6 +42,10 @@ export const styles = StyleSheet.create({
   headerIcon: {
     width: 24,
     height: 24,
+  },
+  robotIcon: {
+    width: 28,
+    height: 28,
   },
   headerContent: {
     flexDirection: 'row',
@@ -134,6 +133,25 @@ export const styles = StyleSheet.create({
     color: colors.textSubtle,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
+  },
+  assistantDrawer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: '50%',
+    zIndex: 30,
+    backgroundColor: colors.background,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.primarySoft,
+    shadowColor: colors.ink,
+    shadowOffset: { width: -8, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  assistantDrawerHidden: {
+    display: 'none',
   },
   sidePanel: {
     position: 'absolute',

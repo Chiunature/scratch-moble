@@ -12,6 +12,7 @@ import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from '@scratch-mobile/i18n';
 import { APP_DISPLAY_NAME } from '@scratch-mobile/shared';
 import BleIcon from '../../../assets/homeScreen/bleIcon.png';
+import AiIcon from '../../../assets/homeScreen/AiIcon.png';
 import settingIcon from '../../../assets/background/setting.png';
 import LogoIcon from '../../../assets/branding/AppLogo.png';
 import homebBG from '../../../assets/background/background.png';
@@ -85,6 +86,20 @@ export function HomeScreen({ navigation }: Props) {
       style={[styles.container, safeAreaPadding]}
     >
       <View style={styles.header}>
+        <Pressable
+          style={styles.bluetoothButton}
+          onPress={() => {
+            navigation.navigate('AiSettings');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="打开模型接口设置"
+        >
+          <Image
+            source={AiIcon}
+            style={styles.bluetoothIcon}
+            resizeMode="contain"
+          />
+        </Pressable>
         <Pressable
           style={styles.bluetoothButton}
           onPress={() => {

@@ -1,0 +1,395 @@
+import { StyleSheet } from 'react-native';
+
+import { colors, fontSize, fontWeight, shadows, spacing } from '../../theme';
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  keyboard: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  backButton: {
+    borderRadius: 28,
+    padding: 12,
+  },
+  backIcon: {
+    width: 28,
+    height: 20,
+    tintColor: colors.primary,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  headerTitle: {
+    color: colors.primary,
+    fontSize: fontSize['2xl'],
+    fontWeight: fontWeight.black,
+  },
+  headerSubtitle: {
+    color: colors.textSubtle,
+    fontSize: fontSize.sm,
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingBottom: spacing['2xl'],
+  },
+  contentColumn: {
+    width: '100%',
+    maxWidth: 720,
+    gap: spacing.md,
+  },
+  loadingArea: {
+    minHeight: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    ...shadows.primaryMd,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  statusBadge: {
+    minWidth: 64,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBadgeOn: {
+    backgroundColor: '#dcfce7',
+  },
+  statusBadgeOff: {
+    backgroundColor: '#e2e8f0',
+  },
+  statusBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.extraBold,
+  },
+  statusBadgeTextOn: {
+    color: '#166534',
+  },
+  statusBadgeTextOff: {
+    color: colors.textMuted,
+  },
+  statusCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  statusTitle: {
+    color: colors.ink,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extraBold,
+  },
+  statusMeta: {
+    color: colors.textSubtle,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
+  cardTitle: {
+    color: colors.ink,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.black,
+    marginBottom: spacing.sm,
+  },
+  cardHint: {
+    color: colors.textSubtle,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  label: {
+    color: colors.ink,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    marginTop: spacing.sm,
+    marginBottom: 6,
+  },
+  input: {
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#f8fafc',
+    color: colors.ink,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSize.sm,
+  },
+  fieldHint: {
+    color: '#b45309',
+    fontSize: fontSize.xs,
+    lineHeight: 18,
+    marginTop: 6,
+  },
+  keyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  keyInput: {
+    flex: 1,
+  },
+  revealButton: {
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revealText: {
+    color: colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#e2e8f0',
+  },
+  optionRowFirst: {
+    borderTopWidth: 0,
+    paddingTop: 0,
+  },
+  optionCopy: {
+    flex: 1,
+  },
+  optionTitle: {
+    color: colors.ink,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  optionHint: {
+    color: colors.textSubtle,
+    fontSize: fontSize.xs,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  privacyNotice: {
+    color: colors.textMuted,
+    backgroundColor: '#eef2ff',
+    borderRadius: 16,
+    padding: spacing.md,
+    fontSize: fontSize.xs,
+    lineHeight: 19,
+  },
+  errorText: {
+    color: '#b91c1c',
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
+  actionsCard: {
+    gap: spacing.sm,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  actionSpacer: {
+    flex: 1,
+  },
+  textAction: {
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  dangerText: {
+    color: '#b91c1c',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  secondaryButton: {
+    minWidth: 112,
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  secondaryText: {
+    color: colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  primaryButton: {
+    minWidth: 112,
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  primaryText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extraBold,
+  },
+  pressed: {
+    opacity: 0.72,
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  addButton: {
+    minHeight: 40,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extraBold,
+  },
+  providerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1.5,
+  },
+  providerCardIdle: {
+    borderColor: '#3b82f6',
+  },
+  providerCardActive: {
+    borderColor: '#e5e7eb',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#6b7280',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extraBold,
+  },
+  providerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  providerTitle: {
+    color: colors.ink,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extraBold,
+  },
+  providerUrl: {
+    color: '#3b82f6',
+    fontSize: fontSize.xs,
+  },
+  providerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  startButton: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#3b82f6',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  startText: {
+    color: colors.surface,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extraBold,
+  },
+  inUseChip: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f9fafb',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  inUseText: {
+    color: '#6b7280',
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editorBackdrop: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  editorWrap: {
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
+    maxHeight: '100%',
+  },
+  editorScroll: {
+    flexGrow: 0,
+  },
+  editorScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  editorCard: {
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    ...shadows.primaryMd,
+  },
+  editorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+});

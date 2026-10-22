@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   AppState,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -43,6 +42,7 @@ export type AssistantPanelProps = {
   onClose: () => void;
   visible?: boolean;
   persistenceError?: string | null;
+  onBusyChange?: (busy: boolean) => void;
 };
 
 type ConversationItem = {
@@ -182,14 +182,14 @@ function CodePreview({ label, code }: { label: string; code: string }) {
     <View style={styles.codeSection}>
       <Text style={styles.codeLabel}>{label}</Text>
       <ScrollView
-        horizontal
         nestedScrollEnabled
         style={styles.codeScroll}
         contentContainerStyle={styles.codeContent}
-        showsHorizontalScrollIndicator
+        showsVerticalScrollIndicator
+        persistentScrollbar
       >
         <Text selectable style={styles.codeText}>
-          {code || '（无生成代码）'}
+          {code.length > 0 ? code : '（无生成代码）'}
         </Text>
       </ScrollView>
     </View>
@@ -202,6 +202,7 @@ export function AssistantPanel({
   onClose,
   visible = true,
   persistenceError,
+  onBusyChange,
 }: AssistantPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ConversationItem[]>([]);
@@ -283,6 +284,10 @@ export function AssistantPanel({
   }, [visible, invalidateWork]);
 
   useEffect(() => {
+    onBusyChange?.(phase !== 'idle');
+  }, [onBusyChange, phase]);
+
+  useEffect(() => {
     const subscription = AppState.addEventListener('change', nextState => {
       if (nextState !== 'active') invalidateWork(true);
     });
@@ -349,7 +354,7 @@ export function AssistantPanel({
         if (!isCurrent(operation)) return;
         if (!exampleId && !connection) {
           throw new Error(
-            '请先打开模型配置，填写 HTTPS 地址、模型名称和 API Key。',
+            '请先返回首页，点左上角 AI 图标填写 HTTPS 地址、模型名称和 API Key。',
           );
         }
         apiKey = connection?.apiKey ?? '';
@@ -875,280 +880,265 @@ export function AssistantPanel({
   const tokenUsage = usageText(candidate?.usage);
 
   return (
-    <Modal
-      visible={visible}
-      onRequestClose={handleClose}
-      animationType="slide"
-      supportedOrientations={['portrait', 'landscape']}
+    <KeyboardAvoidingView
+      style={styles.panel}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <KeyboardAvoidingView
-        style={styles.panel}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerCopy}>
-            <Text style={styles.title}>积木助手</Text>
-            <Text style={styles.subtitle}>
-              本轮对话仅保存在内存，关闭面板仍可继续；离开作品后清除。
-            </Text>
-          </View>
-          <Pressable
-            onPress={handleClose}
-            disabled={busy}
-            style={[styles.closeButton, busy && styles.disabled]}
-            accessibilityRole="button"
-            accessibilityLabel="关闭积木助手"
-          >
-            <Text style={styles.closeText}>×</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>
-            发送时，当前代码、积木摘要、作品标识和最近对话会交给你配置的第三方模型服务。若生成的程序无法变成积木，会把错误发回模型再生成，最多两次。确认前不会应用，也不会连接蓝牙。
+      <View style={styles.header}>
+        <View style={styles.headerCopy}>
+          <Text style={styles.title}>积木助手</Text>
+          <Text style={styles.subtitle}>
+            本轮对话仅保存在内存，关闭面板仍可继续；离开作品后清除。
           </Text>
         </View>
+        <Pressable
+          onPress={handleClose}
+          disabled={busy}
+          style={[styles.closeButton, busy && styles.disabled]}
+          accessibilityRole="button"
+          accessibilityLabel="关闭积木助手"
+        >
+          <Text style={styles.closeText}>×</Text>
+        </Pressable>
+      </View>
 
-        {persistenceError ? (
-          <View style={styles.errorBox} accessibilityRole="alert">
-            <Text style={styles.errorText}>
-              {persistenceError}{' '}
-              当前编辑内容和检查点仍在内存中，请勿离开或重载作品；可先恢复检查点，再重试保存。
+      {persistenceError ? (
+        <View style={styles.errorBox} accessibilityRole="alert">
+          <Text style={styles.errorText}>
+            {persistenceError}{' '}
+            当前编辑内容和检查点仍在内存中，请勿离开或重载作品；可先恢复检查点，再重试保存。
+          </Text>
+        </View>
+      ) : null}
+
+      <ScrollView
+        style={styles.chatScroll}
+        contentContainerStyle={styles.chatContent}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
+        showsVerticalScrollIndicator
+      >
+        {messages.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>
+              描述你想创建、修改或解释的程序
+            </Text>
+            <Text style={styles.emptyText}>
+              助手会先取得编辑器的实时快照，再生成可审阅的候选；只有编译通过后才能接受。
             </Text>
           </View>
         ) : null}
-
-        <ScrollView
-          style={styles.chatScroll}
-          contentContainerStyle={styles.chatContent}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-        >
-          {messages.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>
-                描述你想创建、修改或解释的程序
-              </Text>
-              <Text style={styles.emptyText}>
-                助手会先取得编辑器的实时快照，再生成可审阅的候选；只有编译通过后才能接受。
-              </Text>
-            </View>
-          ) : null}
-          {messages.map(message => (
-            <View
-              key={message.id}
+        {messages.map(message => (
+          <View
+            key={message.id}
+            style={[
+              styles.message,
+              message.role === 'user'
+                ? styles.userMessage
+                : message.role === 'assistant'
+                ? styles.assistantMessage
+                : styles.statusMessage,
+            ]}
+          >
+            <Text style={styles.messageRole}>
+              {message.role === 'user'
+                ? '你'
+                : message.role === 'assistant'
+                ? '助手'
+                : '状态'}
+            </Text>
+            <Text
+              selectable
               style={[
-                styles.message,
-                message.role === 'user'
-                  ? styles.userMessage
-                  : message.role === 'assistant'
-                  ? styles.assistantMessage
-                  : styles.statusMessage,
+                styles.messageText,
+                message.role === 'user' && styles.userMessageText,
               ]}
             >
-              <Text style={styles.messageRole}>
-                {message.role === 'user'
-                  ? '你'
-                  : message.role === 'assistant'
-                  ? '助手'
-                  : '状态'}
-              </Text>
-              <Text
-                selectable
-                style={[
-                  styles.messageText,
-                  message.role === 'user' && styles.userMessageText,
-                ]}
-              >
-                {message.content}
-              </Text>
-            </View>
-          ))}
-
-          {candidate ? (
-            <View style={styles.candidateCard}>
-              <Text style={styles.candidateTitle}>待审阅候选</Text>
-              <Text selectable style={styles.summary}>
-                {candidate.summary}
-              </Text>
-              <Text style={styles.meta}>
-                新程序共 {candidate.blockCount} 个积木
-                {tokenUsage ? ` · ${tokenUsage}` : ''}
-              </Text>
-              <CodePreview label="原代码" code={candidate.originalCode} />
-              <CodePreview label="候选代码" code={candidate.code} />
-              {candidate.removedStatements.length > 0 ? (
-                <View style={styles.diffBox}>
-                  <Text style={styles.diffTitle}>
-                    将删除的语句（{candidate.removedStatements.length}）
-                  </Text>
-                  <Text selectable style={styles.diffText}>
-                    {candidate.removedStatements.slice(0, 12).join('\n')}
-                    {candidate.removedStatements.length > 12
-                      ? `\n… 另有 ${candidate.removedStatements.length - 12} 条`
-                      : ''}
-                  </Text>
-                  {candidate.omissionBlocked ? (
-                    <Text style={styles.diffWarning}>
-                      {candidate.omissionMessage ??
-                        '疑似漏写，已禁止接受。请拒绝后重试，或明确说要清空/删除。'}
-                    </Text>
-                  ) : null}
-                </View>
-              ) : null}
-              <Text
-                style={[
-                  styles.compileText,
-                  (!candidate.compileOk || candidate.omissionBlocked) &&
-                    styles.compileError,
-                ]}
-              >
-                {candidate.omissionBlocked
-                  ? candidate.omissionMessage ?? '疑似漏写，已禁止接受。'
-                  : candidate.compileMessage}
-              </Text>
-              <Text style={styles.meta}>
-                接受会清空原撤销历史；可在继续人工编辑前使用检查点恢复。离开作品或重载编辑器后，内存恢复点失效。
-              </Text>
-              <View style={styles.candidateActions}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.secondaryButton,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={handleDiscard}
-                  disabled={busy}
-                  accessibilityRole="button"
-                  accessibilityLabel="拒绝候选修改"
-                >
-                  <Text style={styles.secondaryText}>拒绝</Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.primaryButton,
-                    pressed && styles.pressed,
-                    (!candidate.compileOk ||
-                      candidate.omissionBlocked ||
-                      busy) &&
-                      styles.disabled,
-                  ]}
-                  onPress={handleApply}
-                  disabled={
-                    !candidate.compileOk ||
-                    candidate.omissionBlocked ||
-                    busy
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="接受并应用候选修改"
-                >
-                  <Text style={styles.primaryText}>接受并应用</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : null}
-
-          {errorText ? (
-            <View style={styles.errorBox}>
-              <Text selectable style={styles.errorText}>
-                {errorText}
-              </Text>
-            </View>
-          ) : null}
-          {__DEV__ ? (
-            <View style={styles.developmentTools}>
-              <Text style={styles.developmentTitle}>开发测试（不调用模型）</Text>
-              <View style={styles.developmentActions}>
-                {DEVELOPMENT_EXAMPLES.map(example => (
-                  <Pressable
-                    key={example.id}
-                    onPress={() => handleGenerate(example.id)}
-                    disabled={busy || Boolean(candidate)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`运行${example.label}`}
-                    style={[
-                      styles.secondaryButton,
-                      (busy || Boolean(candidate)) && styles.disabled,
-                    ]}
-                  >
-                    <Text style={styles.secondaryText}>{example.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ) : null}
-        </ScrollView>
-
-        {busy ? (
-          <View style={styles.progressRow}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={styles.progressText}>
-              {phaseLabel[phase as Exclude<Phase, 'idle'>]}
+              {message.content}
             </Text>
-            {phase === 'snapshot' ||
-            phase === 'model' ||
-            phase === 'prepare' ||
-            phase === 'compile' ? (
-              <Pressable
-                onPress={handleCancel}
-                accessibilityLabel="取消"
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelText}>取消</Text>
-              </Pressable>
+          </View>
+        ))}
+
+        {candidate ? (
+          <View style={styles.candidateCard}>
+            <Text style={styles.candidateTitle}>待审阅候选</Text>
+            <Text selectable style={styles.summary}>
+              {candidate.summary}
+            </Text>
+            <Text style={styles.meta}>
+              新程序共 {candidate.blockCount} 个积木
+              {tokenUsage ? ` · ${tokenUsage}` : ''}
+            </Text>
+            <CodePreview label="原代码" code={candidate.originalCode} />
+            <CodePreview label="候选代码" code={candidate.code} />
+            {candidate.removedStatements.length > 0 ? (
+              <View style={styles.diffBox}>
+                <Text style={styles.diffTitle}>
+                  将删除的语句（{candidate.removedStatements.length}）
+                </Text>
+                <Text selectable style={styles.diffText}>
+                  {candidate.removedStatements.slice(0, 12).join('\n')}
+                  {candidate.removedStatements.length > 12
+                    ? `\n… 另有 ${candidate.removedStatements.length - 12} 条`
+                    : ''}
+                </Text>
+                {candidate.omissionBlocked ? (
+                  <Text style={styles.diffWarning}>
+                    {candidate.omissionMessage ??
+                      '疑似漏写，已禁止接受。请拒绝后重试，或明确说要清空/删除。'}
+                  </Text>
+                ) : null}
+              </View>
             ) : null}
+            <Text
+              style={[
+                styles.compileText,
+                (!candidate.compileOk || candidate.omissionBlocked) &&
+                  styles.compileError,
+              ]}
+            >
+              {candidate.omissionBlocked
+                ? candidate.omissionMessage ?? '疑似漏写，已禁止接受。'
+                : candidate.compileMessage}
+            </Text>
+            <Text style={styles.meta}>
+              接受会清空原撤销历史；可在继续人工编辑前使用检查点恢复。离开作品或重载编辑器后，内存恢复点失效。
+            </Text>
+            <View style={styles.candidateActions}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleDiscard}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel="拒绝候选修改"
+              >
+                <Text style={styles.secondaryText}>拒绝</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && styles.pressed,
+                  (!candidate.compileOk || candidate.omissionBlocked || busy) &&
+                    styles.disabled,
+                ]}
+                onPress={handleApply}
+                disabled={
+                  !candidate.compileOk || candidate.omissionBlocked || busy
+                }
+                accessibilityRole="button"
+                accessibilityLabel="接受并应用候选修改"
+              >
+                <Text style={styles.primaryText}>接受并应用</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
 
-        {checkpoint ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.restoreButton,
-              pressed && styles.pressed,
-            ]}
-            onPress={handleRestore}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel="恢复应用前检查点"
-          >
-            <Text style={styles.restoreText}>恢复应用前检查点</Text>
-          </Pressable>
+        {errorText ? (
+          <View style={styles.errorBox}>
+            <Text selectable style={styles.errorText}>
+              {errorText}
+            </Text>
+          </View>
         ) : null}
+        {__DEV__ ? (
+          <View style={styles.developmentTools}>
+            <Text style={styles.developmentTitle}>开发测试（不调用模型）</Text>
+            <View style={styles.developmentActions}>
+              {DEVELOPMENT_EXAMPLES.map(example => (
+                <Pressable
+                  key={example.id}
+                  onPress={() => handleGenerate(example.id)}
+                  disabled={busy || Boolean(candidate)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`运行${example.label}`}
+                  style={[
+                    styles.secondaryButton,
+                    (busy || Boolean(candidate)) && styles.disabled,
+                  ]}
+                >
+                  <Text style={styles.secondaryText}>{example.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </ScrollView>
 
-        <View style={styles.composer}>
-          <TextInput
-            value={prompt}
-            onChangeText={setPrompt}
-            style={styles.promptInput}
-            placeholder="例如：让底盘前进 2 秒后停止"
-            placeholderTextColor={colors.textFaint}
-            multiline
-            maxLength={4000}
-            editable={!busy && !candidate}
-          />
-          <Pressable
-            style={({ pressed }) => [
-              styles.sendButton,
-              pressed && styles.pressed,
-              (!prompt.trim() || busy || Boolean(candidate)) && styles.disabled,
-            ]}
-            onPress={() => handleGenerate()}
-            disabled={!prompt.trim() || busy || Boolean(candidate)}
-            accessibilityRole="button"
-            accessibilityLabel="发送给积木助手"
-          >
-            <Text style={styles.sendText}>发送</Text>
-          </Pressable>
+      {busy ? (
+        <View style={styles.progressRow}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.progressText}>
+            {phaseLabel[phase as Exclude<Phase, 'idle'>]}
+          </Text>
+          {phase === 'snapshot' ||
+          phase === 'model' ||
+          phase === 'prepare' ||
+          phase === 'compile' ? (
+            <Pressable
+              onPress={handleCancel}
+              accessibilityLabel="取消"
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelText}>取消</Text>
+            </Pressable>
+          ) : null}
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      ) : null}
+
+      {checkpoint ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.restoreButton,
+            pressed && styles.pressed,
+          ]}
+          onPress={handleRestore}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="恢复应用前检查点"
+        >
+          <Text style={styles.restoreText}>恢复应用前检查点</Text>
+        </Pressable>
+      ) : null}
+
+      <Text style={styles.disclosure}>
+        你发送的内容可能会传输给第三方服务商，用于生成和修复积木程序。
+      </Text>
+      <View style={styles.composer}>
+        <TextInput
+          value={prompt}
+          onChangeText={setPrompt}
+          style={styles.promptInput}
+          placeholder="例如：让底盘前进 2 秒后停止"
+          placeholderTextColor={colors.textFaint}
+          multiline
+          maxLength={4000}
+          editable={!busy && !candidate}
+        />
+        <Pressable
+          style={({ pressed }) => [
+            styles.sendButton,
+            pressed && styles.pressed,
+            (!prompt.trim() || busy || Boolean(candidate)) && styles.disabled,
+          ]}
+          onPress={() => handleGenerate()}
+          disabled={!prompt.trim() || busy || Boolean(candidate)}
+          accessibilityRole="button"
+          accessibilityLabel="发送给积木助手"
+        >
+          <Text style={styles.sendText}>发送</Text>
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   panel: {
     flex: 1,
-    minWidth: 280,
     backgroundColor: colors.background,
     padding: spacing.md,
   },
@@ -1180,13 +1170,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: { color: colors.textMuted, fontSize: 30, lineHeight: 32 },
-  notice: {
-    backgroundColor: '#e0e7ff',
-    borderRadius: 12,
-    padding: spacing.sm,
-    marginVertical: spacing.sm,
+  disclosure: {
+    color: colors.textSubtle,
+    fontSize: fontSize.xs,
+    lineHeight: 18,
+    paddingTop: spacing.xs,
   },
-  noticeText: { color: '#3730a3', fontSize: fontSize.xs, lineHeight: 18 },
   chatScroll: { flex: 1 },
   chatContent: { flexGrow: 1, gap: spacing.sm, paddingBottom: spacing.md },
   emptyState: {
@@ -1252,7 +1241,8 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   codeScroll: {
-    maxHeight: 180,
+    minHeight: 72,
+    maxHeight: 240,
     borderRadius: 10,
     backgroundColor: colors.codeBackground,
   },

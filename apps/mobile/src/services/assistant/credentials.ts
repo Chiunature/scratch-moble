@@ -17,6 +17,12 @@ type StoredAssistantProfile = {
   apiKeyStorageKey: string;
 };
 
+type StoredCatalog = {
+  version: 2;
+  activeId: string | null;
+  profiles: StoredAssistantProfile[];
+};
+
 const PROFILE_STORAGE_KEY = 'assistant.connection.profile';
 const API_KEY_PREFIX = 'assistant.connection.api-key.';
 
@@ -71,6 +77,17 @@ function isStoredProfile(value: unknown): value is StoredAssistantProfile {
   );
 }
 
+function isStoredCatalog(value: unknown): value is StoredCatalog {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    record.version === 2 &&
+    (record.activeId === null || typeof record.activeId === 'string') &&
+    Array.isArray(record.profiles) &&
+    record.profiles.every(isStoredProfile)
+  );
+}
+
 export class AssistantCredentialStore {
   constructor(private readonly secureStore: SecureValueStore) {}
 
@@ -78,24 +95,59 @@ export class AssistantCredentialStore {
     profile: AssistantConnectionProfile,
     apiKey: string,
   ): Promise<void> {
+    await this.upsert(profile, apiKey, true);
+  }
+
+  async upsert(
+    profile: AssistantConnectionProfile,
+    apiKey: string,
+    makeActive: boolean,
+  ): Promise<void> {
     const safeProfile = normalizedProfile(profile);
-    if (!apiKey.trim()) {
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) {
       throw new Error('API Key 不能为空。');
     }
 
-    // Remove the old address-bound credential before replacing it. A failed
-    // delete must remain retryable; never orphan a key when changing endpoints.
-    await this.clear();
-    const key = apiKeyStorageKey(safeProfile);
-    await this.secureStore.setItemAsync(key, apiKey.trim());
+    const catalog = (await this.readCatalog()) ?? {
+      version: 2 as const,
+      activeId: null,
+      profiles: [],
+    };
+    const nextKey = apiKeyStorageKey(safeProfile);
+    const previous = catalog.profiles.find(item => item.id === safeProfile.id);
+    if (
+      previous &&
+      previous.apiKeyStorageKey !== nextKey &&
+      this.ownsKey(previous)
+    ) {
+      await this.secureStore.deleteItemAsync(previous.apiKeyStorageKey);
+    }
+    await this.secureStore.setItemAsync(nextKey, trimmedKey);
     const stored: StoredAssistantProfile = {
       ...safeProfile,
-      apiKeyStorageKey: key,
+      apiKeyStorageKey: nextKey,
     };
+    const profiles = catalog.profiles.filter(item => item.id !== safeProfile.id);
+    const index = catalog.profiles.findIndex(item => item.id === safeProfile.id);
+    if (index >= 0) {
+      profiles.splice(index, 0, stored);
+    } else {
+      profiles.push(stored);
+    }
+    const activeStillPresent = profiles.some(item => item.id === catalog.activeId);
+    const activeId = makeActive
+      ? safeProfile.id
+      : activeStillPresent
+        ? catalog.activeId
+        : safeProfile.id;
     try {
-      await kvStore.setItem(PROFILE_STORAGE_KEY, JSON.stringify(stored));
+      await kvStore.setItem(
+        PROFILE_STORAGE_KEY,
+        JSON.stringify({ version: 2, activeId, profiles }),
+      );
     } catch (error) {
-      await this.secureStore.deleteItemAsync(key);
+      await this.secureStore.deleteItemAsync(nextKey);
       throw error;
     }
   }
@@ -104,6 +156,103 @@ export class AssistantCredentialStore {
     profile: AssistantConnectionProfile;
     apiKey: string;
   } | null> {
+    const listed = await this.list();
+    return listed.profiles.find(item => item.profile.id === listed.activeId) ?? null;
+  }
+
+  async list(): Promise<{
+    activeId: string | null;
+    profiles: Array<{ profile: AssistantConnectionProfile; apiKey: string }>;
+  }> {
+    const catalog = await this.readCatalog();
+    if (!catalog) return { activeId: null, profiles: [] };
+    const profiles: Array<{ profile: AssistantConnectionProfile; apiKey: string }> =
+      [];
+    for (const stored of catalog.profiles) {
+      const resolved = await this.resolveStored(stored);
+      if (resolved) profiles.push(resolved);
+    }
+    const activeId = profiles.some(item => item.profile.id === catalog.activeId)
+      ? catalog.activeId
+      : null;
+    return { activeId, profiles };
+  }
+
+  async setActive(id: string | null): Promise<void> {
+    const catalog = await this.readCatalog();
+    if (!catalog || (id && !catalog.profiles.some(item => item.id === id))) {
+      throw new Error('找不到这个模型配置。');
+    }
+    await kvStore.setItem(
+      PROFILE_STORAGE_KEY,
+      JSON.stringify({ ...catalog, activeId: id }),
+    );
+  }
+
+  async remove(id: string): Promise<void> {
+    const catalog = await this.readCatalog();
+    if (!catalog) return;
+    const existing = catalog.profiles.find(item => item.id === id);
+    if (!existing) return;
+    if (this.ownsKey(existing)) {
+      await this.secureStore.deleteItemAsync(existing.apiKeyStorageKey);
+    }
+    const profiles = catalog.profiles.filter(item => item.id !== id);
+    if (profiles.length === 0) {
+      await kvStore.removeItem(PROFILE_STORAGE_KEY);
+      return;
+    }
+    await kvStore.setItem(
+      PROFILE_STORAGE_KEY,
+      JSON.stringify({
+        version: 2,
+        activeId: catalog.activeId === id ? null : catalog.activeId,
+        profiles,
+      }),
+    );
+  }
+
+  async clear(): Promise<void> {
+    const catalog = await this.readCatalogForDeletion();
+    if (catalog) {
+      for (const stored of catalog.profiles) {
+        if (this.ownsKey(stored)) {
+          await this.secureStore.deleteItemAsync(stored.apiKeyStorageKey);
+        }
+      }
+    }
+    // Keep this after SecureStore deletion so a native failure is propagated and
+    // the metadata cannot falsely claim that the credential was cleared.
+    await kvStore.removeItem(PROFILE_STORAGE_KEY);
+  }
+
+  private ownsKey(stored: StoredAssistantProfile): boolean {
+    try {
+      return stored.apiKeyStorageKey === apiKeyStorageKey(normalizedProfile(stored));
+    } catch {
+      return false;
+    }
+  }
+
+  private async resolveStored(
+    stored: StoredAssistantProfile,
+  ): Promise<{ profile: AssistantConnectionProfile; apiKey: string } | null> {
+    if (!this.ownsKey(stored)) return null;
+    let apiKey: string | null;
+    try {
+      apiKey = await this.secureStore.getItemAsync(stored.apiKeyStorageKey);
+    } catch {
+      return null;
+    }
+    if (!apiKey?.trim()) return null;
+    try {
+      return { profile: normalizedProfile(stored), apiKey };
+    } catch {
+      return null;
+    }
+  }
+
+  private async readCatalog(): Promise<StoredCatalog | null> {
     let raw: string | null;
     try {
       raw = await kvStore.getItem(PROFILE_STORAGE_KEY);
@@ -111,7 +260,6 @@ export class AssistantCredentialStore {
       return null;
     }
     if (!raw) return null;
-
     let value: unknown;
     try {
       value = JSON.parse(raw);
@@ -119,60 +267,27 @@ export class AssistantCredentialStore {
       await kvStore.removeItem(PROFILE_STORAGE_KEY);
       return null;
     }
-    if (!isStoredProfile(value)) {
-      await kvStore.removeItem(PROFILE_STORAGE_KEY);
-      return null;
+    if (isStoredCatalog(value)) return value;
+    if (isStoredProfile(value)) {
+      return { version: 2, activeId: value.id, profiles: [value] };
     }
-
-    let profile: AssistantConnectionProfile;
-    try {
-      profile = normalizedProfile(value);
-    } catch {
-      await kvStore.removeItem(PROFILE_STORAGE_KEY);
-      return null;
-    }
-    const expectedKey = apiKeyStorageKey(profile);
-    if (value.apiKeyStorageKey !== expectedKey) {
-      await kvStore.removeItem(PROFILE_STORAGE_KEY);
-      return null;
-    }
-
-    let apiKey: string | null;
-    try {
-      apiKey = await this.secureStore.getItemAsync(value.apiKeyStorageKey);
-    } catch {
-      return null;
-    }
-    if (!apiKey?.trim()) return null;
-
-    return { profile, apiKey };
+    await kvStore.removeItem(PROFILE_STORAGE_KEY);
+    return null;
   }
 
-  async clear(): Promise<void> {
+  private async readCatalogForDeletion(): Promise<StoredCatalog | null> {
     const raw = await kvStore.getItem(PROFILE_STORAGE_KEY);
-    if (raw) {
-      let value: unknown;
-      try {
-        value = JSON.parse(raw);
-      } catch {
-        // The metadata is corrupt; there is no trustworthy key name to delete.
-        value = null;
-      }
+    if (!raw) return null;
+    try {
+      const value: unknown = JSON.parse(raw);
+      if (isStoredCatalog(value)) return value;
       if (isStoredProfile(value)) {
-        let expectedKey: string | undefined;
-        try {
-          expectedKey = apiKeyStorageKey(normalizedProfile(value));
-        } catch {
-          /* Invalid metadata. */
-        }
-        if (value.apiKeyStorageKey === expectedKey) {
-          await this.secureStore.deleteItemAsync(expectedKey);
-        }
+        return { version: 2, activeId: value.id, profiles: [value] };
       }
+      return null;
+    } catch {
+      return null;
     }
-    // Keep this after SecureStore deletion so a native failure is propagated and
-    // the metadata cannot falsely claim that the credential was cleared.
-    await kvStore.removeItem(PROFILE_STORAGE_KEY);
   }
 }
 

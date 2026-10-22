@@ -40,7 +40,7 @@ describe('assistant credentials', () => {
     const raw = mockMetadata.get('assistant.connection.profile');
     expect(raw).toBeDefined();
     expect(raw).not.toContain('secret-key');
-    expect(JSON.parse(raw as string).baseUrl).toBe(
+    expect(JSON.parse(raw as string).profiles[0].baseUrl).toBe(
       'https://api.example.com/v1',
     );
     await expect(store.load()).resolves.toEqual({

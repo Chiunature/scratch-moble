@@ -11,7 +11,9 @@
     "redo": "下一步",
     "programSlot": "当前程序槽 {{slot}}，点击选择",
     "sensorStatus": "传感器状态",
-    "codePreview": "代码示例"
+    "codePreview": "代码示例",
+    "openAssistant": "打开积木助手",
+    "closeAssistant": "关闭积木助手"
   },
   "loading": {
     "project": "加载作品中…",

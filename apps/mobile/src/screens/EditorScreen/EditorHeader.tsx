@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTranslation } from '@scratch-mobile/i18n';
@@ -19,6 +13,7 @@ import CodeViewIcon from '../../../assets/editorScreen/codeView.png';
 import RunIcon from '../../../assets/editorScreen/run.png';
 import PauseIcon from '../../../assets/editorScreen/pause.png';
 import DownloadIcon from '../../../assets/editorScreen/download.png';
+import RobotIcon from '../../../assets/AiSetting/robot.png';
 
 type HostToolbarAction = 'run' | 'download' | 'pause';
 
@@ -31,6 +26,9 @@ type Props = {
   programSlot: number;
   isCodePanelOpen: boolean;
   isSensorPanelOpen: boolean;
+  isAssistantOpen: boolean;
+  assistantAvailable: boolean;
+  assistantBusy: boolean;
   onBack: () => void;
   onRunOnHost: () => void;
   onPauseHost: () => void;
@@ -38,6 +36,7 @@ type Props = {
   onOpenSlotPicker: () => void;
   onToggleCodePanel: () => void;
   onToggleSensorPanel: () => void;
+  onToggleAssistant: () => void;
 };
 
 export function EditorHeader({
@@ -49,6 +48,9 @@ export function EditorHeader({
   programSlot,
   isCodePanelOpen,
   isSensorPanelOpen,
+  isAssistantOpen,
+  assistantAvailable,
+  assistantBusy,
   onBack,
   onRunOnHost,
   onPauseHost,
@@ -56,6 +58,7 @@ export function EditorHeader({
   onOpenSlotPicker,
   onToggleCodePanel,
   onToggleSensorPanel,
+  onToggleAssistant,
 }: Props) {
   const { t } = useTranslation('editorShell');
   const insets = useSafeAreaInsets();
@@ -168,6 +171,32 @@ export function EditorHeader({
           accessibilityState={{ expanded: isCodePanelOpen }}
         >
           <Image source={CodeViewIcon} style={styles.headerIcon} />
+        </Pressable>
+        <Pressable
+          style={[
+            styles.headerPressable,
+            isAssistantOpen && styles.sidePanelActiveButton,
+            (!assistantAvailable || (isAssistantOpen && assistantBusy)) &&
+              styles.hostActionButtonDisabled,
+          ]}
+          disabled={!assistantAvailable || (isAssistantOpen && assistantBusy)}
+          onPress={onToggleAssistant}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isAssistantOpen
+              ? t('toolbar.closeAssistant')
+              : t('toolbar.openAssistant')
+          }
+          accessibilityState={{
+            expanded: isAssistantOpen,
+            disabled: !assistantAvailable || (isAssistantOpen && assistantBusy),
+          }}
+        >
+          <Image
+            source={RobotIcon}
+            style={styles.robotIcon}
+            resizeMode="contain"
+          />
         </Pressable>
       </View>
     </View>

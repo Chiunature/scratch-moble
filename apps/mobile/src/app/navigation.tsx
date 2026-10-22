@@ -8,6 +8,7 @@ import type { BuildGuideModelId } from '../features/buildGuide/data/bundles';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProjectsScreen } from '../screens/ProjectsScreen';
 import { AiChatScreen } from '../screens/AiChatScreen';
+import { AiSettingsScreen } from '../screens/AiSettingsScreen';
 import { RemoteControlScreen } from '../screens/RemoteControlScreen';
 import { RuntimeScreen } from '../screens/RuntimeScreen';
 import { BleDevicesScreen } from '../screens/BleDevicesScreen';
@@ -40,6 +41,7 @@ export type RootStackParamList = {
   BuildGuidePlayer: { modelId: BuildGuideModelId };
   RemoteControl: undefined;
   AiChat: undefined;
+  AiSettings: undefined;
   Runtime: undefined;
   BleDevices: undefined;
   Settings: undefined;
@@ -123,6 +125,11 @@ export function RootNavigator() {
         <Stack.Screen
           name="AiChat"
           component={AiChatScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AiSettings"
+          component={AiSettingsScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

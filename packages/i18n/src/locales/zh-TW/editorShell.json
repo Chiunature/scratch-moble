@@ -11,7 +11,9 @@
     "redo": "下一步",
     "programSlot": "目前程序槽 {{slot}}，點擊選擇",
     "sensorStatus": "感測器狀態",
-    "codePreview": "程式碼示例"
+    "codePreview": "程式碼示例",
+    "openAssistant": "打開積木助手",
+    "closeAssistant": "關閉積木助手"
   },
   "loading": {
     "project": "載入作品中…",

@@ -15,7 +15,9 @@ jest.mock('../src/services/storage/kvStore', () => ({
   },
 }));
 import {
+  activateAssistantConnection,
   clearAssistantConnection,
+  deleteAssistantConnection,
   getAssistantConnection,
   isAssistantSecureStorageAvailable,
   saveAssistantConnection,
@@ -85,11 +87,28 @@ it('does not follow tampered endpoint metadata to retrieve a key', async () => {
   await saveAssistantConnection(profile, 'secret', true);
   const key = 'assistant.connection.profile';
   const metadata = JSON.parse(mockMetadata.get(key)!);
-  mockMetadata.set(
-    key,
-    JSON.stringify({ ...metadata, baseUrl: 'https://attacker.example/v1' }),
-  );
+  metadata.profiles[0] = {
+    ...metadata.profiles[0],
+    baseUrl: 'https://attacker.example/v1',
+  };
+  mockMetadata.set(key, JSON.stringify(metadata));
   expect(await getAssistantConnection()).toBeNull();
+});
+it('keeps the other profile when saving, and start chooses the active one', async () => {
+  mockNative = native;
+  await saveAssistantConnection(profile, 'first-key', true);
+  await saveAssistantConnection(
+    { id: 'other', baseUrl: 'https://other.example/v1', model: 'other-model' },
+    'second-key',
+    true,
+  );
+  expect(mockSecure.size).toBe(2);
+  expect((await getAssistantConnection())?.profile.id).toBe('test');
+  await activateAssistantConnection('other');
+  expect((await getAssistantConnection())?.profile.id).toBe('other');
+  await deleteAssistantConnection('other');
+  expect(await getAssistantConnection()).toBeNull();
+  expect(mockSecure.size).toBe(1);
 });
 it('sanitizes native storage errors instead of exposing credentials', async () => {
   mockNative = {
