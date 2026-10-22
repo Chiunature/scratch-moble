@@ -39,7 +39,12 @@ export type GenerateAssistantProposalResult = {
 };
 
 export type GenerateAssistantCodeInput = GenerateAssistantProposalInput & {
-  repair?: { python: string; error: string };
+  repair?: {
+    python: string;
+    error: string;
+    /** 首次成功解析后锁定的授权；修复时必须原样带回。 */
+    lockedProgramEditJson?: string;
+  };
 };
 
 export type GenerateAssistantCodeResult = {

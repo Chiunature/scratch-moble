@@ -149,23 +149,24 @@ describe('buildAssistantCandidate', () => {
     ).toThrow('当前积木结构不支持此修改');
   });
 
-  it('clears the workspace when python has no statements', () => {
-    const candidate = buildPythonCandidate(
-      {
-        variables: [{ id: 'variable-1', name: '速度' }],
-        blocks: {
-          languageVersion: 0,
-          blocks: [{ id: 'hat', type: 'event_when_flag_clicked' }],
-        },
+  it('clears the whole workspace only with workspace scope', () => {
+    const base = {
+      variables: [{ id: 'variable-1', name: '速度' }],
+      blocks: {
+        languageVersion: 0,
+        blocks: [{ id: 'hat', type: 'event_when_flag_clicked' }],
       },
-      '# 清空\n',
-      'ai',
-    );
-    expect(candidate.blocks.blocks).toEqual([]);
-    expect(candidate.variables).toEqual([]);
+    };
+    const mainOnly = buildPythonCandidate(base, '# 清空\n', 'ai', 'main');
+    expect(mainOnly.blocks.blocks).toHaveLength(1);
+    expect(mainOnly.variables).toEqual([{ id: 'variable-1', name: '速度' }]);
+
+    const cleared = buildPythonCandidate(base, '# 清空\n', 'ai', 'workspace');
+    expect(cleared.blocks.blocks).toEqual([]);
+    expect(cleared.variables).toEqual([]);
   });
 
-  it('places a custom block beside the green flag and its call under it', () => {
+  it('replaces custom blocks only with procedures scope', () => {
     const candidate = buildPythonCandidate(
       {
         blocks: {
@@ -184,11 +185,35 @@ describe('buildAssistantCandidate', () => {
         'qianjin(40)',
       ].join('\n'),
       'ai',
+      'procedures',
     );
     const roots = candidate.blocks.blocks ?? [];
     const hat = roots.find(block => block.type === 'event_when_flag_clicked');
     expect(hat?.next?.block?.type).toBe('procedures_call');
     expect(roots.filter(block => block.type === 'procedures_definition')).toHaveLength(1);
     expect(roots.some(block => block.id === 'old-def')).toBe(false);
+  });
+
+  it('keeps old custom definitions under main scope', () => {
+    const candidate = buildPythonCandidate(
+      {
+        blocks: {
+          languageVersion: 0,
+          blocks: [
+            { id: 'hat', type: 'event_when_flag_clicked' },
+            { id: 'old-def', type: 'procedures_definition' },
+          ],
+        },
+      },
+      '_motor.mov_stop()',
+      'ai',
+      'main',
+    );
+    const roots = candidate.blocks.blocks ?? [];
+    expect(roots.some(block => block.id === 'old-def')).toBe(true);
+    expect(
+      roots.find(block => block.type === 'event_when_flag_clicked')?.next?.block
+        ?.type,
+    ).toBe('mov_stop');
   });
 });

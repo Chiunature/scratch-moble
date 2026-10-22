@@ -499,11 +499,19 @@ function buildPythonMessages(input: GenerateAssistantCodeInput): ChatMessage[] {
   const repair = input.repair
     ? [
         '',
-        '上一次 Python 没有通过本地反编译，请修正后重新输出完整 JSON。',
+        '上一次 Python 没有通过本地检查，请修正后重新输出完整 JSON。',
         `错误：${input.repair.error.slice(0, 2_000)}`,
         '失败的 Python：',
         input.repair.python.slice(0, MAX_CONTEXT_CODE_LENGTH),
-      ].join('\n')
+        input.repair.lockedProgramEditJson
+          ? [
+              '必须原样保留下面的 program_edit，不得改 mode、scope，也不得扩大 allow / targets / replacements：',
+              input.repair.lockedProgramEditJson.slice(0, 4_000),
+            ].join('\n')
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
     : '';
   return [
     { role: 'system', content: createPythonSystemPrompt() },

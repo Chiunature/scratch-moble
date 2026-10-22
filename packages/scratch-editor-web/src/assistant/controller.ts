@@ -1,6 +1,9 @@
 import * as ScratchBlocks from 'scratch-blocks';
 import type { EditorInMessage, EditorOutMessage } from '@scratch-mobile/shared';
-import { ASSISTANT_CAPABILITY_CATALOG_VERSION } from '@scratch-mobile/assistant-contracts';
+import {
+  ASSISTANT_CAPABILITY_CATALOG_VERSION,
+  type AssistantProgramEditScope,
+} from '@scratch-mobile/assistant-contracts';
 import { renderPythonCode } from '../codegen/generators';
 import type { Workspace } from '../codegen/types';
 import { refreshColoursFromParentInWorkspace } from '../blocks/portDropdownExtensions';
@@ -10,11 +13,24 @@ import {
   buildPythonCandidate,
   cloneWorkspace,
   stableWorkspaceJson,
+  stripProcedureDefinitionsFromPython,
   summarizeWorkspace,
   workspaceFingerprint,
   type WorkspaceState,
 } from './candidate';
 import { isEmptyAssistantPython, normalizeAssistantPython } from '../decompile';
+import { patchProcedureReporterBlocks } from '../workspace-custom/procedureDrag/reporterBlocks';
+
+function normalizePythonForScope(
+  python: string,
+  scope: AssistantProgramEditScope,
+): string {
+  const source =
+    scope === 'main' ? stripProcedureDefinitionsFromPython(python) : python;
+  return normalizeAssistantPython(source);
+}
+
+let procedureReportersPatched = false;
 
 type Options = {
   post: (message: EditorOutMessage) => void;
@@ -68,6 +84,15 @@ function ensureHeadlessProcedureBlocks(): void {
   ).Block.prototype;
   for (const name of ['setDragStrategy', 'showContextMenu', 'initSvg', 'render']) {
     if (typeof prototype[name] !== 'function') prototype[name] = () => {};
+  }
+  // %n 参数孔需能接到数字输入；真机编辑器启动时也会打同一补丁。
+  if (!procedureReportersPatched) {
+    try {
+      patchProcedureReporterBlocks();
+      procedureReportersPatched = true;
+    } catch {
+      // Headless without full block registry can skip.
+    }
   }
 }
 
@@ -280,6 +305,10 @@ export function createAssistantController(
           const id = ScratchBlocks.utils.idGenerator.genUid();
           const python =
             message.source?.kind === 'python' ? message.source.python : null;
+          const programScope: AssistantProgramEditScope =
+            message.source?.kind === 'python'
+              ? (message.source.programScope ?? 'main')
+              : 'main';
           if (python == null && !message.proposal) {
             throw new Error('候选缺少 Python 或结构化提案。');
           }
@@ -288,21 +317,35 @@ export function createAssistantController(
           }
           const state =
             python != null
-              ? buildPythonCandidate(baseline.state, python, `ai-${id}`)
+              ? buildPythonCandidate(
+                  baseline.state,
+                  python,
+                  `ai-${id}`,
+                  programScope,
+                )
               : buildAssistantCandidate(
                   baseline.state,
                   message.proposal,
                   `ai-${id}`,
                 );
+          if (programScope === 'workspace') {
+            const blocks = state.blocks?.blocks ?? [];
+            const variables = Array.isArray(state.variables)
+              ? state.variables
+              : [];
+            if (blocks.length > 0 || variables.length > 0) {
+              throw new Error('清空工作区后仍有积木或变量，已拒绝。');
+            }
+          }
           const result = validate(state);
           if (
             python != null &&
             !isEmptyAssistantPython(python) &&
-            normalizeAssistantPython(python) !==
-              normalizeAssistantPython(result.code)
+            normalizePythonForScope(python, programScope) !==
+              normalizePythonForScope(result.code, programScope)
           ) {
             throw new Error(
-              `反编译结果与原 Python 不一致。\n原程序：\n${normalizeAssistantPython(python)}\n生成结果：\n${normalizeAssistantPython(result.code)}`,
+              `反编译结果与原 Python 不一致。\n原程序：\n${normalizePythonForScope(python, programScope)}\n生成结果：\n${normalizePythonForScope(result.code, programScope)}`,
             );
           }
           candidate = {

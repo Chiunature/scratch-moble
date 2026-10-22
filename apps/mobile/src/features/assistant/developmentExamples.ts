@@ -1,6 +1,7 @@
 import {
   parseAssistantCodeResponse,
   type AssistantCodeResponse,
+  type AssistantProgramEdit,
 } from '@scratch-mobile/assistant-contracts';
 
 export type DevelopmentExampleId =
@@ -60,7 +61,8 @@ const PYTHON: Record<DevelopmentExampleId, string> = {
     'def qianjin(bushu, kaiguan):',
     '    if kaiguan:',
     "        _motor.mov_dir_power('advance', bushu)",
-    'qianjin(40, not _touch.state(0))',
+    // 与 codegen 的 operator_not 一致，写成 not (...)，避免旧编辑器包回环误判。
+    'qianjin(40, not (_touch.state(0)))',
   ].join('\n'),
 };
 
@@ -72,13 +74,34 @@ const SUMMARY: Record<DevelopmentExampleId, string> = {
   'custom-block': '本地固定示例：自制积木「前进」带数字孔步数和是否孔开关。',
 };
 
+function exampleProgramEdit(
+  id: DevelopmentExampleId,
+  python: string,
+): AssistantProgramEdit {
+  const lines = python
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+  return {
+    mode: 'revise',
+    scope: id === 'custom-block' ? 'procedures' : 'main',
+    allow: ['add', 'replace'],
+    add: lines,
+    targets: [],
+    keep: [],
+    replacements: [],
+  };
+}
+
 export function createDevelopmentCode(
   id: DevelopmentExampleId,
 ): AssistantCodeResponse {
+  const python = PYTHON[id];
   return parseAssistantCodeResponse({
     type: 'code',
     message: SUMMARY[id],
-    python: PYTHON[id],
+    python,
+    program_edit: exampleProgramEdit(id, python),
     assumptions: [],
     questions: [],
     hardware_config: {},

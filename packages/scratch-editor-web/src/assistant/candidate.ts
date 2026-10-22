@@ -3,6 +3,7 @@ import {
   AssistantStatementSchema,
   parseAssistantProposal,
   type AssistantBlockSummary,
+  type AssistantProgramEditScope,
   type AssistantStatement,
 } from '@scratch-mobile/assistant-contracts';
 import { statementToBlock } from './buildWorkspaceSnapshot';
@@ -287,27 +288,22 @@ export function buildAssistantCandidate(
   return cloneWorkspace(state);
 }
 
-/** Replaces the green-flag chain with blocks decompiled from restricted Python. */
-export function buildPythonCandidate(
-  base: unknown,
-  python: string,
+function removeProcedureDefinitions(roots: BlockState[]) {
+  for (let index = roots.length - 1; index >= 0; index -= 1) {
+    if (roots[index]?.type === 'procedures_definition') roots.splice(index, 1);
+  }
+}
+
+function ensureSingleGreenFlag(
+  roots: BlockState[],
   prefix: string,
-): WorkspaceState {
-  if (isEmptyAssistantPython(python)) {
-    const state = cloneWorkspace(base);
-    state.blocks = { languageVersion: 0, blocks: [] };
-    state.variables = [];
-    return cloneWorkspace(state);
+): BlockState {
+  const hats = roots.filter(
+    block => block.type === BLOCK_TYPES.event.whenFlagClicked,
+  );
+  if (hats.length > 1) {
+    throw new Error('当前不支持多个绿旗入口，请先合并为一个主程序。');
   }
-  const fragment = pythonToWorkspace(python, prefix);
-  if (!fragment.chain && fragment.procedures.length === 0) {
-    throw new Error('没有可应用的积木。');
-  }
-  const state = cloneWorkspace(base);
-  state.blocks ??= { languageVersion: 0, blocks: [] };
-  const roots = state.blocks.blocks!;
-  const hats = roots.filter(block => block.type === BLOCK_TYPES.event.whenFlagClicked);
-  if (hats.length > 1) fail();
   const hat: BlockState = hats[0] ?? {
     id: `${prefix}-hat`,
     type: BLOCK_TYPES.event.whenFlagClicked,
@@ -315,14 +311,50 @@ export function buildPythonCandidate(
     y: 48,
   };
   if (!hats.length) roots.push(hat);
-  if (fragment.chain) hat.next = { block: fragment.chain as EmittedBlock as BlockState };
-  else delete hat.next;
-  if (fragment.procedures.length > 0) {
-    for (let index = roots.length - 1; index >= 0; index -= 1) {
-      if (roots[index]?.type === 'procedures_definition') roots.splice(index, 1);
+  return hat;
+}
+
+/** 去掉自制积木定义与其 @custom 注释，供 main scope 回环比较。 */
+export function stripProcedureDefinitionsFromPython(source: string): string {
+  const kept: string[] = [];
+  let inDef = false;
+  let defIndent = 0;
+  for (const raw of source.split(/\r?\n/)) {
+    const trimmed = raw.trim();
+    if (!inDef) {
+      if (/^#\s*@(?:custom|custom-arg|sparkai-custom-arg)\b/.test(trimmed)) {
+        continue;
+      }
+      if (/^def\s+[A-Za-z_]/.test(trimmed)) {
+        inDef = true;
+        defIndent = raw.match(/^\s*/)?.[0].length ?? 0;
+        continue;
+      }
+      kept.push(raw);
+      continue;
     }
-    roots.push(...(fragment.procedures as unknown as BlockState[]));
+    if (!trimmed) continue;
+    const indent = raw.match(/^\s*/)?.[0].length ?? 0;
+    if (indent <= defIndent) {
+      inDef = false;
+      if (/^#\s*@(?:custom|custom-arg|sparkai-custom-arg)\b/.test(trimmed)) {
+        continue;
+      }
+      if (/^def\s+[A-Za-z_]/.test(trimmed)) {
+        inDef = true;
+        defIndent = indent;
+        continue;
+      }
+      kept.push(raw);
+    }
   }
+  return kept.join('\n');
+}
+
+function mergeVariables(
+  state: WorkspaceState,
+  incoming: Array<{ name: string; [key: string]: unknown }>,
+) {
   const existing = Array.isArray(state.variables) ? state.variables : [];
   const seen = new Set(
     existing.map(variable =>
@@ -333,7 +365,66 @@ export function buildPythonCandidate(
   );
   state.variables = [
     ...existing,
-    ...fragment.variables.filter(variable => !seen.has(variable.name)),
+    ...incoming.filter(variable => !seen.has(variable.name)),
   ];
+}
+
+/**
+ * 按 program_edit.scope 把受限 Python 应用到工作区。
+ * workspace：清空积木与变量（python 必须为空）。
+ * main：只替换绿旗主链，保留变量、自制积木与游离积木。
+ * procedures：替换或删除自制积木定义，并可更新主链；保留变量与游离积木。
+ */
+export function buildPythonCandidate(
+  base: unknown,
+  python: string,
+  prefix: string,
+  scope: AssistantProgramEditScope = 'main',
+): WorkspaceState {
+  if (scope === 'workspace') {
+    if (!isEmptyAssistantPython(python)) {
+      throw new Error('清空整个工作区时 Python 必须为空。');
+    }
+    const state = cloneWorkspace(base);
+    state.blocks = { languageVersion: 0, blocks: [] };
+    state.variables = [];
+    return cloneWorkspace(state);
+  }
+
+  const state = cloneWorkspace(base);
+  state.blocks ??= { languageVersion: 0, blocks: [] };
+  const roots = state.blocks.blocks!;
+
+  if (isEmptyAssistantPython(python)) {
+    const hat = ensureSingleGreenFlag(roots, prefix);
+    delete hat.next;
+    if (scope === 'procedures') removeProcedureDefinitions(roots);
+    return cloneWorkspace(state);
+  }
+
+  const fragment = pythonToWorkspace(python, prefix);
+  if (!fragment.chain && fragment.procedures.length === 0) {
+    throw new Error('没有可应用的积木。');
+  }
+  const hat = ensureSingleGreenFlag(roots, prefix);
+  if (fragment.chain) {
+    hat.next = { block: fragment.chain as EmittedBlock as BlockState };
+  } else {
+    delete hat.next;
+  }
+
+  if (scope === 'procedures') {
+    removeProcedureDefinitions(roots);
+    if (fragment.procedures.length > 0) {
+      roots.push(...(fragment.procedures as unknown as BlockState[]));
+    }
+  } else if (scope === 'main') {
+    // 主程序 scope 不改动已有自制积木；候选里的定义忽略，避免误删。
+  } else {
+    const _exhaustive: never = scope;
+    void _exhaustive;
+  }
+
+  mergeVariables(state, fragment.variables);
   return cloneWorkspace(state);
 }

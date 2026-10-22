@@ -5,6 +5,7 @@ import { AssistantContractError } from './contractError';
 export * from './contractError';
 export * from './evaluation';
 export * from './pythonEvaluation';
+export * from './pythonNormalize';
 export * from './pythonProgramDiff';
 export * from './pythonResponse';
 

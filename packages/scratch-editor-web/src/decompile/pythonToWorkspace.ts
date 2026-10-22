@@ -1,4 +1,8 @@
 import {
+  isEmptyAssistantPythonSource,
+  normalizeAssistantPythonSource,
+} from '@scratch-mobile/assistant-contracts';
+import {
   NOTE_PITCH_MAX,
   pitchToDisplayName,
 } from '@scratch-mobile/shared';
@@ -1398,85 +1402,16 @@ function alignVariableIdentifiers(source: string): string {
   return result;
 }
 
-/** 代码生成统一使用 JSON 双引号，比较时把单引号字符串折成同样形式。 */
-function canonicalizeQuotes(source: string): string {
-  let result = '';
-  for (let index = 0; index < source.length; index += 1) {
-    const char = source[index]!;
-    if (char !== '"' && char !== "'") {
-      result += char;
-      continue;
-    }
-    let value = '';
-    index += 1;
-    while (index < source.length) {
-      const current = source[index]!;
-      if (current === '\\') {
-        const next = source[index + 1];
-        value += next === 'n' ? '\n' : (next ?? '');
-        index += 2;
-        continue;
-      }
-      if (current === char) break;
-      value += current;
-      index += 1;
-    }
-    result += JSON.stringify(value);
-  }
-  return result;
-}
-
-function compactPython(line: string): string {
-  let result = '';
-  let quote: string | null = null;
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index]!;
-    if (quote) {
-      result += char;
-      if (char === '\\') {
-        result += line[index + 1] ?? '';
-        index += 1;
-        continue;
-      }
-      if (char === quote) quote = null;
-      continue;
-    }
-    if (char === '"' || char === "'") {
-      quote = char;
-      result += char;
-      continue;
-    }
-    if (char === ' ' || char === '\t' || char === '(' || char === ')') continue;
-    result += char;
-  }
-  return result;
-}
-
-/** 忽略注释、空行、循环节拍、自动 global / 初始化，以及空格和括号差异。 */
+/**
+ * 回环比较：先对齐显示名拼音，再走契约包规范化。
+ * 不含 # @var / # @custom 元数据注释，避免注释原文差异导致误拒。
+ */
 export function isEmptyAssistantPython(source: string): boolean {
-  return normalizeAssistantPython(source).length === 0;
+  return isEmptyAssistantPythonSource(alignVariableIdentifiers(source));
 }
 
 export function normalizeAssistantPython(source: string): string {
-  const kept: string[] = [];
-  let skippingLead = true;
-  const aligned = canonicalizeQuotes(alignVariableIdentifiers(source));
-  for (const raw of aligned.split(/\r?\n/)) {
-    const withoutComment = raw.replace(/(^|[^\\])#.*$/, '$1').trim();
-    if (!withoutComment) continue;
-    if (compactPython(withoutComment) === '_os.sleep_s0.001') continue;
-    if (skippingLead && /^global\s+/.test(withoutComment)) continue;
-    if (
-      skippingLead &&
-      /^[A-Za-z_][A-Za-z0-9_]* = (?:0|PikaStdData\.List\(\))$/.test(
-        withoutComment,
-      )
-    ) {
-      continue;
-    }
-    skippingLead = false;
-    const compact = compactPython(withoutComment);
-    if (compact) kept.push(compact);
-  }
-  return kept.join('\n');
+  return normalizeAssistantPythonSource(alignVariableIdentifiers(source), {
+    includeMetadata: false,
+  });
 }

@@ -4,12 +4,15 @@
  */
 import type {
   AssistantBlockSummary,
+  AssistantProgramEditScope,
   AssistantProposal,
 } from '@scratch-mobile/assistant-contracts';
 
 export type AssistantPythonSource = {
   kind: 'python';
   python: string;
+  /** 缺省 main：只替换绿旗主链。workspace 仅用于清空整个工作区。 */
+  programScope?: AssistantProgramEditScope;
 };
 import type { HandleShankKey } from '../constants/handleShank';
 import type { EditorAppLocale } from './editorLocale';

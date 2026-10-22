@@ -102,7 +102,16 @@ const generated = {
   response: {
     type: 'code' as const,
     message: 'summary',
-    python: '_motor.mov_stop()',
+    python: 'new()',
+    programEdit: {
+      mode: 'revise' as const,
+      scope: 'main' as const,
+      allow: ['replace' as const],
+      add: [],
+      targets: [],
+      keep: [],
+      replacements: [{ from: 'old()', to: 'new()' }],
+    },
     assumptions: [],
     questions: [],
     hardware_config: {},
@@ -523,6 +532,76 @@ describe('AssistantPanel regressions', () => {
     );
     expect(findButton(renderer, '接受并应用候选修改')?.props.disabled).toBe(
       true,
+    );
+    await act(async () => {
+      renderer.unmount();
+    });
+  });
+
+  it('lets a clear-main candidate through when the editor only has a placeholder', async () => {
+    generateAssistantCode.mockResolvedValue({
+      assistantMessage: 'generated',
+      response: {
+        type: 'code',
+        message: '已清空主程序',
+        python: '',
+        programEdit: {
+          mode: 'clear',
+          scope: 'main',
+          allow: ['remove'],
+          add: [],
+          targets: [],
+          keep: [],
+          replacements: [],
+        },
+        assumptions: [],
+        questions: [],
+        hardware_config: {},
+      },
+    });
+    compileGeneratedCode.mockResolvedValue({
+      ok: false,
+      message: '暂无有效 Python 代码',
+      bytecodePath: null,
+      bytecodeSize: 0,
+      hexPreview: '',
+    });
+    const { calls, deferred, request } = setupRequest();
+    const renderer = renderPanel({
+      projectId: 'project-1',
+      request,
+      onClose: jest.fn(),
+    });
+    await act(async () => {
+      findInput(renderer).props.onChangeText('清空主程序');
+    });
+    await act(async () => {
+      findButton(renderer, '发送给积木助手')!.props.onPress();
+    });
+    const snapshot = calls.find(
+      message => message.type === 'editor.workspace.snapshot.request',
+    )!;
+    await act(async () => {
+      deferred
+        .get(snapshot.requestId)!
+        .resolve(snapshotResponse(snapshot.requestId, 'project-1'));
+    });
+    const prepare = calls.find(
+      message => message.type === 'editor.workspace.candidate.prepare',
+    )!;
+    await act(async () => {
+      deferred.get(prepare.requestId)!.resolve({
+        ...readyResponse(prepare.requestId, 'project-1'),
+        code: '# 请从「当程序启动时」积木开始搭建程序',
+        blockCount: 1,
+      });
+    });
+    await act(async () => undefined);
+    expect(findText(renderer, '主程序将被清空。确认后才会移除绿旗下的积木，变量和自制积木会保留，不会连接或上传到蓝牙设备。')).toBe(
+      true,
+    );
+    expect(findButton(renderer, '接受并应用候选修改')?.props.disabled).toBe(
+      false,
     );
     await act(async () => {
       renderer.unmount();
