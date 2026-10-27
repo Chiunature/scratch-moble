@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +9,7 @@ import {
   type ListRenderItem,
 } from 'react-native';
 
+import { usePlatformStore } from '../../store/usePlatformStore';
 import { colors, fontSize } from '../../theme';
 
 type GeneratedCodePanelProps = {
@@ -37,6 +37,7 @@ const CodeLine = React.memo(function CodeLine({ line }: CodeLineProps) {
 export const GeneratedCodePanel = React.memo(function GeneratedCodePanel({
   code,
 }: GeneratedCodePanelProps) {
+  const isWeb = usePlatformStore(state => state.isWeb);
   const lines = useMemo(() => toGeneratedCodeLines(code), [code]);
   const estimatedContentWidth = useMemo(
     () =>
@@ -95,7 +96,7 @@ export const GeneratedCodePanel = React.memo(function GeneratedCodePanel({
             maxToRenderPerBatch={INITIAL_RENDERED_LINES}
             updateCellsBatchingPeriod={16}
             windowSize={9}
-            removeClippedSubviews={Platform.OS !== 'web'}
+            removeClippedSubviews={!isWeb}
             style={{ width: listWidth, height: viewport.height }}
             contentContainerStyle={styles.listContent}
           />
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   codeLine: {
     flexShrink: 0,
     color: colors.codeText,
-    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
+    fontFamily: usePlatformStore.getState().monospaceFontFamily,
     fontSize: fontSize.xs,
     lineHeight: CODE_LINE_HEIGHT,
   },

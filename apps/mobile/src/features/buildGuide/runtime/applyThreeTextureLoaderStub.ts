@@ -1,5 +1,6 @@
-import { Platform } from 'react-native';
 import * as THREE from 'three';
+
+import { usePlatformStore } from '../../../store/usePlatformStore';
 
 let applied = false;
 
@@ -18,7 +19,7 @@ function disableCreateImageBitmap(): void {
 }
 
 export function applyThreeTextureLoaderStub(): void {
-  if (applied || Platform.OS === 'web') {
+  if (applied || usePlatformStore.getState().isWeb) {
     return;
   }
 

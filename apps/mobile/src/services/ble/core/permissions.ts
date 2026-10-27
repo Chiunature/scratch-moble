@@ -1,7 +1,9 @@
 import { Linking, PermissionsAndroid, Platform } from 'react-native';
 
+import { usePlatformStore } from '../../../store/usePlatformStore';
+
 export async function requestBlePermissions(): Promise<boolean> {
-  if (Platform.OS !== 'android') {
+  if (!usePlatformStore.getState().isAndroid) {
     return true;
   }
 
@@ -29,12 +31,13 @@ export async function requestBlePermissions(): Promise<boolean> {
 
 /** 打开系统蓝牙设置页；失败（无对应 intent / 平台不支持）返回 false。 */
 export async function openBluetoothSettings(): Promise<boolean> {
+  const { isAndroid, isIOS } = usePlatformStore.getState();
   try {
-    if (Platform.OS === 'android') {
+    if (isAndroid) {
       await Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS');
       return true;
     }
-    if (Platform.OS === 'ios') {
+    if (isIOS) {
       return Linking.openURL('app-settings:');
     }
     return false;

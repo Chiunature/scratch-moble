@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 import type { RnVariablePromptOpenMessage } from '@scratch-mobile/shared';
 import { useTranslation } from '@scratch-mobile/i18n';
 
+import { usePlatformStore } from '../../../store/usePlatformStore';
 import { colors, fontSize, fontWeight, spacing } from '../../../theme';
 
 type Props = {
@@ -25,6 +25,7 @@ export function VariablePromptOverlay({
   onCommit,
   onCancel,
 }: Props) {
+  const isIOS = usePlatformStore(state => state.isIOS);
   const { t } = useTranslation('overlays');
   const [name, setName] = useState('');
   const inputRef = useRef<TextInput>(null);
@@ -60,7 +61,7 @@ export function VariablePromptOverlay({
         onPress={() => onCancel(session.sessionId)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={isIOS ? 'padding' : undefined}
         >
           <Pressable style={styles.card} onPress={event => event.stopPropagation()}>
             <Text style={styles.title}>{title}</Text>

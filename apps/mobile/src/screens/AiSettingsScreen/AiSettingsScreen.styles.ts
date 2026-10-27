@@ -142,6 +142,8 @@ export const styles = StyleSheet.create({
     marginTop: 6,
   },
   keyRow: {
+    // borderWidth: 1,
+    // borderColor: 'blue',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -164,6 +166,8 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   optionRow: {
+    // borderWidth: 1,
+    // borderColor: 'red',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -173,7 +177,7 @@ export const styles = StyleSheet.create({
   },
   optionRowFirst: {
     borderTopWidth: 0,
-    paddingTop: 0,
+    // paddingTop: 0,
   },
   optionCopy: {
     flex: 1,

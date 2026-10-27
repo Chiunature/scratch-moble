@@ -160,9 +160,7 @@ export function BleDevicesScreen() {
 
         if (result.watchError) {
           const message =
-            result.watchError instanceof Error
-              ? result.watchError.message
-              : '';
+            result.watchError instanceof Error ? result.watchError.message : '';
           setErrorMessage(
             message
               ? t('errors.connectedWatchFailedWithMessage', { message })
@@ -464,9 +462,11 @@ export function BleDevicesScreen() {
               contentContainerStyle={styles.listContent}
               ListHeaderComponent={
                 pairedDevices.length > 0 ? (
-                  <Text style={styles.deviceHint}>
-                    {t('longPressToRemove')}
-                  </Text>
+                  <View style={styles.pairedHeader}>
+                    <Text style={styles.deviceHint}>
+                      {t('longPressToRemove')}
+                    </Text>
+                  </View>
                 ) : null
               }
               ListEmptyComponent={

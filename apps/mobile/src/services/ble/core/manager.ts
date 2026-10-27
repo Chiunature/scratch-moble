@@ -514,6 +514,8 @@ export class BleDeviceManager {
 
     this.characteristic.monitor((error, characteristic) => {
       if (error) {
+        // iOS 结束 Notify 事务时回调 Operation was cancelled；
+        // Android 同一路径是 disconnected，两边都不是监听失败。
         if (isBleDisconnectError(error)) {
           return;
         }

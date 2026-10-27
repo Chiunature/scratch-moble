@@ -1,21 +1,22 @@
-import { Platform } from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
 import { buildLocalPartCandidates } from '@scratch-mobile/ldr-engine';
 import partIndex from '../../../../assets/ldraw/part-index.json';
+import { usePlatformStore } from '../../../store/usePlatformStore';
 import { readTextFile } from '../../../utils/blobFs';
 
-const LOCAL_ROOTS =
-  Platform.OS === 'android'
-    ? ['ldraw']
-    : [`${ReactNativeBlobUtil.fs.dirs.MainBundleDir}/ldraw`];
+const isAndroid = usePlatformStore.getState().isAndroid;
+
+const LOCAL_ROOTS = isAndroid
+  ? ['ldraw']
+  : [`${ReactNativeBlobUtil.fs.dirs.MainBundleDir}/ldraw`];
 
 const INDEXED_PART_PATHS = partIndex as Record<string, string>;
 const localPartCache = new Map<string, Promise<string | null>>();
 
 async function readCandidate(path: string): Promise<string | null> {
   try {
-    if (Platform.OS === 'android') {
+    if (isAndroid) {
       return await readTextFile(ReactNativeBlobUtil.fs.asset(path));
     }
 

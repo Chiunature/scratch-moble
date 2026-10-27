@@ -1,11 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
   AppState,
   Image,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -29,6 +34,7 @@ import {
   type AssistantConnectionProfile,
   type AssistantConnectionRecord,
 } from '../../services/assistant';
+import { usePlatformStore } from '../../store/usePlatformStore';
 import { colors, spacing } from '../../theme';
 import backIcon from '../../../assets/settingScreen/back.png';
 import { CheckIcon, PencilIcon, PlayIcon, TrashIcon } from './AiSettingsIcons';
@@ -39,7 +45,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AiSettings'>;
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
 
 function createProfileId(): string {
-  return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  return `p-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
 }
 
 function modelInitial(model: string): string {
@@ -88,6 +96,7 @@ function validateInputs(
 }
 
 export function AiSettingsScreen({ navigation }: Props) {
+  const isIOS = usePlatformStore(state => state.isIOS);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
@@ -110,7 +119,9 @@ export function AiSettingsScreen({ navigation }: Props) {
   const originalBaseUrlRef = useRef(DEFAULT_BASE_URL);
   const addressClearedKeyRef = useRef(false);
   const operationRef = useRef(0);
-  const actionRef = useRef<'save' | 'test' | 'delete' | 'activate' | null>(null);
+  const actionRef = useRef<'save' | 'test' | 'delete' | 'activate' | null>(
+    null,
+  );
   const testControllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const mutationInFlightRef = useRef(false);
@@ -262,7 +273,16 @@ export function AiSettingsScreen({ navigation }: Props) {
       actionRef.current = null;
       if (mountedRef.current) setSaving(false);
     }
-  }, [apiKey, baseUrl, loading, makeProfile, model, persistSecurely, saving, testing]);
+  }, [
+    apiKey,
+    baseUrl,
+    loading,
+    makeProfile,
+    model,
+    persistSecurely,
+    saving,
+    testing,
+  ]);
 
   const handleTest = useCallback(async () => {
     if (actionRef.current || saving || testing || loading) return;
@@ -332,21 +352,26 @@ export function AiSettingsScreen({ navigation }: Props) {
     setProfiles(await listAssistantConnections());
   }, []);
 
-  const openEditor = useCallback((record: AssistantConnectionRecord | null) => {
-    if (actionRef.current || saving || testing) return;
-    const nextBaseUrl = record?.profile.baseUrl ?? DEFAULT_BASE_URL;
-    profileIdRef.current = record?.profile.id ?? createProfileId();
-    originalBaseUrlRef.current = nextBaseUrl;
-    addressClearedKeyRef.current = false;
-    setBaseUrl(nextBaseUrl);
-    setModel(record?.profile.model ?? '');
-    setApiKey(record?.apiKey ?? '');
-    setShowApiKey(false);
-    setStrictSchema(record ? record.profile.supportsJsonSchema !== false : true);
-    setPersistSecurely(Boolean(record?.persisted) && secureStorageAvailable);
-    setErrorText(null);
-    setEditorOpen(true);
-  }, [saving, secureStorageAvailable, testing]);
+  const openEditor = useCallback(
+    (record: AssistantConnectionRecord | null) => {
+      if (actionRef.current || saving || testing) return;
+      const nextBaseUrl = record?.profile.baseUrl ?? DEFAULT_BASE_URL;
+      profileIdRef.current = record?.profile.id ?? createProfileId();
+      originalBaseUrlRef.current = nextBaseUrl;
+      addressClearedKeyRef.current = false;
+      setBaseUrl(nextBaseUrl);
+      setModel(record?.profile.model ?? '');
+      setApiKey(record?.apiKey ?? '');
+      setShowApiKey(false);
+      setStrictSchema(
+        record ? record.profile.supportsJsonSchema !== false : true,
+      );
+      setPersistSecurely(Boolean(record?.persisted) && secureStorageAvailable);
+      setErrorText(null);
+      setEditorOpen(true);
+    },
+    [saving, secureStorageAvailable, testing],
+  );
 
   const closeEditor = useCallback(() => {
     if (saving) return;
@@ -358,54 +383,62 @@ export function AiSettingsScreen({ navigation }: Props) {
     setEditorOpen(false);
   }, [saving, stopTest]);
 
-  const handleActivate = useCallback(async (record: AssistantConnectionRecord) => {
-    if (record.active || actionRef.current || saving || testing || loading) return;
-    actionRef.current = 'activate';
-    setErrorText(null);
-    try {
-      await activateAssistantConnection(record.profile.id);
-      if (!mountedRef.current) return;
-      await refreshProfiles();
-    } catch (error) {
-      if (mountedRef.current) setErrorText(safeErrorMessage(error, record.apiKey));
-    } finally {
-      actionRef.current = null;
-    }
-  }, [loading, refreshProfiles, saving, testing]);
-
-  const handleDelete = useCallback(async (record: AssistantConnectionRecord) => {
-    if (actionRef.current || saving || testing || loading) return;
-    actionRef.current = 'delete';
-    const operation = ++operationRef.current;
-    const confirmed = await confirmAction(
-      '删除模型配置',
-      `将删除「${record.profile.model}」。本机保存的 API Key 会一并移除，这不会撤销服务商侧的密钥。`,
-      '删除',
-    );
-    if (!mountedRef.current || operation !== operationRef.current) return;
-    if (!confirmed || actionRef.current !== 'delete') {
-      actionRef.current = null;
-      return;
-    }
-
-    mutationInFlightRef.current = true;
-    setSaving(true);
-    setErrorText(null);
-    try {
-      await deleteAssistantConnection(record.profile.id);
-      if (!mountedRef.current || operation !== operationRef.current) return;
-      if (profileIdRef.current === record.profile.id) setEditorOpen(false);
-      await refreshProfiles();
-    } catch (error) {
-      if (mountedRef.current && operation === operationRef.current) {
-        setErrorText(safeErrorMessage(error, record.apiKey));
+  const handleActivate = useCallback(
+    async (record: AssistantConnectionRecord) => {
+      if (record.active || actionRef.current || saving || testing || loading)
+        return;
+      actionRef.current = 'activate';
+      setErrorText(null);
+      try {
+        await activateAssistantConnection(record.profile.id);
+        if (!mountedRef.current) return;
+        await refreshProfiles();
+      } catch (error) {
+        if (mountedRef.current)
+          setErrorText(safeErrorMessage(error, record.apiKey));
+      } finally {
+        actionRef.current = null;
       }
-    } finally {
-      mutationInFlightRef.current = false;
-      actionRef.current = null;
-      if (mountedRef.current) setSaving(false);
-    }
-  }, [loading, refreshProfiles, saving, testing]);
+    },
+    [loading, refreshProfiles, saving, testing],
+  );
+
+  const handleDelete = useCallback(
+    async (record: AssistantConnectionRecord) => {
+      if (actionRef.current || saving || testing || loading) return;
+      actionRef.current = 'delete';
+      const operation = ++operationRef.current;
+      const confirmed = await confirmAction(
+        '删除模型配置',
+        `将删除「${record.profile.model}」。本机保存的 API Key 会一并移除，这不会撤销服务商侧的密钥。`,
+        '删除',
+      );
+      if (!mountedRef.current || operation !== operationRef.current) return;
+      if (!confirmed || actionRef.current !== 'delete') {
+        actionRef.current = null;
+        return;
+      }
+
+      mutationInFlightRef.current = true;
+      setSaving(true);
+      setErrorText(null);
+      try {
+        await deleteAssistantConnection(record.profile.id);
+        if (!mountedRef.current || operation !== operationRef.current) return;
+        if (profileIdRef.current === record.profile.id) setEditorOpen(false);
+        await refreshProfiles();
+      } catch (error) {
+        if (mountedRef.current && operation === operationRef.current) {
+          setErrorText(safeErrorMessage(error, record.apiKey));
+        }
+      } finally {
+        mutationInFlightRef.current = false;
+        actionRef.current = null;
+        if (mountedRef.current) setSaving(false);
+      }
+    },
+    [loading, refreshProfiles, saving, testing],
+  );
 
   const handleBack = useCallback(() => {
     if (saving) return;
@@ -489,7 +522,9 @@ export function AiSettingsScreen({ navigation }: Props) {
                   key={record.profile.id}
                   style={[
                     styles.providerCard,
-                    record.active ? styles.providerCardActive : styles.providerCardIdle,
+                    record.active
+                      ? styles.providerCardActive
+                      : styles.providerCardIdle,
                   ]}
                 >
                   <View style={styles.avatar}>
@@ -568,7 +603,7 @@ export function AiSettingsScreen({ navigation }: Props) {
         <View style={styles.editorBackdrop}>
           <KeyboardAvoidingView
             style={styles.editorWrap}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={isIOS ? 'padding' : undefined}
           >
             <ScrollView
               style={styles.editorScroll}
@@ -642,9 +677,13 @@ export function AiSettingsScreen({ navigation }: Props) {
                     onPress={() => setShowApiKey(current => !current)}
                     disabled={busy}
                     accessibilityRole="button"
-                    accessibilityLabel={showApiKey ? '隐藏 API Key' : '显示 API Key'}
+                    accessibilityLabel={
+                      showApiKey ? '隐藏 API Key' : '显示 API Key'
+                    }
                   >
-                    <Text style={styles.revealText}>{showApiKey ? '隐藏' : '显示'}</Text>
+                    <Text style={styles.revealText}>
+                      {showApiKey ? '隐藏' : '显示'}
+                    </Text>
                   </Pressable>
                 </View>
                 <View style={[styles.optionRow, styles.optionRowFirst]}>
@@ -679,7 +718,9 @@ export function AiSettingsScreen({ navigation }: Props) {
                     thumbColor={persistSecurely ? colors.primary : '#f8fafc'}
                   />
                 </View>
-                {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+                {errorText ? (
+                  <Text style={styles.errorText}>{errorText}</Text>
+                ) : null}
                 <View style={styles.actionsRow}>
                   <View style={styles.actionSpacer} />
                   {testing ? (

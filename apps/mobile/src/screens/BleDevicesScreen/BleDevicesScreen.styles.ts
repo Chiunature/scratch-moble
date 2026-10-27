@@ -236,11 +236,13 @@ export const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSubtle,
   },
+  pairedHeader: {
+    alignSelf: 'stretch',
+  },
   deviceHint: {
-    position: 'absolute',
-    right: 0,
     fontSize: fontSize.xs,
     color: colors.textFaint,
+    textAlign: 'right',
   },
   onlineBadge: {
     position: 'absolute',

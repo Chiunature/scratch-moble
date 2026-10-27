@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   AppState,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,6 +33,7 @@ import {
   getAssistantConnection,
 } from '../../services/assistant';
 import { compileGeneratedCode } from '../../services/pika';
+import { usePlatformStore } from '../../store/usePlatformStore';
 import { colors, fontSize, fontWeight, shadows, spacing } from '../../theme';
 
 export type AssistantPanelProps = {
@@ -204,6 +204,7 @@ export function AssistantPanel({
   persistenceError,
   onBusyChange,
 }: AssistantPanelProps) {
+  const isIOS = usePlatformStore(state => state.isIOS);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ConversationItem[]>([]);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -882,7 +883,7 @@ export function AssistantPanel({
   return (
     <KeyboardAvoidingView
       style={styles.panel}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={isIOS ? 'padding' : undefined}
     >
       <View style={styles.header}>
         <View style={styles.headerCopy}>
@@ -1251,7 +1252,7 @@ const styles = StyleSheet.create({
     color: colors.codeText,
     fontSize: 12,
     lineHeight: 18,
-    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
+    fontFamily: usePlatformStore.getState().monospaceFontFamily,
   },
   compileText: {
     color: '#166534',
@@ -1276,7 +1277,7 @@ const styles = StyleSheet.create({
     color: '#7f1d1d',
     fontSize: 12,
     lineHeight: 18,
-    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
+    fontFamily: usePlatformStore.getState().monospaceFontFamily,
   },
   diffWarning: {
     color: '#b91c1c',

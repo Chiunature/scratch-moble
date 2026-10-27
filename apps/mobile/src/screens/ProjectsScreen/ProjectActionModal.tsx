@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
   Easing,
+  Keyboard,
   Modal,
   Pressable,
   StyleSheet,
@@ -9,6 +11,7 @@ import {
   TextInput,
   View,
   Image,
+  type KeyboardEvent,
 } from 'react-native';
 import {
   resolveProjectDisplayName,
@@ -17,10 +20,22 @@ import {
 
 import type { ScratchProjectSummary } from '@scratch-mobile/shared';
 
+import { usePlatformStore } from '../../store/usePlatformStore';
 import { colors, fontSize, fontWeight, shadows, spacing } from '../../theme';
 import deleteWarningIcon from '../../../assets/notifications/deleteWarning.png';
 import deleteIcon from '../../../assets/notifications/delete.png';
 type ActionMode = 'select' | 'rename' | 'delete';
+
+function keyboardOverlap(event: KeyboardEvent, sheetHeight: number) {
+  const windowHeight = Dimensions.get('window').height;
+  const { height, screenY } = event.endCoordinates;
+  const keyboardTop =
+    screenY > 0 && screenY < windowHeight ? screenY : windowHeight - height;
+  const cardHeight = sheetHeight || 240;
+  const cardBottom = (windowHeight + cardHeight) / 2;
+  const overlap = cardBottom + spacing.lg - keyboardTop;
+  return overlap > 0 ? overlap : 0;
+}
 
 export type ProjectRenamePayload = {
   projectId: string;
@@ -48,6 +63,7 @@ export function ProjectActionModal({
   onRename,
   onDelete,
 }: Props) {
+  const isIOS = usePlatformStore(state => state.isIOS);
   const { t } = useTranslation('projects');
   const [mode, setMode] = useState<ActionMode>('select');
   const [renameValue, setRenameValue] = useState('');
@@ -57,6 +73,9 @@ export function ProjectActionModal({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const contentScale = useRef(new Animated.Value(0.9)).current;
   const contentTranslateY = useRef(new Animated.Value(20)).current;
+  const keyboardLift = useRef(new Animated.Value(0)).current;
+  const sheetHeightRef = useRef(0);
+  const keyboardEventRef = useRef<KeyboardEvent | null>(null);
 
   const resetState = useCallback(() => {
     setMode('select');
@@ -70,6 +89,7 @@ export function ProjectActionModal({
       overlayOpacity.setValue(0);
       contentScale.setValue(0.9);
       contentTranslateY.setValue(20);
+      keyboardLift.setValue(0);
       return;
     }
 
@@ -100,7 +120,40 @@ export function ProjectActionModal({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [visible, project, overlayOpacity, contentScale, contentTranslateY]);
+  }, [visible, project, overlayOpacity, contentScale, contentTranslateY, keyboardLift]);
+
+  const animateLift = useCallback(
+    (event: KeyboardEvent | null) => {
+      keyboardEventRef.current = event;
+      const distance = event
+        ? keyboardOverlap(event, sheetHeightRef.current)
+        : 0;
+      Animated.timing(keyboardLift, {
+        toValue: -distance,
+        duration: isIOS ? event?.duration || 250 : 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    },
+    [isIOS, keyboardLift],
+  );
+
+  useEffect(() => {
+    if (!visible) {
+      keyboardEventRef.current = null;
+      return undefined;
+    }
+
+    const showEvent = isIOS ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = isIOS ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, animateLift);
+    const hideSub = Keyboard.addListener(hideEvent, () => animateLift(null));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [isIOS, visible, animateLift]);
 
   const handleClose = useCallback(() => {
     if (isSubmitting) {
@@ -205,9 +258,20 @@ export function ProjectActionModal({
                 transform: [
                   { scale: contentScale },
                   { translateY: contentTranslateY },
+                  { translateY: keyboardLift },
                 ],
               },
             ]}
+            onLayout={event => {
+              const nextHeight = event.nativeEvent.layout.height;
+              if (nextHeight === sheetHeightRef.current) {
+                return;
+              }
+              sheetHeightRef.current = nextHeight;
+              if (keyboardEventRef.current) {
+                animateLift(keyboardEventRef.current);
+              }
+            }}
             onStartShouldSetResponder={() => true}
           >
             <View style={styles.header}>
