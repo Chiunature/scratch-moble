@@ -121,7 +121,9 @@ function useTrackLayout() {
   const [trackWidth, setTrackWidth] = useState(0);
 
   const measureLayout = useCallback((onMeasured?: () => void) => {
-    trackRef.current?.measureInWindow((pageX, _pageY, width) => {
+    // Touch pageX matches measure()'s pageX. measureInWindow subtracts the
+    // safe-area inset, which on Android 17 shifts the track by that inset.
+    trackRef.current?.measure((_x, _y, width, _height, pageX) => {
       trackLayoutRef.current = { pageX, width };
       if (width > 0) {
         setTrackWidth(width);
