@@ -4885,10 +4885,10 @@ expo-modules-core@~56.0.23:
     expo-modules-jsi "~56.0.12"
     invariant "^2.2.4"
 
-expo-modules-jsi@~56.0.12:
-  version "56.0.12"
-  resolved "https://registry.yarnpkg.com/expo-modules-jsi/-/expo-modules-jsi-56.0.12.tgz#9abcdb2f94e6c08171899dec0bfd5923639bfc57"
-  integrity sha512-OnXiNbXzYybZPh5QnJyIIwQjQfN7PP4Di/2Hz0xQHKLgQmCfn/zAQziOjbUXVeL3cAyZ8+uDnTDYmDAc3B2qhQ==
+expo-modules-jsi@56.0.14, expo-modules-jsi@~56.0.12:
+  version "56.0.14"
+  resolved "https://registry.yarnpkg.com/expo-modules-jsi/-/expo-modules-jsi-56.0.14.tgz#47855f87928621b352a0e038e913be245b4b0d6e"
+  integrity sha512-Hzjq8plGfjGb7OsensIBYkzQsVLVotws2arFVZJb6LV6vE9L8B3E1xUlejzlAsUR5eRKE3aImK+P+4X2slGVGQ==
 
 expo-navigation-bar@~56.0.3:
   version "56.0.3"
