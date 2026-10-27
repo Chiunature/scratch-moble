@@ -25,6 +25,26 @@ buildscript {
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
 
+// NDK r27 aligns to 4 KB unless ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES is set.
+// Android 15+ 16 KB-page devices reject the app when any 64-bit ELF LOAD
+// segment is still 4 KB aligned. react-native-pika does not pass this flag.
+subprojects { subproject ->
+    subproject.plugins.withId("com.android.library") {
+        if (!subproject.projectDir.absolutePath.contains("${File.separator}react-native-pika${File.separator}")) {
+            return
+        }
+        subproject.android {
+            defaultConfig {
+                externalNativeBuild {
+                    cmake {
+                        arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                    }
+                }
+            }
+        }
+    }
+}
+
 allprojects {
     repositories {
         maven { url "https://maven.aliyun.com/repository/google" }
