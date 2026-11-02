@@ -230,3 +230,49 @@ describe('isProgramEditWidened', () => {
     expect(isProgramEditWidened(locked, locked)).toBe(false);
   });
 });
+
+describe('control-flow path in program_edit', () => {
+  const original = [
+    'while True:',
+    '    _motor.stop(4)',
+    '_motor.run_power(4, 50)',
+  ].join('\n');
+  const movedOut = ['_motor.stop(4)', '_motor.run_power(4, 50)'].join('\n');
+
+  it('rejects moving a statement out of a loop without a path-aware replacement', () => {
+    const assessment = assessAssistantProgramEdit({
+      programEdit: {
+        mode: 'revise',
+        scope: 'main',
+        allow: ['replace'],
+        add: [],
+        targets: [],
+        keep: [],
+        replacements: [{ from: '_motor.stop(4)', to: '_motor.stop(4)' }],
+      },
+      originalPython: original,
+      candidatePython: movedOut,
+    });
+    expect(assessment.blockAccept).toBe(true);
+    expect(assessment.message).toMatch(/未声明/);
+  });
+
+  it('allows a path-aware stop move when the while header is also declared removed', () => {
+    const assessment = assessAssistantProgramEdit({
+      programEdit: {
+        mode: 'delete',
+        scope: 'main',
+        allow: ['remove', 'replace'],
+        add: [],
+        targets: ['while True:'],
+        keep: [],
+        replacements: [
+          { from: 'while|_motor.stop(4)', to: '_motor.stop(4)' },
+        ],
+      },
+      originalPython: original,
+      candidatePython: movedOut,
+    });
+    expect(assessment.blockAccept).toBe(false);
+  });
+});

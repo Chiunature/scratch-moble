@@ -144,10 +144,7 @@ function assertInput(input: GenerateAssistantProposalInput): void {
       'configuration',
     );
   }
-  if (
-    input.context.blocks.length > 500 ||
-    contextMessage(input.context).length > 128_000
-  ) {
+  if (contextMessage(input.context).length > 128_000) {
     throw new AssistantRequestError(
       '当前作品上下文过大，请缩小程序后再请求助手。',
       'configuration',
@@ -166,8 +163,6 @@ function assertInput(input: GenerateAssistantProposalInput): void {
 
 function contextMessage(context: AssistantWorkspaceContext): string {
   return JSON.stringify({
-    projectId: context.projectId,
-    workspaceHash: context.workspaceHash,
     generatedCode: context.generatedCode,
   });
 }
@@ -482,13 +477,15 @@ export async function generateAssistantProposal(
   }
 }
 
-function createPythonSystemPrompt(): string {
-  return [
+function createPythonSystemPrompt(includeJsonSchema: boolean): string {
+  const parts = [
     ASSISTANT_PYTHON_RULES,
     '若用户是在修改已有程序，请基于当前 Python 输出完整新程序，不要输出差异。',
-    'JSON Schema：',
-    JSON.stringify(ASSISTANT_CODE_RESPONSE_JSON_SCHEMA),
-  ].join('\n');
+  ];
+  if (includeJsonSchema) {
+    parts.push('JSON Schema：', JSON.stringify(ASSISTANT_CODE_RESPONSE_JSON_SCHEMA));
+  }
+  return parts.join('\n');
 }
 
 function buildPythonMessages(input: GenerateAssistantCodeInput): ChatMessage[] {
@@ -508,13 +505,14 @@ function buildPythonMessages(input: GenerateAssistantCodeInput): ChatMessage[] {
               '必须原样保留下面的 program_edit，不得改 mode、scope，也不得扩大 allow / targets / replacements：',
               input.repair.lockedProgramEditJson.slice(0, 4_000),
             ].join('\n')
-          : '',
+          : '可以更新 program_edit 以匹配实际改动；通过验收前声明尚未锁定。',
       ]
         .filter(Boolean)
         .join('\n')
     : '';
+  const includeJsonSchema = input.profile.supportsJsonSchema === false;
   return [
-    { role: 'system', content: createPythonSystemPrompt() },
+    { role: 'system', content: createPythonSystemPrompt(includeJsonSchema) },
     ...conversation,
     {
       role: 'user',

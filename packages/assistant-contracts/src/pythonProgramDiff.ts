@@ -1,6 +1,6 @@
 import {
   assistantPythonStatements,
-  normalizePythonStatementKey,
+  normalizePythonStatementKeyWithPath,
 } from './pythonNormalize';
 
 export type AssistantPythonDiff = {
@@ -46,7 +46,7 @@ function bagFromLines(lines: string[]): Map<string, number> {
 
 function normalizeDeclaredLines(lines: string[]): string[] {
   return lines
-    .map(line => normalizePythonStatementKey(line))
+    .map(line => normalizePythonStatementKeyWithPath(line))
     .filter(Boolean);
 }
 

@@ -26,7 +26,7 @@ import { type RootStackParamList } from '../../app/navigation';
 import {
   activateAssistantConnection,
   deleteAssistantConnection,
-  generateAssistantProposal,
+  generateAssistantCode,
   isAssistantSecureStorageAvailable,
   listAssistantConnections,
   normalizeAssistantBaseUrl,
@@ -314,11 +314,11 @@ export function AiSettingsScreen({ navigation }: Props) {
     testControllerRef.current = controller;
     setTesting(true);
     try {
-      await generateAssistantProposal({
+      const result = await generateAssistantCode({
         profile: makeProfile(normalizedBaseUrl),
         apiKey: apiKey.trim(),
         prompt:
-          '请仅解释：这是一次连接测试。不要创建或修改积木，operations 必须为空。',
+          '请仅解释：这是一次连接测试。type 必须为 explanation，不要返回 code，也不要修改程序。',
         context: {
           projectId: 'connection-test',
           workspaceHash: '',
@@ -328,6 +328,11 @@ export function AiSettingsScreen({ navigation }: Props) {
         conversation: [],
         signal: controller.signal,
       });
+      if (result.response.type === 'code') {
+        throw new Error(
+          '连接测试期望 explanation，模型却返回了 code；请检查模型或关闭严格 JSON Schema 后重试。',
+        );
+      }
       if (mountedRef.current && operation === operationRef.current) {
         Alert.alert('连接成功', '模型连接与结构化响应验证成功。');
       }

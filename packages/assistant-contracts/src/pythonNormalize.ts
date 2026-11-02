@@ -242,6 +242,23 @@ export function normalizePythonStatementKey(line: string): string {
   return foldPythonWhitespaceOutsideStrings(withoutParens);
 }
 
+const CONTROL_PATH_PREFIX = /^(?:(?:while|for|if|elif|else|def)(?:\/(?:while|for|if|elif|else|def))*)\|/;
+
+/**
+ * 声明行比较键：保留 while/if/... 控制流路径前缀，再规范化语句正文。
+ * 例：while/if|_motor.stop(4)
+ */
+export function normalizePythonStatementKeyWithPath(line: string): string {
+  const trimmed = line.trim();
+  const match = CONTROL_PATH_PREFIX.exec(trimmed);
+  if (match) {
+    const path = match[0].slice(0, -1);
+    const body = normalizePythonStatementKey(trimmed.slice(match[0].length));
+    return body ? `${path}|${body}` : '';
+  }
+  return normalizePythonStatementKey(trimmed);
+}
+
 function isLeadingGlobal(line: string): boolean {
   return /^global\s+/.test(line.trim());
 }
@@ -252,6 +269,39 @@ function isLeadingInit(line: string): boolean {
   );
 }
 
+/** 编辑器生成 Python 使用 4 空格缩进。 */
+const INDENT_WIDTH = 4;
+
+type ControlFrame = { indent: number; kind: string };
+
+function leadingIndentColumns(raw: string): number {
+  let spaces = 0;
+  for (let index = 0; index < raw.length; index += 1) {
+    const char = raw[index]!;
+    if (char === ' ') spaces += 1;
+    else if (char === '\t') spaces += INDENT_WIDTH;
+    else break;
+  }
+  return Math.floor(spaces / INDENT_WIDTH) * INDENT_WIDTH;
+}
+
+function controlKind(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed.endsWith(':')) return null;
+  if (/^while\b/.test(trimmed)) return 'while';
+  if (/^for\b/.test(trimmed)) return 'for';
+  if (/^if\b/.test(trimmed)) return 'if';
+  if (/^elif\b/.test(trimmed)) return 'elif';
+  if (/^else\s*:/.test(trimmed)) return 'else';
+  if (/^def\b/.test(trimmed)) return 'def';
+  return null;
+}
+
+function withControlPath(path: string[], bodyKey: string): string {
+  if (!bodyKey) return '';
+  return path.length > 0 ? `${path.join('/')}|${bodyKey}` : bodyKey;
+}
+
 export type AssistantPythonStatementOptions = {
   /** 是否保留 # @var / # @custom 等元数据注释。diff 为 true；回环比较为 false。 */
   includeMetadata?: boolean;
@@ -260,6 +310,7 @@ export type AssistantPythonStatementOptions = {
 /**
  * 抽出可比较的语句行。
  * includeMetadata 默认 true（授权 diff）；回环比较传 false。
+ * 键带控制流路径：循环/分支内为 while/if|语句。
  */
 export function assistantPythonStatements(
   source: string,
@@ -268,13 +319,19 @@ export function assistantPythonStatements(
   const includeMetadata = options.includeMetadata !== false;
   const kept: string[] = [];
   let skippingLead = true;
+  const stack: ControlFrame[] = [];
   for (const raw of source.split(/\r?\n/)) {
     const trimmed = raw.trim();
     if (!trimmed) continue;
+    const indent = leadingIndentColumns(raw);
+    while (stack.length > 0 && stack[stack.length - 1]!.indent >= indent) {
+      stack.pop();
+    }
+    const path = stack.map(frame => frame.kind);
     if (METADATA_COMMENT.test(trimmed)) {
       if (!includeMetadata) continue;
       skippingLead = false;
-      const key = normalizePythonStatementKey(trimmed);
+      const key = withControlPath(path, normalizePythonStatementKey(trimmed));
       if (key) kept.push(key);
       continue;
     }
@@ -286,7 +343,9 @@ export function assistantPythonStatements(
     if (skippingLead && isLeadingGlobal(withoutComment)) continue;
     if (skippingLead && isLeadingInit(withoutComment)) continue;
     skippingLead = false;
-    kept.push(key);
+    kept.push(withControlPath(path, key));
+    const kind = controlKind(withoutComment);
+    if (kind) stack.push({ indent, kind });
   }
   return kept;
 }

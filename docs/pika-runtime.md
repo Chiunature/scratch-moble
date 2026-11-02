@@ -1,8 +1,13 @@
-# PikaScript 编译与本地运行（轨道 A）
+# PikaScript 编译与主机下发
 
-本文档描述 Scratch 移动端当前已落地的 **Python 编译 + 手机本地执行** 链路，以及相关封装 API，供后续成员查阅与扩展。
+本文档描述 Scratch 移动端已落地的两条链路：
 
-> **当前范围**：轨道 A（编译 / 本地调试）。轨道 B（BLE 连接、字节码下发到主机）尚未实现。
+- **轨道 A**：积木生成 Python，经 `react-native-pika` 编译为手机本地 `.py.o`。
+- **轨道 B**：读取该字节码，经 BLE 上传到 Spark_AI 主机程序槽位。
+
+原生编译器来自依赖 `react-native-pika`（`apps/mobile/package.json` 当前为 `0.1.1`）。本仓库没有 `packages/pika-bytecode/` 目录，不要按该路径查找 C/JNI 源码。
+
+字节码校验、错误文案和工作流相位在 `packages/core/src/runtime/`。帧格式在 `packages/protocol`。连接与上传在 `apps/mobile/src/services/ble/`，详见 [ble-connection.md](./ble-connection.md)。
 
 ---
 
@@ -17,250 +22,179 @@ flowchart LR
 
   subgraph rn [React Native]
     Publisher -->|editor.code.generated| Editor[EditorScreen]
-    Editor --> Service[pikaService]
+    Editor --> Workflow[useEditorPikaWorkflow]
+    Workflow --> Service[pikaService.compileGeneratedCode]
     Service --> RNPika[react-native-pika]
+    Workflow --> Upload[uploadBytecodeToHost]
+    Upload --> BLE[BleDeviceManager]
   end
 
-  subgraph native [原生层]
-    RNPika --> JNI[PikaMobileModule / JNI]
-    JNI --> CAPI[pika_mobile.c]
-    CAPI --> Compiler[PikaCompiler]
-    CAPI --> VM[PikaVM]
-  end
-
-  Compiler --> PyO[".py.o 字节码文件"]
-  VM --> PyO
+  RNPika --> PyO["本地 .py.o"]
+  BLE --> Host["主机槽位 N.o"]
 ```
-
-### 数据流步骤
 
 | 步骤 | 位置 | 说明 |
 |------|------|------|
-| 1 | `packages/scratch-editor-web/src/codegen/` | 积木工作区 → Python 源码字符串 |
-| 2 | `packages/scratch-editor-web/src/bridge/codeGenerationPublisher.ts` | 防抖 200ms，通过 `postMessage` 发送 `editor.code.generated` |
-| 3 | `apps/mobile/src/screens/EditorScreen/EditorScreen.tsx` | 接收消息，存入 `generatedCode` state，代码面板展示 |
-| 4 | `apps/mobile/src/services/pika/pikaService.ts` | 业务封装：校验源码、统一成功/失败结构 |
-| 5 | `packages/pika-bytecode/` | JS → NativeModules `PikaMobile` |
-| 6 | `packages/pika-bytecode/mobile/pika_mobile.c` | 调用 `pikaCompile` / `obj_run` / `pikaVM_runByteCode` |
+| 1 | `packages/scratch-editor-web/src/codegen/` | 积木工作区 → Python 源码 |
+| 2 | `packages/scratch-editor-web/src/bridge/codeGenerationPublisher.ts` | 防抖后通过 `postMessage` 发送 `editor.code.generated` |
+| 3 | `apps/mobile/src/screens/EditorScreen/EditorScreen.tsx` | 接收代码，交给 `useEditorPikaWorkflow` |
+| 4 | `apps/mobile/src/services/pika/pikaService.ts` | 校验源码并调用 `react-native-pika` 的 `compile` |
+| 5 | `packages/core/src/runtime/pika.ts` | 把原生结果映射为文案、字节数和 magic 预览 |
+| 6 | `apps/mobile/src/services/ble/upload/service.ts` | 读取 `.py.o`，以 `{槽位}.o` 经 BLE 下发 |
+
+代码发布有约 200ms 防抖。运行或下载读取的是当前已收到的 `generatedCode`，不会在编译前再向 WebView 要一次生成。刚改完积木就点运行，有可能用到上一份代码。
 
 ---
 
 ## 2. 目录与依赖
 
 ```
-packages/pika-bytecode/          # 可独立发布的 react-native-pika 包
-  mobile/pika_mobile.{c,h}       # C API
-  pikascript/                    # PikaScript v1.13.4 运行时
-  android/                       # Android Kotlin/JNI/CMake
-  ios/                           # iOS ObjC++ bridge
-  src/                           # TypeScript API
-
-apps/mobile/src/services/pika/   # 业务封装（推荐 UI / 服务层只调这里）
-  pikaService.ts
-  index.ts
+apps/mobile/src/services/pika/          # 编译适配：只调 react-native-pika
+apps/mobile/src/services/ble/upload/    # 字节码上传到主机槽位
+apps/mobile/src/features/editor/hooks/useEditorPikaWorkflow.ts
+packages/core/src/runtime/pika.ts       # 文案、magic、可编译性判断
+packages/core/src/runtime/pikaWorkflow.ts
+packages/protocol/src/frames.ts         # 上传帧
 ```
 
-- `apps/mobile/package.json` 依赖 `"react-native-pika": "0.1.0"`
-- 根 `package.json` 通过 `packages/*` 识别本地 `react-native-pika` 包；独立发布后应用可改为 npm 版本范围
+`apps/mobile` 通过 `"react-native-pika": "0.1.1"` 使用原生模块。域逻辑不要直接依赖该包，放在 `packages/core`。
 
 ---
 
 ## 3. 字节码格式（`.py.o`）
 
-编译产物为 **PikaScript 专有字节码**，不是 `.so` 共享库。
+编译产物是 **PikaScript 字节码**，不是 `.so`。
 
 | 字段 | 值 |
 |------|-----|
-| Magic | `0x0f 70 79 6f`（hex: `0f70796f`，即 `0x0f` + `"pyo"`） |
-| 默认输出路径（Android） | `{filesDir}/pika-main.py.o` |
-| 默认输出路径（iOS） | `{Documents}/pika-main.py.o` |
+| Magic | `0x0f 0x70 0x79 0x6f`（`0x0f` + `"pyo"`，hex 前缀 `0f70796f`） |
+| 默认文件 | `getDefaultBytecodePath()` 返回的本地 `pika-main.py.o`，每次编译覆盖 |
 
-编译成功时，代码面板会显示字节数及 hex 前缀。合法前缀应以 `0f70796f` 开头。
+上传前 `readBytecodeFile()` 会检查这 4 个字节。不匹配则报「字节码格式无效，请重新编译」，不会把文件发给主机。
 
----
-
-## 4. 原生模块 API（`react-native-pika`）
-
-路径：`packages/pika-bytecode/src/index.ts`
-
-通过 `NativeModules.PikaMobile`（Legacy 桥接）调用，**非 TurboModule**。
-
-### 类型
-
-```typescript
-type PikaResult = {
-  code: number;        // 0 表示成功（PIKA_RES_OK）
-  message: string;
-  data?: string;       // 编译成功后可能携带文件内容
-  dataEncoding?: 'utf8' | 'base64' | 'hex';  // Android 编译结果为 hex
-};
-```
-
-### 函数
-
-| 函数 | 签名 | 说明 |
-|------|------|------|
-| `compile` | `(source: string, outputPath?: string \| null) => Promise<PikaResult>` | Python 源码 → 写入 `outputPath`；`outputPath` 为空时由原生层使用默认路径 |
-| `execute` | `(source: string) => Promise<PikaResult>` | 在手机 VM 中直接执行 Python 源码 |
-| `executeBytecode` | `(path: string) => Promise<PikaResult>` | 加载 `.py.o` 文件并执行 |
-| `readFile` | `(path: string) => Promise<PikaResult>` | 读取字节码文件，`data` 为 hex（Android） |
-| `getDefaultBytecodePath` | `() => Promise<string>` | 返回当前平台默认 `.py.o` 绝对路径 |
-
-### 使用示例
-
-```typescript
-import {
-  compile,
-  execute,
-  executeBytecode,
-  getDefaultBytecodePath,
-} from 'react-native-pika';
-
-const path = await getDefaultBytecodePath();
-const compiled = await compile("print('hello')\n", path);
-if (compiled.code !== 0) {
-  throw new Error(compiled.message);
-}
-
-await execute("print('hello')\n");
-await executeBytecode(path);
-```
+助手预览也会调用 `compileGeneratedCode`，但写入缓存目录后随即删除，不上传、不连接设备。
 
 ---
 
-## 5. 业务封装 API（`pikaService`）
+## 4. 业务封装 API（`pikaService`）
 
-路径：`apps/mobile/src/services/pika/`
-
-**推荐**：页面、服务层优先调用此层，而不是直接调 `react-native-pika`。该层负责空代码校验、默认路径、hex 解析与用户可读错误信息。
-
-### 导出
+路径：`apps/mobile/src/services/pika/`。页面和服务层调用这里，不直接调 `react-native-pika`。
 
 ```typescript
 import {
   compileGeneratedCode,
+  readBytecodeFile,
+  getDefaultBytecodePath,
   type PikaCompileOutcome,
 } from '../../services/pika';
 ```
 
-### 类型
+`PikaCompileOutcome` 定义在 `@scratch-mobile/core`：
 
 ```typescript
 type PikaCompileOutcome = {
   ok: boolean;
   message: string;
-  bytecodePath: string | null;  // 成功时为绝对路径，供 BLE 上传使用
-  bytecodeSize: number;       // 字节码字节数
-  hexPreview: string;         // 前 16 字节的 hex，用于快速校验 magic
+  errorName?: string;
+  phase?: 'compile' | 'execute' | 'bytecode' | 'io';
+  output?: string;
+  outputTruncated?: boolean;
+  bytecodePath: string | null; // 成功时的绝对路径
+  bytecodeSize: number;
+  hexPreview: string;          // 前 16 字节 hex，正常以 0f70796f 开头
 };
 ```
 
-### 函数
-
-#### `compileGeneratedCode(source, outputPath?)`
-
-将编辑器生成的 Python 编译为 `.py.o`。
+### `compileGeneratedCode(source, outputPath?)`
 
 | 参数 | 说明 |
 |------|------|
-| `source` | Python 源码字符串 |
-| `outputPath` | 可选；省略时自动 `getDefaultBytecodePath()` |
+| `source` | Python 源码。先 `trim`，再交给 `isCompilablePythonSource()` |
+| `outputPath` | 可选。省略时使用 `getDefaultBytecodePath()` |
 
-| 前置校验 | 行为 |
-|----------|------|
-| 空字符串 | `ok: false`，`message: '暂无有效 Python 代码'` |
-| 以 `//` 开头（占位注释） | 同上 |
+以下内容不会送去编译，直接返回 `ok: false`、`message: '暂无有效 Python 代码'`：
 
-| 返回值字段 | 说明 |
-|------------|------|
-| `ok` | `result.code === 0` |
-| `bytecodePath` | 成功时保留路径，供 BLE 上传使用 |
-| `bytecodeSize` | 从 `PikaResult.data`（hex）解码后的长度 |
-| `hexPreview` | 前 16 字节 hex，正常应以 `0f70796f` 开头 |
+- 空字符串
+- 以 `//` 开头
+- 以「拖拽飞出栏积木后生成 Python 代码」或「请从「当程序启动时」积木开始搭建程序」这两句占位注释开头
 
-### 使用示例
+这不是 Python 语法分析。语法错误由原生编译器返回，再经 `mapPikaMessage()` 变成中文说明。
+
+### `readBytecodeFile(path)`
+
+读取编译产物并解码 `hex` 或 `base64`，通过 magic 校验后返回 `number[]`，供 BLE 上传使用。
 
 ```typescript
-const source = generatedCode; // 来自 editor.code.generated
-
 const compiled = await compileGeneratedCode(source);
-if (!compiled.ok) {
+if (!compiled.ok || !compiled.bytecodePath) {
   console.warn(compiled.message);
   return;
 }
-console.log(`字节码 ${compiled.bytecodeSize} B，前缀 ${compiled.hexPreview}`);
+const bytes = await readBytecodeFile(compiled.bytecodePath);
 ```
 
 ---
 
-## 6. 编辑器 UI 集成
+## 5. 编辑器里的运行、下载和暂停
 
-路径：`apps/mobile/src/screens/EditorScreen/EditorScreen.tsx`
+入口：`useEditorPikaWorkflow`。须已连接主机，否则弹窗提示，不编译。
 
-代码面板（右上角代码图标打开）为只读代码查看器；编译与 BLE 下发由编辑器头部「运行 / 下载」按钮触发（Pika 工作流弹窗展示进度与结果，见 `useEditorPikaWorkflow`）：
+| 操作 | 行为 |
+|------|------|
+| **运行** | 编译当前 Python，上传到所选槽位，末包功能码 `0xBC`（上传后运行） |
+| **下载** | 同样编译并上传，末包功能码 `0xBB`（只保存） |
+| **暂停** | `stopHostApp()`，发送 `app_stop`（`0xB9`）。不重新编译 |
 
-| 按钮 | 调用 | 用户可见反馈 |
-|------|------|--------------|
-| **运行 / 下载** | `compileGeneratedCode(generatedCode)` → `uploadBytecodeToHost` | 弹窗显示「编译成功：N 字节，前缀 0f70796f…」及上传进度 |
+槽位范围 0–10，主机文件名是 `{槽位}.o`，例如槽位 0 为 `0.o`。默认槽位是 0。
 
-`generatedCode` 变化时会重置编译状态（需重新编译）。
+工作流相位在 `pikaWorkflow`：`idle → compiling → uploading → idle`。暂停走 `idle → running → idle`。非法转换会被忽略。弹窗只读 store 里的相位，不自己写状态。
+
+`generatedCode` 变化时关闭进度弹窗。上一份编译结果不能直接当成新源码的产物再上传。
 
 ---
 
-## 7. 限制与注意事项
+## 6. 上传帧
 
-### 手机本地 VM 无设备 API
+`uploadBytecodeToHost()` 要求蓝牙已连接，然后调用 `bleDeviceManager.uploadFile()`。分包在 `packages/protocol` 的 `buildUploadFrames()`，会话在 `UploadSession`：发出一帧后等待主机 ACK，校验通过才发下一帧。
 
-Codegen 生成的 Python 使用固件模块（`_motor`、`_key`、`_matrix` 等，见 `packages/scratch-editor-web/src/codegen/moduleCall.ts`）。当前 vendor 的 `pikascript-api` 仅含 `PikaStdLib`。
+| 帧 | 功能码 | 内容 |
+|----|--------|------|
+| 文件名 | `0xDA` | 主机文件名，如 `0.o` |
+| 中间包 | `0xAA` | 最多 128 字节 |
+| 结束包 | `0xBB` | 最后一包，上传后不运行 |
+| 结束并运行 | `0xBC` | 最后一包，上传后运行 |
 
-| 操作 | 含硬件 API 的脚本 |
-|------|-------------------|
-| **编译** | 通常可成功（编译器做语法级处理） |
-| **BLE 下发** | 在主机固件上执行，含硬件 API 的脚本可正常运行 |
+帧结构是 `5A 97 98`、长度、功能码、数据、低 8 位累加和、`A5`。没收齐的字节留在接收缓冲里。ACK 校验失败、超时或断连会取消本次上传。
 
-含硬件调用的程序，最终应在**主机固件**上执行；轨道 B 通过 BLE 下发 `.py.o`（见 `uploadBytecodeToHost`）。
+---
 
-### `print` 输出不在 App 界面
+## 7. 限制
 
-`print()` 走 PikaScript 底层 `pika_platform_printf`，输出到系统日志。查看方式：
+含 `_motor`、`_matrix` 等硬件调用的程序，应在主机上执行。手机侧编译通常只做语法处理；编译成功不表示固件里一定有同名模块，也不表示硬件已接好。
+
+`print()` 走 PikaScript 的平台输出，出现在系统日志里，不出现在 App 界面：
 
 ```bash
 yarn logs:mobile
 ```
 
-### 开发时 Hooks 顺序报错
+给 `EditorScreen` 新增 Hook 后，Fast Refresh 可能报 Hooks 顺序错误。需要完全重载 App（`yarn start --reset-cache` 或重新 `yarn android`）。
 
-给 `EditorScreen` 新增 `useState` 后，Fast Refresh 可能触发 Hooks 顺序警告。解决：**完全重载 App**（`yarn start --reset-cache` 或重新 `yarn android`），不要只依赖热更新。
-
-### 修改原生代码后
-
-```bash
-yarn install
-yarn android   # 或 yarn ios（需 pod install）
-```
-
-Android NDK 编译 `react-native-pika` 时，`CMakeLists.txt` 使用 `REALPATH` 解析 `PIKA_ROOT`，以兼容 Yarn workspace 符号链接。
+修改 `react-native-pika` 的原生代码后需要重新安装应用。该包的源码不在本仓库。
 
 ---
 
-## 8. 后续扩展（轨道 B 预留）
-
-| 能力 | 状态 | 建议接入点 |
-|------|------|------------|
-| BLE 扫描 / 连接主机 | 未做 | `apps/mobile/src/services/ble/` |
-| 字节码分片下发 | 未做 | 扩展 `packages/protocol`，读取 `compileGeneratedCode` 产物 |
-| 上传按钮 | 未做 | `EditorScreen`，依赖 BLE 连接就绪后启用 |
-
----
-
-## 9. 相关文件索引
+## 8. 相关文件
 
 | 文件 | 职责 |
 |------|------|
 | [packages/scratch-editor-web/src/codegen/generators.ts](../packages/scratch-editor-web/src/codegen/generators.ts) | `renderPythonCode()` |
-| [packages/shared/src/types/editorBridge.ts](../packages/shared/src/types/editorBridge.ts) | `editor.code.generated` 消息类型 |
-| [apps/mobile/src/services/pika/pikaService.ts](../apps/mobile/src/services/pika/pikaService.ts) | 业务封装 |
-| [packages/pika-bytecode/src/index.ts](../packages/pika-bytecode/src/index.ts) | 原生 JS API |
-| [packages/pika-bytecode/mobile/pika_mobile.c](../packages/pika-bytecode/mobile/pika_mobile.c) | C API 实现 |
-| [packages/pika-bytecode/pikascript/pikascript-core/PikaCompiler.c](../packages/pika-bytecode/pikascript/pikascript-core/PikaCompiler.c) | 编译器核心 |
-| [docs/module-boundary.md](./module-boundary.md) | 模块边界（BLE / 原生放 `apps/mobile`） |
+| [packages/shared/src/types/editorBridge.ts](../packages/shared/src/types/editorBridge.ts) | `editor.code.generated` |
+| [apps/mobile/src/services/pika/pikaService.ts](../apps/mobile/src/services/pika/pikaService.ts) | 编译与读取字节码 |
+| [packages/core/src/runtime/pika.ts](../packages/core/src/runtime/pika.ts) | magic、可编译性、错误文案 |
+| [packages/core/src/runtime/pikaWorkflow.ts](../packages/core/src/runtime/pikaWorkflow.ts) | 编译 / 上传 / 暂停相位 |
+| [apps/mobile/src/features/editor/hooks/useEditorPikaWorkflow.ts](../apps/mobile/src/features/editor/hooks/useEditorPikaWorkflow.ts) | 运行、下载、暂停 |
+| [apps/mobile/src/services/ble/upload/service.ts](../apps/mobile/src/services/ble/upload/service.ts) | 槽位文件名与上传 |
+| [packages/protocol/src/frames.ts](../packages/protocol/src/frames.ts) | 文件名帧与 128 字节分包 |
+| [docs/ble-connection.md](./ble-connection.md) | 扫描、连接、Notify |
+| [docs/blocks-python-codegen.md](./blocks-python-codegen.md) | 积木到 Python 的生成细节 |

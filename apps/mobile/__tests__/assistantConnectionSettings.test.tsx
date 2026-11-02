@@ -7,7 +7,7 @@ import { AiSettingsScreen } from '../src/screens/AiSettingsScreen';
 jest.mock('../src/services/assistant', () => ({
   activateAssistantConnection: jest.fn(),
   deleteAssistantConnection: jest.fn(),
-  generateAssistantProposal: jest.fn(),
+  generateAssistantCode: jest.fn(),
   isAssistantSecureStorageAvailable: jest.fn(() => false),
   listAssistantConnections: jest.fn(),
   normalizeAssistantBaseUrl: jest.requireActual(
@@ -140,7 +140,7 @@ it.each([
     });
     expect(service.saveAssistantConnection).not.toHaveBeenCalled();
     expect(service.deleteAssistantConnection).not.toHaveBeenCalled();
-    expect(service.generateAssistantProposal).not.toHaveBeenCalled();
+    expect(service.generateAssistantCode).not.toHaveBeenCalled();
   },
 );
 
@@ -172,7 +172,7 @@ it('ignores a previous save confirmation after remount without cancelling the ne
 
 it('aborts a running connection test on background and ignores its late response', async () => {
   let finish!: () => void;
-  service.generateAssistantProposal.mockImplementation(
+  service.generateAssistantCode.mockImplementation(
     () =>
       new Promise<void>(resolve => {
         finish = resolve;
@@ -186,7 +186,7 @@ it('aborts a running connection test on background and ignores its late response
   await act(async () => {
     confirmation()();
   });
-  const signal = service.generateAssistantProposal.mock.calls[0][0]
+  const signal = service.generateAssistantCode.mock.calls[0][0]
     .signal as AbortSignal;
   await act(async () => {
     onStateChange('background');

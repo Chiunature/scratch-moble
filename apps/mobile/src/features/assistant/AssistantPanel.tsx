@@ -230,6 +230,13 @@ export function AssistantPanel({
     setMessages(messagesRef.current);
   }, []);
 
+  const replaceMessage = useCallback((id: string, content: string) => {
+    messagesRef.current = messagesRef.current.map(item =>
+      item.id === id ? { ...item, content } : item,
+    );
+    setMessages(messagesRef.current);
+  }, []);
+
   const discardCandidateSilently = useCallback(
     (staleCandidate: CandidateState | null) => {
       if (!staleCandidate || staleCandidate.projectId !== projectId) return;
@@ -401,8 +408,9 @@ export function AssistantPanel({
         if (!isCurrent(operation)) return;
         networkControllerRef.current = null;
 
+        const assistantMessageId = createRequestId();
         appendMessage({
-          id: createRequestId(),
+          id: assistantMessageId,
           role: exampleId ? 'status' : 'assistant',
           content: proposalText(generated),
         });
@@ -417,21 +425,14 @@ export function AssistantPanel({
         }
 
         const lockedWorkspaceHash = snapshot.workspaceHash;
-        const lockedProgramEdit: AssistantProgramEdit =
-          generated.response.programEdit;
-        const lockedProgramEditJson = JSON.stringify({
-          program_edit: lockedProgramEdit,
-        });
+        /** 反编译 + 授权验收通过后才锁定；通过前可更换声明。 */
+        let lockedProgramEdit: AssistantProgramEdit | null = null;
 
         const adoptCodeResponse = (
           next: GenerateAssistantCodeResult,
         ): boolean => {
           if (next.response.type !== 'code') {
-            appendMessage({
-              id: createRequestId(),
-              role: 'assistant',
-              content: proposalText(next),
-            });
+            replaceMessage(assistantMessageId, proposalText(next));
             busyRef.current = false;
             setPhase('idle');
             return false;
@@ -442,8 +443,9 @@ export function AssistantPanel({
           if (snapshot.workspaceHash !== lockedWorkspaceHash) {
             throw new Error('作品快照已变化，授权已失效，请重新生成。');
           }
-          // 修复响应里的声明若被加宽则忽略；验收始终使用首次锁定的授权。
+          // 锁定后：修复响应若加宽则忽略，仍用已锁定授权。
           if (
+            lockedProgramEdit &&
             isProgramEditWidened(lockedProgramEdit, next.response.programEdit)
           ) {
             next.response = {
@@ -452,7 +454,45 @@ export function AssistantPanel({
             };
           }
           generated = next;
+          replaceMessage(assistantMessageId, proposalText(generated));
           return true;
+        };
+
+        const requestRepair = async (
+          failedPython: string,
+          error: string,
+        ): Promise<boolean> => {
+          if (!connection) throw new Error('模型配置不可用。');
+          const controller = new AbortController();
+          networkControllerRef.current = controller;
+          setPhase('model');
+          const repaired = await generateAssistantCode({
+            profile: connection.profile,
+            apiKey: connection.apiKey,
+            prompt: trimmedPrompt,
+            conversation: priorConversation,
+            context: {
+              projectId,
+              workspaceHash: snapshot.workspaceHash,
+              generatedCode: snapshot.code,
+              blocks: snapshot.blocks,
+            },
+            repair: {
+              python: failedPython,
+              error,
+              ...(lockedProgramEdit
+                ? {
+                    lockedProgramEditJson: JSON.stringify({
+                      program_edit: lockedProgramEdit,
+                    }),
+                  }
+                : {}),
+            },
+            signal: controller.signal,
+          });
+          networkControllerRef.current = null;
+          if (!isCurrent(operation)) return false;
+          return adoptCodeResponse(repaired);
         };
 
         setPhase('prepare');
@@ -461,7 +501,23 @@ export function AssistantPanel({
           EditorOutMessage,
           { type: 'editor.workspace.candidate.ready' }
         > | null = null;
+        let omission = {
+          removed: [] as string[],
+          added: [] as string[],
+          blockAccept: false,
+          message: null as string | null,
+        };
+        let compileOk = false;
+        let compileMessage = '编译未完成。';
+
         for (let attempt = 0; attempt < 3; attempt += 1) {
+          const responseEdit = generated.response.programEdit;
+          const activeEdit: AssistantProgramEdit | undefined =
+            lockedProgramEdit ?? responseEdit;
+          if (!activeEdit) {
+            throw new Error('code 响应缺少 program_edit 授权声明。');
+          }
+
           const prepareRequestId = createRequestId();
           const prepared = await request({
             type: 'editor.workspace.candidate.prepare',
@@ -470,7 +526,7 @@ export function AssistantPanel({
             source: {
               kind: 'python',
               python,
-              programScope: lockedProgramEdit.scope,
+              programScope: activeEdit.scope,
             },
             sessionId: snapshot.sessionId,
             catalogVersion: snapshot.catalogVersion,
@@ -500,45 +556,33 @@ export function AssistantPanel({
             if (exampleId || attempt === 2) {
               throw new Error(prepared.reason || '编辑器拒绝了该候选修改。');
             }
-            if (!connection) throw new Error('模型配置不可用。');
-            const controller = new AbortController();
-            networkControllerRef.current = controller;
-            setPhase('model');
-            const repaired = await generateAssistantCode({
-              profile: connection.profile,
-              apiKey: connection.apiKey,
-              prompt: trimmedPrompt,
-              conversation: priorConversation,
-              context: {
-                projectId,
-                workspaceHash: snapshot.workspaceHash,
-                generatedCode: snapshot.code,
-                blocks: snapshot.blocks,
-              },
-              repair: {
+            if (
+              !(await requestRepair(
                 python,
-                error: prepared.reason,
-                lockedProgramEditJson,
-              },
-              signal: controller.signal,
-            });
-            networkControllerRef.current = null;
-            if (!isCurrent(operation)) return;
-            if (!adoptCodeResponse(repaired)) return;
+                prepared.reason || '编辑器拒绝了该候选修改。',
+              ))
+            ) {
+              return;
+            }
             python = generated.response.python;
             setPhase('prepare');
             continue;
           }
           ready = assertCandidateReady(prepared, prepareRequestId, projectId);
           const assessed = assessAssistantProgramEdit({
-            programEdit: lockedProgramEdit,
+            programEdit: activeEdit,
             originalPython: snapshot.code,
             candidatePython: ready.code,
           });
-          const omission = exampleId
+          omission = exampleId
             ? { ...assessed, blockAccept: false, message: null }
             : assessed;
-          if (omission.blockAccept && !exampleId && attempt < 2) {
+          if (omission.blockAccept && !exampleId) {
+            if (attempt === 2) {
+              compileOk = false;
+              compileMessage = omission.message ?? '候选未通过 program_edit 验收。';
+              break;
+            }
             discardCandidateSilently({
               projectId,
               candidateId: ready.candidateId,
@@ -555,41 +599,85 @@ export function AssistantPanel({
               omissionMessage: omission.message,
             });
             ready = null;
-            if (!connection) throw new Error('模型配置不可用。');
-            const controller = new AbortController();
-            networkControllerRef.current = controller;
-            setPhase('model');
-            const repaired = await generateAssistantCode({
-              profile: connection.profile,
-              apiKey: connection.apiKey,
-              prompt: trimmedPrompt,
-              conversation: priorConversation,
-              context: {
-                projectId,
-                workspaceHash: snapshot.workspaceHash,
-                generatedCode: snapshot.code,
-                blocks: snapshot.blocks,
-              },
-              repair: {
+            if (
+              !(await requestRepair(
                 python,
-                error:
-                  omission.message ??
-                  '候选未通过 program_edit 验收，请按已锁定的授权修正 Python。',
-                lockedProgramEditJson,
-              },
-              signal: controller.signal,
-            });
-            networkControllerRef.current = null;
-            if (!isCurrent(operation)) return;
-            if (!adoptCodeResponse(repaired)) return;
+                omission.message ??
+                  '候选未通过 program_edit 验收，请修正 Python 或 program_edit。',
+              ))
+            ) {
+              return;
+            }
             python = generated.response.python;
             setPhase('prepare');
             continue;
           }
-          break;
-        }
-        if (!ready) throw new Error('编辑器没有返回匹配的候选工作区。');
-        if (!isCurrent(operation)) {
+
+          // 反编译与授权均通过：锁定声明；之后的编译修复不得加宽。
+          lockedProgramEdit = activeEdit;
+          const acceptedEdit = activeEdit;
+
+          setPhase('compile');
+          compileOk = false;
+          compileMessage = '编译未完成。';
+          let compileOutputPath: string | null = null;
+          try {
+            const safeProjectId = projectId
+              .replace(/[^a-zA-Z0-9_-]/g, '_')
+              .slice(0, 48);
+            const safeCandidateId = ready.candidateId
+              .replace(/[^a-zA-Z0-9_-]/g, '_')
+              .slice(0, 48);
+            compileOutputPath = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/assistant-${safeProjectId}-${safeCandidateId}.py.o`;
+            const outcome = await compileGeneratedCode(
+              ready.code,
+              compileOutputPath,
+            );
+            compileOk = outcome.ok;
+            compileMessage = outcome.ok
+              ? `编译通过（${outcome.bytecodeSize} 字节）。这里只验证代码，不会连接或上传到蓝牙设备。`
+              : outcome.message || '候选代码编译失败。';
+            if (
+              !compileOk &&
+              acceptedEdit.mode === 'clear' &&
+              !isCompilablePythonSource(ready.code)
+            ) {
+              compileOk = true;
+              compileMessage =
+                acceptedEdit.scope === 'workspace'
+                  ? '工作区将被清空。确认后才会移除积木和变量，不会连接或上传到蓝牙设备。'
+                  : '主程序将被清空。确认后才会移除绿旗下的积木，变量和自制积木会保留，不会连接或上传到蓝牙设备。';
+            }
+          } catch (error) {
+            compileMessage = `候选代码编译异常：${safeErrorMessage(error)}`;
+          } finally {
+            if (compileOutputPath) {
+              await ReactNativeBlobUtil.fs
+                .unlink(compileOutputPath)
+                .catch(() => undefined);
+            }
+          }
+          if (!isCurrent(operation)) {
+            discardCandidateSilently({
+              projectId,
+              candidateId: ready.candidateId,
+              sessionId: ready.sessionId,
+              summary: generated.response.message,
+              originalCode: snapshot.code,
+              code: ready.code,
+              blockCount: ready.blockCount,
+              usage: generated.usage,
+              compileOk,
+              compileMessage,
+              removedStatements: omission.removed,
+              omissionBlocked: omission.blockAccept,
+              omissionMessage: omission.message,
+            });
+            return;
+          }
+          if (compileOk || exampleId || attempt === 2) {
+            break;
+          }
           discardCandidateSilently({
             projectId,
             candidateId: ready.candidateId,
@@ -600,64 +688,21 @@ export function AssistantPanel({
             blockCount: ready.blockCount,
             usage: generated.usage,
             compileOk: false,
-            compileMessage: '',
-            removedStatements: [],
+            compileMessage,
+            removedStatements: omission.removed,
             omissionBlocked: false,
             omissionMessage: null,
           });
-          return;
+          ready = null;
+          if (!(await requestRepair(python, compileMessage))) {
+            return;
+          }
+          python = generated.response.python;
+          setPhase('prepare');
         }
 
-        const assessed = assessAssistantProgramEdit({
-          programEdit: lockedProgramEdit,
-          originalPython: snapshot.code,
-          candidatePython: ready.code,
-        });
-        const omission = exampleId
-          ? { ...assessed, blockAccept: false, message: null }
-          : assessed;
-
-        setPhase('compile');
-        let compileOk = false;
-        let compileMessage = '编译未完成。';
-        let compileOutputPath: string | null = null;
-        try {
-          const safeProjectId = projectId
-            .replace(/[^a-zA-Z0-9_-]/g, '_')
-            .slice(0, 48);
-          const safeCandidateId = ready.candidateId
-            .replace(/[^a-zA-Z0-9_-]/g, '_')
-            .slice(0, 48);
-          compileOutputPath = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/assistant-${safeProjectId}-${safeCandidateId}.py.o`;
-          const outcome = await compileGeneratedCode(
-            ready.code,
-            compileOutputPath,
-          );
-          compileOk = outcome.ok;
-          compileMessage = outcome.ok
-            ? `编译通过（${outcome.bytecodeSize} 字节）。这里只验证代码，不会连接或上传到蓝牙设备。`
-            : outcome.message || '候选代码编译失败。';
-          // 清空后往往只剩占位说明，Pika 会报「暂无有效 Python 代码」。
-          // 这是 clear 的预期结果，不应挡住确认。
-          if (
-            !compileOk &&
-            lockedProgramEdit.mode === 'clear' &&
-            !isCompilablePythonSource(ready.code)
-          ) {
-            compileOk = true;
-            compileMessage =
-              lockedProgramEdit.scope === 'workspace'
-                ? '工作区将被清空。确认后才会移除积木和变量，不会连接或上传到蓝牙设备。'
-                : '主程序将被清空。确认后才会移除绿旗下的积木，变量和自制积木会保留，不会连接或上传到蓝牙设备。';
-          }
-        } catch (error) {
-          compileMessage = `候选代码编译异常：${safeErrorMessage(error)}`;
-        } finally {
-          if (compileOutputPath) {
-            await ReactNativeBlobUtil.fs
-              .unlink(compileOutputPath)
-              .catch(() => undefined);
-          }
+        if (!ready) {
+          throw new Error('编辑器没有返回匹配的候选工作区。');
         }
         if (!isCurrent(operation)) {
           discardCandidateSilently({
@@ -710,6 +755,7 @@ export function AssistantPanel({
       phase,
       projectId,
       prompt,
+      replaceMessage,
       request,
       setCandidate,
     ],

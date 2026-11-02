@@ -518,20 +518,86 @@ describe('AssistantPanel regressions', () => {
         .get(snapshot.requestId)!
         .resolve(snapshotResponse(snapshot.requestId, 'project-1'));
     });
-    const prepare = calls.find(
-      message => message.type === 'editor.workspace.candidate.prepare',
-    )!;
-    await act(async () => {
-      deferred
-        .get(prepare.requestId)!
-        .resolve(readyResponse(prepare.requestId, 'project-1'));
-    });
-    await act(async () => undefined);
+    // 编译失败会在同一次生成里最多再请求 2 次，共 3 次 prepare。
+    for (let round = 0; round < 3; round += 1) {
+      await act(async () => undefined);
+      const prepare = calls.filter(
+        message => message.type === 'editor.workspace.candidate.prepare',
+      )[round];
+      expect(prepare).toBeDefined();
+      await act(async () => {
+        deferred
+          .get(prepare!.requestId)!
+          .resolve(readyResponse(prepare!.requestId, 'project-1'));
+      });
+      await act(async () => undefined);
+    }
+    expect(generateAssistantCode).toHaveBeenCalledTimes(3);
     expect(ReactNativeBlobUtil.fs.unlink).toHaveBeenCalledWith(
       '/cache/assistant-project-1-candidate-1.py.o',
     );
     expect(findButton(renderer, '接受并应用候选修改')?.props.disabled).toBe(
       true,
+    );
+    await act(async () => {
+      renderer.unmount();
+    });
+  });
+
+  it('retries once after a compile failure and then accepts', async () => {
+    compileGeneratedCode
+      .mockResolvedValueOnce({
+        ok: false,
+        message: 'syntax error',
+        bytecodePath: null,
+        bytecodeSize: 0,
+        hexPreview: '',
+      })
+      .mockResolvedValue({
+        ok: true,
+        bytecodeSize: 12,
+        message: '',
+        bytecodePath: '/cache/output.o',
+      });
+    const { calls, deferred, request } = setupRequest();
+    const renderer = renderPanel({
+      projectId: 'project-1',
+      request,
+      onClose: jest.fn(),
+    });
+    await act(async () => {
+      findInput(renderer).props.onChangeText('prompt');
+    });
+    await act(async () => {
+      findButton(renderer, '发送给积木助手')!.props.onPress();
+    });
+    const snapshot = calls.find(
+      message => message.type === 'editor.workspace.snapshot.request',
+    )!;
+    await act(async () => {
+      deferred
+        .get(snapshot.requestId)!
+        .resolve(snapshotResponse(snapshot.requestId, 'project-1'));
+    });
+    for (let round = 0; round < 2; round += 1) {
+      await act(async () => undefined);
+      const prepare = calls.filter(
+        message => message.type === 'editor.workspace.candidate.prepare',
+      )[round];
+      expect(prepare).toBeDefined();
+      await act(async () => {
+        deferred
+          .get(prepare!.requestId)!
+          .resolve(readyResponse(prepare!.requestId, 'project-1'));
+      });
+      await act(async () => undefined);
+    }
+    expect(generateAssistantCode).toHaveBeenCalledTimes(2);
+    const repair = generateAssistantCode.mock.calls[1][0];
+    expect(repair.repair?.error).toContain('syntax error');
+    expect(repair.repair?.lockedProgramEditJson).toBeDefined();
+    expect(findButton(renderer, '接受并应用候选修改')?.props.disabled).toBe(
+      false,
     );
     await act(async () => {
       renderer.unmount();
@@ -594,7 +660,7 @@ describe('AssistantPanel regressions', () => {
         ...readyResponse(prepare.requestId, 'project-1'),
         code: '# 请从「当程序启动时」积木开始搭建程序',
         blockCount: 1,
-      });
+      } as EditorOutMessage);
     });
     await act(async () => undefined);
     expect(findText(renderer, '主程序将被清空。确认后才会移除绿旗下的积木，变量和自制积木会保留，不会连接或上传到蓝牙设备。')).toBe(

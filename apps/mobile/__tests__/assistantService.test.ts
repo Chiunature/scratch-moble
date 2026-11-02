@@ -1,5 +1,6 @@
 import {
   AssistantRequestError,
+  generateAssistantCode,
   generateAssistantProposal,
   normalizeAssistantBaseUrl,
 } from '../src/services/assistant/openAiCompatible';
@@ -382,5 +383,110 @@ describe('assistant model client', () => {
     expect(content).toContain('_motor.run_power(4, 30)');
     expect(content).not.toContain('block-secret-id');
     expect(content).not.toContain('"blocks"');
+    expect(content).not.toContain('"projectId"');
+    expect(content).not.toContain('"workspaceHash"');
+  });
+});
+
+describe('generateAssistantCode', () => {
+  it('omits JSON Schema from the system prompt when strict schema is enabled', async () => {
+    let system = '';
+    await generateAssistantCode(
+      {
+        profile: {
+          id: 'developer',
+          baseUrl: 'https://api.example.com',
+          model: 'test-model',
+          supportsJsonSchema: true,
+        },
+        apiKey: 'developer-key',
+        prompt: '解释一下',
+        context: {
+          projectId: 'p',
+          workspaceHash: 'h',
+          generatedCode: '_motor.stop(4)',
+          blocks: [],
+        },
+      },
+      {
+        fetch: (async (_url, init) => {
+          const body = JSON.parse(String(init?.body)) as {
+            messages: Array<{ role: string; content: string }>;
+          };
+          system = body.messages.find(m => m.role === 'system')?.content ?? '';
+          return new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      type: 'explanation',
+                      message: 'ok',
+                      python: '',
+                      assumptions: [],
+                      questions: [],
+                      hardware_config: {},
+                    }),
+                  },
+                },
+              ],
+            }),
+            { status: 200 },
+          );
+        }) as AssistantFetch,
+      },
+    );
+    expect(system).toContain('_motor.run_power');
+    expect(system).not.toContain('JSON Schema：');
+  });
+
+  it('keeps JSON Schema in the system prompt when strict schema is disabled', async () => {
+    let system = '';
+    await generateAssistantCode(
+      {
+        profile: {
+          id: 'developer',
+          baseUrl: 'https://api.example.com',
+          model: 'test-model',
+          supportsJsonSchema: false,
+        },
+        apiKey: 'developer-key',
+        prompt: '解释一下',
+        context: {
+          projectId: 'p',
+          workspaceHash: 'h',
+          generatedCode: '',
+          blocks: [],
+        },
+      },
+      {
+        fetch: (async (_url, init) => {
+          const body = JSON.parse(String(init?.body)) as {
+            messages: Array<{ role: string; content: string }>;
+          };
+          system = body.messages.find(m => m.role === 'system')?.content ?? '';
+          return new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      type: 'explanation',
+                      message: 'ok',
+                      python: '',
+                      assumptions: [],
+                      questions: [],
+                      hardware_config: {},
+                    }),
+                  },
+                },
+              ],
+            }),
+            { status: 200 },
+          );
+        }) as AssistantFetch,
+      },
+    );
+    expect(system).toContain('JSON Schema：');
   });
 });

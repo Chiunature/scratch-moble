@@ -641,7 +641,7 @@ qianjin(50)
 ### 11.3 旧资料的适用范围
 
 - `docs/scratch-blocks-guide.md` 主要面向编辑器开发和构建流程。
-- `docs/pika-runtime.md` 含“BLE 未实现”、本地 `packages/pika-bytecode/` 等历史信息，与当前源码有差异。当前已存在编译和 BLE 上传流程，应优先参考实际 hook/service。
+- `docs/pika-runtime.md` 描述当前的本地编译和 BLE 槽位上传。原生编译器在依赖 `react-native-pika` 中，本仓库没有 `packages/pika-bytecode/`。
 - `dist/`、移动端 HTML 资源和旧 generated 文件是构建产物或历史产物；业务事实以 `src/` 及当前构建脚本为准。
 
 ## 12. 新增或修改积木时的检查清单

@@ -175,6 +175,7 @@ export const ASSISTANT_PYTHON_RULES = [
   '只返回 JSON，不要 Markdown。type 为 code、question 或 explanation。',
   'code 必须给出完整主程序 python，并必须声明 program_edit；缺少 program_edit 会被拒绝。',
   'program_edit 字段：mode(revise|delete|keep-only|clear)、scope(main|procedures|workspace)、allow、add、targets、keep、replacements。',
+  '授权比较带控制流位置：循环/分支内的语句写成 while|_motor.stop(4) 或 while/if|_motor.stop(4)；顶层不写前缀。把语句挪进或挪出循环时，from 与 to 的路径前缀必须不同。',
   'revise：小改。每条删除必须写在 replacements.from，对应 to；纯新增写在 add。不要用新增数量抵消无关删除。',
   'delete：删除写在 targets；若同时新增或替换，allow 必须含 add/replace，并填写 add 或 replacements。',
   'keep-only：只保留 keep 中的语句；keep 为空表示主程序可空，不代表清空工作区。',

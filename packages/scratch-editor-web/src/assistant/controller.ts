@@ -20,6 +20,7 @@ import {
 } from './candidate';
 import { isEmptyAssistantPython, normalizeAssistantPython } from '../decompile';
 import { patchProcedureReporterBlocks } from '../workspace-custom/procedureDrag/reporterBlocks';
+import { firstPythonMismatchMessage } from './pythonMismatch';
 
 function normalizePythonForScope(
   python: string,
@@ -338,15 +339,12 @@ export function createAssistantController(
             }
           }
           const result = validate(state);
-          if (
-            python != null &&
-            !isEmptyAssistantPython(python) &&
-            normalizePythonForScope(python, programScope) !==
-              normalizePythonForScope(result.code, programScope)
-          ) {
-            throw new Error(
-              `反编译结果与原 Python 不一致。\n原程序：\n${normalizePythonForScope(python, programScope)}\n生成结果：\n${normalizePythonForScope(result.code, programScope)}`,
-            );
+          if (python != null && !isEmptyAssistantPython(python)) {
+            const expected = normalizePythonForScope(python, programScope);
+            const actual = normalizePythonForScope(result.code, programScope);
+            if (expected !== actual) {
+              throw new Error(firstPythonMismatchMessage(expected, actual));
+            }
           }
           candidate = {
             id,
